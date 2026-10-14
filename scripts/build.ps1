@@ -9,7 +9,10 @@ if ($Verify) {
     $taskProcess = Start-Process -FilePath (Join-Path $taskOutput 'CodexSwitch.exe') -ArgumentList @('--self-test','--verify-readonly',('"'+$taskReport+'"')) -WindowStyle Hidden -PassThru
     if (!$taskProcess.WaitForExit(60000)) { throw 'Internal verification did not finish' }
     $taskResult = Get-Content -LiteralPath $taskReport -Raw | ConvertFrom-Json
-    $taskResult | Select-Object version,passed,failed
+    Write-Output ($taskResult | Select-Object version,passed,failed | ConvertTo-Json -Compress)
+    if ($taskResult.failed -ne 0) {
+        Write-Output ($taskResult.tests | Where-Object { -not $_.passed } | Select-Object name,failure | ConvertTo-Json -Compress)
+    }
     if ($taskProcess.ExitCode -ne 0 -or $taskResult.failed -ne 0) { throw 'Internal verification failed' }
 }
 Write-Output ('Executable: '+(Join-Path $taskOutput 'CodexSwitch.exe'))

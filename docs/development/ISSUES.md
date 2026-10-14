@@ -6,11 +6,11 @@ The roadmap is [#1](https://github.com/Gaebabi/codex-switch/issues/1). Foundatio
 
 Every issue and PR includes a verification section:
 
-- Changed behavior/layout: actual baseline and after screenshots side by side with revisions/captions.
-- New functionality: actual confirmation screenshot, exercised steps and result.
+- Changed behavior/layout: actual application baseline and after screenshots side by side with revisions/captions.
+- New functionality: actual application confirmation screenshot, exercised steps and result. Repository pages do not substitute for program screenshots.
 - Planned functionality: actual baseline/problem screenshot now; explicit pending after/native confirmation until implementation. Never fabricate a finished feature screenshot.
 - State OS/architecture, source/package/client revision, commands/results, limitations and unrun checks. Screenshots complement automated checks, not replace them.
 
-Capture public repository pages anonymously when possible. Remove account names/emails, private chats, credentials, home paths and avatar identifiers before export. Replace sensitive pixels irreversibly before optional blur; strip private metadata and inspect the exported screenshot. Do not upload originals. Public repository evidence is not a screenshot of native switching.
+Capture the implementation's application UI in an isolated environment when possible. Remove account names/emails, private chats, credentials, home paths and avatar identifiers before export. Replace sensitive pixels irreversibly before optional blur; strip private metadata and inspect the exported screenshot. Do not upload originals. Synthetic app UI evidence is explicitly labeled and cannot prove native switching.
 
 Store only sanitized evidence under `docs/evidence/` or GitHub issue attachments, referenced with immutable commit URLs. Keep raw captures/receipts ignored. A PR uses `Closes` only for completed acceptance and `Refs` for ongoing work; link the review and CI results before merge.

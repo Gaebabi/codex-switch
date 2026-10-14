@@ -6,7 +6,7 @@ Describe the concrete problem and resulting behavior. Link the issue; use `Close
 
 List commands and results, OS/architecture, and any checks left unrun. Distinguish source/build/isolated checks from native account switching and chat resumption. Use disposable storage; never stop another person's Codex to validate a PR.
 
-Attach before/after screenshots for a change, or a confirmation screenshot for a new feature, with revisions and evidence scope. Planned work must label confirmation pending. Irreversibly replace private pixels before blur; never upload originals.
+Attach actual application before/after screenshots for a change, or an application confirmation screenshot for a new feature, with revisions and evidence scope. Repository screenshots cannot substitute for application evidence. Planned work must label confirmation pending. Irreversibly replace private pixels before blur; never upload originals.
 
 ## Compatibility and privacy
 
