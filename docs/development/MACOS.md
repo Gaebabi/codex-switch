@@ -1,6 +1,6 @@
 # macOS 개발 안내
 
-설치와 기본 사용은 [Mac setup](../MACOS.md), 공통 구조는 [Development map](../ARCHITECTURE.md)를 확인합니다. 현재 소스는 1.27.6이며 native Mac 수용은 별도입니다.
+설치와 기본 사용은 [Mac setup](../MACOS.md), 공통 구조는 [Development map](../ARCHITECTURE.md)를 확인합니다. 현재 소스는1.30.0 / .NET10 LTS이며 검토한 지원 기준은macOS15+입니다. 공개 다운로드는1.27.6을 유지하며 계정 전환·재개 수용은 별도입니다.
 
 ## 빌드와 검증
 
@@ -11,7 +11,7 @@ bash scripts/verify-macos.sh
 python3 scripts/verify-macos-install.py /path/to/CodexSwitch-osx-arm64.zip
 ```
 
-빌드에는 .NET 8 SDK, 선택적 SQLite/설치 검사에는 Python 3이 필요합니다. 생성물은 ignored artifacts에 저장합니다. 계정 없는 임시 Keychain/storage/socket fixtures와 OS 자원 검사를 실제 로그인/전환 성공으로 해석하지 않습니다.
+빌드에는 .NET10.0.4xx SDK, 선택적 SQLite/설치 검사에는 Python3이 필요합니다. 생성물은 ignored artifacts에 저장합니다. `--verify-ui`는 실제 게시용 앱의 자체NSWindow만 캡처하며 가상계정과 CI software rendering을 사용합니다. 계정 없는 임시 Keychain/storage/socket fixtures나 창 실행을 실제 로그인/전환 성공으로 해석하지 않습니다.
 
 ## 연결과 저장소
 

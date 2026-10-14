@@ -35,7 +35,10 @@ for path in paths:
 runtime=data['runtime'];version=data.get('appVersion',data.get('version'));architecture=data['architecture']
 if not re.fullmatch(r'\.NET \d+\.\d+\.\d+',runtime) or not re.fullmatch(r'\d+\.\d+\.\d+',version) or architecture not in ('X64','Arm64'):
     raise SystemExit('Unexpected runtime/version/architecture metadata')
+rendering='Windows native WPF' if args.os=='Windows' else data.get('rendering')
+if args.os=='macOS' and rendering!='Software (CI native window)':raise SystemExit('Unexpected Mac evidence rendering mode')
 value={'schema':1,'revision':args.revision,'os':args.os,'architecture':architecture,'runtime':runtime,'appVersion':version,'images':images,
+    'rendering':rendering,
     'scope':'Native published app on the stated OS; only own app window, synthetic accounts, no personal desktop/credentials/Codex action. No account-switch/resume acceptance.'}
 (args.destination/'evidence.json').write_text(json.dumps(value,indent=2)+'\n',encoding='utf-8')
 print(json.dumps({'os':args.os,'architecture':architecture,'runtime':runtime,'nativeScreenshots':len(images),'metadataRemoved':True}))

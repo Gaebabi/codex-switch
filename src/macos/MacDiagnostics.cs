@@ -160,7 +160,8 @@ internal static class MacDiagnostics
                         if (!text.IsVisible) continue; var position = text.TranslatePoint(new Point(), card);
                         Assert(position.HasValue && position.Value.Y >= -1 && position.Value.Y + text.Bounds.Height <= card.Bounds.Height + 1, "Card text is vertically clipped: " + text.Text);
                     }
-                    Assert(window.AccountScroll.Extent.Height <= window.AccountScroll.Viewport.Height + 1, "Four cards unexpectedly require scrolling.");
+                    Assert(window.AccountScroll.Extent.Height <= window.AccountScroll.Viewport.Height + 1,
+                        $"Four cards unexpectedly require scrolling: extent={window.AccountScroll.Extent.Height}, viewport={window.AccountScroll.Viewport.Height}.");
                     var menuBar = window.MenuBarProbe;
                     Assert(menuBar is { Visible: true, Template: true, MenuItems: 5 } && menuBar.Title.Trim() == "72.6%", "Native menu bar lost its symbol, percentage or actions after rebuilding the view.");
                     foreach (var button in window.GetVisualDescendants().OfType<Button>().Where(b => b.IsVisible))

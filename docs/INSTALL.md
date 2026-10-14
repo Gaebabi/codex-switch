@@ -1,6 +1,6 @@
 # Build and install
 
-Use an existing complete package, or build from this repository. Codex desktop/CLI must already be installed. Only source builds require the .NET 8 SDK.
+Use an existing complete package, or build from this repository. Codex desktop/CLI must already be installed. Current source1.30.0 requires .NET10.0.4xx SDK and packages runtime10.0.13; published1.27.6 binaries remain unchanged.
 
 ## Windows
 
@@ -15,7 +15,7 @@ Run these commands from the repository root:
 
 ## Mac
 
-macOS 12 or later. Choose your processor:
+Current source packages declare macOS15 or later, matching the reviewed .NET10 support baseline. Published1.27.6 bundles have the older12.0 minimum; that metadata is not a current support guarantee for an unsupported OS. Choose your processor:
 
 ```bash
 bash scripts/build-macos.sh osx-arm64 # Apple Silicon

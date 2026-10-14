@@ -19,6 +19,7 @@ namespace CodexAccountDesk;
 
 internal sealed class DeskWindow : Window
 {
+    private const double AccountRowMinimumHeight = 126;
     private readonly CancellationTokenSource _stop = new();
     private readonly DesktopSessionMonitor _sessions = new(Program.CodexHome);
     private readonly MacResourceMonitor _resources = new();
@@ -147,7 +148,7 @@ internal sealed class DeskWindow : Window
         toolbar.Children.Add(_cancel);
         _sessionValues = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 24, HorizontalAlignment = HorizontalAlignment.Center };
         toolbar.Children.Add(_sessionValues); Grid.SetRow(toolbar, 1); shell.Children.Add(toolbar);
-        _accounts = new Grid { Margin = new Thickness(4, 2) };
+        _accounts = new Grid { Margin = new Thickness(4, 1) };
         _accountScroll = new ScrollViewer { Content = _accounts, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
         _accountScroll.SizeChanged += (_, _) => ResizeAccounts(); Grid.SetRow(_accountScroll, 2); shell.Children.Add(_accountScroll);
         var footer = new Grid { RowDefinitions = new RowDefinitions("22,24"), ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(8, 2) };
@@ -213,7 +214,7 @@ internal sealed class DeskWindow : Window
         }
         var columns = profiles.Length == 1 ? 1 : 2;
         for (var i = 0; i < columns; i++) _accounts.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-        for (var i = 0; i < (profiles.Length + columns - 1) / columns; i++) _accounts.RowDefinitions.Add(new RowDefinition(GridLength.Star) { MinHeight = 126 });
+        for (var i = 0; i < (profiles.Length + columns - 1) / columns; i++) _accounts.RowDefinitions.Add(new RowDefinition(GridLength.Star) { MinHeight = AccountRowMinimumHeight });
         for (var i = 0; i < profiles.Length; i++)
         {
             var profile = profiles[i]; var pending = _service?.Vault.Data.PendingSwitch;
@@ -232,7 +233,9 @@ internal sealed class DeskWindow : Window
         }
         ResizeAccounts();
     }
-    private void ResizeAccounts() => _accounts.Height = Math.Max(Math.Max(0, _accountScroll.Bounds.Height - 4), _accounts.RowDefinitions.Count * 126);
+    private void ResizeAccounts() => _accounts.Height = Math.Max(
+        Math.Max(0, _accountScroll.Bounds.Height - _accounts.Margin.Top - _accounts.Margin.Bottom),
+        _accounts.RowDefinitions.Count * AccountRowMinimumHeight);
     internal void Preview(string language, bool dark, AccountProfile[] profiles)
     { Loc.SetLanguage(language); _theme = new(dark); _preview = profiles; Build(); UpdateTray(); }
     internal IReadOnlyList<MacAccountCard> Cards => _cards;
