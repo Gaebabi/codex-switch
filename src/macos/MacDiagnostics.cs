@@ -173,7 +173,7 @@ internal static class MacDiagnostics
                     }
                     checks.Add(new { name, passed = true });
                 }
-                catch (Exception error) { failures++; checks.Add(new { name, passed = false, error = error.Message }); }
+                catch (Exception error) { failures++; checks.Add(new { name, passed = false, error = error.Message }); Console.Error.WriteLine("UI case " + name + ": " + error.Message); }
                 using var bitmap = new RenderTargetBitmap(new PixelSize((int)window.ClientSize.Width * 2, (int)window.ClientSize.Height * 2), new Vector(192, 192));
                 bitmap.Render(window); bitmap.Save(Path.Combine(directory, name + ".png"));
                 if (Program.NativeUiEvidence) await NativeUiCapture.SaveAsync(window, Path.Combine(directory, name + "-native.png"));
@@ -192,7 +192,7 @@ internal static class MacDiagnostics
                     }
                     checks.Add(new { name = "account-count-" + count, passed = true });
                 }
-                catch (Exception error) { failures++; checks.Add(new { name = "account-count-" + count, passed = false, error = error.Message }); }
+                catch (Exception error) { failures++; checks.Add(new { name = "account-count-" + count, passed = false, error = error.Message }); Console.Error.WriteLine("UI account-count " + count + ": " + error.Message); }
                 using var bitmap = new RenderTargetBitmap(new PixelSize((int)window.ClientSize.Width * 2, (int)window.ClientSize.Height * 2), new Vector(192, 192));
                 bitmap.Render(window); bitmap.Save(Path.Combine(directory, "accounts-" + count + ".png"));
             }
