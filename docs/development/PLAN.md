@@ -1,5 +1,13 @@
 # Current plan
 
+## Always-on refresh — issue #25
+
+- [x] Remove Windows footer switch/caption and Mac settings toggle; retire the opt-out preference and use fixed60s initialized-app refresh.
+- [x] Preserve manual refresh, existing asynchronous/coalescing/switch/shutdown paths, vault identities and translation compatibility.
+- [x] Inspect matching before/after, Korean minimum and light program captures; check legacy disabled preference and actual timer callback in disposable storage. Windows93/93, SQLite23/23, Mac compile and nine×353 catalogues pass.
+
+[Issue #25](https://github.com/Gaebabi/codex-switch/issues/25) owns formal PR, final reviewed-head CI/review and owner-authorized merge. Source1.29.3; no binary Release, installed-app replacement or real-account action.
+
 ## Account date warnings — issue #23
 
 - [x] Share inclusive future expiry72h/reset48h warning eligibility across Windows/Mac without changing dates, quotas or data identities.

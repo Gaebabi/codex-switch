@@ -23,6 +23,8 @@ Switch Codex accounts, automatically resume eligible unfinished local chats, and
 2. Select **+** in the title bar to add accounts. On Windows, right-click **↻** to import the current Codex login.
 3. Compare the cards and select **Switch**. Reads refresh every 60 seconds; **↻** or **F5** refreshes immediately.
 
+**Source1.29.3:** automatic refresh is always enabled at60seconds. Its Windows footer switch/caption and Mac settings toggle are removed; an older disabled preference no longer stops reads. [Application comparison and scope](docs/evidence/always-refresh/README.md)
+
 Keep the full package together. Packaged apps need no .NET installation; building source requires the .NET 8 SDK and installed Codex desktop/CLI.
 
 ## What you can see

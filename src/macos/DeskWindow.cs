@@ -76,7 +76,7 @@ internal sealed class DeskWindow : Window
         {
             if (Exiting) return;
             foreach (var card in _cards) card.Update(DateTimeOffset.UtcNow);
-            if (++_ticks % 60 == 0 && _ready && _service!.Vault.Data.AutoRefresh) await RunAsync(token => _service.RefreshAllAsync(null, token));
+            if (++_ticks % 60 == 0 && _ready) await RunAsync(token => _service!.RefreshAllAsync(null, token));
         };
     }
     private void OnUi(Action action) => Dispatcher.UIThread.Post(() => { if (!Exiting) action(); });
@@ -387,8 +387,6 @@ internal sealed class DeskWindow : Window
     {
         if (_service == null) return;
         var menu = _theme.Menu(_settingsButton);
-        var auto = new MenuItem { Header = Loc.T("자동 갱신"), ToggleType = MenuItemToggleType.CheckBox, IsChecked = _service.Vault.Data.AutoRefresh };
-        auto.Click += (_, _) => _ = RunAsync(_ => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.AutoRefresh = auto.IsChecked; _service.Vault.Save(); } return Task.CompletedTask; });
         var drives = new MenuItem { Header = Loc.T("드라이브 설정") }; drives.Click += async (_, _) =>
         {
             var selection = await DeskDialogs.Volumes(this, _theme, _service.Vault.Data.Drives.ToArray());
@@ -396,7 +394,7 @@ internal sealed class DeskWindow : Window
         };
         var current = new MenuItem { Header = Loc.T("현재 계정 가져오기") }; current.Click += async (_, _) => await RefreshAsync();
         var quit = new MenuItem { Header = Loc.T("종료") }; quit.Click += async (_, _) => await ExitAsync();
-        menu.ItemsSource = new[] { auto, drives, current, quit }; menu.Open(_settingsButton);
+        menu.ItemsSource = new[] { drives, current, quit }; menu.Open(_settingsButton);
     }
     private void UpdateTray()
     {

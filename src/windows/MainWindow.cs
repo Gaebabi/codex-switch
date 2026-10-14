@@ -35,7 +35,6 @@ internal sealed class MainWindow : Window
     private readonly SessionUsagePanel _sessionCount = new();
     private readonly Button _refresh = new(), _add = new(), _cancelLogin = new(), _cancelSwitch = new();
     private MenuItem? _importCurrent;
-    private readonly CheckBox _auto = new();
     private readonly Border _loginPanel = new();
     private readonly List<AccountTankCard> _tankCards = new();
     private readonly Dictionary<string, string> _selectedQuotas = new();
@@ -77,14 +76,12 @@ internal sealed class MainWindow : Window
         _add.Click += async (_, _) => await AddAsync();
         _cancelLogin.Click += (_, _) => _loginCancellation?.Cancel();
         _cancelSwitch.Click += (_, _) => CancelSwitch();
-        _auto.Checked += (_, _) => SaveAutoRefresh(true);
-        _auto.Unchecked += (_, _) => SaveAutoRefresh(false);
         _service.Changed += ServiceChanged;
         _sessions.Changed += SessionChanged;
         _hardware.Changed += HardwareChanged;
         _drives.Changed += DrivesChanged;
         StateChanged += (_, _) => { if (_maximizeButton != null) _maximizeButton.Content = Burn0Theme.Icon(WindowState == WindowState.Maximized ? "window-restore" : "window-maximize", Color("muted"), 12, true); };
-        _refreshTimer.Tick += async (_, _) => { if (_ready && !_closing && _service.Vault.Data.AutoRefresh) await RefreshAsync(); };
+        _refreshTimer.Tick += async (_, _) => { if (_ready && !_closing) await RefreshAsync(); };
         _clockTimer.Tick += (_, _) => UpdateCountdowns();
         Loaded += async (_, _) => await StartAsync();
         Closing += OnClosing;
@@ -96,7 +93,7 @@ internal sealed class MainWindow : Window
     }
     private void ApplyTheme()
     {
-        foreach (var element in new FrameworkElement[] { _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _auto, _loginPanel, _scroll })
+        foreach (var element in new FrameworkElement[] { _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _loginPanel, _scroll })
         {
             if (element.Parent is Panel panel) panel.Children.Remove(element);
             else if (element.Parent is ContentControl control && ReferenceEquals(control.Content, element)) control.Content = null;
@@ -119,10 +116,8 @@ internal sealed class MainWindow : Window
         _hardwarePanel.FlowDirection = FlowDirection.LeftToRight; _drivePanel.FlowDirection = FlowDirection.LeftToRight;
         _hardwarePanel.Refresh(_hardware.Current, _theme);
         _drivePanel.Refresh(_drives.Current, _theme);
-        _status.TextWrapping = TextWrapping.NoWrap; _status.TextTrimming = TextTrimming.CharacterEllipsis; _status.Margin = new Thickness(0, 0, 16, 0);
-        _auto.Content = Loc.T("60초 자동 조회"); _auto.Foreground = Color("muted"); _auto.FontSize = 12; _auto.VerticalAlignment = VerticalAlignment.Center;
+        _status.TextWrapping = TextWrapping.NoWrap; _status.TextTrimming = TextTrimming.CharacterEllipsis;
         _loginText.Text = Loc.T("브라우저에서 추가할 계정으로 로그인해 주세요.");
-        _auto.IsChecked = _service.Vault.Data.AutoRefresh;
         _loginPanel.Background = Color("surface"); _loginPanel.CornerRadius = new CornerRadius(_theme.Number("radius")); _loginPanel.Padding = new Thickness(12);
         Content = BuildRoot(); RenderAccounts(); UpdateControls(); RenderStatus();
     }
@@ -143,8 +138,7 @@ internal sealed class MainWindow : Window
         _scroll.Content = _rows; Grid.SetRow(_scroll, 2); body.Children.Add(_scroll);
         var footer = new StackPanel { Margin = new Thickness(0, 4, 0, 0) };
         _hardwarePanel.Margin = new Thickness(0, 0, 0, 4); footer.Children.Add(_hardwarePanel);
-        var statusLine = new DockPanel(); DockPanel.SetDock(_auto, Dock.Right); statusLine.Children.Add(_auto);
-        var statusHost = new Grid(); statusHost.Children.Add(_status); statusHost.Children.Add(_drivePanel); statusLine.Children.Add(statusHost); footer.Children.Add(statusLine);
+        var statusHost = new Grid(); statusHost.Children.Add(_status); statusHost.Children.Add(_drivePanel); footer.Children.Add(statusHost);
         _cancelSwitch.HorizontalAlignment = HorizontalAlignment.Left; _cancelSwitch.Margin = new Thickness(0, 10, 0, 0); footer.Children.Add(_cancelSwitch);
         Grid.SetRow(footer, 3); body.Children.Add(footer); Grid.SetRow(body, 1); root.Children.Add(body); return root;
     }
@@ -639,7 +633,7 @@ internal sealed class MainWindow : Window
                 var snapshot = MeasureGrid();
                 if (_options.PreviewPath != null) CapturePreview(Path.ChangeExtension(_options.PreviewPath, null) + "-switch-" + stage + "-" + lang + ".png");
                 cases.Add(new { stage = stage.ToString(), lang, illustrative = true, layout = snapshot,
-                    otherControlsEnabled = _add.IsEnabled && _refresh.IsEnabled && _auto.IsEnabled });
+                    otherControlsEnabled = _add.IsEnabled && _refresh.IsEnabled });
             }
         }
         finally
@@ -720,7 +714,6 @@ internal sealed class MainWindow : Window
     {
         _switchCancellation?.Cancel();
     }
-    private void SaveAutoRefresh(bool value) { lock (_service.Vault.SyncRoot) { _service.Vault.Data.AutoRefresh = value; _service.Vault.Save(); } }
     private void SetRefreshStatus()
     {
         var failures = _service.Accounts.Count(a => a.Error != null); SetStatus(failures > 0 ? "{0}개 계정의 갱신에 실패했습니다. 이전 조회값과 안내를 확인하세요." : "사용량을 갱신했습니다.", failures > 0, failures);
@@ -742,18 +735,18 @@ internal sealed class MainWindow : Window
     {
         _refresh.IsEnabled = _ready && !_closing; _add.IsEnabled = _ready && !_loggingIn && !_closing;
         if (_importCurrent != null) _importCurrent.IsEnabled = !_closing;
-        _auto.IsEnabled = !_closing; _loginPanel.Visibility = _loggingIn ? Visibility.Visible : Visibility.Collapsed;
+        _loginPanel.Visibility = _loggingIn ? Visibility.Visible : Visibility.Collapsed;
         _cancelSwitch.Visibility = Visibility.Collapsed;
     }
     internal object ProbeInteractionState()
     {
         var oldLogin = _loggingIn; _loggingIn = true; UpdateControls();
-        var result = new { manualRefreshAvailableDuringLogin = _refresh.IsEnabled, importEnabledDuringLogin = _importCurrent?.IsEnabled == true, autoRefreshEnabledDuringLogin = _auto.IsEnabled,
+        var result = new { manualRefreshAvailableDuringLogin = _refresh.IsEnabled, importEnabledDuringLogin = _importCurrent?.IsEnabled == true, automaticRefreshIntervalSeconds = _refreshTimer.Interval.TotalSeconds,
             duplicateLoginDisabled = !_add.IsEnabled, captionHeight = WindowChrome.GetWindowChrome(this).CaptionHeight, theme = _theme.Dark ? "dark" : "light" };
         _loggingIn = oldLogin; UpdateControls(); return result;
     }
     private object CaptureControls() => new { activeQueries = _service.RefreshingCount, visibleRefreshButtons = CountRefreshButtons(this),
-        importEnabled = _importCurrent?.IsEnabled == true, addAccountEnabled = _add.IsEnabled, autoRefreshEnabled = _auto.IsEnabled };
+        importEnabled = _importCurrent?.IsEnabled == true, addAccountEnabled = _add.IsEnabled, automaticRefreshIntervalSeconds = _refreshTimer.Interval.TotalSeconds };
     private static int CountRefreshButtons(DependencyObject root)
     {
         var count = root is Button button && (Equals(button.Content, Loc.T("새로 고침")) || Equals(button.ToolTip, Loc.T("새로 고침")) || Equals(button.ToolTip, Loc.T("이 계정 즉시 새로 고침"))) ? 1 : 0;

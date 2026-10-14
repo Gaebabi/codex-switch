@@ -1,6 +1,6 @@
 # Operations
 
-Public `Gaebabi/codex-switch`, baseline `main`, is the canonical source. Clone into any directory. Source/app version is **1.29.2**; published binary version remains **1.27.6**. Binary delivery is manual GitHub Release ZIPs plus SHA256SUMS; no automatic updater or CI release publisher exists.
+Public `Gaebabi/codex-switch`, baseline `main`, is the canonical source. Clone into any directory. Source/app version is **1.29.3**; published binary version remains **1.27.6**. Binary delivery is manual GitHub Release ZIPs plus SHA256SUMS; no automatic updater or CI release publisher exists.
 
 ## Build and verify
 
@@ -33,6 +33,8 @@ dotnet run --project tests/windows-handoff/CodexSwitch.WindowsHandoff.Tests.cspr
 ## Data and installed packages
 
 Windows data remains `%LOCALAPPDATA%/CodexAccountDesk`; Mac remains `~/Library/Application Support/CodexAccountDesk`. Default Codex home is `CODEX_HOME` or `~/.codex`. Preserve data/key-service identities, vault format, bundle ID and IPC names during source cleanup.
+
+Source1.29.3 retires the persisted `AutoRefresh` preference and both platform toggles. Older files, including a disabled preference, load through the existing serializer and omit the retired field on normal save. Initialized-app account reads always use the existing60-second schedule; normal lifetime and read-only verification boundaries remain unchanged. [Application/timer evidence](../evidence/always-refresh/README.md)
 
 Windows per-user installations use `%LOCALAPPDATA%/Programs/CodexSwitch/<version>`. Stage an update in a new version folder; use `--request-exit --data-dir <existing-directory>` to stop only the utility, then start the new complete copy with the existing data/home. Do not overwrite a running folder or terminate native Codex for installation verification.
 

@@ -33,7 +33,6 @@ internal sealed class VaultData
 {
     public int Version { get; set; } = 1;
     public List<AccountProfile> Accounts { get; set; } = new();
-    public bool AutoRefresh { get; set; } = true;
     public string? PreviousDesktopAuthJson { get; set; }
     public string Theme { get; set; } = "dark";
     public string Language { get; set; } = "en";
