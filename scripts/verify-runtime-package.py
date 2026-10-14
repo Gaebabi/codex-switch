@@ -18,6 +18,11 @@ names=['CodexSwitch.dll','CodexSwitch.deps.json','System.Private.CoreLib.dll']+(
 if any(not(root/name).is_file() for name in names):raise SystemExit('Incomplete self-contained package')
 deps=json.loads((root/'CodexSwitch.deps.json').read_text(encoding='utf-8'))
 if not deps['runtimeTarget']['name'].endswith('/'+args.rid):raise SystemExit('Runtime identifier mismatch')
+target=deps['targets'][deps['runtimeTarget']['name']]
+project_assets=sorted(asset for key,value in deps['libraries'].items() if value['type']=='project' for asset in target[key].get('runtime',{}))
+if 'CodexSwitch.Core.dll' not in project_assets or any(not(root/asset).is_file() for asset in project_assets):
+    raise SystemExit('Published project dependencies are incomplete')
 value={'schema':1,'rid':args.rid,'tfm':data['tfm'],'frameworks':frameworks,'files':sum(path.is_file() for path in root.rglob('*')),
+    'projectRuntimeAssets':project_assets,
     'scope':'Full published-folder runtime/target inspection; foreign binaries not executed, no install/account/switch acceptance.'}
 args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text(json.dumps(value,indent=2)+'\n',encoding='utf-8');print(json.dumps(value))
