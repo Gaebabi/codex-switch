@@ -11,3 +11,5 @@ Using the production shutdown code with a disposable GUI parent and a child that
 The actual WPF application components retain their UI. This comparison confirms the program's visual layout; it does not show an actual account handoff. Account/session/sensor inputs are fictional. No private source pixels, recoverable blur or personal metadata are present. Native lifecycle checks exercise the production shutdown and coordinator with only disposable fixture processes; credential application, launch and chat resume endpoints in that fixture are synthetic and counted once.
 
 Windows CI tests absence, delayed children, cancellation, the 30-second deadline and native shutdown refusal. Production does not force-kill the desktop or ignore Restart Manager errors. Ambiguous Continue delivery and account identity checks are unchanged. Mac already waits for native termination; this correction changes the Windows lifecycle boundary.
+
+Primary Windows API reference: [Restart Manager shutdown and error semantics](https://learn.microsoft.com/en-us/windows/win32/api/restartmanager/nf-restartmanager-rmshutdown).
