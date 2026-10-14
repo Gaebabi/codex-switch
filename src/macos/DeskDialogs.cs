@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Media;
 
 namespace CodexAccountDesk;
 
@@ -15,7 +16,7 @@ internal static class DeskDialogs
     {
         var window = new Window { Title = title, Width = 430, Height = height, MinWidth = 360, MinHeight = height,
             WindowStartupLocation = WindowStartupLocation.CenterOwner, CanResize = height > 150 };
-        theme.Apply(window); return window;
+        theme.Apply(window); window.FlowDirection = Loc.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight; return window;
     }
     public static Task<string?> Prompt(Window owner, DeskTheme theme, string title, string value)
     {
@@ -26,6 +27,14 @@ internal static class DeskDialogs
         var save = theme.Button(Loc.T("저장"), () => window.Close(text.Text ?? "")); save.IsDefault = true;
         actions.Children.Add(cancel); actions.Children.Add(save); body.Children.Add(actions); window.Content = body;
         window.Opened += (_, _) => { text.Focus(); text.SelectAll(); }; return window.ShowDialog<string?>(owner);
+    }
+    public static Task Message(Window owner, DeskTheme theme, string title, string message)
+    {
+        var window = Dialog(theme, title, 220);
+        var body = new StackPanel { Margin = new Thickness(16), Spacing = 16 };
+        var text = theme.Text(message, 13); text.TextWrapping = Avalonia.Media.TextWrapping.Wrap; body.Children.Add(text);
+        var close = theme.Button(Loc.T("확인"), () => window.Close()); close.IsDefault = true; body.Children.Add(close);
+        window.Content = body; return window.ShowDialog(owner);
     }
     public static async Task<bool> Confirm(Window owner, DeskTheme theme, string title, string value)
     {

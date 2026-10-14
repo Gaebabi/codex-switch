@@ -39,7 +39,7 @@ Mac: `bash scripts/verify-macos.sh` runs isolated native checks. [Mac developmen
 
 Use UTF-8, `.editorconfig` and focused patches; avoid mass formatting. Preserve async account reads, credential revisions, unavailable-versus-zero behavior, existing data/key identities and read-only databases. Fix causes rather than weakening security or hiding failures.
 
-UI catalogs are `localization/Strings.en.json` and `localization/Strings.ko.json`, using Korean keys. Add paired translations; `node scripts/regenerate-ko.cjs` regenerates Korean (Node is optional for normal builds). Japanese/Chinese currently translate docs only.
+UI catalogues are versioned JSON files in `localization/packs/`, indexed in `localization/index.json`, with stable English-based message IDs. Nine languages are bundled in source 1.28.0; partial local packs intentionally fall back to English. [Translator guide/schema/review policy](docs/LOCALIZATION.md). Run `python scripts/verify-localization.py` and the cross-platform localization test project before a translation PR. No Node or third-party translation service is needed to contribute.
 
 Windows `python scripts/render-demo.py` renders a fictional screenshot from current UI components, using .NET 8 and Python's standard library. It does not prove real switching. Inspect the result when UI changes.
 

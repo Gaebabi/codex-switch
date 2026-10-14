@@ -1,5 +1,6 @@
 """Render one fictional documentation screenshot with the current Windows UI."""
 import json
+import argparse
 from pathlib import Path
 import subprocess
 import tempfile
@@ -26,8 +27,7 @@ PROJECT = r'''<Project Sdk="Microsoft.NET.Sdk">
     <EmbeddedResource Include="../../assets/brand/app-icon.ico" LogicalName="CodexAccountDesk.AppIcon.ico" />
     <EmbeddedResource Include="../../resources/Burn0Tokens.css" LogicalName="CodexAccountDesk.Burn0Tokens.css" />
     <EmbeddedResource Include="../../resources/Burn0Icons.json" LogicalName="CodexAccountDesk.Burn0Icons.json" />
-    <EmbeddedResource Include="../../localization/Strings.ko.json" WithCulture="false" LogicalName="CodexAccountDesk.Strings.ko.json" />
-    <EmbeddedResource Include="../../localization/Strings.en.json" WithCulture="false" LogicalName="CodexAccountDesk.Strings.en.json" />
+    <EmbeddedResource Include="../../localization/packs/*.json;../../localization/index.json;../../localization/legacy-keys.json" WithCulture="false" LogicalName="CodexAccountDesk.LanguagePacks.%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>'''
 
@@ -53,18 +53,22 @@ internal static class DemoRenderer
     public static int Main(string[] args)
     {
         var output = Path.GetFullPath(args[0]); var fixture = Path.GetFullPath(args[1]);
+        AppContext.SetSwitch("Switch.System.Windows.Media.ShouldRenderEvenWhenNoDisplayDevicesAreAvailable", true);
         var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-        Loc.SetLanguage("en"); var now = DateTimeOffset.UtcNow;
+        if (args.Length > 5 && args[5].Length > 0) Loc.Install(args[5], Path.Combine(fixture, "languages"));
+        Loc.SetLanguage(args.Length > 2 ? args[2] : "en"); var now = DateTimeOffset.UtcNow;
         var vault = new AccountVault(Path.Combine(fixture, "data"));
-        vault.Data.Language = "en"; vault.Data.Theme = "dark";
+        vault.Data.Language = Loc.Language; vault.Data.Theme = "dark";
         vault.Data.Accounts.Add(Profile("work", "pro", 38, 1, "25500", 432, 150, 4, now));
         vault.Data.Accounts.Add(Profile("personal", "pro_lite", 63, 0, "8200", 288, 75, 2, now));
         vault.Data.Accounts.Add(Profile("research", "plus", 86, 0, "0", 168, 105, 6, now));
         vault.Data.Accounts.Add(Profile("backup", "pro", 14, 2, "12400", 624, 165, 0, now));
         var service = new AccountService(vault, Path.Combine(fixture, "home"));
         typeof(AccountService).GetProperty(nameof(AccountService.CurrentKey))!.SetValue(service, "work");
+        var width = args.Length > 3 ? int.Parse(args[3], System.Globalization.CultureInfo.InvariantCulture) : 800;
+        var height = args.Length > 4 ? int.Parse(args[4], System.Globalization.CultureInfo.InvariantCulture) : 560;
         var window = new MainWindow(service, new Program.Options { DataDirectory = vault.DirectoryPath,
-            CodexHome = service.CodexHome, ReportPath = Path.Combine(fixture, "unused.json") }) { Width = 800, Height = 560 };
+            CodexHome = service.CodexHome, ReportPath = Path.Combine(fixture, "unused.json") }) { Width = width, Height = height };
         typeof(MainWindow).GetField("_ready", Private)!.SetValue(window, true);
         Call(window, "RenderAccounts"); Call(window, "UpdateControls");
         var theme = new Burn0Theme(true);
@@ -85,12 +89,14 @@ internal static class DemoRenderer
             new DriveReading("C:\\", "C:", (long)(40.6 * gib), 512 * gib), new DriveReading("D:\\", "D:", 624 * gib, 1024 * gib) }, theme);
         var root = (Grid)window.Content;
         window.Content = null; root.Background = theme.Color("canvas"); root.Resources = window.Resources;
+        if (Loc.RightToLeft) root.FlowDirection = FlowDirection.RightToLeft;
+        root.Language = System.Windows.Markup.XmlLanguage.GetLanguage(Loc.Culture.IetfLanguageTag);
         System.Windows.Documents.TextElement.SetFontFamily(root, theme.Font);
         var titlebar = (Grid)root.Children[0];
         var demo = new TextBlock { Text = "DEMO", FontFamily = theme.Font, FontSize = 10, FontWeight = FontWeights.SemiBold,
             Foreground = theme.Color("warning"), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         Grid.SetColumn(demo, 1); titlebar.Children.Add(demo);
-        var size = new Size(800, 560);
+        var size = new Size(width, height);
         root.Measure(size); root.Arrange(new Rect(size)); root.UpdateLayout(); Call(window, "LayoutCards");
         root.Measure(size); root.Arrange(new Rect(size)); root.UpdateLayout();
         var radius = WindowChrome.GetWindowChrome(window).CornerRadius.TopLeft;
@@ -102,18 +108,22 @@ internal static class DemoRenderer
             var edge = new Pen(new SolidColorBrush((Color)ColorConverter.ConvertFromString("#60656C")), 1);
             drawing.DrawRoundedRectangle(null, edge, new Rect(0.5, 0.5, size.Width - 1, size.Height - 1), radius - 0.5, radius - 0.5);
         }
-        var bitmap = new RenderTargetBitmap(800, 560, 96, 96, PixelFormats.Pbgra32); bitmap.Render(frame);
+        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); bitmap.Render(frame);
+        var pixels = new byte[width * height * 4]; bitmap.CopyPixels(pixels, width * 4, 0);
+        if (Enumerable.Range(0, width * height).Count(i => pixels[i * 4 + 3] == 255) < width * height * 0.95)
+            throw new InvalidOperationException("Application render is empty: root " + root.ActualWidth + "x" + root.ActualHeight + "; radius " + radius);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         Directory.CreateDirectory(Path.GetDirectoryName(output)!);
         using (var stream = File.Create(output)) encoder.Save(stream);
         var receipt = new { kind = "fictional documentation demo", actualUiSource = "MainWindow and current resource/account components",
-            renderedAtUtc = now, width = 800, height = 560, profiles = vault.Data.Accounts.Select(a => new { a.Email, a.Plan,
+            renderedAtUtc = now, width, height, profiles = vault.Data.Accounts.Select(a => new { a.Email, a.Plan,
                 remaining = a.Usage!.LeastRemaining, credits = a.Usage.Buckets[0].CreditBalance, resets = a.Usage.AvailableResets }),
             scene = "everyday mixed status", cornerRadius = radius, edgePixels = 1,
             resourceHistory = "bounded independent fluctuations over two minutes",
             running = 5, queued = 2, goals = 1, cpu = 26, memory = 73, gpu = 42, vram = 58,
+            language = Loc.Language, culture = Loc.Culture.Name,
             liveAccountAccess = false, nativeCodexStarted = false, liveTaskInjection = false };
-        File.WriteAllText(Path.Combine(Path.GetDirectoryName(output)!, "demo.json"), JsonSerializer.Serialize(receipt, new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllText(Path.ChangeExtension(output, ".json"), JsonSerializer.Serialize(receipt, new JsonSerializerOptions { WriteIndented = true }));
         window.Close(); app.Shutdown(); return 0;
     }
     private static AccountProfile Profile(string id, string plan, double used, int resets, string credits,
@@ -133,17 +143,27 @@ internal static class DemoRenderer
 }'''
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--language', default='en')
+    parser.add_argument('--output', type=Path, default=OUTPUT)
+    parser.add_argument('--width', type=int, default=800)
+    parser.add_argument('--height', type=int, default=560)
+    parser.add_argument('--pack', type=Path)
+    options = parser.parse_args()
+    output = options.output.resolve()
+    if options.width < 500 or options.height < 360:
+        parser.error('Use at least the application minimum size, 500x360.')
     WORK.mkdir(parents=True, exist_ok=True)
     (WORK / 'Demo.csproj').write_text(PROJECT + '\n', encoding='utf-8')
     (WORK / 'DemoRenderer.cs').write_text(RENDERER + '\n', encoding='utf-8')
     subprocess.run(['dotnet', 'build', str(WORK / 'Demo.csproj'), '-c', 'Release', '--nologo', '-p:UseSharedCompilation=false'], check=True)
     with tempfile.TemporaryDirectory(prefix='fixture-', dir=WORK) as fixture:
-        subprocess.run(['dotnet', str(WORK / 'bin/Release/net8.0-windows/CodexSwitch.Demo.dll'), str(OUTPUT), fixture], check=True, timeout=30)
-    manifest_path = OUTPUT.with_suffix('.json')
+        subprocess.run(['dotnet', str(WORK / 'bin/Release/net8.0-windows/CodexSwitch.Demo.dll'), str(output), fixture, options.language, str(options.width), str(options.height), str(options.pack.resolve()) if options.pack else ''], check=True, timeout=30)
+    manifest_path = output.with_suffix('.json')
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     manifest['sourceVersion'] = ET.parse(ROOT / 'src/windows/CodexSwitch.Windows.csproj').findtext('PropertyGroup/Version')
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
-    print(json.dumps({'screenshot': str(OUTPUT), 'bytes': OUTPUT.stat().st_size, 'data': 'fictional', 'liveAccountsTouched': False}))
+    print(json.dumps({'screenshot': str(output), 'bytes': output.stat().st_size, 'language':options.language, 'data': 'fictional', 'liveAccountsTouched': False}))
 
 if __name__ == '__main__':
     main()

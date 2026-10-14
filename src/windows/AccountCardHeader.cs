@@ -14,7 +14,7 @@ internal sealed class AccountCardHeader : Grid
         Actions = actions;
         ColumnDefinitions.Add(new()); ColumnDefinitions.Add(new() { Width = GridLength.Auto });
         var labels = new StackPanel { Margin = new Thickness(0, 0, 6, 0) };
-        _name = new TextBlock { Text = name, FontSize = 14, FontWeight = FontWeights.SemiBold, Foreground = theme.Color("text"), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = name + "\n" + metadata };
+        _name = new TextBlock { Text = name, FontSize = 14, FontWeight = FontWeights.SemiBold, Foreground = theme.Color("text"), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = name + "\n" + metadata, FlowDirection = FlowDirection.LeftToRight };
         _metadata = new TextBlock { Text = metadata, FontSize = 11, Foreground = theme.Color(current ? "accent" : "muted"), Margin = new Thickness(0, 3, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis };
         labels.Children.Add(_name); labels.Children.Add(_metadata); Children.Add(labels);
         foreach (Button button in actions.Children) _sizes[button] = (button.Padding, button.MinHeight, button.FontSize);

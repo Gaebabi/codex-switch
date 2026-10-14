@@ -1,11 +1,13 @@
 # Current status
 
-Updated 2026-10-14. Product version **1.27.6**.
+Updated 2026-10-14. Source version **1.28.0**; published binaries **1.27.6**.
 
 - Canonical public source: [Gaebabi/codex-switch](https://github.com/Gaebabi/codex-switch), baseline `main`.
 - Current [Release 1.27.6](https://github.com/Gaebabi/codex-switch/releases/tag/v1.27.6): Windows x64 / Mac arm64 / Mac x64 self-contained ZIPs and checksums. Last release verification: Windows internal 93/93 and isolated SQLite/WAL 23/23; Mac cross-publish/package checks. Native Mac login/switch/resume and notarization remain separate.
 - Account switching, checkpoint recovery and one Continue for eligible idle unfinished chats are described in all four README languages. Existing account data and protocol identities remain unchanged.
-- Documentation uses one clearly fictional 800×560 PNG from current Windows UI. It is not live account/switch evidence.
+- [Language packs, issue #16](https://github.com/Gaebabi/codex-switch/issues/16): source 1.28.0 provides nine built-in catalogues with 338 messages each, stable English-based IDs, immediate/persistent language selection and validated local JSON import/restoration on Windows/Mac. English fallback, Gregorian/culture formatting, integer plurals and RTL behavior are covered by 39 production API checks. Existing binary downloads retain English/Korean.
+- [Language application evidence](../evidence/language-packs/README.md) includes a previous/current English comparison, nine new-language screens, German minimum-window and a partial Arabic RTL fixture. Windows font fallback now follows the selected UI culture. Fictional credentials ensure no private source pixels are present; these are WPF component renders, not real-account switching or native Mac picker evidence.
+- The seven new catalogues are AI-assisted initial translations. Structural completeness is verified; native-speaker linguistic review remains pending. Windows internal 93/93 and SQLite/WAL 23/23 regression checks pass, both Mac architectures cross-publish, and read-only CI also runs production pack tests on Ubuntu/Windows/native Mac. Issue #16 and its PR own the exact reviewed-head remote results/merge outcome.
 - [Foundation PR #8](https://github.com/Gaebabi/codex-switch/pull/8) organizes source/assets/catalogs/developer guides, contributor workflow and safe CI. The root has 11 tracked files instead of 70; all 63 C# sources remain byte-identical. English portable filenames preserve the Korean formula content.
 - Fresh local Windows 93/93 and SQLite/WAL 23/23 checks pass; both Mac cross-publishes succeed. Before/after application WPF components render identical fictional PNGs. Every roadmap issue has application baseline/comparison evidence and explicit pending native confirmation for unimplemented features.
 - Windows CI's missing Codex prerequisite is supplied by locked official CLI 0.162.1 without lifecycle scripts, real accounts or a desktop installation. Local checks also pass with this exact client. [CI](../CI.md) and PR #8 own the final remote checks/review/merge outcome. Linux implementation and a new binary release are not included.

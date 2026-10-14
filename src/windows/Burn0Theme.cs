@@ -40,7 +40,7 @@ internal sealed class Burn0Theme
         var result = new SolidColorBrush(color); result.Freeze(); return result;
     }
     public double Number(string name) => double.Parse(_tokens[name].Replace("px", "").Replace("ms", ""), CultureInfo.InvariantCulture);
-    public FontFamily Font => new(_tokens["font"].Split(',')[0].Trim(' ', '"') + ", Segoe UI, Malgun Gothic");
+    public FontFamily Font => new(_tokens["font"].Split(',')[0].Trim(' ', '"') + ", Segoe UI, Global User Interface");
     public static string ReadResource(string suffix)
     {
         var assembly = Assembly.GetExecutingAssembly();

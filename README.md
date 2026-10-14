@@ -31,7 +31,7 @@ Keep the full package together. Packaged apps need no .NET installation; buildin
 - Recent usage and a depletion estimate based on usage history. Open **History** from an account's **...** menu.
 - Local running/queued/goal counts, resource trends and configurable drive free space. Hover a gauge for details.
 
-The title bar has language and light/dark settings. The UI supports English and Korean; Japanese and Chinese are documentation translations.
+The title bar has language and light/dark settings. **Source 1.28.0** adds nine UI languages (English, Korean, Japanese, Simplified/Traditional Chinese, Spanish, French, German and Brazilian Portuguese) and validated local JSON language packs. Current **1.27.6 downloads** still have English/Korean. [Language packs and translation contributions](docs/LOCALIZATION.md)
 
 ## Switch and resume
 

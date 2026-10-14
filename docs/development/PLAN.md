@@ -1,5 +1,17 @@
 # Current plan
 
+## Language packs — issue #16
+
+- [x] Shared versioned JSON packs, stable English-based IDs, strict validation, fallback/culture/plural/RTL behavior.
+- [x] Windows and Mac menus, trusted local pack import/restoration, persistent choice and live UI updates.
+- [x] Nine complete built-in catalogues and an English-first translator/schema/CI workflow.
+- [x] Isolated positive/negative tests, application screenshots, Windows/Mac builds and privacy checks. Remote/native verification limits are recorded in the PR.
+- [ ] Formal PR, exact-head CI, self-review and authorized merge; no binary Release in this scope.
+
+English/Korean preferences, user names, credential/data identities, switching/continuation and labeled KST semantics are preserved. New source version: 1.28.0; published packages remain 1.27.6 until separately released.
+
+## Completed repository foundation
+
 Tracking [#1](https://github.com/Gaebabi/codex-switch/issues/1); foundation [#2](https://github.com/Gaebabi/codex-switch/issues/2), branch `chore/oss-foundation`.
 
 - [x] Inspect platform/security boundaries and create scoped roadmap issues.

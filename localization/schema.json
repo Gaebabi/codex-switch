@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Codex Switch language pack v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "code", "nativeName", "englishName", "culture", "direction", "strings"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schemaVersion": {"const": 1},
+    "code": {"type": "string", "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$", "maxLength": 64},
+    "nativeName": {"type": "string", "minLength": 1, "maxLength": 64},
+    "englishName": {"type": "string", "minLength": 1, "maxLength": 64},
+    "culture": {"type": "string", "minLength": 1, "maxLength": 64},
+    "direction": {"enum": ["ltr", "rtl"]},
+    "strings": {
+      "type": "object", "minProperties": 1, "maxProperties": 2048,
+      "propertyNames": {"pattern": "^[a-z][a-z0-9_.-]{0,79}$"},
+      "additionalProperties": {"type": "string", "minLength": 1, "maxLength": 4096}
+    },
+    "plurals": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object", "additionalProperties": false, "required": ["other"],
+        "properties": {
+          "zero": {"type": "string", "minLength": 1, "maxLength": 4096},
+          "one": {"type": "string", "minLength": 1, "maxLength": 4096},
+          "two": {"type": "string", "minLength": 1, "maxLength": 4096},
+          "few": {"type": "string", "minLength": 1, "maxLength": 4096},
+          "many": {"type": "string", "minLength": 1, "maxLength": 4096},
+          "other": {"type": "string", "minLength": 1, "maxLength": 4096}
+        }
+      }
+    }
+  }
+}

@@ -13,6 +13,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Threading;
+using Avalonia.Platform.Storage;
 
 namespace CodexAccountDesk;
 
@@ -87,7 +88,10 @@ internal sealed class DeskWindow : Window
             {
                 var vault = await Task.Run(() => { var result = new AccountVault(Program.DataDirectory); result.Save(); return result; }, token);
                 _service = new(vault, Program.CodexHome); _service.Changed += () => OnUi(RenderAccounts);
-                Loc.SetLanguage(vault.Data.Language); _theme = new(vault.Data.Theme == "dark"); Build();
+                var languageProblems = Loc.LoadInstalled(Path.Combine(vault.DirectoryPath, "languages"));
+                if (!Loc.RestoreLanguage(vault.Data.Language)) _statusMessage = Loc.T("Saved language pack unavailable. Showing English.");
+                else if (languageProblems.Count > 0) _statusMessage = Loc.F("pack.invalid_local_packs", languageProblems.Count);
+                _theme = new(vault.Data.Theme == "dark"); Build();
             }
             await _service.InitializeAsync(token); _ready = true;
             _sessions.Start(); _resources.Start(); _drives.Configure(_service.Vault.Data.Drives.ToArray()); _drives.Start(); _clock.Start();
@@ -100,6 +104,7 @@ internal sealed class DeskWindow : Window
     private void Build()
     {
         _theme.Apply(this);
+        FlowDirection = Loc.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         var shell = new Grid { RowDefinitions = new RowDefinitions("34,22,*,50") };
         var titlebar = new Grid { Background = _theme.Brush("chrome"), ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto,Auto,Auto"), Margin = new Thickness(0) };
         var caption = _theme.Text("Codex Switch", 12); caption.VerticalAlignment = VerticalAlignment.Center;
@@ -118,15 +123,11 @@ internal sealed class DeskWindow : Window
         _refresh = _theme.IconButton(DeskButtonIconKind.Refresh, Loc.T("새로 고침"), () => _ = RefreshAsync());
         _refresh.Classes.Add("title-action"); ToolTip.SetTip(_refresh, Loc.T("새로 고침") + " (⌘R / F5)");
         Grid.SetColumn(_refresh, 2); titlebar.Children.Add(_refresh);
-        var language = _theme.Button(Loc.LanguageName, () =>
-        {
-            _ = RunAsync(_ =>
-            {
-                var next = Loc.Language == "ko" ? "en" : "ko";
-                if (_service != null) { lock (_service.Vault.SyncRoot) { _service.Vault.Data.Language = next; _service.Vault.Save(); } }
-                Loc.SetLanguage(next); Build(); UpdateTray(); return Task.CompletedTask;
-            });
-        }); Grid.SetColumn(language, 3); titlebar.Children.Add(language);
+        var language = _theme.Button(Loc.LanguageCode + " ▾", () => { });
+        ToolTip.SetTip(language, Loc.LanguageName + " · " + Loc.T("언어 설정"));
+        Avalonia.Automation.AutomationProperties.SetName(language, Loc.T("언어 설정") + ": " + Loc.LanguageName);
+        language.Click += (_, _) => OpenLanguageMenu(language);
+        Grid.SetColumn(language, 3); titlebar.Children.Add(language);
         var theme = _theme.Button(Loc.T(_theme.Dark ? "라이트" : "다크"), () =>
         {
             _ = RunAsync(_ =>
@@ -148,11 +149,52 @@ internal sealed class DeskWindow : Window
         _accountScroll = new ScrollViewer { Content = _accounts, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
         _accountScroll.SizeChanged += (_, _) => ResizeAccounts(); Grid.SetRow(_accountScroll, 2); shell.Children.Add(_accountScroll);
         var footer = new Grid { RowDefinitions = new RowDefinitions("22,24"), ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(8, 2) };
-        _hardware = new Grid { Height = 18, Margin = new Thickness(0, 0, 0, 4) }; Grid.SetColumnSpan(_hardware, 2); footer.Children.Add(_hardware);
-        _volumes = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 }; Grid.SetRow(_volumes, 1); footer.Children.Add(_volumes);
+        _hardware = new Grid { Height = 18, Margin = new Thickness(0, 0, 0, 4), FlowDirection = FlowDirection.LeftToRight }; Grid.SetColumnSpan(_hardware, 2); footer.Children.Add(_hardware);
+        _volumes = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, FlowDirection = FlowDirection.LeftToRight }; Grid.SetRow(_volumes, 1); footer.Children.Add(_volumes);
         _status = _theme.Text(_statusMessage, 10, "muted"); ToolTip.SetTip(_status, _statusMessage); _status.MaxWidth = 150; _status.VerticalAlignment = VerticalAlignment.Center;
         Grid.SetColumn(_status, 1); Grid.SetRow(_status, 1); footer.Children.Add(_status); Grid.SetRow(footer, 3); shell.Children.Add(footer); Content = shell;
         RenderAccounts(); RenderSessions(); RenderHardware(); RenderVolumes();
+    }
+    private void ChangeLanguage(string code)
+    {
+        if (!Loc.Languages.Any(p => string.Equals(p.Code, code, StringComparison.OrdinalIgnoreCase))) throw new ArgumentException("Unsupported application language.");
+        if (_service != null) { lock (_service.Vault.SyncRoot) { _service.Vault.Data.Language = code; _service.Vault.Save(); } }
+        Loc.SetLanguage(code);
+        Build(); UpdateTray();
+    }
+    private void OpenLanguageMenu(Button owner)
+    {
+        var menu = _theme.Menu(owner);
+        foreach (var info in Loc.Languages)
+        {
+            var item = new MenuItem { Header = info.NativeName, ToggleType = MenuItemToggleType.Radio, IsChecked = info.Code == Loc.Language };
+            ToolTip.SetTip(item, info.IsCustom ? Loc.F("Local pack · {0}/{1} translated", info.Translated, info.Total) + "\n" + Loc.T("English is shown for missing translations.") : Loc.T("Built-in pack"));
+            item.Click += (_, _) => ChangeLanguage(info.Code); menu.Items.Add(item);
+        }
+        menu.Items.Add(new Separator());
+        var import = new MenuItem { Header = Loc.T("Import language pack…") }; import.Click += async (_, _) => await ImportLanguagePackAsync(); menu.Items.Add(import);
+        if (Loc.Current.IsCustom)
+        {
+            var restore = new MenuItem { Header = Loc.T("Restore built-in language pack") };
+            restore.Click += async (_, _) => { try { ChangeLanguage(Loc.RestoreBuiltIn(Path.Combine(Program.DataDirectory, "languages"))); _statusMessage = Loc.T("Local translations replaced with the built-in pack."); Build(); } catch (Exception error) { await DeskDialogs.Message(this, _theme, Loc.T("Language packs"), error.Message); } };
+            menu.Items.Add(restore);
+        }
+        menu.Open(owner);
+    }
+    private async Task ImportLanguagePackAsync()
+    {
+        try
+        {
+            var selected = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = Loc.T("Import language pack…"), AllowMultiple = false,
+                FileTypeFilter = new[] { new FilePickerFileType(Loc.T("Language pack files (*.json)")) { Patterns = new[] { "*.json" } } } });
+            if (selected.Count == 0) return;
+            using var file = selected[0];
+            var path = file.TryGetLocalPath();
+            if (path == null) throw new InvalidDataException("Language packs must be local JSON files.");
+            var pack = await Task.Run(() => Loc.Install(path, Path.Combine(Program.DataDirectory, "languages")));
+            ChangeLanguage(pack.Code); _statusMessage = Loc.T("Language pack installed. Language changed without restarting."); Build();
+        }
+        catch (Exception error) { await DeskDialogs.Message(this, _theme, Loc.T("Language packs"), error.Message); }
     }
     private void RenderAccounts()
     {

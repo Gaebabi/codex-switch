@@ -32,6 +32,11 @@ jobs:
       - run: python -m pip install -r requirements-dev.txt
       - run: python scripts/verify-repository.py
       - run: python scripts/test-audit-public.py
+      - run: python scripts/verify-localization.py
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: '8.0.4xx'
+      - run: dotnet run --project tests/localization/CodexSwitch.Localization.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - run: python scripts/audit-public.py --tree-only
       - run: git diff --check
 
@@ -68,6 +73,8 @@ jobs:
         run: ./scripts/build.ps1 -Verify
       - name: Verify read-only SQLite and WAL
         run: python scripts/verify-queues.py --executable artifacts/win-x64/CodexSwitch.exe
+      - name: Verify language-pack parsing and lifecycle
+        run: dotnet run --project tests/localization/CodexSwitch.Localization.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
 
   macos:
     name: Mac compilation (${{ matrix.rid }})
@@ -92,3 +99,5 @@ jobs:
         run: dotnet publish src/macos/CodexSwitch.Mac.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:UseSharedCompilation=false -o artifacts/macos-ci/${{ matrix.rid }}
       - name: Run disposable read-only queue checks
         run: python3 scripts/verify-queues.py --executable artifacts/macos-ci/${{ matrix.rid }}/CodexSwitch
+      - name: Verify native culture and pack lifecycle
+        run: dotnet run --project tests/localization/CodexSwitch.Localization.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false

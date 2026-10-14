@@ -11,7 +11,7 @@
     <RootNamespace>CodexAccountDesk</RootNamespace>
     <Title>Codex Switch</Title>
     <Product>Codex Switch</Product>
-    <Version>1.27.6</Version>
+    <Version>1.28.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>../../assets/brand/app-icon.ico</ApplicationIcon>
     <DebugType>none</DebugType>
@@ -24,7 +24,6 @@
     <EmbeddedResource Include="../../assets/brand/app-icon.ico" LogicalName="CodexAccountDesk.AppIcon.ico" />
     <EmbeddedResource Include="../../resources/Burn0Tokens.css" LogicalName="CodexAccountDesk.Burn0Tokens.css" />
     <EmbeddedResource Include="../../resources/Burn0Icons.json" LogicalName="CodexAccountDesk.Burn0Icons.json" />
-    <EmbeddedResource Include="../../localization/Strings.ko.json" WithCulture="false" LogicalName="CodexAccountDesk.Strings.ko.json" />
-    <EmbeddedResource Include="../../localization/Strings.en.json" WithCulture="false" LogicalName="CodexAccountDesk.Strings.en.json" />
+    <EmbeddedResource Include="../../localization/packs/*.json;../../localization/index.json;../../localization/legacy-keys.json" WithCulture="false" LogicalName="CodexAccountDesk.LanguagePacks.%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

@@ -22,6 +22,8 @@ internal static class Program
         public bool SelfTest { get; set; }
         public bool ExitExisting { get; set; }
         public string? LanguageOverride { get; set; }
+        public int LanguagePackProblems { get; set; }
+        public bool SavedLanguageUnavailable { get; set; }
         public string? TrendPreviewDirectory { get; set; }
         public string? TankPreviewDirectory { get; set; }
         public string? SessionReportPath { get; set; }
@@ -104,7 +106,9 @@ internal static class Program
             if (!firstInstance) { RequestExisting(namespaceKey, options.SwitchAccount == null ? "activate" : "switch:" + options.SwitchAccount); return 0; }
             var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             var vault = new AccountVault(options.DataDirectory);
-            Loc.SetLanguage(options.LanguageOverride ?? vault.Data.Language);
+            options.LanguagePackProblems = Loc.LoadInstalled(Path.Combine(vault.DirectoryPath, "languages")).Count;
+            if (options.LanguageOverride != null) Loc.SetLanguage(options.LanguageOverride);
+            else options.SavedLanguageUnavailable = !Loc.RestoreLanguage(vault.Data.Language);
             if (options.LanguageOverride != null) { vault.Data.Language = options.LanguageOverride; vault.Save(); }
             var service = new AccountService(vault, options.CodexHome);
             Diagnostics.BeginReadOnlyProbe(service);

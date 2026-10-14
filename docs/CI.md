@@ -10,6 +10,8 @@
 
 These do not prove live login/switch/resume, Mac Keychain/GUI acceptance, notarization or Linux application support. Ubuntu runs repository tooling only. The workflow uploads no binaries or raw diagnostics.
 
+Language packs additionally run structural/source-key checks and the production parser/culture/installation test project on all three hosts. Nine built-in catalogues are complete; custom-pack rejection, English fallback, integer plural rules, UTF-8/BOM, restart reload and RTL culture are exercised. [Localization guide](LOCALIZATION.md)
+
 Tool dependencies are pinned in [requirements-dev.txt](../requirements-dev.txt), SDK in [global.json](../global.json). Windows checks require the actual official Codex CLI for app-server login cancellation and isolated credential-switch initialization; CI installs version 0.162.1 from the [locked development prerequisite](../tools/ci-codex/package.json), with lifecycle scripts disabled and its exact native executable path selected. No desktop install or successful browser authentication is required. Those checks do not fake the app-server protocol or use a real account.
 
 Dependabot proposes Actions, Mac NuGet, Python and the locked CLI prerequisite updates for review. This is not a complete lockfile of every project dependency or a bit-for-bit reproducibility claim. [GitHub security guidance](https://docs.github.com/en/actions/reference/security/secure-use)

@@ -11,7 +11,7 @@ Tracking [#1](https://github.com/Gaebabi/codex-switch/issues/1). Updated 2026-10
 | Linux x64 / arm64 | None | No supported executable, credential provider or desktop handoff yet |
 | WSL / remote / headless / CLI-only | No dedicated supported setup | Do not assume desktop restoration or share credentials across homes/OSes |
 
-English stays the shared default. UI supports English/Korean; Japanese/Chinese are documentation translations. Contributions in other languages and for other environments are welcome.
+English stays the shared default. Published 1.27.6 UI supports English/Korean. Source 1.28.0 adds nine UI catalogues and extensible local packs, tracked in [#16](https://github.com/Gaebabi/codex-switch/issues/16) and the [translator guide](LOCALIZATION.md). Contributions in other languages and for other environments are welcome.
 
 ## Sequence and completion gates
 

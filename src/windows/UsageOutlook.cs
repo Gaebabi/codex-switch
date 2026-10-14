@@ -28,7 +28,7 @@ internal sealed class UsageOutlook : StackPanel
     private StackPanel Metric(string title, out TextBlock value)
     {
         var panel = new StackPanel { Margin = new Thickness(0, 0, 12, 0) }; panel.Children.Add(Text(title, 12, "muted"));
-        value = Text("", 28, "text", FontWeights.SemiBold); value.Margin = new Thickness(0, 7, 0, 0); value.TextWrapping = TextWrapping.NoWrap; value.TextTrimming = TextTrimming.CharacterEllipsis;
+        value = Text("", 28, "text", FontWeights.SemiBold); value.FlowDirection = FlowDirection.LeftToRight; value.Margin = new Thickness(0, 7, 0, 0); value.TextWrapping = TextWrapping.NoWrap; value.TextTrimming = TextTrimming.CharacterEllipsis;
         panel.Children.Add(value); return panel;
     }
     private TextBlock Text(string text, double size, string color, FontWeight? weight = null) => new()

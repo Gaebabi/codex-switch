@@ -51,7 +51,7 @@ internal sealed class AccountTankCard : Grid
         var period = choice == null ? Loc.T("잔여량") : Loc.F("{0} 잔여", choice.Window.PeriodLabel);
         if (choice != null && profile.Usage!.Buckets.Count > 1) period = choice.BucketLabel + " · " + period;
         _period = Text(period, 12, "muted"); metric.Children.Add(_period);
-        _numberRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+        _numberRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, FlowDirection = FlowDirection.LeftToRight };
         _number = Text(choice == null ? "—" : choice.Window.Remaining.ToString("0.#", Loc.Culture), 64, choice?.Window.Remaining < 15 ? "warning" : "text", FontWeights.SemiBold); _numberRow.Children.Add(_number);
         if (choice != null) { _percent = Text("%", 27, "muted", FontWeights.Medium); _percent.VerticalAlignment = VerticalAlignment.Bottom; _percent.Margin = new Thickness(3, 0, 0, 13); _numberRow.Children.Add(_percent); }
         metric.Children.Add(_numberRow);
@@ -104,7 +104,7 @@ internal sealed class AccountTankCard : Grid
         _subscriptionLine.Children.Add(_subscriptionDate); _subscriptionLine.Children.Add(_subscriptionDays);
         var resetCredits = profile.Usage?.AvailableResets;
         _resetCredits = Text(resetCredits is int count ? Loc.F("초기화권 {0}장", count) : Loc.T("초기화권 —"), 12, "text", FontWeights.SemiBold);
-        _resetCredits.ToolTip = resetCredits is int available ? (available == 1 ? Loc.T("초기화권 1개") : Loc.F("초기화권 {0}개", available)) : Loc.T("초기화권 정보 없음");
+        _resetCredits.ToolTip = resetCredits is int available ? Loc.Count("초기화권 {0}개", available) : Loc.T("초기화권 정보 없음");
         if (profile.Error != null) _resetCredits.ToolTip += "\n" + Loc.T("갱신 실패 · 이전 값");
         _resetCredits.HorizontalAlignment = HorizontalAlignment.Right; _resetCredits.LineHeight = 14; _resetCredits.Margin = new Thickness(8, 0, 0, 0);
         Grid.SetColumn(_resetCredits, 2); Grid.SetRow(_resetCredits, 1); footer.Children.Add(_resetCredits);
@@ -118,6 +118,8 @@ internal sealed class AccountTankCard : Grid
         _state.VerticalAlignment = VerticalAlignment.Center; _state.TextTrimming = TextTrimming.CharacterEllipsis; _state.ToolTip = profile.Error == null ? null : Loc.Error(profile.Error);
         _state.Margin = new Thickness(10, 0, 0, 0); _subscriptionLine.Children.Add(_state); _last.Children.Add(_subscriptionLine);
         Grid.SetRow(_last, 2); Grid.SetColumnSpan(_last, 3); footer.Children.Add(_last); Grid.SetRow(footer, 2); _layout.Children.Add(footer);
+        foreach (var value in new[] { _depletion, _reset, _subscriptionDate, _subscriptionDays, _resetCredits, _credits, _plan }) value.FlowDirection = FlowDirection.LeftToRight;
+        _subscriptionLine.FlowDirection = FlowDirection.LeftToRight;
         Children.Add(_layout); SizeChanged += (_, _) => Reflow(); Update(DateTimeOffset.UtcNow);
     }
     private void Reflow()

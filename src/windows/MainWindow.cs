@@ -105,6 +105,8 @@ internal sealed class MainWindow : Window
         Background = Color("canvas"); Foreground = Color("text"); FontFamily = _theme.Font; FontSize = _theme.Number("ui-size");
         WindowFrame.RefreshBorder(this);
         Language = System.Windows.Markup.XmlLanguage.GetLanguage(Loc.Culture.IetfLanguageTag);
+        var direction = Loc.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        if (FlowDirection != direction) FlowDirection = direction;
         SetResources();
         ConfigureTitleAction(_add, "계정 추가", "plus"); ConfigureTitleAction(_refresh, "새로 고침", "refresh");
         var refreshMenu = DropdownTheme.Create(_refresh, _theme);
@@ -114,6 +116,7 @@ internal sealed class MainWindow : Window
         ConfigureButton(_cancelLogin, "로그인 취소", "close"); ConfigureButton(_cancelSwitch, "전환 취소", "close");
         foreach (var text in new[] { _status, _loginText }) { text.Foreground = Color("muted"); text.FontSize = _theme.Number("caption-size"); }
         RenderSessions();
+        _hardwarePanel.FlowDirection = FlowDirection.LeftToRight; _drivePanel.FlowDirection = FlowDirection.LeftToRight;
         _hardwarePanel.Refresh(_hardware.Current, _theme);
         _drivePanel.Refresh(_drives.Current, _theme);
         _status.TextWrapping = TextWrapping.NoWrap; _status.TextTrimming = TextTrimming.CharacterEllipsis; _status.Margin = new Thickness(0, 0, 16, 0);
@@ -153,7 +156,10 @@ internal sealed class MainWindow : Window
         identity.Children.Add(AppIdentity.Glyph(Color("text"), 18)); var title = Label("Codex Switch", 12, "text", FontWeights.SemiBold); title.Margin = new Thickness(8, 0, 0, 0); identity.Children.Add(title); bar.Children.Add(identity);
         var controls = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         controls.Children.Add(_add); controls.Children.Add(_refresh);
-        var language = NewButton(Loc.LanguageName + " ▾", null, false, true); language.Padding = new Thickness(10, 0, 10, 0); language.Background = Brushes.Transparent; language.ToolTip = Loc.T("언어 설정");
+        var language = NewButton(Loc.LanguageCode + " ▾", null, false, true); language.Padding = new Thickness(10, 0, 10, 0); language.Background = Brushes.Transparent; language.ToolTip = Loc.LanguageName + " · " + Loc.T("언어 설정");
+        System.Windows.Automation.AutomationProperties.SetName(language, Loc.T("언어 설정") + ": " + Loc.LanguageName);
+        if (_options.LanguagePackProblems > 0) language.ToolTip += "\n" + Loc.F("pack.invalid_local_packs", _options.LanguagePackProblems);
+        else if (_options.SavedLanguageUnavailable) language.ToolTip += "\n" + Loc.T("Saved language pack unavailable. Showing English.");
         language.Click += (_, _) => OpenLanguageMenu(language); WindowChrome.SetIsHitTestVisibleInChrome(language, true); controls.Children.Add(language);
         var theme = NewButton(_theme.Dark ? "라이트" : "다크", null, false); theme.Padding = new Thickness(10, 0, 10, 0); theme.Background = Brushes.Transparent; theme.ToolTip = Loc.T("Burn0 테마 전환");
         theme.Click += (_, _) => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.Theme = _theme.Dark ? "light" : "dark"; _service.Vault.Save(); } _theme = new Burn0Theme(!_theme.Dark); ApplyTheme(); UpdateTray(); };
@@ -186,22 +192,44 @@ internal sealed class MainWindow : Window
         var menu = DropdownTheme.Create(owner, _theme);
         foreach (var option in Loc.Languages)
         {
-            var item = new MenuItem { Header = option.Name, IsCheckable = true, IsChecked = option.Code == Loc.Language };
+            var item = new MenuItem { Header = option.NativeName, IsCheckable = true, IsChecked = option.Code == Loc.Language,
+                ToolTip = option.IsCustom ? Loc.F("Local pack · {0}/{1} translated", option.Translated, option.Total) + "\n" + Loc.T("English is shown for missing translations.") : Loc.T("Built-in pack") };
             item.Click += (_, _) => ChangeLanguage(option.Code); menu.Items.Add(item);
+        }
+        menu.Items.Add(new Separator());
+        var import = new MenuItem { Header = Loc.T("Import language pack…"), ToolTip = Loc.T("Choose a trusted language pack. Imported packs change labels and messages, and contain text only.") };
+        import.Click += async (_, _) => await ImportLanguagePackAsync(); menu.Items.Add(import);
+        if (Loc.Current.IsCustom)
+        {
+            var restore = new MenuItem { Header = Loc.T("Restore built-in language pack") };
+            restore.Click += (_, _) => { try { ChangeLanguage(Loc.RestoreBuiltIn(Path.Combine(_service.Vault.DirectoryPath, "languages"))); SetStatus("Local translations replaced with the built-in pack."); } catch (Exception error) { Confirm(error.Message, Loc.T("Language packs"), "확인", false); } };
+            menu.Items.Add(restore);
         }
         owner.ContextMenu = menu; menu.IsOpen = true;
     }
+    private async Task ImportLanguagePackAsync()
+    {
+        var picker = new Microsoft.Win32.OpenFileDialog { Title = Loc.T("Import language pack…"), Filter = Loc.T("Language pack files (*.json)") + "|*.json", CheckFileExists = true, Multiselect = false };
+        if (picker.ShowDialog(this) != true) return;
+        try
+        {
+            var pack = await Task.Run(() => Loc.Install(picker.FileName, Path.Combine(_service.Vault.DirectoryPath, "languages")));
+            ChangeLanguage(pack.Code); SetStatus("Language pack installed. Language changed without restarting.");
+        }
+        catch (Exception error) { Confirm(error.Message, Loc.T("Language packs"), "확인", false); }
+    }
     internal void ChangeLanguage(string language, bool save = true)
     {
-        Loc.SetLanguage(language);
+        if (!Loc.Languages.Any(p => string.Equals(p.Code, language, StringComparison.OrdinalIgnoreCase))) throw new ArgumentException("Unsupported application language.");
         if (save) { lock (_service.Vault.SyncRoot) { _service.Vault.Data.Language = language; _service.Vault.Save(); } }
+        Loc.SetLanguage(language);
         ApplyTheme(); UpdateTray();
     }
     private bool Confirm(string message, string title, string confirmSource, bool showCancel = true)
     {
         var dialog = new Window { Owner = this, Title = title, Width = 510, SizeToContent = SizeToContent.Height,
             ResizeMode = ResizeMode.NoResize, WindowStartupLocation = WindowStartupLocation.CenterOwner, WindowStyle = WindowStyle.None,
-            Background = Color("canvas"), Foreground = Color("text"), FontFamily = FontFamily, Language = Language };
+            Background = Color("canvas"), Foreground = Color("text"), FontFamily = FontFamily, Language = Language, FlowDirection = FlowDirection };
         WindowFrame.Apply(dialog, 0);
         var root = new DockPanel(); var heading = new Border { Background = Color("chrome"), Height = 40, Padding = new Thickness(16, 0, 16, 0), Child = new TextBlock { Text = title, FontSize = 12, VerticalAlignment = VerticalAlignment.Center } };
         DockPanel.SetDock(heading, Dock.Top); root.Children.Add(heading);
@@ -354,13 +382,13 @@ internal sealed class MainWindow : Window
         {
             foreach (var language in new[] { originalLanguage == "ko" ? "en" : "ko", originalLanguage })
             {
-                var button = Descendants(this).OfType<Button>().Single(b => Equals(b.ToolTip, Loc.T("언어 설정")));
+                var button = Descendants(this).OfType<Button>().Single(b => b.ToolTip is string tip && tip.EndsWith(Loc.T("언어 설정"), StringComparison.Ordinal));
                 button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 var menu = button.ContextMenu;
                 try
                 {
                     menu.UpdateLayout();
-                    var item = menu.Items.Cast<MenuItem>().Single(i => ((string)i.Header).EndsWith(Loc.Languages.Single(l => l.Code == language).Name, StringComparison.Ordinal));
+                    var item = menu.Items.OfType<MenuItem>().Single(i => Equals(i.Header, Loc.Languages.Single(l => l.Code == language).NativeName));
                     item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
                     UpdateLayout(); actions++;
                     if (Loc.Language != language) throw new InvalidOperationException("Language menu did not apply its selection");
@@ -745,7 +773,7 @@ internal sealed class MainWindow : Window
             item.Click += async (_, _) => { BringToFront(); await QueueSwitchAsync(profile); }; menu.Items.Add(item);
         }
         var languages = new Forms.ToolStripMenuItem(Loc.T("언어"));
-        foreach (var option in Loc.Languages) { var item = new Forms.ToolStripMenuItem(option.Name) { Checked = option.Code == Loc.Language }; item.Click += (_, _) => ChangeLanguage(option.Code); languages.DropDownItems.Add(item); }
+        foreach (var option in Loc.Languages) { var item = new Forms.ToolStripMenuItem(option.NativeName) { Checked = option.Code == Loc.Language }; item.Click += (_, _) => ChangeLanguage(option.Code); languages.DropDownItems.Add(item); }
         menu.Items.Add(languages);
         if (_switching && _switchPhase is SwitchPhase.BackingUp or SwitchPhase.Resuming) menu.Items.Add(Loc.T("전환 작업 취소"), null, (_, _) => CancelSwitch());
         menu.Items.Add(new Forms.ToolStripSeparator()); menu.Items.Add(Loc.T("프로그램 종료"), null, async (_, _) => await ExitAsync());

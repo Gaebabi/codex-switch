@@ -30,6 +30,7 @@ internal sealed class AccountDetailWindow : Window
         Title = profile.DisplayName + " · " + Loc.T("사용량 추이"); Background = theme.Color("canvas"); Foreground = theme.Color("text"); FontFamily = theme.Font;
         WindowFrame.RefreshBorder(this);
         Language = System.Windows.Markup.XmlLanguage.GetLanguage(Loc.Culture.IetfLanguageTag);
+        FlowDirection = Loc.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         var root = new Grid(); root.RowDefinitions.Add(new() { Height = new GridLength(40) }); root.RowDefinitions.Add(new());
         var caption = new DockPanel { Height = 40, Background = theme.Color("chrome") };
         var close = new Button { Width = 46, Height = 40, Style = (Style)resources["CaptionButton"], Background = Brushes.Transparent,
@@ -81,7 +82,7 @@ internal sealed class AccountDetailWindow : Window
         if (profile.Usage != null)
         {
             Extra(Loc.F("{0:MM/dd HH:mm:ss} 조회", UsagePresentation.KoreanTime(profile.Usage.CheckedAt)));
-            if (profile.Usage.AvailableResets.HasValue) Extra(profile.Usage.AvailableResets == 1 ? Loc.T("초기화권 1개") : Loc.F("초기화권 {0}개", profile.Usage.AvailableResets));
+            if (profile.Usage.AvailableResets.HasValue) Extra(Loc.Count("초기화권 {0}개", profile.Usage.AvailableResets.Value));
         }
         Extra(profile.SubscriptionActiveUntil is DateTimeOffset until ? Loc.F("구독 종료 {0:yyyy/MM/dd HH:mm} (한국 시간)", UsagePresentation.KoreanTime(until)) : Loc.T("구독 종료일 정보 없음"));
         if (profile.SubscriptionLastChecked is DateTimeOffset checkedAt) Extra(Loc.F("구독 정보 확인 {0:MM/dd HH:mm}", UsagePresentation.KoreanTime(checkedAt)));

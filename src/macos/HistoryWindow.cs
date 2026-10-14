@@ -17,13 +17,14 @@ internal sealed class HistoryWindow : Window
     private bool _closed;
     public HistoryWindow(AccountService service, string key, DeskTheme theme)
     {
-        _service = service; _key = key; _theme = theme; Title = "History"; Width = 640; Height = 380; MinWidth = 500; MinHeight = 300;
+        _service = service; _key = key; _theme = theme; Title = Loc.T("추이 보기"); Width = 640; Height = 380; MinWidth = 500; MinHeight = 300;
         theme.Apply(this); WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        service.Changed += Changed; Closed += (_, _) => { _closed = true; service.Changed -= Changed; }; Render();
+        service.Changed += Changed; Loc.Changed += Changed; Closed += (_, _) => { _closed = true; service.Changed -= Changed; Loc.Changed -= Changed; }; Render();
     }
     private void Changed() => Dispatcher.UIThread.Post(() => { if (!_closed) Render(); });
     private void Render()
     {
+        Title = Loc.T("추이 보기"); FlowDirection = Loc.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         var profile = _service.Accounts.FirstOrDefault(p => p.Key == _key);
         if (profile == null) { Close(); return; }
         var choices = MacAccountCard.Choices(profile); var selected = MacAccountCard.Select(profile, _selection);
@@ -35,7 +36,7 @@ internal sealed class HistoryWindow : Window
         }
         foreach (var hours in new[] { 6, 24, 168 })
         {
-            var button = _theme.Button(hours == 168 ? "7d" : hours + "h", () =>
+            var button = _theme.Button(hours == 168 ? Loc.T("7일") : Loc.F("{0}시간", hours), () =>
             { lock (_service.Vault.SyncRoot) { _service.Vault.Data.TrendHours = hours; _service.Vault.Save(); } Render(); });
             button.Margin = new Thickness(0, 0, 6, 6); selectors.Children.Add(button);
         }
@@ -51,7 +52,7 @@ internal sealed class HistoryWindow : Window
             var labels = new[] { "잔여량", "예상 소진", "다음 리셋" };
             for (var i = 0; i < 3; i++)
             {
-                var cell = new StackPanel(); cell.Children.Add(_theme.Text(Loc.T(labels[i]), 11, "muted")); var number = _theme.Text(values[i], i == 0 ? 38 : 24); number.FontWeight = FontWeight.SemiBold;
+                var cell = new StackPanel(); cell.Children.Add(_theme.Text(Loc.T(labels[i]), 11, "muted")); var number = _theme.Text(values[i], i == 0 ? 38 : 24); number.FontWeight = FontWeight.SemiBold; number.FlowDirection = FlowDirection.LeftToRight;
                 cell.Children.Add(number); Grid.SetColumn(cell, i); metrics.Children.Add(cell);
             }
             Grid.SetRow(metrics, 1); root.Children.Add(metrics);

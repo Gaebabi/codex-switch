@@ -1,6 +1,6 @@
 # Operations
 
-Public `Gaebabi/codex-switch`, baseline `main`, is the canonical source. Clone into any directory. Source/app version is **1.27.6**. Binary delivery is manual GitHub Release ZIPs plus SHA256SUMS; no automatic updater or CI release publisher exists.
+Public `Gaebabi/codex-switch`, baseline `main`, is the canonical source. Clone into any directory. Source/app version is **1.28.0**; published binary version remains **1.27.6**. Binary delivery is manual GitHub Release ZIPs plus SHA256SUMS; no automatic updater or CI release publisher exists.
 
 ## Build and verify
 
@@ -9,6 +9,8 @@ Run from the repository root with .NET 8.0.4xx. `global.json` allows current pat
 ```powershell
 .\scripts\build.ps1 -Verify
 python scripts/verify-queues.py --executable artifacts/win-x64/CodexSwitch.exe
+python scripts/verify-localization.py
+dotnet run --project tests/localization/CodexSwitch.Localization.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
 ```
 
 Equivalent direct commands:
@@ -28,8 +30,12 @@ Windows per-user installations use `%LOCALAPPDATA%/Programs/CodexSwitch/<version
 
 Authentication, vaults, raw captures, reports, packages and recovery archives stay ignored. `--record-dashboard` captures are unredacted. `python scripts/render-demo.py` uses temporary fictional data and does not start Codex. README icons share `assets/macos/app-icon.png`; keep one canonical asset.
 
+Built-in language resources are `localization/index.json`, `localization/packs/*.json` and `localization/legacy-keys.json`; [schema/import/contribution contracts](../LOCALIZATION.md) are versioned. Local user packs live privately in `<application-data>/languages/pack-<code>.json`, independently of credential encryption. Missing saved packs display English and report their absence while preserving the preference. Do not translate authored account names or change vault/client identities.
+
+Documentation capture accepts `--language`, `--output`, `--width`, `--height` and an optional `--pack` local fixture. Use the actual application minimum of 500×360. The capture process alone enables WPF rendering in a disconnected display session and rejects empty bitmaps; it does not change production graphics or system settings.
+
 ## Git and publication
 
-Use issues and scoped PRs with screenshot evidence. The owner authorized this foundation's commit/push/PR, review and merge. A push/merge is not a binary Release. CI runs on PR/main/manual dispatch with read-only permissions; no signing/account secrets or privileged fork events. [Issue conventions](ISSUES.md)
+Use issues and scoped PRs with screenshot evidence. The owner authorized the repository foundation and language-pack commit/push/PR, review and merge. A push/merge is not a binary Release. CI runs on PR/main/manual dispatch with read-only permissions; no signing/account secrets or privileged fork events. [Issue conventions](ISSUES.md)
 
 Full-history publication audits still report historical generic checkout paths; current published instructions are portable. Do not hide those findings or rewrite public history as routine cleanup.

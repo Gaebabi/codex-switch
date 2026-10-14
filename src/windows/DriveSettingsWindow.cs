@@ -19,6 +19,8 @@ internal sealed class DriveSettingsWindow : Window
         Owner = owner; _theme = theme; Width = 420; Height = 350; WindowStartupLocation = WindowStartupLocation.CenterOwner;
         if (owner.Left < -10000) { WindowStartupLocation = WindowStartupLocation.Manual; Left = owner.Left; Top = owner.Top; ShowInTaskbar = false; }
         WindowStyle = WindowStyle.None; Title = Loc.T("드라이브 설정"); Background = theme.Color("canvas"); Foreground = theme.Color("text"); FontFamily = theme.Font;
+        Language = System.Windows.Markup.XmlLanguage.GetLanguage(Loc.Culture.IetfLanguageTag);
+        FlowDirection = Loc.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         WindowFrame.Apply(this); Resources = owner.Resources;
         var root = new DockPanel();
         var title = new Border { Height = 40, Background = theme.Color("chrome"), Padding = new Thickness(14, 0, 0, 0), Child = new TextBlock { Text = Title, VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold } };
@@ -34,8 +36,8 @@ internal sealed class DriveSettingsWindow : Window
         foreach (var path in roots)
         {
             var preference = preferences.FirstOrDefault(p => string.Equals(p.Root, path, StringComparison.OrdinalIgnoreCase));
-            _rows.Add(new(path, new CheckBox { Content = path[..2], IsChecked = preference != null, Foreground = theme.Color("text"), VerticalAlignment = VerticalAlignment.Center, Width = 65 },
-                new TextBox { Text = preference?.Label ?? path[..2], MaxLength = 16, Foreground = theme.Color("text"), Background = theme.Color("surface"), BorderThickness = new Thickness(0), Padding = new Thickness(5), VerticalContentAlignment = VerticalAlignment.Center }));
+            _rows.Add(new(path, new CheckBox { Content = path[..2], IsChecked = preference != null, Foreground = theme.Color("text"), VerticalAlignment = VerticalAlignment.Center, Width = 65, FlowDirection = FlowDirection.LeftToRight },
+                new TextBox { Text = preference?.Label ?? path[..2], MaxLength = 16, Foreground = theme.Color("text"), Background = theme.Color("surface"), BorderThickness = new Thickness(0), Padding = new Thickness(5), VerticalContentAlignment = VerticalAlignment.Center, FlowDirection = FlowDirection.LeftToRight }));
         }
         Render(); Content = root;
     }

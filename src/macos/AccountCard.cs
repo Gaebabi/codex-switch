@@ -27,14 +27,14 @@ internal sealed class MacAccountCard : Grid
         Children.Add(new TankSurface(theme, quota?.Window.Remaining, profile.IsCurrent && !profile.RequiresApply));
         var layout = new Grid { RowDefinitions = new RowDefinitions("28,*,42"), Margin = new Thickness(8, 5) };
         var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto") };
-        var title = theme.Text(profile.DisplayName, 13); title.VerticalAlignment = VerticalAlignment.Center; ToolTip.SetTip(title, profile.DisplayName);
+        var title = theme.Text(profile.DisplayName, 13); title.FlowDirection = FlowDirection.LeftToRight; title.VerticalAlignment = VerticalAlignment.Center; ToolTip.SetTip(title, profile.DisplayName);
         header.Children.Add(title); Grid.SetColumn(switchButton, 1); header.Children.Add(switchButton); Grid.SetColumn(more, 2); header.Children.Add(more); layout.Children.Add(header);
         var metric = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Spacing = 0 };
         var period = theme.Text(profile.Error != null ? Loc.T("갱신 필요") : profile.IsRefreshing ? Loc.T("사용량 조회 중…") :
             quota == null ? Loc.T("잔여량") : Loc.F("{0} 잔여", quota.Window.PeriodLabel), 11, profile.Error == null ? "muted" : "warning");
         period.HorizontalAlignment = HorizontalAlignment.Center; metric.Children.Add(period);
         var number = theme.Text(quota == null ? "—" : quota.Window.Remaining.ToString("0.#", Loc.Culture) + "%", 54);
-        number.FontWeight = FontWeight.SemiBold; number.HorizontalAlignment = HorizontalAlignment.Center; metric.Children.Add(number);
+        number.FlowDirection = FlowDirection.LeftToRight; number.FontWeight = FontWeight.SemiBold; number.HorizontalAlignment = HorizontalAlignment.Center; metric.Children.Add(number);
         var metricHost = new Grid { Background = Brushes.Transparent }; metricHost.Children.Add(metric); Grid.SetRow(metricHost, 1); layout.Children.Add(metricHost);
         metricHost.SizeChanged += (_, _) => { period.IsVisible = metricHost.Bounds.Height >= 62; number.FontSize = Math.Clamp((metricHost.Bounds.Height - (period.IsVisible ? 16 : 0)) / 1.3, 22, 54); };
         var choices = Choices(profile);
@@ -50,17 +50,18 @@ internal sealed class MacAccountCard : Grid
         _depletion = theme.Text("", 11); _depletion.Margin = new Thickness(6, 0); Put(_depletion, 0, 1);
         _reset = theme.Text("", 11); _reset.Margin = new Thickness(6, 0); Put(_reset, 1, 1);
         var plan = theme.Text(profile.Plan is "unknown" or "" ? Loc.T("요금제 —") : CultureInfo.InvariantCulture.TextInfo.ToTitleCase(profile.Plan.Replace('_', ' ')), 11);
-        plan.HorizontalAlignment = HorizontalAlignment.Right; Put(plan, 0, 2);
+        plan.FlowDirection = FlowDirection.LeftToRight; plan.HorizontalAlignment = HorizontalAlignment.Right; Put(plan, 0, 2);
         var resets = theme.Text(profile.Usage?.AvailableResets is int count ? Loc.F("초기화권 {0}장", count) : Loc.T("초기화권 —"), 11);
-        resets.HorizontalAlignment = HorizontalAlignment.Right; Put(resets, 1, 2);
+        resets.FlowDirection = FlowDirection.LeftToRight; resets.HorizontalAlignment = HorizontalAlignment.Right; Put(resets, 1, 2);
         _subscription = theme.Text(Subscription(profile.SubscriptionActiveUntil), 10, "muted"); Grid.SetColumnSpan(_subscription, 2); Put(_subscription, 2, 0);
         var bucket = profile.Usage?.Buckets.FirstOrDefault(b => b.Id == quota?.BucketId) ?? profile.Usage?.Buckets.FirstOrDefault();
-        var credit = theme.Text(Credits(bucket), 10); credit.HorizontalAlignment = HorizontalAlignment.Right; Put(credit, 2, 2);
+        var credit = theme.Text(Credits(bucket), 10); credit.FlowDirection = FlowDirection.LeftToRight; credit.HorizontalAlignment = HorizontalAlignment.Right; Put(credit, 2, 2);
         ToolTip.SetTip(credit, bucket?.CreditBalance ?? (bucket?.UnlimitedCredits == true ? Loc.T("크레딧 제한 없음") : Loc.T("크레딧 정보 없음")));
         ToolTip.SetTip(this, profile.Error == null ? null : Loc.F("갱신 실패 · 이전 조회값\n{0}", Loc.Error(profile.Error))); Grid.SetRow(footer, 2); layout.Children.Add(footer); Children.Add(layout); Update(DateTimeOffset.UtcNow);
     }
     public void Update(DateTimeOffset now)
     {
+        _depletion.FlowDirection = FlowDirection.LeftToRight; _reset.FlowDirection = FlowDirection.LeftToRight; _subscription.FlowDirection = FlowDirection.LeftToRight;
         _subscription.Text = Subscription(_profile.SubscriptionActiveUntil);
         if (_quota == null) { _depletion.Text = Loc.T(_profile.IsRefreshing ? "측정중" : "정보 없음"); _reset.Text = "—"; return; }
         var forecast = UsagePredictor.Evaluate(_quota.Window, _trend, now);
