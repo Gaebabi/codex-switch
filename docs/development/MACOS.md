@@ -1,6 +1,6 @@
 # macOS 개발 안내
 
-설치와 기본 사용은 [Mac setup](../MACOS.md), 공통 구조는 [Development map](../ARCHITECTURE.md)를 확인합니다. 현재 소스는1.30.0 / .NET10 LTS이며 검토한 지원 기준은macOS15+입니다. 공개 다운로드는1.27.6을 유지하며 계정 전환·재개 수용은 별도입니다.
+설치와 기본 사용은 [Mac setup](../MACOS.md), 공통 구조는 [Development map](../ARCHITECTURE.md)를 확인합니다. 현재 소스는1.31.0 / .NET10 LTS이며 검토한 지원 기준은macOS15+입니다. 공개 다운로드는1.27.6을 유지하며 계정 전환·재개 수용은 별도입니다.
 
 ## 빌드와 검증
 

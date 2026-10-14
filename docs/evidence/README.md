@@ -2,7 +2,9 @@
 
 ## Current source evidence
 
-Source 1.30.3 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
+Source 1.31.0 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
+
+- [Native security project extraction](platform-security/README.md): Windows/Mac application before/after and native private-file/vault contracts.
 
 - [Tooltip style lifetime](tooltip-lifetime/README.md): actual before/after WPF tooltip components and native app confirmation.
 

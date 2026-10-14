@@ -22,7 +22,7 @@ dotnet publish src/windows/CodexSwitch.Windows.csproj -c Release -r win-x64 --se
 dotnet build src/macos/CodexSwitch.Mac.csproj -c Release --nologo -p:UseSharedCompilation=false
 ```
 
-[Contributor checks](../../CONTRIBUTING.md) / [Mac native/build guide](MACOS.md) / [CI boundaries](../CI.md). Cross-publish is not native account acceptance. Linux security/handoff and the .NET LTS migration are [planned](../PLATFORM_SUPPORT_PLAN.md).
+[Contributor checks](../../CONTRIBUTING.md) / [Mac native/build guide](MACOS.md) / [CI boundaries](../CI.md). Cross-publish is not native account acceptance. The .NET LTS migration is complete; Linux security/handoff and remaining service boundaries follow [the platform roadmap](../PLATFORM_SUPPORT_PLAN.md).
 
 Windows normal-shutdown regression uses disposable parent/child processes and the production shutdown/coordinator; no Codex installation or real account is involved:
 

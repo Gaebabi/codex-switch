@@ -61,7 +61,7 @@ docs/evidence/       sanitized issue/PR screenshots
 | Source | Required change |
 | --- | --- |
 | `src/shared/Runtime.cs`, `DesktopShutdown.cs` | Replace Mac/Windows-only discovery and lifecycle branches with verified Linux client capabilities and confirmed normal shutdown |
-| `src/shared/VaultProtection.cs` | Linux is rejected today; add an OS-held key provider with reviewed encrypted format/migration |
+| `src/platforms/security/VaultProtection.cs` | Linux is rejected today; add an OS-held key provider with reviewed encrypted format/migration |
 | `src/shared/ReadOnlySqlite.cs` | Resolve Linux SQLite instead of Windows DLL; preserve read-only WAL visibility and database bytes |
 | `src/shared/DesktopSessionMonitor.cs` | Unix sockets exist; add Linux same-UID peer/socket ownership/client identity verification |
 | `src/macos/Program.cs`, `DeskWindow.cs`, native resources/menu | Share UI by composition; Linux must not load AppKit/Mach or require a tray |

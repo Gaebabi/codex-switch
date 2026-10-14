@@ -19,7 +19,8 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 - [x] Reconcile live issues/PRs; #3/#5/#6/#7 remain open, runtime #4 is complete. Dependency major upgrades remain separate proposals.
 - [x] Extract native protection/Keychain/secure-file primitives byte-preserving into `CodexSwitch.PlatformSecurity`; keep account serialization in the integration layer. Both apps/tests/rendering reference one assembly; complete packages require it.
 - [x] Local Windows native protection/file10, existing core/language41, publish/runtime and own-window UI pass. Add Linux refusal/POSIX and native Mac Keychain tests to read-only CI; native Mac confirmation remains required.
-- [ ] Inspect exact-revision native Windows/Mac before/after and record final-head CI/review/merge in a focused PR for #37. No personal storage/client action or new Release.
+- [x] Inspect exact-revision native Windows/Mac before/after: [native security evidence](../evidence/platform-security/README.md), eight selected PNGs with metadata/hash receipts; source12d73d0/run38655891808 passes all four jobs. Mac security16 each and Windows10 pass; same-scale Windows dark PNGs are byte-identical.
+- [ ] Record final complete-head CI/review and owner-authorized PR38 merge for #37. No personal storage/client action or new Release.
 
 ## Tooltip style lifetime — issue35
 
