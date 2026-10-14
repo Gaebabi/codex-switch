@@ -257,7 +257,7 @@ internal sealed class MainWindow : Window
         titleAction.Setters.Add(new Setter(FrameworkElement.MinHeightProperty, 32.0));
         titleAction.Setters.Add(new Setter(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center));
         DropdownTheme.Install(Resources, _theme);
-        ToolTipTheme.Install(Resources, _theme);
+        ToolTipTheme.Install(Application.Current.Resources, _theme);
         var switchStyle = new Style(typeof(CheckBox)); var switchTemplate = new ControlTemplate(typeof(CheckBox));
         var switchPanel = new FrameworkElementFactory(typeof(StackPanel)); switchPanel.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
         var switchGrid = new FrameworkElementFactory(typeof(Grid)); switchGrid.SetValue(FrameworkElement.WidthProperty, 44.0); switchGrid.SetValue(FrameworkElement.HeightProperty, 24.0);

@@ -19,21 +19,23 @@ if data['os']!=args.os or data['failures']!=0:raise SystemExit('Native UI verifi
 if args.os=='macOS' and data.get('nativeWindowCapture') is not True:raise SystemExit('Native Mac screenshots required')
 pattern=re.compile(r'(en|ko)-(dark|light)-(500x360|600x420|800x560|800x600)'+('' if args.os=='Windows' else '-native')+r'\.png')
 extra=re.compile(r'en-(dark|light)-(language|history)'+('' if args.os=='Windows' else '-native')+r'\.png')
-paths=sorted(p for p in args.source.glob('*.png') if pattern.fullmatch(p.name) or extra.fullmatch(p.name))
-if len(paths)!=(12 if args.os=='Windows' else 16):raise SystemExit('Complete native language/theme/size/menu/history evidence required')
+tooltip=re.compile(r'en-(dark|light)-tooltip\.png') if args.os=='Windows' else None
+paths=sorted(p for p in args.source.glob('*.png') if pattern.fullmatch(p.name) or extra.fullmatch(p.name) or tooltip and tooltip.fullmatch(p.name))
+if len(paths)!=(14 if args.os=='Windows' else 16):raise SystemExit('Complete language/theme/size/menu/history/tooltip evidence required')
 args.destination.mkdir(parents=True,exist_ok=True)
 images=[]
 for path in paths:
     with Image.open(path) as raw:
         raw.load();rgb=raw.convert('RGB')
-        minimum=(160,160) if '-language' in path.name else (400,280)
+        minimum=(60,25) if '-tooltip' in path.name else (160,160) if '-language' in path.name else (400,280)
         if rgb.width<minimum[0] or rgb.height<minimum[1] or rgb.width>4000 or rgb.height>3000 or rgb.entropy()<1 or all(low==high for low,high in rgb.getextrema()):
             raise SystemExit('Blank or invalid native window image')
         clean=Image.new('RGB',rgb.size);clean.paste(rgb)
         output=args.destination/path.name;clean.save(output,format='PNG')
         with Image.open(output) as checked:
             if checked.info:raise SystemExit('Native image metadata was not stripped')
-        images.append({'file':output.name,'width':rgb.width,'height':rgb.height,'sha256':hashlib.sha256(output.read_bytes()).hexdigest()})
+        images.append({'file':output.name,'width':rgb.width,'height':rgb.height,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),
+            'capture':'WPF tooltip component at detached-owner boundary' if '-tooltip' in path.name else 'Native own window or popup'})
 runtime=data['runtime'];version=data.get('appVersion',data.get('version'));architecture=data['architecture']
 if not re.fullmatch(r'\.NET \d+\.\d+\.\d+',runtime) or not re.fullmatch(r'\d+\.\d+\.\d+',version) or architecture not in ('X64','Arm64'):
     raise SystemExit('Unexpected runtime/version/architecture metadata')
@@ -41,6 +43,8 @@ rendering='Windows native WPF' if args.os=='Windows' else data.get('rendering')
 if args.os=='macOS' and rendering!='Software (CI native window)':raise SystemExit('Unexpected Mac evidence rendering mode')
 value={'schema':1,'revision':args.revision,'os':args.os,'architecture':architecture,'runtime':runtime,'appVersion':version,'images':images,
     'rendering':rendering,
-    'scope':'Native published app on the stated OS; only own app window, synthetic accounts, no personal desktop/credentials/Codex action. No account-switch/resume acceptance.'}
+    'scope':'Published app on the stated OS; native own windows/popups and explicitly labeled WPF tooltip component renders, synthetic accounts only. No personal desktop/credentials/Codex action or account-switch/resume acceptance.'}
 (args.destination/'evidence.json').write_text(json.dumps(value,indent=2)+'\n',encoding='utf-8')
-print(json.dumps({'os':args.os,'architecture':architecture,'runtime':runtime,'nativeScreenshots':len(images),'metadataRemoved':True}))
+print(json.dumps({'os':args.os,'architecture':architecture,'runtime':runtime,
+    'nativeScreenshots':sum(i['capture']=='Native own window or popup' for i in images),
+    'tooltipComponentRenders':sum(i['capture']=='WPF tooltip component at detached-owner boundary' for i in images),'metadataRemoved':True}))

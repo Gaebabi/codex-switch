@@ -1,11 +1,18 @@
 # Current plan
 
+## Tooltip style lifetime — issue35
+
+- [x] Reproduce loss of the window-scoped implicit WPF tooltip style when a delayed popup references an account control replaced by refresh. Normal resource gauge reopen/update tests retain their explicit styles.
+- [x] Install the common WPF tooltip style at application scope, preserving popup service, data updates, positioning, animation and accessibility. Source1.30.3.
+- [ ] Inspect baseline/corrected actual tooltip component images and native app evidence; verify repeated resource updates, replaced-owner and both-theme boundaries.
+- [ ] Finish exact-head CI, author review and owner-authorized PR promotion. No personal capture, installed-app replacement, real account action or binary Release.
+
 ## Documentation destinations and screenshots — issue33
 
 - [x] Inspect tracked README/developer/evidence file destinations; direct latest-UI links to current evidence and label the old foundation comparison as historical.
 - [x] Add heading/reference/HTML-link checks and regression coverage to repository CI; read screenshot source version from the shared version owner.
 - [x] Re-render and inspect the current source documentation image, preserve the previous image for comparison and collect fresh native Windows/macOS15 arm64/Intel gallery evidence. Capture checkpoint1a2cc58 passes all four jobs in run38633951637; six native PNGs and the component-render before/after are inspected, metadata stripped and digests checked.
-- [ ] Complete scoped privacy/link checks, reviewed-head CI, author review and PR promotion. No binary Release or account action.
+- [x] Complete scoped privacy/link checks, reviewed-head CI (run38634563795 atb22ac2d), author review and PR34 merge to maine92b8fe. No binary Release or account action.
 
 ## Common scrollbars and theme icons — issue31
 

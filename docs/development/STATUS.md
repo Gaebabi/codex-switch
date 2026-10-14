@@ -1,6 +1,8 @@
 # Current status
 
-Updated 2026-10-15. Source version **1.30.2**; published binaries **1.27.6**.
+Updated 2026-10-15. Source version **1.30.3**; published binaries **1.27.6**.
+
+Issue35: the common WPF tooltip style is installed in application resources, so a delayed popup whose account owner was replaced during refresh retains the custom template. Previously the implicit style was available only through the removed owner's window. Native Windows evidence now checks attached/replaced owners and repeated active resource-tooltip updates in both themes; tooltip PNGs are explicitly labeled component renders, separate from own-HWND screenshots. Baseline images and final-head CI/review are pending. macOS tooltip behavior is unchanged and its native app regression remains required.
 
 Issue33 audits documentation destinations and refreshes source screenshots. Latest-UI navigation now points to the scrollbar/theme checkpoint and current gallery; the original foundation comparison is explicitly historical. Local heading anchors/reference definitions/HTML links join existing tracked-file checks. Screenshot provenance reads the shared managed version instead of the now-empty app-project Version. Current source1.30.2 README rendering and six fresh native Windows/macOS15 arm64/Intel PNGs are inspected, metadata stripped and SHA256 checked; capture run38633951637 at1a2cc58 passes all four jobs. Complete-head CI/review/promotion are recorded by the linked PR.
 
