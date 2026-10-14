@@ -1,6 +1,6 @@
 # macOS 개발 안내
 
-설치와 기본 사용은 [Mac setup](../docs/MACOS.md), 공통 구조는 [Development map](../docs/ARCHITECTURE.md)를 확인합니다. 현재 소스는 1.27.6이며 native Mac 수용은 별도입니다.
+설치와 기본 사용은 [Mac setup](../MACOS.md), 공통 구조는 [Development map](../ARCHITECTURE.md)를 확인합니다. 현재 소스는 1.27.6이며 native Mac 수용은 별도입니다.
 
 ## 빌드와 검증
 

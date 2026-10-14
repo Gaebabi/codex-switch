@@ -8,4 +8,4 @@ The forecast estimates how long the **reported remaining quota** would last if r
 - At least three growth blocks and 0.1 percentage point of total growth are required. Stale observations (15 minutes), a reached reset or insufficient data suspend the forecast.
 - The initial rate is the median of the first three growth blocks. Later changes use a bounded exponential update with `alpha = 1 - 2^(-1/4)`.
 
-Forecasts are conditional estimates. A pause, model choice or workload change can make them inaccurate. Reset-time corrections do not create artificial new usage segments. See `UsageAnalysis.cs` and its replay checks for the complete implementation; the original detailed formula is also available in [Korean](../예측공식.md).
+Forecasts are conditional estimates. A pause, model choice or workload change can make them inaccurate. Reset-time corrections do not create artificial new usage segments. See `src/shared/UsageAnalysis.cs` and its replay checks for the complete implementation; the original detailed formula is also available in [Korean](FORECAST.ko.md).

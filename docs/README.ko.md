@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../macos/Assets/app-icon.png" width="88" height="88" alt="Codex Switch app icon" />
+  <img src="../assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" />
 </p>
 <h1 align="center">Codex Switch</h1>
 
@@ -12,6 +12,8 @@ Codex 계정을 전환하고, 재개 가능한 미완료 로컬 작업을 자동
 *가상 데이터로 연출한 평소 사용 예시입니다. 서로 다른 잔량과 작은 자원 변동, 정상/주의 상태를 현재 Windows UI와 둥근 창 외곽으로 보여줍니다.*
 
 ## 바로 시작
+
+**Linux:** 지원을 계획 중이며 아직 실행 패키지는 없습니다. [지원 계획](PLATFORM_SUPPORT_PLAN.md) / [이슈 #1](https://github.com/Gaebabi/codex-switch/issues/1). 다양한 언어·배포판·접근성 관련 기여를 환영합니다.
 
 1. Windows는 전체 패키지의 `CodexSwitch.exe`를 실행하세요. Mac은 `Install.command`로 설치한 뒤 **Codex Switch.app**을 여세요. [빌드와 설치](INSTALL.md)
 2. 타이틀바의 **+**로 계정을 추가하세요. Windows에서 현재 로그인은 **↻**를 우클릭해 가져올 수 있습니다.
@@ -39,4 +41,4 @@ Codex 계정을 전환하고, 재개 가능한 미완료 로컬 작업을 자동
 
 [Mac 설치](MACOS.md) / [예측 방식](FORECAST.md) / [보안](../SECURITY.md) / [개발](../CONTRIBUTING.md)
 
-공개 오픈소스이며 OpenAI 공식 제품이 아닙니다. [Windows·Mac 실행 패키지 다운로드](https://github.com/Gaebabi/codex-switch/releases/tag/v1.27.6): 소스 빌드나 .NET 설치가 필요하지 않습니다. Mac은 미공증 패키지입니다. 인증 정보는 로컬 암호화 저장소에 보관합니다. [MIT](../LICENSE) / [리소스 고지](../Burn0Assets.LICENSE.txt)
+공개 오픈소스이며 OpenAI 공식 제품이 아닙니다. [Windows·Mac 실행 패키지 다운로드](https://github.com/Gaebabi/codex-switch/releases/tag/v1.27.6): 소스 빌드나 .NET 설치가 필요하지 않습니다. Mac은 미공증 패키지입니다. 인증 정보는 로컬 암호화 저장소에 보관합니다. [MIT](../LICENSE) / [리소스 고지](../licenses/Burn0Assets.LICENSE.txt)

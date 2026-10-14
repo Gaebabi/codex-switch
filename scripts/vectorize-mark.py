@@ -8,7 +8,7 @@ from PIL import Image
 import math
 
 root = Path(__file__).resolve().parents[1]
-image = Image.open(root / "Assets/mark.png").convert("RGBA")
+image = Image.open(root / "assets/brand/mark.png").convert("RGBA")
 alpha = image.getchannel("A")
 w,h = alpha.size
 pixels = alpha.load()
@@ -45,10 +45,10 @@ while edges:
     contours.append(coords)
     paths.append('M '+' L '.join(f'{x:.3f},{y:.3f}' for x,y in coords)+' Z')
 data=' '.join(paths)
-(root/'Assets/mark.path').write_text(data+'\n',encoding='utf-8')
-(root/'Assets/mark.svg').write_text(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><path fill="currentColor" fill-rule="evenodd" d="{data}"/></svg>\n',encoding='utf-8')
+(root/'assets/brand/mark.path').write_text(data+'\n',encoding='utf-8')
+(root/'assets/brand/mark.svg').write_text(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><path fill="currentColor" fill-rule="evenodd" d="{data}"/></svg>\n',encoding='utf-8')
 def area(contour):
     return abs(sum(a[0]*b[1]-b[0]*a[1] for a,b in zip(contour,contour[1:]+contour[:1])))
 body=paths[max(range(len(contours)),key=lambda index:area(contours[index]))]
-(root/'Assets/mark-body.path').write_text(body+'\n',encoding='utf-8')
+(root/'assets/brand/mark-body.path').write_text(body+'\n',encoding='utf-8')
 print({'contours':len(paths),'pathBytes':len(data),'viewBox':[0,0,1000,1000]})

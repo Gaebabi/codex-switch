@@ -1,11 +1,12 @@
-# 작업 지침
+# Repository instructions
 
-- 이 제품의 유일한 정본은 `D:\Git\codex-switch`, GitHub `Gaebabi/codex-switch`의 public `main`입니다. 이전 `codex-account-desk` 경로를 새 작업에 사용하지 않습니다.
-- 저장소 통합 상태와 이전 이력의 로컬 복구 방법은 `REPOSITORY.md`를 확인합니다. 과거 날짜의 작업 기록은 당시 경로를 보존한 기록입니다.
-- 먼저 `D:\Git\gaebabi-tools\codex-context\START_HERE.md`와 이 저장소의 `README.md`, `OPERATIONS.md`, `PLAN.md`, `STATUS.md`를 확인합니다.
-- 소스와 한국어 문서는 `apply_patch`로 수정합니다. PowerShell 문자열 치환/저장으로 코드를 수정하지 않습니다.
-- 오류는 근본 원인을 고치며, 오류를 삼키거나 실제 사용량/관측값을 바꿔 검사를 통과시키지 않습니다.
-- 인증 파일, 토큰, 암호화 계정 저장소, 개인 계정 진단/캡처, 빌드 생성물은 커밋하지 않습니다.
-- 실제 Codex 앱을 검증 목적으로 종료하거나 계정을 전환하지 않습니다. 로컬 내부 검사와 실제 계정/렌더 증거를 구분합니다.
-- 작업이 바뀌면 `PLAN.md`, `STATUS.md`, `OPERATIONS.md`를 갱신합니다. 프로젝트 경로나 실행/CI/게시 기준이 바뀌면 공통 컨텍스트와 `CONTEXT_LOG.md`에도 필요한 사실만 기록합니다.
-- 만족 확인 전 자동 상태 백업 커밋을 만들지 않습니다. 사용자의 직접 커밋 요청은 해당 범위의 커밋 권한입니다. push, merge, 배포와 외부 게시는 각각 명시 요청 범위에서만 실행합니다.
+- Public `Gaebabi/codex-switch` is the canonical source, baseline branch `main`. Use focused issue-linked branches/PRs. The former codex-account-desk repository is historical recovery material.
+- Read `README.md`, `CONTRIBUTING.md`, `docs/development/OPERATIONS.md`, `docs/development/PLAN.md`, `docs/development/STATUS.md` and relevant architecture/release guides. Respect closer instructions and the user's explicit scope.
+- Edit sources and Korean documents with `apply_patch` or equivalent UTF-8-safe patches. PowerShell string replacement/save can corrupt encoding.
+- Fix root causes; do not swallow failures, fabricate observations, relax trust checks or change fixtures to force the expected result.
+- Never commit authentication, tokens, account stores, databases, raw personal captures/diagnostics or build output. Run scoped repository/privacy checks before pushing.
+- Do not stop the user's live Codex or switch their real account for verification. Separate source/build/isolated checks from native account/UI/resumption evidence.
+- Preserve data directories, vault/key identities, bundle ID and IPC names. Source cleanup does not authorize credential migration.
+- Keep development plan/status/operations and public guides consistent when paths/build/CI change. Local/private operating context belongs outside published documents.
+- Every issue/PR needs verification screenshots: before/after for changed behavior and a confirmation screen for a new feature. Planned work shows its baseline and explicitly pending confirmation. Remove private source pixels before applying blur; captions state the actual evidence scope.
+- Create automatic backup commits only after satisfaction is confirmed. A direct PR request authorizes scoped branch commits/push/PR. Merge/release/external messages need explicit scope; the current owner request includes review and merge, not a new binary release.

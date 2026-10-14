@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 task_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
-task_binary="${1:-$task_root/macos/bin/Release/net8.0/CodexSwitch}"
+task_binary="${1:-$task_root/src/macos/bin/Release/net8.0/CodexSwitch}"
 if [[ $# -eq 0 ]]; then
-  dotnet build "$task_root/macos/CodexAccountDesk.Mac.csproj" -c Release -p:UseSharedCompilation=false
+  dotnet build "$task_root/src/macos/CodexSwitch.Mac.csproj" -c Release -p:UseSharedCompilation=false
 fi
 task_output="$task_root/artifacts/macos-verification/$(date -u +%Y%m%dT%H%M%SZ)-$$"
 mkdir -p "$task_output"

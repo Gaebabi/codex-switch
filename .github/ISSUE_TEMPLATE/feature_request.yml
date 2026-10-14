@@ -1,0 +1,30 @@
+name: Feature / platform / accessibility request
+description: Propose an improvement or contribute a new environment. Any language is welcome.
+labels: ["type:feature", "priority:normal"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What task or barrier should improve?
+      description: Describe who needs this and the behavior you expect. Translation, keyboard/accessibility, packaging and distro feedback are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Proposed behavior and environment
+      description: Include OS/CPU/desktop details if relevant, and which capabilities need support. See the platform roadmap before requesting an existing task.
+    validations:
+      required: true
+  - type: textarea
+    id: contribution
+    attributes:
+      label: Baseline or confirmation screenshot
+      description: Attach the current barrier/baseline for planned work; label future confirmation pending. Implemented new features need a confirmation screenshot. Replace private pixels before blur; do not upload originals.
+    validations:
+      required: true
+  - type: textarea
+    id: help
+    attributes:
+      label: Contribution or acceptance ideas (optional)
+      description: Documentation, translation, code or testing help is welcome. Do not share account identities, credentials, private chats or raw captures.

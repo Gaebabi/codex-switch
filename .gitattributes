@@ -4,6 +4,12 @@
 *.csproj text eol=lf
 *.manifest text eol=lf
 *.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+.editorconfig text eol=lf
+*.cjs text eol=lf
+*.sln text eol=lf
+.github/CODEOWNERS text eol=lf
 *.css text eol=lf
 *.md text eol=lf
 *.txt text eol=lf

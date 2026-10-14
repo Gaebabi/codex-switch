@@ -1,0 +1,64 @@
+"""Verify tracked UTF-8 documents, local links and contributor/CI configuration."""
+from pathlib import Path
+import re
+import subprocess
+from urllib.parse import unquote, urlsplit
+import yaml
+
+root = Path(__file__).resolve().parents[1]
+names = subprocess.check_output(["git", "-C", str(root), "ls-files", "-z"]).decode("utf-8").split("\0")
+documents = links = configurations = 0
+errors = []
+
+for name in filter(None, names):
+    if not name.isascii():
+        errors.append(f"{name}: tracked file names must be portable ASCII")
+    if "/" not in name and Path(name).suffix in (".cs", ".csproj", ".css"):
+        errors.append(f"{name}: application source/resources belong in their directories")
+
+for name in filter(None, names):
+    path = root / name
+    if path.suffix not in (".md", ".yml", ".yaml"):
+        continue
+    source = path.read_text(encoding="utf-8", errors="strict")
+    if "\ufffd" in source:
+        errors.append(f"{name}: Unicode replacement character")
+    if path.suffix == ".md":
+        documents += 1
+        targets = re.findall(r"\[[^\]\n]*\]\((<[^>]+>|[^)\s]+)(?:\s+\"[^\"]*\")?\)", source)
+        targets += re.findall(r'<(?:img|a)\b[^>]*(?:src|href)="([^"]+)"', source)
+        for target in targets:
+            target = target.removeprefix("<").removesuffix(">")
+            parsed = urlsplit(target)
+            if parsed.scheme or parsed.netloc or not parsed.path:
+                continue
+            resolved = (path.parent / unquote(parsed.path)).resolve()
+            if not resolved.is_relative_to(root) or not resolved.exists():
+                errors.append(f"{name}: missing or external local target {target}")
+            links += 1
+    else:
+        configurations += 1
+        data = yaml.load(source, Loader=yaml.BaseLoader)
+        if name.startswith(".github/ISSUE_TEMPLATE/") and "body" in data:
+            identifiers = [field["id"] for field in data["body"] if "id" in field]
+            if len(identifiers) != len(set(identifiers)):
+                errors.append(f"{name}: duplicate issue field ID")
+        if name.startswith(".github/workflows/"):
+            if data.get("permissions") != {"contents": "read"}:
+                errors.append(f"{name}: PR verification needs contents: read only")
+            if "pull_request_target" in data.get("on", {}) or "workflow_run" in data.get("on", {}):
+                errors.append(f"{name}: privileged event is outside PR verification scope")
+            for job in data.get("jobs", {}).values():
+                for step in job.get("steps", []):
+                    action = step.get("uses")
+                    if action and not re.fullmatch(r"actions/[a-z-]+@[0-9a-f]{40}", action):
+                        errors.append(f"{name}: action must use a verified full SHA")
+                    if action and action.startswith("actions/checkout@") and step.get("with", {}).get("persist-credentials") != "false":
+                        errors.append(f"{name}: checkout must not persist credentials")
+            if "secrets." in source:
+                errors.append(f"{name}: PR verification must not consume repository secrets")
+
+print(f"Checked {documents} Markdown documents, {links} local links and {configurations} YAML configurations.")
+for error in errors:
+    print(error)
+raise SystemExit(1 if errors else 0)

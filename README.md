@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="macos/Assets/app-icon.png" width="88" height="88" alt="Codex Switch app icon" />
+  <img src="assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" />
 </p>
 <h1 align="center">Codex Switch</h1>
 
@@ -16,6 +16,8 @@ Switch Codex accounts, automatically resume eligible unfinished local chats, and
 **Download:** [Windows x64](https://github.com/Gaebabi/codex-switch/releases/download/v1.27.6/CodexSwitch-v1.27.6-win-x64.zip) / [Mac Apple Silicon](https://github.com/Gaebabi/codex-switch/releases/download/v1.27.6/CodexSwitch-v1.27.6-osx-arm64.zip) / [Mac Intel](https://github.com/Gaebabi/codex-switch/releases/download/v1.27.6/CodexSwitch-v1.27.6-osx-x64.zip)
 
 [Release notes and checksums](https://github.com/Gaebabi/codex-switch/releases/tag/v1.27.6). No source build or .NET installation is needed. Mac packages are not notarized; see [Mac setup](docs/MACOS.md).
+
+**Linux:** planned; no Linux package yet. Follow the [support roadmap](docs/PLATFORM_SUPPORT_PLAN.md) and [issue #1](https://github.com/Gaebabi/codex-switch/issues/1). Contributions across languages, distributions and accessibility needs are welcome.
 
 1. Use a complete Windows or Mac package. Windows: run `CodexSwitch.exe`. Mac: run `Install.command`, then open **Codex Switch.app**. [Build and install](docs/INSTALL.md)
 2. Select **+** in the title bar to add accounts. On Windows, right-click **↻** to import the current Codex login.
@@ -41,6 +43,6 @@ The title bar has language and light/dark settings. The UI supports English and 
 
 ## More
 
-[Mac setup](docs/MACOS.md) / [Forecast](docs/FORECAST.md) / [Security](SECURITY.md) / [Development](CONTRIBUTING.md)
+[Mac setup](docs/MACOS.md) / [Forecast](docs/FORECAST.md) / [Security](SECURITY.md) / [Contributing](CONTRIBUTING.md) / [Roadmap](docs/PLATFORM_SUPPORT_PLAN.md)
 
-This is independent open-source software, not an official OpenAI product. Credentials stay in a local encrypted vault. [MIT](LICENSE) / [Asset notices](Burn0Assets.LICENSE.txt)
+This is independent open-source software, not an official OpenAI product. Credentials stay in a local encrypted vault. [MIT](LICENSE) / [Asset notices](licenses/Burn0Assets.LICENSE.txt)

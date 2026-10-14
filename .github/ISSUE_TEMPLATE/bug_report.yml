@@ -1,0 +1,45 @@
+name: Bug report / environment compatibility
+description: Report reproducible behavior with sanitized environment details. Any language is welcome.
+labels: ["type:bug", "priority:normal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search existing issues first. English is the shared documentation language; reports in other languages are welcome.
+        Never include credentials, account names/emails, auth.json, vaults, private chats, databases or raw logs/screenshots.
+        Report security vulnerabilities privately: https://github.com/Gaebabi/codex-switch/security/advisories/new
+  - type: input
+    id: version
+    attributes:
+      label: Codex Switch version and installation source
+      placeholder: 1.27.6, GitHub Release / source commit
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS/version, x64/ARM64, and Codex desktop/CLI version. Linux reports can include distro, GNOME/KDE, X11/Wayland and keyring provider. No usernames or home paths.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the smallest steps and expected versus actual behavior. State which feature was tested; a successful launch is separate from switching/resumption.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Verification screenshot and evidence
+      description: Attach the baseline/problem screenshot; changes need before/after, new functionality needs confirmation. Replace private pixels before blur. A public-safe fictional reproduction is welcome; planned confirmation must say pending.
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy check
+      options:
+        - label: This report contains no credentials or private account/chat data.
+          required: true

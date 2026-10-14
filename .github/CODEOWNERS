@@ -1,0 +1,12 @@
+# Changes to trust boundaries and CI need maintainer review.
+/.github/ @Gaebabi
+/SECURITY.md @Gaebabi
+/src/shared/AccountSwitchCoordinator.cs @Gaebabi
+/src/shared/DesktopSwitchBackend.cs @Gaebabi
+/src/shared/DesktopSessionMonitor.cs @Gaebabi
+/src/shared/DesktopShutdown.cs @Gaebabi
+/src/shared/VaultProtection.cs @Gaebabi
+/src/shared/Storage.cs @Gaebabi
+/src/shared/Runtime.cs @Gaebabi
+/src/platforms/macos/MacKeychain.cs @Gaebabi
+/scripts/audit-public.py @Gaebabi

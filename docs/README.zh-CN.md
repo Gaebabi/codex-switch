@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../macos/Assets/app-icon.png" width="88" height="88" alt="Codex Switch app icon" />
+  <img src="../assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" />
 </p>
 <h1 align="center">Codex Switch</h1>
 
@@ -28,6 +28,8 @@
 UI支持英语和韩语；日语和中文仅用于文档翻译。语言与浅色/深色主题可在标题栏切换。
 
 切换前保存并验证带日期的本地主聊天名称，备份当前登录。**切换会重启 Codex**，重新打开相同聊天 ID、目录、模型和权限，并向符合条件的空闲聊天发送一次 **Continue**，自动继续未完成的工作。已运行或完成的工作不重复启动。中断的交接可用 **Resume chats** 恢复；发送结果不明确时不会自动重发。名称保存或正常退出失败会阻止登录变更，也可能影响使用相同登录的 CLI/IDE。[切换详情](SWITCHING.md)
+
+Linux 支持正在规划中，尚无执行包。[支持计划](PLATFORM_SUPPORT_PLAN.md) / [Issue #1](https://github.com/Gaebabi/codex-switch/issues/1)。欢迎不同语言、环境和无障碍相关的贡献。
 
 [Mac](MACOS.md) / [预测](FORECAST.md) / [安全](../SECURITY.md) / [开发](../CONTRIBUTING.md)
 

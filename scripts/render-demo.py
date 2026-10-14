@@ -17,17 +17,17 @@ PROJECT = r'''<Project Sdk="Microsoft.NET.Sdk">
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <StartupObject>CodexAccountDesk.DemoRenderer</StartupObject>
     <AssemblyName>CodexSwitch.Demo</AssemblyName><RootNamespace>CodexAccountDesk</RootNamespace>
-    <ApplicationManifest>../../app.manifest</ApplicationManifest>
+    <ApplicationManifest>../../src/windows/app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="../../*.cs" /><Compile Include="DemoRenderer.cs" />
-    <EmbeddedResource Include="../../Assets/mark.path" LogicalName="CodexAccountDesk.Mark.path" />
-    <EmbeddedResource Include="../../Assets/mark-body.path" LogicalName="CodexAccountDesk.MarkBody.path" />
-    <EmbeddedResource Include="../../Assets/app-icon.ico" LogicalName="CodexAccountDesk.AppIcon.ico" />
-    <EmbeddedResource Include="../../Burn0Tokens.css" LogicalName="CodexAccountDesk.Burn0Tokens.css" />
-    <EmbeddedResource Include="../../Burn0Icons.json" LogicalName="CodexAccountDesk.Burn0Icons.json" />
-    <EmbeddedResource Include="../../Strings.ko.json" WithCulture="false" LogicalName="CodexAccountDesk.Strings.ko.json" />
-    <EmbeddedResource Include="../../Strings.en.json" WithCulture="false" LogicalName="CodexAccountDesk.Strings.en.json" />
+    <Compile Include="../../src/windows/*.cs;../../src/shared/*.cs;../../src/platforms/macos/*.cs" /><Compile Include="DemoRenderer.cs" />
+    <EmbeddedResource Include="../../assets/brand/mark.path" LogicalName="CodexAccountDesk.Mark.path" />
+    <EmbeddedResource Include="../../assets/brand/mark-body.path" LogicalName="CodexAccountDesk.MarkBody.path" />
+    <EmbeddedResource Include="../../assets/brand/app-icon.ico" LogicalName="CodexAccountDesk.AppIcon.ico" />
+    <EmbeddedResource Include="../../resources/Burn0Tokens.css" LogicalName="CodexAccountDesk.Burn0Tokens.css" />
+    <EmbeddedResource Include="../../resources/Burn0Icons.json" LogicalName="CodexAccountDesk.Burn0Icons.json" />
+    <EmbeddedResource Include="../../localization/Strings.ko.json" WithCulture="false" LogicalName="CodexAccountDesk.Strings.ko.json" />
+    <EmbeddedResource Include="../../localization/Strings.en.json" WithCulture="false" LogicalName="CodexAccountDesk.Strings.en.json" />
   </ItemGroup>
 </Project>'''
 
@@ -141,7 +141,7 @@ def main():
         subprocess.run(['dotnet', str(WORK / 'bin/Release/net8.0-windows/CodexSwitch.Demo.dll'), str(OUTPUT), fixture], check=True, timeout=30)
     manifest_path = OUTPUT.with_suffix('.json')
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
-    manifest['sourceVersion'] = ET.parse(ROOT / 'CodexAccountDesk.csproj').findtext('PropertyGroup/Version')
+    manifest['sourceVersion'] = ET.parse(ROOT / 'src/windows/CodexSwitch.Windows.csproj').findtext('PropertyGroup/Version')
     manifest_path.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
     print(json.dumps({'screenshot': str(OUTPUT), 'bytes': OUTPUT.stat().st_size, 'data': 'fictional', 'liveAccountsTouched': False}))
 

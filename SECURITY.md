@@ -13,3 +13,7 @@ The documentation PNG is a fictional demo with reserved example addresses. Live 
 ## Report a vulnerability
 
 Use GitHub's private **Report a vulnerability** option when available. If it is unavailable, request a private contact through a minimal issue. Include no credentials, private chats or identifying account details.
+
+[Open a private advisory](https://github.com/Gaebabi/codex-switch/security/advisories/new). Linux credential protection and authenticated switching are [planned](docs/PLATFORM_SUPPORT_PLAN.md), not currently available.
+
+PR checks use read-only tokens, pinned actions and disposable fixtures without signing/account secrets or publication. [CI details](docs/CI.md). Targeted publication scans complement secret scanning/push protection; they cannot guarantee detection of every secret. Full-history findings remain separate from a tracked-tree pass.

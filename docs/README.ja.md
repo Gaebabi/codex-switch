@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../macos/Assets/app-icon.png" width="88" height="88" alt="Codex Switch app icon" />
+  <img src="../assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" />
 </p>
 <h1 align="center">Codex Switch</h1>
 
@@ -28,6 +28,8 @@ Codex アカウントを切り替え、次に使うアカウントの残り利�
 UI は英語と韓国語に対応します。日本語と中国語はドキュメント翻訳です。言語とライト/ダークはタイトルバーで変更できます。
 
 切り替え前に日付付きのローカルチャット名を保存・確認し、現在のログインをバックアップします。**Codex を再起動**して同じチャット ID・フォルダー・モデル・権限を開き、再開可能な待機中チャットに一度だけ **Continue** を送り、未完了の作業を自動で再開します。実行中・完了済みの作業は重複実行しません。中断した引き継ぎは **Resume chats** で続けられ、送信結果が不明な場合は自動再送しません。名前保存や正常終了に失敗するとログイン変更を停止します。同じログインを使う CLI/IDE にも影響する場合があります。[詳細](SWITCHING.md)
+
+Linux 版は計画中で、実行パッケージはまだありません。[対応計画](PLATFORM_SUPPORT_PLAN.md) / [Issue #1](https://github.com/Gaebabi/codex-switch/issues/1)。さまざまな言語・環境・アクセシビリティに関する貢献を歓迎します。
 
 [Mac](MACOS.md) / [予測](FORECAST.md) / [セキュリティ](../SECURITY.md) / [開発](../CONTRIBUTING.md)
 
