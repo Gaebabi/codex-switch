@@ -23,7 +23,14 @@ internal static class NativeUiCapture
         var errors = capture.StandardError.ReadToEndAsync(); var output = capture.StandardOutput.ReadToEndAsync();
         try { await capture.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(15)); }
         catch (TimeoutException) { if (!capture.HasExited) capture.Kill(); await capture.WaitForExitAsync(); throw; }
-        await errors; await output;
-        if (capture.ExitCode != 0 || !File.Exists(path)) throw new IOException("Native Mac window capture failed");
+        var errorText = await errors; await output;
+        if (capture.ExitCode != 0 || !File.Exists(path))
+        {
+            File.WriteAllText(path + ".capture-error.txt", errorText);
+            var reason = errorText.Contains("image from window", StringComparison.OrdinalIgnoreCase) ? "WindowServer image unavailable" :
+                errorText.Contains("permission", StringComparison.OrdinalIgnoreCase) || errorText.Contains("not permitted", StringComparison.OrdinalIgnoreCase) ? "OS capture permission denied" :
+                errorText.Contains("display", StringComparison.OrdinalIgnoreCase) ? "OS display unavailable" : "OS capture error";
+            throw new IOException($"Native Mac window capture failed: {Path.GetFileName(path)}; exit={capture.ExitCode}; {reason}.");
+        }
     }
 }
