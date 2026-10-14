@@ -2,13 +2,15 @@
 
 ## Main parts
 
-Sources are grouped under `src/shared`, `src/windows`, `src/macos` and `src/platforms/macos`. The next step is explicit shared-core/platform projects, tracked in the [roadmap](PLATFORM_SUPPORT_PLAN.md).
+`src/core/CodexSwitch.Core.csproj` builds one UI-neutral .NET10 assembly consumed by both desktop apps and contract tests. It owns account/quota/authentication models, usage/resource presentation, refresh scheduling, checkpointed switch policy and language catalogues. It references no WPF, Avalonia, native P/Invoke or platform-service project. The existing `src/shared` integration sources and `src/platforms/macos` remain linked by the apps while platform providers are extracted in later focused parts of [issue3](https://github.com/Gaebabi/codex-switch/issues/3).
+
+The coordinator accepts its platform error formatter explicitly; its `IAccountSwitchBackend` still owns actual client/storage/IPC actions. Language installation accepts an `ILanguagePackWriter`; the existing private-directory/atomic-write adapter preserves file protection before publishing the new in-memory catalogue. Vault configuration/default drives remain in the integration layer. Unsupported vault defaults/discovery now fail before taking a Windows path. `Directory.Build.props` owns the managed version; Mac bundle metadata must match it.
 
 | Part | Responsibility |
 | --- | --- |
 | `AccountService`, `AccountVault` | Account identity, encrypted storage and asynchronous query/login coordination |
 | `AccountSwitchCoordinator`, desktop automation | Checkpointed chat naming, normal shutdown, login application and chat resumption |
-| `Models`, `UsageAnalysis` | Reported quota, credits/reset counts and usage-history forecasts |
+| `src/core` | UI-neutral models, quota/forecast, refresh/coordinator policy, language/resource presentation |
 | `DesktopSessionMonitor`, queue stores | Read-only local desktop activity and saved/SQLite queue observations |
 | `HardwareSampler`, `DriveMonitor` | Independent machine-resource and volume collection |
 | `MainWindow`, account/resource panels | Windows WPF UI and shared Burn0 theme |
@@ -26,6 +28,8 @@ Sources are grouped under `src/shared`, `src/windows`, `src/macos` and `src/plat
 - Depletion is conditional on measured recent usage. [Forecast details](FORECAST.md)
 
 ## Verification
+
+Core assembly/resource identity and platform write-failure preservation are checked by the production language API tests. Windows/Mac native screenshot CI still runs the published app after extraction; a successful portable core build does not establish Linux account support. Key provider, lifecycle/discovery, peer-authenticated IPC, SQLite and resource-provider project boundaries remain follow-ups.
 
 `scripts/build.ps1 -Verify` runs Windows isolated checks. `scripts/verify-queues.py` uses disposable SQLite/WAL fixtures. Mac checks run through `scripts/verify-macos.sh` on a Mac. Do not stop the user's Codex or switch a real account as a test.
 

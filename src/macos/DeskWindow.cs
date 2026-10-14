@@ -194,7 +194,7 @@ internal sealed class DeskWindow : Window
             using var file = selected[0];
             var path = file.TryGetLocalPath();
             if (path == null) throw new InvalidDataException("Language packs must be local JSON files.");
-            var pack = await Task.Run(() => Loc.Install(path, Path.Combine(Program.DataDirectory, "languages")));
+            var pack = await Task.Run(() => Loc.Install(path, Path.Combine(Program.DataDirectory, "languages"), PlatformLanguagePackWriter.Instance));
             ChangeLanguage(pack.Code); _statusMessage = Loc.T("Language pack installed. Language changed without restarting."); Build();
         }
         catch (Exception error) { await DeskDialogs.Message(this, _theme, Loc.T("Language packs"), error.Message); }
@@ -280,7 +280,7 @@ internal sealed class DeskWindow : Window
                 await using var backend = new DesktopSwitchBackend(_service, _sessions);
                 var coordinator = new AccountSwitchCoordinator(backend,
                     plan => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.PendingSwitch = plan; _service.Vault.Save(); } },
-                    plan => OnUi(() => { _phase = plan.Phase; RenderAccounts(); }));
+                    plan => OnUi(() => { _phase = plan.Phase; RenderAccounts(); }), UserErrors.Describe);
                 var pending = _service.Vault.Data.PendingSwitch;
                 if (pending != null && pending.TargetAccountKey != profile.Key) throw new InvalidOperationException(Loc.T("남은 채팅 재개 작업을 먼저 처리해 주세요."));
                 var plan = pending ?? await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, _switch.Token);

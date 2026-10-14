@@ -62,8 +62,9 @@ internal sealed class AccountSwitchCoordinator
     private readonly IAccountSwitchBackend _backend;
     private readonly Action<AccountSwitchPlan?> _save;
     private readonly Action<AccountSwitchPlan> _changed;
-    public AccountSwitchCoordinator(IAccountSwitchBackend backend, Action<AccountSwitchPlan?> save, Action<AccountSwitchPlan> changed)
-    { _backend = backend; _save = save; _changed = changed; }
+    private readonly Func<Exception, string> _describeError;
+    public AccountSwitchCoordinator(IAccountSwitchBackend backend, Action<AccountSwitchPlan?> save, Action<AccountSwitchPlan> changed, Func<Exception, string> describeError)
+    { _backend = backend; _save = save; _changed = changed; _describeError = describeError; }
     public async Task<AccountSwitchPlan> PrepareAsync(string target, DateTimeOffset at, CancellationToken cancellation)
     {
         var source = await _backend.CurrentAccountAsync(cancellation);
@@ -116,7 +117,7 @@ internal sealed class AccountSwitchCoordinator
                 catch (Exception error)
                 {
                     chat.ResumeState = chat.ResumeState is ChatResumeState.Sending or ChatResumeState.Unconfirmed ? ChatResumeState.Unconfirmed : ChatResumeState.Failed;
-                    chat.Error = UserErrors.Describe(error);
+                    chat.Error = _describeError(error);
                 }
                 Checkpoint(plan, SwitchPhase.Resuming);
             }
@@ -126,7 +127,7 @@ internal sealed class AccountSwitchCoordinator
         }
         catch (Exception error)
         {
-            plan.Error = error is OperationCanceledException ? "전환 작업을 취소했습니다." : UserErrors.Describe(error);
+            plan.Error = error is OperationCanceledException ? "전환 작업을 취소했습니다." : _describeError(error);
             _save(plan); _changed(plan); throw;
         }
     }

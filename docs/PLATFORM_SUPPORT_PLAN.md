@@ -2,6 +2,8 @@
 
 Tracking [#1](https://github.com/Gaebabi/codex-switch/issues/1). Updated 2026-10-15. Resumed checkpoints and reviewed native evidence are tracked in [PR27](https://github.com/Gaebabi/codex-switch/pull/27). Account switching and safe automatic continuation are the core product; a window that launches is not evidence of either capability.
 
+Runtime issue4 is completed by merged PR27: source1.30.0/.NET10.0.13, native Windows x64 and macOS15 arm64/Intel app-window evidence, complete runtime/package inspection and four-job reviewed-head CI. Core issue3 starts with a shared UI-neutral project in source1.30.1; native integration-provider boundaries and Linux5/6/7 remain open. Public binaries remain1.27.6 until separately released.
+
 ## Current support
 
 | Environment | Package | Evidence boundary |

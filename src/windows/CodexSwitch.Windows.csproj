@@ -11,13 +11,13 @@
     <RootNamespace>CodexAccountDesk</RootNamespace>
     <Title>Codex Switch</Title>
     <Product>Codex Switch</Product>
-    <Version>1.30.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>../../assets/brand/app-icon.ico</ApplicationIcon>
     <DebugType>none</DebugType>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../core/CodexSwitch.Core.csproj" />
     <PackageReference Include="System.Management" Version="10.0.13" />
     <Compile Include="../shared/**/*.cs;../platforms/macos/**/*.cs" Link="Shared/%(Filename)%(Extension)" />
     <EmbeddedResource Include="../../assets/brand/mark.path" LogicalName="CodexAccountDesk.Mark.path" />
@@ -25,6 +25,5 @@
     <EmbeddedResource Include="../../assets/brand/app-icon.ico" LogicalName="CodexAccountDesk.AppIcon.ico" />
     <EmbeddedResource Include="../../resources/Burn0Tokens.css" LogicalName="CodexAccountDesk.Burn0Tokens.css" />
     <EmbeddedResource Include="../../resources/Burn0Icons.json" LogicalName="CodexAccountDesk.Burn0Icons.json" />
-    <EmbeddedResource Include="../../localization/packs/*.json;../../localization/index.json;../../localization/legacy-keys.json" WithCulture="false" LogicalName="CodexAccountDesk.LanguagePacks.%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

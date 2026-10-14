@@ -1,14 +1,27 @@
 """Verify tracked UTF-8 documents, local links and contributor/CI configuration."""
 from pathlib import Path
+import plistlib
 import re
 import subprocess
 from urllib.parse import unquote, urlsplit
+import xml.etree.ElementTree as ET
 import yaml
 
 root = Path(__file__).resolve().parents[1]
 names = subprocess.check_output(["git", "-C", str(root), "ls-files", "-z"]).decode("utf-8").split("\0")
 documents = links = configurations = 0
 errors = []
+
+version = ET.parse(root / "Directory.Build.props").findtext("./PropertyGroup/Version")
+if not version or not re.fullmatch(r"\d+\.\d+\.\d+", version):
+    errors.append("Directory.Build.props: expected one semantic managed version")
+for project in ("src/core/CodexSwitch.Core.csproj", "src/windows/CodexSwitch.Windows.csproj", "src/macos/CodexSwitch.Mac.csproj"):
+    if ET.parse(root / project).find("./PropertyGroup/Version") is not None:
+        errors.append(f"{project}: use the shared managed version")
+with (root / "src/macos/Info.plist").open("rb") as bundle:
+    metadata = plistlib.load(bundle)
+if metadata.get("CFBundleVersion") != version or metadata.get("CFBundleShortVersionString") != version:
+    errors.append("src/macos/Info.plist: bundle and managed version must match")
 
 for name in filter(None, names):
     if not name.isascii():

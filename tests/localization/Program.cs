@@ -23,6 +23,24 @@ byte[] Resource(string name)
     using var output = new MemoryStream(); input.CopyTo(output); return output.ToArray();
 }
 var englishBytes = Resource("en.json");
+Check("Both app policies and catalogues live in one UI-neutral assembly", () =>
+{
+    var core = typeof(Loc).Assembly;
+    Assert(core.GetName().Name == "CodexSwitch.Core" && typeof(AccountProfile).Assembly == core &&
+        typeof(AccountSwitchCoordinator).Assembly == core && typeof(RefreshCoordinator).Assembly == core);
+    Assert(!core.GetReferencedAssemblies().Any(a => a.Name is "Avalonia" or "Avalonia.Controls" or "PresentationFramework" or "System.Management" or "CodexSwitch"));
+    Assert(!core.GetTypes().SelectMany(t => t.GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic |
+        System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance)).Any(m => m.IsDefined(typeof(System.Runtime.InteropServices.DllImportAttribute), false)));
+});
+if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())
+    Check("Unsupported vault/discovery cannot take a Windows fallback", () =>
+    {
+        var vaultRejected = false; var discoveryRejected = false;
+        try { _ = new VaultData(); } catch (PlatformNotSupportedException) { vaultRejected = true; }
+        try { RuntimeLocator.FindAsync(System.Threading.CancellationToken.None).GetAwaiter().GetResult(); }
+        catch (PlatformNotSupportedException) { discoveryRejected = true; }
+        Assert(vaultRejected && discoveryRejected);
+    });
 var basis = LanguagePack.Parse(englishBytes, null, false);
 byte[] Mutate(Action<JsonObject> action)
 { var json = JsonNode.Parse(englishBytes)!.AsObject(); action(json); return Encoding.UTF8.GetBytes(json.ToJsonString()); }
@@ -99,23 +117,39 @@ try
     File.WriteAllText(packPath,partial.ToJsonString(),Encoding.UTF8);
     Check("Real install/reload uses data-only JSON and English plural fallback", () =>
     {
-        var info=Loc.Install(packPath,installed); Assert(info.IsCustom && info.Translated==1 && info.Total==basis.Strings.Count);
+        var info=Loc.Install(packPath,installed,PlatformLanguagePackWriter.Instance); Assert(info.IsCustom && info.Translated==1 && info.Total==basis.Strings.Count);
         Loc.SetLanguage("ca"); Assert(Loc.T("계정 추가")=="Afegeix un compte" && Loc.T("새로 고침")=="Refresh" && Loc.Count("msg.accounts",1)=="1 account");
         Assert(File.Exists(Path.Combine(installed,"pack-ca.json"))); Loc.LoadInstalled(installed); Assert(Loc.RestoreLanguage("ca") && Loc.Language=="ca");
     });
     Check("Rejected replacement keeps installed bytes and current selection unchanged", () =>
     {
         var before=File.ReadAllBytes(Path.Combine(installed,"pack-ca.json")); partial["strings"]!["unknown.id"]="Invalid"; File.WriteAllText(packPath,partial.ToJsonString(),Encoding.UTF8);
-        Rejected(()=>Loc.Install(packPath,installed)); Assert(before.SequenceEqual(File.ReadAllBytes(Path.Combine(installed,"pack-ca.json"))) && Loc.Language=="ca"); partial["strings"]!.AsObject().Remove("unknown.id");
+        Rejected(()=>Loc.Install(packPath,installed,PlatformLanguagePackWriter.Instance)); Assert(before.SequenceEqual(File.ReadAllBytes(Path.Combine(installed,"pack-ca.json"))) && Loc.Language=="ca"); partial["strings"]!.AsObject().Remove("unknown.id");
+    });
+    Check("Platform write failure cannot publish an unpersisted language pack", () =>
+    {
+        var before = File.ReadAllBytes(Path.Combine(installed,"pack-ca.json"));
+        var oldText = Loc.T("계정 추가");
+        partial["strings"]![Loc.Id("계정 추가")] = "Unpersisted replacement";
+        File.WriteAllText(packPath,partial.ToJsonString(),Encoding.UTF8);
+        var rejected = false;
+        try { Loc.Install(packPath,installed,new RefusingPackWriter()); } catch (IOException) { rejected = true; }
+        Assert(rejected && Loc.Language=="ca" && Loc.T("계정 추가")==oldText &&
+            before.SequenceEqual(File.ReadAllBytes(Path.Combine(installed,"pack-ca.json"))));
     });
     Check("Valid RTL metadata and Gregorian culture are supported", () =>
     {
         partial["code"]="ar"; partial["nativeName"]="العربية"; partial["englishName"]="Arabic"; partial["culture"]="ar-SA"; partial["direction"]="rtl";
         partial["strings"]![Loc.Id("계정 추가")]="إضافة حساب"; File.WriteAllText(packPath,partial.ToJsonString(),Encoding.UTF8);
-        Loc.Install(packPath,installed); Loc.SetLanguage("ar"); Assert(Loc.RightToLeft && Loc.Culture.DateTimeFormat.Calendar is GregorianCalendar && Loc.T("계정 추가")=="إضافة حساب");
+        Loc.Install(packPath,installed,PlatformLanguagePackWriter.Instance); Loc.SetLanguage("ar"); Assert(Loc.RightToLeft && Loc.Culture.DateTimeFormat.Calendar is GregorianCalendar && Loc.T("계정 추가")=="إضافة حساب");
     });
     Check("Restoring an external-only pack selects English without other pack loss", () => { Loc.SetLanguage(Loc.RestoreBuiltIn(installed)); Assert(Loc.Language=="en" && !File.Exists(Path.Combine(installed,"pack-ar.json")) && File.Exists(Path.Combine(installed,"pack-ca.json"))); });
     Check("Corrupt installed packs report failures without hiding or losing valid packs", () => { File.WriteAllText(Path.Combine(installed,"broken.json"),"{"); File.WriteAllBytes(Path.Combine(installed,"invalid.json"),Mutate(j=>j["schemaVersion"]=2)); var problems=Loc.LoadInstalled(installed); Assert(problems.Count==2 && Loc.Languages.Any(p=>p.Code=="ca") && Loc.Languages.Any(p=>p.Code=="en")); });
 }
 finally { Loc.LoadInstalled(Path.Combine(directory,"empty")); Loc.SetLanguage("en"); Directory.Delete(directory,true); }
 Console.WriteLine(JsonSerializer.Serialize(new { passed=checks.Count,failed=0,checks,scope="Production language-pack parsing/catalogue/install APIs with disposable text files only; no account/Codex data or process access." },new JsonSerializerOptions { WriteIndented=true }));
+
+internal sealed class RefusingPackWriter : ILanguagePackWriter
+{
+    public void Write(string directory, string fileName, byte[] bytes) => throw new IOException("Synthetic platform write refusal");
+}

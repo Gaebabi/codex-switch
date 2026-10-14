@@ -26,7 +26,7 @@ internal static class Program
             using (var fixture = await StartAsync(executable, directory, 1800))
             {
                 var backend = new Backend(executable, fixture); var phases = new List<SwitchPhase>();
-                var coordinator = new AccountSwitchCoordinator(backend, _ => { }, plan => phases.Add(plan.Phase));
+                var coordinator = new AccountSwitchCoordinator(backend, _ => { }, plan => phases.Add(plan.Phase), UserErrors.Describe);
                 var plan = await coordinator.PrepareAsync("target", DateTimeOffset.UtcNow, CancellationToken.None);
                 Assert(await coordinator.RunAsync(plan, CancellationToken.None), "One invocation did not complete the handoff");
                 Assert(fixture.Parent.HasExited && fixture.Child.HasExited, "Credentials changed before actual process exit");
@@ -37,7 +37,7 @@ internal static class Program
             using (var fixture = await StartAsync(executable, directory, 1800))
             using (var cancellation = new CancellationTokenSource())
             {
-                var backend = new Backend(executable, fixture); var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { });
+                var backend = new Backend(executable, fixture); var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, UserErrors.Describe);
                 var plan = await coordinator.PrepareAsync("target", DateTimeOffset.UtcNow, CancellationToken.None);
                 var cancel = Task.Run(async () => { await fixture.Parent.WaitForExitAsync(); cancellation.Cancel(); });
                 var cancelled = false;
@@ -48,7 +48,7 @@ internal static class Program
             }
             using (var fixture = await StartAsync(executable, directory, 33000))
             {
-                var backend = new Backend(executable, fixture); var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { });
+                var backend = new Backend(executable, fixture); var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, UserErrors.Describe);
                 var plan = await coordinator.PrepareAsync("target", DateTimeOffset.UtcNow, CancellationToken.None);
                 watch.Restart(); var timedOut = false;
                 try { await coordinator.RunAsync(plan, CancellationToken.None); } catch (IOException) { timedOut = true; }

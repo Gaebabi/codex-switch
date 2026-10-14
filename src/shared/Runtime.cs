@@ -16,6 +16,7 @@ internal static class RuntimeLocator
     public static async Task<CodexInstallation> FindAsync(CancellationToken cancellation)
     {
         if (OperatingSystem.IsMacOS()) return await MacDesktop.FindAsync(cancellation);
+        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Codex discovery requires a supported platform provider.");
         var desktop = await FindDesktopAsync(cancellation);
         var candidates = new List<string>();
         var overrideCli = Environment.GetEnvironmentVariable("CODEX_ACCOUNT_DESK_CLI");

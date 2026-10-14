@@ -15,6 +15,8 @@ Source1.30.0 CI also runs the actual published Windows/Mac app in an isolated ev
 
 Language packs additionally run structural/source-key checks and the production parser/culture/installation test project on all three hosts. Nine built-in catalogues are complete; custom-pack rejection, English fallback, integer plural rules, UTF-8/BOM, restart reload and RTL culture are exercised. [Localization guide](LOCALIZATION.md)
 
+Source1.30.1 apps/tests consume one UI-neutral core assembly. Contract checks verify its identity/native dependency boundary and preserve installed catalogue bytes/selection when the platform writer refuses. Ubuntu additionally confirms unsupported vault/discovery fail before entering a Windows path. Native Windows/Mac UI evidence remains required after extraction; Ubuntu portable contracts are not Linux desktop support.
+
 Temperature contract checks run on all three hosts: production storage parsing, volume/device/channel identity, partial coverage, invalid/unavailable/stale readings and multilingual formatting. Hosted CI does not claim physical temperature sensors. [Temperature support](TEMPERATURES.md)
 
 Tool dependencies are pinned in [requirements-dev.txt](../requirements-dev.txt), SDK in [global.json](../global.json). Windows checks require the actual official Codex CLI for app-server login cancellation and isolated credential-switch initialization; CI installs version 0.162.1 from the [locked development prerequisite](../tools/ci-codex/package.json), with lifecycle scripts disabled and its exact native executable path selected. No desktop install or successful browser authentication is required. Those checks do not fake the app-server protocol or use a real account.

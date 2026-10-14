@@ -47,7 +47,7 @@ internal static class SwitchDiagnostics
         test("All names are confirmed before shutdown, account apply, launch, and resume", () =>
         {
             var backend = new Backend(); AccountSwitchPlan? saved = null;
-            var coordinator = new AccountSwitchCoordinator(backend, plan => saved = plan, _ => { });
+            var coordinator = new AccountSwitchCoordinator(backend, plan => saved = plan, _ => { }, UserErrors.Describe);
             var plan = coordinator.PrepareAsync("target", at, CancellationToken.None).GetAwaiter().GetResult();
             backend.Resuming = (chat, sending) => { sending(); assert(saved?.Phase == SwitchPhase.Resuming && chat.ResumeState == ChatResumeState.Sending, "Send preceded its durable checkpoint"); return ChatResumeState.Resumed; };
             assert(coordinator.RunAsync(plan, CancellationToken.None).GetAwaiter().GetResult(), "Transition did not finish");
@@ -58,7 +58,7 @@ internal static class SwitchDiagnostics
         test("A name failure prevents shutdown/apply and retry preserves completed backups", () =>
         {
             var backend = new Backend { Naming = chat => { if (chat.Id == "b") throw new IOException("synthetic name failure"); } };
-            var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { });
+            var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, UserErrors.Describe);
             var plan = coordinator.PrepareAsync("target", at, CancellationToken.None).GetAwaiter().GetResult();
             var failed = false; try { coordinator.RunAsync(plan, CancellationToken.None).GetAwaiter().GetResult(); } catch (IOException) { failed = true; }
             assert(failed && !backend.Calls.Contains("close") && !backend.Calls.Contains("apply") && plan.Chats[0].NameSaved && !plan.Chats[1].NameSaved, "Partial backup closed the desktop");
@@ -68,7 +68,7 @@ internal static class SwitchDiagnostics
         test("Cancellation during backup preserves names and leaves the account unchanged", () =>
         {
             using var cancellation = new CancellationTokenSource(); var backend = new Backend { Naming = _ => cancellation.Cancel() };
-            var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { });
+            var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, UserErrors.Describe);
             var plan = coordinator.PrepareAsync("target", at, cancellation.Token).GetAwaiter().GetResult();
             var failed = false; try { coordinator.RunAsync(plan, cancellation.Token).GetAwaiter().GetResult(); } catch (OperationCanceledException) { failed = true; }
             assert(failed && backend.Account == "source" && !backend.Calls.Contains("close") && plan.Chats[0].NameSaved, "Cancellation applied credentials or lost saved names");
@@ -76,7 +76,7 @@ internal static class SwitchDiagnostics
         test("An external login change during backup prevents shutdown and account overwrite", () =>
         {
             var backend = new Backend(); backend.Naming = _ => backend.Account = "other";
-            var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { });
+            var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, UserErrors.Describe);
             var plan = coordinator.PrepareAsync("target", at, CancellationToken.None).GetAwaiter().GetResult();
             var failed = false; try { coordinator.RunAsync(plan, CancellationToken.None).GetAwaiter().GetResult(); } catch (InvalidOperationException) { failed = true; }
             assert(failed && !backend.Calls.Contains("close") && !backend.Calls.Contains("apply"), "Changed login was overwritten");
@@ -84,7 +84,7 @@ internal static class SwitchDiagnostics
         test("Recovery after credential apply does not apply credentials or rename chats twice", () =>
         {
             var backend = new Backend { Applying = () => throw new IOException("synthetic checkpoint failure after apply") };
-            var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { });
+            var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, UserErrors.Describe);
             var plan = coordinator.PrepareAsync("target", at, CancellationToken.None).GetAwaiter().GetResult();
             try { coordinator.RunAsync(plan, CancellationToken.None).GetAwaiter().GetResult(); } catch (IOException) { }
             assert(plan.Phase == SwitchPhase.Applying && backend.Account == "target" && !plan.AccountApplied, "Apply failure checkpoint was lost");
@@ -94,7 +94,7 @@ internal static class SwitchDiagnostics
         test("Resume failure preserves an unconfirmed send, resumes other chats, and skips finished work on retry", () =>
         {
             var backend = new Backend { Resuming = (chat, sending) => { sending(); if (chat.Id == "a") throw new IOException("synthetic delivery loss"); return ChatResumeState.Resumed; } };
-            AccountSwitchPlan? saved = null; var coordinator = new AccountSwitchCoordinator(backend, plan => saved = plan, _ => { });
+            AccountSwitchPlan? saved = null; var coordinator = new AccountSwitchCoordinator(backend, plan => saved = plan, _ => { }, UserErrors.Describe);
             var plan = coordinator.PrepareAsync("target", at, CancellationToken.None).GetAwaiter().GetResult();
             assert(!coordinator.RunAsync(plan, CancellationToken.None).GetAwaiter().GetResult(), "Unconfirmed delivery was declared complete");
             assert(saved != null && plan.Chats[0].ResumeState == ChatResumeState.Unconfirmed && plan.Chats[1].ResumeState == ChatResumeState.Resumed, "Resume failure lost partial progress");

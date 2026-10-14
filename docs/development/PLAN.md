@@ -6,11 +6,18 @@
 - [x] Checkpoint P1: add isolated native published-app screenshot modes and sanitized CI artifact validation for Windows/Mac. Local Windows HWND captures and existing93 checks pass; native Mac CI remains a gate.
 - [x] Checkpoint P2: migrate all projects/scripts/CI to .NET10 LTS (SDK10.0.402/runtime10.0.13), including System.Management10.0.13 and Mac supported-OS/bundle metadata. Local Windows93, pack39/temperature29 and Mac publish pass; full runtime/package inspection and native CI remain promotion gates. Manage PR20 only after reviewed replacement.
 - [x] Checkpoint P3 evidence: attach inspected native Windows before/after and native Mac arm64/Intel confirmation images, with metadata-free PNGs and exact-source receipts. Run38622544372 passes all four jobs; runtime folders and Mac ZIP bytes/modes are checked.
-- [ ] P3 promotion: complete latest-head CI/review and merge the scoped runtime PR. Close only issue4 when its criteria pass.
+- [x] P3 promotion: latest-head run38623109273 passed all four jobs, author review recorded, PR27 squash-merged to main de66231 and issue4 closed. Superseded Dependabot20 closed. No new binary Release.
 - [x] Checkpoint P2.2: correct the Mac minimum-window content budget exposed by native CI; preserve126px row minimum and strict no-clipping/no-scroll checks. Align current installation/developer guides with .NET10 and disclose software rendering in exported Mac provenance. Native confirmation remains required.
 - [ ] Continue core/platform extraction (#3), then Linux credential/client trust (#5), handoff (#6) and package/environment acceptance (#7), each with separate checkpoints and target-OS evidence.
 
 Every checkpoint receives a scoped commit/push. The PR stays draft until target-OS app screenshots are validated and privacy checked. Personal desktops/vaults are not captured or used. Public binary Release/signing and full Linux account support are separate gates.
+
+## Core extraction — issue3, focused first part
+
+- [x] Checkpoint P4: move eleven domain/presentation/catalogue files into one UI-neutral `src/core` project consumed by Windows/Mac/tests/rendering; centralize managed version1.30.1. Keep native integration and vault defaults outside it, inject existing error/private-file-write adapters, and reject unsupported discovery/vault defaults explicitly.
+- [x] Local Windows93/SQLite23, core/language41, temperature29 and Windows/Mac compilation pass. Catalogue resource identity and refusal-before-cache-update are verified.
+- [ ] Checkpoint P5: attach native Windows/Mac before/after program screenshots, pass latest-head native/portable CI, self-review and merge the focused extraction PR. Keep issue3 open for the remaining native-provider boundaries.
+- [ ] Continue explicit key provider, lifecycle/discovery, authenticated IPC, SQLite and hardware adapters before Linux credential/client acceptance5 and handoff6. Unsupported Linux remains disabled; no insecure fallback or release claim.
 
 ## Always-on refresh — issue #25
 

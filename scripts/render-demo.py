@@ -22,13 +22,13 @@ PROJECT = r'''<Project Sdk="Microsoft.NET.Sdk">
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Management" Version="10.0.13" />
+    <ProjectReference Include="../../src/core/CodexSwitch.Core.csproj" />
     <Compile Include="../../src/windows/*.cs;../../src/shared/*.cs;../../src/platforms/macos/*.cs" /><Compile Include="DemoRenderer.cs" />
     <EmbeddedResource Include="../../assets/brand/mark.path" LogicalName="CodexAccountDesk.Mark.path" />
     <EmbeddedResource Include="../../assets/brand/mark-body.path" LogicalName="CodexAccountDesk.MarkBody.path" />
     <EmbeddedResource Include="../../assets/brand/app-icon.ico" LogicalName="CodexAccountDesk.AppIcon.ico" />
     <EmbeddedResource Include="../../resources/Burn0Tokens.css" LogicalName="CodexAccountDesk.Burn0Tokens.css" />
     <EmbeddedResource Include="../../resources/Burn0Icons.json" LogicalName="CodexAccountDesk.Burn0Icons.json" />
-    <EmbeddedResource Include="../../localization/packs/*.json;../../localization/index.json;../../localization/legacy-keys.json" WithCulture="false" LogicalName="CodexAccountDesk.LanguagePacks.%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>'''
 
@@ -56,7 +56,7 @@ internal static class DemoRenderer
         var output = Path.GetFullPath(args[0]); var fixture = Path.GetFullPath(args[1]);
         AppContext.SetSwitch("Switch.System.Windows.Media.ShouldRenderEvenWhenNoDisplayDevicesAreAvailable", true);
         var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
-        if (args.Length > 5 && args[5].Length > 0) Loc.Install(args[5], Path.Combine(fixture, "languages"));
+        if (args.Length > 5 && args[5].Length > 0) Loc.Install(args[5], Path.Combine(fixture, "languages"), PlatformLanguagePackWriter.Instance);
         Loc.SetLanguage(args.Length > 2 ? args[2] : "en"); var now = DateTimeOffset.UtcNow;
         var vault = new AccountVault(Path.Combine(fixture, "data"));
         vault.Data.Language = Loc.Language; vault.Data.Theme = args.Length > 8 ? args[8] : "dark";

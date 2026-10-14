@@ -207,7 +207,7 @@ internal sealed class MainWindow : Window
         if (picker.ShowDialog(this) != true) return;
         try
         {
-            var pack = await Task.Run(() => Loc.Install(picker.FileName, Path.Combine(_service.Vault.DirectoryPath, "languages")));
+            var pack = await Task.Run(() => Loc.Install(picker.FileName, Path.Combine(_service.Vault.DirectoryPath, "languages"), PlatformLanguagePackWriter.Instance));
             ChangeLanguage(pack.Code); SetStatus("Language pack installed. Language changed without restarting.");
         }
         catch (Exception error) { Confirm(error.Message, Loc.T("Language packs"), "확인", false); }
@@ -695,7 +695,7 @@ internal sealed class MainWindow : Window
             {
                 var cancellation = _switchCancellation.Token;
                 await using var backend = new DesktopSwitchBackend(_service, _sessions);
-                var coordinator = new AccountSwitchCoordinator(backend, SaveSwitch, SwitchChanged);
+                var coordinator = new AccountSwitchCoordinator(backend, SaveSwitch, SwitchChanged, UserErrors.Describe);
                 var plan = pending?.TargetAccountKey == profile.Key ? JsonSerializer.Deserialize<AccountSwitchPlan>(JsonSerializer.Serialize(pending))! :
                     await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, cancellation);
                 if (await coordinator.RunAsync(plan, cancellation)) SetStatus("계정을 전환하고 채팅을 재개했습니다.");

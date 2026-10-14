@@ -6,7 +6,7 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../src/core/CodexSwitch.Core.csproj" />
     <Compile Include="../../src/shared/*.cs;../../src/platforms/macos/*.cs;Program.cs" />
-    <EmbeddedResource Include="../../localization/packs/*.json;../../localization/index.json;../../localization/legacy-keys.json" WithCulture="false" LogicalName="CodexAccountDesk.LanguagePacks.%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

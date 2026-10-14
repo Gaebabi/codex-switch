@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>CodexSwitch.Core</AssemblyName>
+    <RootNamespace>CodexAccountDesk</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="CodexSwitch" />
+    <InternalsVisibleTo Include="CodexSwitch.Demo" />
+    <InternalsVisibleTo Include="CodexSwitch.Localization.Tests" />
+    <InternalsVisibleTo Include="CodexSwitch.Temperatures.Tests" />
+    <InternalsVisibleTo Include="CodexSwitch.WindowsHandoff.Tests" />
+    <EmbeddedResource Include="../../localization/packs/*.json;../../localization/index.json;../../localization/legacy-keys.json" WithCulture="false" LogicalName="CodexAccountDesk.LanguagePacks.%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

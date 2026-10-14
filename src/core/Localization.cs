@@ -9,6 +9,11 @@ using System.Threading;
 
 namespace CodexAccountDesk;
 
+internal interface ILanguagePackWriter
+{
+    void Write(string directory, string fileName, byte[] bytes);
+}
+
 internal static class Loc
 {
     private sealed record State(LanguagePack Pack, CultureInfo Culture);
@@ -89,15 +94,15 @@ internal static class Loc
         lock (Sync) Volatile.Write(ref _packs, candidate.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase));
         return problems;
     }
-    public static LanguageInfo Install(string file, string directory)
+    public static LanguageInfo Install(string file, string directory, ILanguagePackWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         var bytes = ReadFile(file); var pack = LanguagePack.Parse(bytes, BuiltIns["en"], true);
         lock (Sync)
         {
             var candidate = _packs.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
             if (candidate.Values.Count(p => p.Info.IsCustom) >= 64 && !(candidate.TryGetValue(pack.Info.Code, out var existing) && existing.Info.IsCustom)) throw new InvalidDataException("At most 64 local language packs are supported.");
-            SecureFiles.CreatePrivateDirectory(directory);
-            SecureFiles.AtomicWrite(Path.Combine(directory, "pack-" + pack.Info.Code + ".json"), bytes);
+            writer.Write(directory, "pack-" + pack.Info.Code + ".json", bytes);
             candidate[pack.Info.Code] = pack; Volatile.Write(ref _packs, candidate.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase));
         }
         return pack.Info;
