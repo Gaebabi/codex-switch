@@ -191,6 +191,7 @@ internal static class MacDiagnostics
                     await Task.Delay(120);
                     var scroll = menu.GetVisualDescendants().OfType<ScrollViewer>().First();
                     Assert(scroll.Extent.Height > scroll.Viewport.Height, "Language dropdown has no reachable overflow");
+                    Assert(menu.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ScrollBar>().Any(bar => bar.IsVisible), "Language dropdown has no visible scrollbar");
                     scroll.Offset = new Vector(0, scroll.Extent.Height); await Task.Delay(80);
                     Assert(scroll.Offset.Y > 0, "Language dropdown cannot scroll");
                     scroll.Offset = default; await Task.Delay(80);
