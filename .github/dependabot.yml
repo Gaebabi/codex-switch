@@ -5,6 +5,11 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /tools/ci-codex
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
   - package-ecosystem: nuget
     directory: /src/macos
     schedule:
