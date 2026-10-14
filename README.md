@@ -45,4 +45,6 @@ The title bar has language and light/dark settings. The UI supports English and 
 
 [Mac setup](docs/MACOS.md) / [Forecast](docs/FORECAST.md) / [Security](SECURITY.md) / [Contributing](CONTRIBUTING.md) / [Roadmap](docs/PLATFORM_SUPPORT_PLAN.md)
 
+Developer reference: [Architecture](docs/ARCHITECTURE.md) / [CI](docs/CI.md) / [Operations](docs/development/OPERATIONS.md) / [Application comparison](docs/evidence/README.md).
+
 This is independent open-source software, not an official OpenAI product. Credentials stay in a local encrypted vault. [MIT](LICENSE) / [Asset notices](licenses/Burn0Assets.LICENSE.txt)
