@@ -26,7 +26,8 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 
 - [x] Move RuntimeLocator/CodexInstallation, normal shutdown, owned-child lifetime and Mac desktop/peer verification into one `CodexSwitch.DesktopClient` project. RuntimeHome remains integration code; no UI/domain project dependency. Source1.31.1.
 - [x] Keep supported-OS algorithm bodies and identities; explicitly reject unsupported desktop running/launch/thread-open/shutdown before a Windows fallback. Local Windows refusal/assembly5 pass.
-- [ ] Complete existing native handoff/security/SQLite/app checks, same-source native Windows/Mac before/after and exact-head CI/review/merge. Remaining IPC/SQLite/resource separation and all Linux5/6/7 acceptance stay open.
+- [x] Complete existing native handoff/security/SQLite/app checks and [native Windows/Mac before/after](../evidence/desktop-client/README.md). Source903fdc0/run38657071888 passes all four jobs; client5Windows/4Mac/7Ubuntu and six selected native PNGs are checked. Same-scale Windows dark images are byte-identical.
+- [ ] Complete latest-head CI/author review and PR40 merge. Remaining IPC/SQLite/resource separation and all Linux5/6/7 acceptance stay open.
 
 ## Tooltip style lifetime — issue35
 

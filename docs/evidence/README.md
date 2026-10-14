@@ -2,7 +2,9 @@
 
 ## Current source evidence
 
-Source 1.31.0 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
+Source 1.31.1 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
+
+- [Native desktop client extraction](desktop-client/README.md): Windows/Mac application before/after and unsupported-lifecycle refusal contracts.
 
 - [Native security project extraction](platform-security/README.md): Windows/Mac application before/after and native private-file/vault contracts.
 

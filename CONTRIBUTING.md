@@ -50,6 +50,8 @@ Temperature changes also run `dotnet run --project tests/temperatures/CodexSwitc
 
 Native storage/provider changes also run `dotnet run --project tests/platform-security/CodexSwitch.PlatformSecurity.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false` on the relevant native OS. The tests reference the same independent security assembly as both apps and use disposable files/diagnostic keys. Unsupported encryption must reject; a portable test pass does not establish Linux vault support.
 
+Client/provider changes also run `dotnet run --project tests/desktop-client/CodexSwitch.DesktopClient.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false`, plus the existing Windows disposable handoff regression. Native client refusal contracts do not discover, start or stop a personal installed Codex.
+
 ## Privacy and review
 
 Use disposable storage/databases/test accounts. Never stop another person's Codex or switch their real account to test a PR. Report source/build/isolated/native results separately. Screenshots must contain no credentials, private chats, account identities or home paths: irreversibly replace those pixels, then blur the replacement if desired. Strip private metadata and inspect the final export; blur alone is insufficient.
