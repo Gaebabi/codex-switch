@@ -11,6 +11,8 @@
 
 These do not prove live login/switch/resume, Mac Keychain/GUI acceptance, notarization or Linux application support. Ubuntu runs repository tooling and portable production contract tests only. The workflow uploads no binaries or raw diagnostics.
 
+Source1.30.0 CI also runs the actual published Windows/Mac app in an isolated evidence mode and captures only its own native window with fictional profiles. Sanitized PNGs/runtime/architecture manifests are retained as14-day artifacts after validation; no raw desktop, user home, account secret or binary Release is published. Mac evidence mode explicitly selects software rendering on virtual runners; it does not prove Metal/GPU coverage. Complete package inspection checks .NET10.0.13 included runtimes and RID. Native window execution is distinct from real login/switch/resume and Linux acceptance.
+
 Language packs additionally run structural/source-key checks and the production parser/culture/installation test project on all three hosts. Nine built-in catalogues are complete; custom-pack rejection, English fallback, integer plural rules, UTF-8/BOM, restart reload and RTL culture are exercised. [Localization guide](LOCALIZATION.md)
 
 Temperature contract checks run on all three hosts: production storage parsing, volume/device/channel identity, partial coverage, invalid/unavailable/stale readings and multilingual formatting. Hosted CI does not claim physical temperature sensors. [Temperature support](TEMPERATURES.md)

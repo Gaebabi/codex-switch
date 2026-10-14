@@ -39,7 +39,12 @@ internal static class Program
         if (queueReport != null) return QueueDiagnostics.VerifyAsync(CodexHome, queueReport).GetAwaiter().GetResult();
         using var single = new Mutex(true, "CodexAccountDesk-" + SecureFiles.Hash(Environment.UserName + "\n" + (WindowProbePath ?? PreviewDirectory ?? DataDirectory))[..24], out var first);
         if (!first) return 0;
-        try { return AppBuilder.Configure<DeskApp>().UsePlatformDetect().LogToTrace().StartWithClassicDesktopLifetime(args, ShutdownMode.OnExplicitShutdown); }
+        try
+        {
+            var builder = AppBuilder.Configure<DeskApp>().UsePlatformDetect().LogToTrace();
+            if (NativeUiEvidence) builder.With(new AvaloniaNativePlatformOptions { RenderingMode = new[] { AvaloniaNativeRenderingMode.Software } });
+            return builder.StartWithClassicDesktopLifetime(args, ShutdownMode.OnExplicitShutdown);
+        }
         finally { VaultProtection.ReleaseKeys(); }
     }
 }

@@ -208,12 +208,13 @@ internal static class MacDiagnostics
                 if (!passed) failures++; checks.Add(new { name = "menu-bar-" + name, passed });
             }
         }
-        catch (Exception error) { failures++; checks.Add(new { name = "render", passed = false, error = error.Message }); }
+        catch (Exception error) { failures++; checks.Add(new { name = "render", passed = false, error = error.Message }); Console.Error.WriteLine("Native UI verification failed: " + error.GetType().Name + ": " + error.Message); }
         finally
         {
             File.WriteAllText(Path.Combine(directory, "render-report.json"), JsonSerializer.Serialize(new { schema = 1, version = typeof(Program).Assembly.GetName().Version!.ToString(3),
                 os = "macOS", architecture = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString(),
-                runtime = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription, nativeWindowCapture = Program.NativeUiEvidence, failures, checks,
+                runtime = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription, nativeWindowCapture = Program.NativeUiEvidence,
+                rendering = Program.NativeUiEvidence ? "Software (CI native window)" : "Default", failures, checks,
                 scope = "Synthetic native Avalonia window renders; no account, Keychain, Codex home or network access." }, new JsonSerializerOptions { WriteIndented = true }));
             Program.DiagnosticExitCode = failures == 0 ? 0 : 1; await window.ExitAsync();
         }

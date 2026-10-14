@@ -12,7 +12,7 @@ OUTPUT = ROOT / 'docs/media/demo.png'
 
 PROJECT = r'''<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType><TargetFramework>net8.0-windows</TargetFramework>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF><UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>disable</ImplicitUsings><Nullable>enable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
@@ -21,7 +21,7 @@ PROJECT = r'''<Project Sdk="Microsoft.NET.Sdk">
     <ApplicationManifest>../../src/windows/app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="System.Management" Version="10.0.13" />
     <Compile Include="../../src/windows/*.cs;../../src/shared/*.cs;../../src/platforms/macos/*.cs" /><Compile Include="DemoRenderer.cs" />
     <EmbeddedResource Include="../../assets/brand/mark.path" LogicalName="CodexAccountDesk.Mark.path" />
     <EmbeddedResource Include="../../assets/brand/mark-body.path" LogicalName="CodexAccountDesk.MarkBody.path" />
@@ -214,7 +214,7 @@ def main():
     (WORK / 'DemoRenderer.cs').write_text(RENDERER + '\n', encoding='utf-8')
     subprocess.run(['dotnet', 'build', str(WORK / 'Demo.csproj'), '-c', 'Release', '--nologo', '-p:UseSharedCompilation=false'], check=True)
     with tempfile.TemporaryDirectory(prefix='fixture-', dir=WORK) as fixture:
-        subprocess.run(['dotnet', str(WORK / 'bin/Release/net8.0-windows/CodexSwitch.Demo.dll'), str(output), fixture, options.language, str(options.width), str(options.height), str(options.pack.resolve()) if options.pack else '', 'live' if options.live_resources else 'demo' if options.temperature_preview else '', 'dates' if options.deadline_preview else '', options.theme], check=True, timeout=30)
+        subprocess.run(['dotnet', str(WORK / 'bin/Release/net10.0-windows/CodexSwitch.Demo.dll'), str(output), fixture, options.language, str(options.width), str(options.height), str(options.pack.resolve()) if options.pack else '', 'live' if options.live_resources else 'demo' if options.temperature_preview else '', 'dates' if options.deadline_preview else '', options.theme], check=True, timeout=30)
     manifest_path = output.with_suffix('.json')
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     manifest['sourceVersion'] = ET.parse(ROOT / 'src/windows/CodexSwitch.Windows.csproj').findtext('PropertyGroup/Version')

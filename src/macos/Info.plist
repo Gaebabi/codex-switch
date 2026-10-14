@@ -7,10 +7,10 @@
   <key>CFBundleExecutable</key><string>CodexSwitch</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleInfoDictionaryVersion</key><string>6.0</string>
-  <key>CFBundleShortVersionString</key><string>1.27.6</string>
-  <key>CFBundleVersion</key><string>1.27.6</string>
+  <key>CFBundleShortVersionString</key><string>1.30.0</string>
+  <key>CFBundleVersion</key><string>1.30.0</string>
   <key>CFBundleIconFile</key><string>app-icon.icns</string>
-  <key>LSMinimumSystemVersion</key><string>12.0</string>
+  <key>LSMinimumSystemVersion</key><string>15.0</string>
   <key>LSApplicationCategoryType</key><string>public.app-category.utilities</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>NSRequiresAquaSystemAppearance</key><false/>

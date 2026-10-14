@@ -1,6 +1,6 @@
 # Platform support roadmap
 
-Tracking [#1](https://github.com/Gaebabi/codex-switch/issues/1). Updated 2026-10-14. Account switching and safe automatic continuation are the core product; a window that launches is not evidence of either capability.
+Tracking [#1](https://github.com/Gaebabi/codex-switch/issues/1). Updated 2026-10-15. Resumed checkpoints and reviewed native evidence are tracked in [PR27](https://github.com/Gaebabi/codex-switch/pull/27). Account switching and safe automatic continuation are the core product; a window that launches is not evidence of either capability.
 
 ## Current support
 
@@ -26,7 +26,7 @@ English stays the shared default. Published 1.27.6 UI supports English/Korean. S
 
 Runtime work can proceed alongside extraction. Linux credential/client trust precedes desktop handoff. Package prototypes may come earlier; stable support claims require native evidence. No delivery date is promised before feasibility gates.
 
-Current projects target .NET 8. Its support ends **2026-11-10**; .NET 10 LTS is supported through **2028-11-14**. This is a priority security dependency, with a dedicated migration PR. [Microsoft policy](https://dotnet.microsoft.com/en-us/platform/support/policy)
+Source1.30.0 targets .NET10 LTS, SDK10.0.402/runtime10.0.13; published1.27.6 packages remain .NET8 until separately released. .NET8 support ends **2026-11-10**; .NET10 LTS is supported through **2028-11-14**. The reviewed current macOS baseline is15+, matching native runners and the bundle minimum. [Microsoft policy](https://dotnet.microsoft.com/en-us/platform/support/policy), [current .NET10 release](https://dotnet.microsoft.com/en-us/download/dotnet/10.0), [supported OS versions](https://github.com/dotnet/core/blob/main/release-notes/10.0/supported-os.md).
 
 ## Project organization
 

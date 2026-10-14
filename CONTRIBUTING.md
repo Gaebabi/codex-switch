@@ -12,7 +12,7 @@ Issues use type, area, priority and milestone; native GitHub open/closed state t
 
 ## Setup and checks
 
-Clone into any directory. The current SDK is **.NET 8.0.4xx**, with patch roll-forward in `global.json`. The [.NET 10 LTS migration](https://github.com/Gaebabi/codex-switch/issues/4) is follow-up work. Sources live in `src/`, shared visuals in `assets/` and `resources/`, catalogs in `localization/`, operational guides in `docs/development/`. [Build/install](docs/INSTALL.md)
+Clone into any directory. The current SDK is **.NET 10.0.4xx**, with patch roll-forward in `global.json`. The [.NET 10 LTS migration](https://github.com/Gaebabi/codex-switch/issues/4) uses reviewed runtime10.0.13; full published folders and native app-window evidence are checked before promotion. Sources live in `src/`, shared visuals in `assets/` and `resources/`, catalogs in `localization/`, operational guides in `docs/development/`. [Build/install](docs/INSTALL.md)
 
 Python 3.12 repository checks run on Windows, Mac and Linux:
 
