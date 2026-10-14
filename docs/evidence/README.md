@@ -2,7 +2,9 @@
 
 ## Current source evidence
 
-Source 1.30.2 is the current app UI; published downloads remain 1.27.6. Choose the evidence for the capability being reviewed:
+Source 1.30.3 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
+
+- [Tooltip style lifetime](tooltip-lifetime/README.md): actual before/after WPF tooltip components and native app confirmation.
 
 - [Latest documentation screenshots and native platform gallery](../media/README.md#native-platform-gallery): fictional inputs, actual Windows/macOS app windows.
 - [README screenshot before/after and destination audit](documentation-refresh/README.md): source 1.27.6 illustration replaced by source 1.30.2.

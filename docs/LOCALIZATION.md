@@ -1,6 +1,6 @@
 # Languages and language packs
 
-Introduced in source **1.28.0**, the nine built-in UI languages are English, 한국어, 日本語, 简体中文, 繁體中文, Español, Français, Deutsch and Português (Brasil). Current source **1.30.2** contains **353 messages** per language, including temperature status alongside switching, continuation, quota/history and security messages. Published **1.27.6** binaries still provide English/Korean; build current source until a new binary release is published.
+Introduced in source **1.28.0**, the nine built-in UI languages are English, 한국어, 日本語, 简体中文, 繁體中文, Español, Français, Deutsch and Português (Brasil). Current source **1.30.3** contains **353 messages** per language, including temperature status alongside switching, continuation, quota/history and security messages. Published **1.27.6** binaries still provide English/Korean; build current source until a new binary release is published.
 
 Select the language code in the title bar, then choose a language by its native name. Selection updates the Windows/Mac main UI, menus and history without restarting account services. The preference is stored with existing settings; authored account names, chat IDs, models/permissions and credentials are not translated or migrated.
 

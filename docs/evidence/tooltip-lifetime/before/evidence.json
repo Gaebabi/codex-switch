@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "revision": "e92b8fe49bf9d4e5beeb54df6a2539a8a7e073b9",
+  "os": "Windows",
+  "architecture": "X64",
+  "runtime": ".NET 10.0.13",
+  "appVersion": "1.30.2",
+  "images": [
+    {
+      "file": "en-dark-tooltip.png",
+      "width": 112,
+      "height": 26,
+      "sha256": "d0db07fcbb80d90502b01c2d60d41df4c64999a73ee4b6680c594f6331e2db49",
+      "capture": "WPF tooltip component at detached-owner boundary"
+    },
+    {
+      "file": "en-light-tooltip.png",
+      "width": 112,
+      "height": 26,
+      "sha256": "d0db07fcbb80d90502b01c2d60d41df4c64999a73ee4b6680c594f6331e2db49",
+      "capture": "WPF tooltip component at detached-owner boundary"
+    },
+    {
+      "file": "en-dark-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "f238a97bd5a41a33843afc5fbbb75a56760cc74168ea5c0c39b262ac7c740b2d",
+      "capture": "Native own window or popup"
+    }
+  ],
+  "rendering": "Windows native WPF",
+  "scope": "Published app on the stated OS; native own windows/popups and explicitly labeled WPF tooltip component renders, synthetic accounts only. No personal desktop/credentials/Codex action or account-switch/resume acceptance."
+}

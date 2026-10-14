@@ -4,7 +4,7 @@
 
 - [x] Reproduce loss of the window-scoped implicit WPF tooltip style when a delayed popup references an account control replaced by refresh. Normal resource gauge reopen/update tests retain their explicit styles.
 - [x] Install the common WPF tooltip style at application scope, preserving popup service, data updates, positioning, animation and accessibility. Source1.30.3.
-- [ ] Inspect baseline/corrected actual tooltip component images and native app evidence; verify repeated resource updates, replaced-owner and both-theme boundaries.
+- [x] Inspect baseline/corrected actual tooltip component images and native app evidence; verify repeated resource/disk updates, replaced-owner and both-theme boundaries. Capture checkpoint386cde7 passes all four jobs in run38638804892; Windows and both native Mac confirmations are metadata/hash checked.
 - [ ] Finish exact-head CI, author review and owner-authorized PR promotion. No personal capture, installed-app replacement, real account action or binary Release.
 
 ## Documentation destinations and screenshots — issue33
