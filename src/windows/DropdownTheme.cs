@@ -28,6 +28,7 @@ internal static class DropdownTheme
 
     public static void Install(ResourceDictionary resources, Burn0Theme theme)
     {
+        ScrollTheme.Install(resources, theme);
         var panel = new Style(typeof(ContextMenu));
         panel.Setters.Add(new Setter(Control.BackgroundProperty, theme.Color("elevated")));
         panel.Setters.Add(new Setter(Control.ForegroundProperty, theme.Color("text")));

@@ -18,14 +18,15 @@ data=json.loads(report.read_text(encoding='utf-8'))
 if data['os']!=args.os or data['failures']!=0:raise SystemExit('Native UI verification did not pass')
 if args.os=='macOS' and data.get('nativeWindowCapture') is not True:raise SystemExit('Native Mac screenshots required')
 pattern=re.compile(r'(en|ko)-(dark|light)-(500x360|600x420|800x560|800x600)'+('' if args.os=='Windows' else '-native')+r'\.png')
-paths=sorted(p for p in args.source.glob('*.png') if pattern.fullmatch(p.name))
-if len(paths)!=(8 if args.os=='Windows' else 12):raise SystemExit('Complete native language/theme/size evidence required')
+extra=re.compile(r'en-(dark|light)-(language|history)'+('' if args.os=='Windows' else '-native')+r'\.png')
+paths=sorted(p for p in args.source.glob('*.png') if pattern.fullmatch(p.name) or extra.fullmatch(p.name))
+if len(paths)!=(12 if args.os=='Windows' else 16):raise SystemExit('Complete native language/theme/size/menu/history evidence required')
 args.destination.mkdir(parents=True,exist_ok=True)
 images=[]
 for path in paths:
     with Image.open(path) as raw:
         raw.load();rgb=raw.convert('RGB')
-        if rgb.width<400 or rgb.height<280 or rgb.width>4000 or rgb.height>3000 or rgb.entropy()<1:
+        if rgb.width<160 or rgb.height<160 or rgb.width>4000 or rgb.height>3000 or rgb.entropy()<1 or all(low==high for low,high in rgb.getextrema()):
             raise SystemExit('Blank or invalid native window image')
         clean=Image.new('RGB',rgb.size);clean.paste(rgb)
         output=args.destination/path.name;clean.save(output,format='PNG')

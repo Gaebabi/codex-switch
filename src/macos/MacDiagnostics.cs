@@ -179,6 +179,50 @@ internal static class MacDiagnostics
                 bitmap.Render(window); bitmap.Save(Path.Combine(directory, name + ".png"));
                 if (Program.NativeUiEvidence) await NativeUiCapture.SaveAsync(window, Path.Combine(directory, name + "-native.png"));
             }
+            foreach (var dark in new[] { true, false })
+            {
+                var name = "en-" + (dark ? "dark" : "light");
+                var palette = new DeskTheme(dark); var profiles = Profiles(4);
+                window.Width = 600; window.Height = 420; window.Preview("en", dark, profiles); await Task.Delay(120);
+                var owner = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "LanguageButton");
+                var menu = window.OpenLanguageMenu(owner);
+                try
+                {
+                    await Task.Delay(120);
+                    var scroll = menu.GetVisualDescendants().OfType<ScrollViewer>().First();
+                    Assert(scroll.Extent.Height > scroll.Viewport.Height, "Language dropdown has no reachable overflow");
+                    scroll.Offset = new Vector(0, scroll.Extent.Height); await Task.Delay(80);
+                    Assert(scroll.Offset.Y > 0, "Language dropdown cannot scroll");
+                    scroll.Offset = default; await Task.Delay(80);
+                    if (Program.NativeUiEvidence)
+                    {
+                        var popup = menu.GetVisualRoot() as TopLevel ?? throw new InvalidOperationException("Native menu root unavailable");
+                        await NativeUiCapture.SaveAsync(popup, Path.Combine(directory, name + "-language-native.png"));
+                    }
+                }
+                finally { menu.Close(); }
+                var temporary = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "codex-scroll-evidence-" + Guid.NewGuid().ToString("N")));
+                var vault = new AccountVault(Path.Combine(temporary, "data")); vault.Data.Accounts.AddRange(profiles);
+                var service = new AccountService(vault, Path.Combine(temporary, "home"));
+                var history = new HistoryWindow(service, profiles[0].Key, palette) { Width = 500, Height = 300, ShowInTaskbar = false };
+                try
+                {
+                    history.Show(window); await Task.Delay(120);
+                    var scroll = history.GetVisualDescendants().OfType<ScrollViewer>().First();
+                    Assert(scroll.Extent.Height > scroll.Viewport.Height, "Minimum history cannot scroll its content");
+                    scroll.Offset = new Vector(0, scroll.Extent.Height); await Task.Delay(80);
+                    Assert(scroll.Offset.Y > 0, "History cannot scroll"); scroll.Offset = default; await Task.Delay(80);
+                    if (Program.NativeUiEvidence) await NativeUiCapture.SaveAsync(history, Path.Combine(directory, name + "-history-native.png"));
+                }
+                finally
+                {
+                    history.Close();
+                    if (Path.GetDirectoryName(temporary) != Path.GetFullPath(Path.GetTempPath()).TrimEnd(Path.DirectorySeparatorChar) ||
+                        !Path.GetFileName(temporary).StartsWith("codex-scroll-evidence-", StringComparison.Ordinal)) throw new IOException("Unexpected fixture cleanup target");
+                    Directory.Delete(temporary, true);
+                }
+                checks.Add(new { name = name + "-scroll-surfaces", passed = true });
+            }
             foreach (var count in new[] { 0, 1, 8 })
             {
                 window.Width = 500; window.Height = 360; window.Preview("en", true, Profiles(count)); await Task.Delay(120);

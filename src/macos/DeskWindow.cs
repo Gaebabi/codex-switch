@@ -127,11 +127,12 @@ internal sealed class DeskWindow : Window
         _refresh.Classes.Add("title-action"); ToolTip.SetTip(_refresh, Loc.T("새로 고침") + " (⌘R / F5)");
         Grid.SetColumn(_refresh, 2); titlebar.Children.Add(_refresh);
         var language = _theme.Button(Loc.LanguageCode + " ▾", () => { });
+        language.Name = "LanguageButton";
         ToolTip.SetTip(language, Loc.LanguageName + " · " + Loc.T("언어 설정"));
         Avalonia.Automation.AutomationProperties.SetName(language, Loc.T("언어 설정") + ": " + Loc.LanguageName);
         language.Click += (_, _) => OpenLanguageMenu(language);
         Grid.SetColumn(language, 3); titlebar.Children.Add(language);
-        var theme = _theme.Button(Loc.T(_theme.Dark ? "라이트" : "다크"), () =>
+        var theme = _theme.IconButton(_theme.Dark ? DeskButtonIconKind.Sun : DeskButtonIconKind.Moon, Loc.T(_theme.Dark ? "라이트" : "다크"), () =>
         {
             _ = RunAsync(_ =>
             {
@@ -139,7 +140,7 @@ internal sealed class DeskWindow : Window
                 if (_service != null) { lock (_service.Vault.SyncRoot) { _service.Vault.Data.Theme = next.Dark ? "dark" : "light"; _service.Vault.Save(); } }
                 _theme = next; Build(); return Task.CompletedTask;
             });
-        }); Grid.SetColumn(theme, 4); titlebar.Children.Add(theme);
+        }); theme.Name = "ThemeButton"; theme.Classes.Add("title-action"); Grid.SetColumn(theme, 4); titlebar.Children.Add(theme);
         _settingsButton = _theme.IconButton(DeskButtonIconKind.More, Loc.T("설정"), OpenSettings); _settingsButton.Width = 28; _settingsButton.Padding = new Thickness(0);
         Grid.SetColumn(_settingsButton, 5); titlebar.Children.Add(_settingsButton); shell.Children.Add(titlebar);
         var toolbar = new Grid { Margin = new Thickness(8, 1) };
@@ -165,7 +166,7 @@ internal sealed class DeskWindow : Window
         Loc.SetLanguage(code);
         Build(); UpdateTray();
     }
-    private void OpenLanguageMenu(Button owner)
+    internal ContextMenu OpenLanguageMenu(Button owner)
     {
         var menu = _theme.Menu(owner);
         foreach (var info in Loc.Languages)
@@ -183,6 +184,7 @@ internal sealed class DeskWindow : Window
             menu.Items.Add(restore);
         }
         menu.Open(owner);
+        return menu;
     }
     private async Task ImportLanguagePackAsync()
     {

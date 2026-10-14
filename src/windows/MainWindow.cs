@@ -151,11 +151,14 @@ internal sealed class MainWindow : Window
         var controls = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         controls.Children.Add(_add); controls.Children.Add(_refresh);
         var language = NewButton(Loc.LanguageCode + " ▾", null, false, true); language.Padding = new Thickness(10, 0, 10, 0); language.Background = Brushes.Transparent; language.ToolTip = Loc.LanguageName + " · " + Loc.T("언어 설정");
+        language.Name = "LanguageButton";
         System.Windows.Automation.AutomationProperties.SetName(language, Loc.T("언어 설정") + ": " + Loc.LanguageName);
         if (_options.LanguagePackProblems > 0) language.ToolTip += "\n" + Loc.F("pack.invalid_local_packs", _options.LanguagePackProblems);
         else if (_options.SavedLanguageUnavailable) language.ToolTip += "\n" + Loc.T("Saved language pack unavailable. Showing English.");
         language.Click += (_, _) => OpenLanguageMenu(language); WindowChrome.SetIsHitTestVisibleInChrome(language, true); controls.Children.Add(language);
-        var theme = NewButton(_theme.Dark ? "라이트" : "다크", null, false); theme.Padding = new Thickness(10, 0, 10, 0); theme.Background = Brushes.Transparent; theme.ToolTip = Loc.T("Burn0 테마 전환");
+        var theme = NewButton("", _theme.Dark ? "sun" : "moon", false); theme.Name = "ThemeButton";
+        theme.Style = (Style)Resources["TitleActionButton"]; theme.ToolTip = Loc.T(_theme.Dark ? "라이트" : "다크");
+        System.Windows.Automation.AutomationProperties.SetName(theme, (string)theme.ToolTip);
         theme.Click += (_, _) => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.Theme = _theme.Dark ? "light" : "dark"; _service.Vault.Save(); } _theme = new Burn0Theme(!_theme.Dark); ApplyTheme(); UpdateTray(); };
         WindowChrome.SetIsHitTestVisibleInChrome(theme, true); controls.Children.Add(theme);
         var minimize = CaptionButton("window-minimize", "최소화", () => SystemCommands.MinimizeWindow(this));

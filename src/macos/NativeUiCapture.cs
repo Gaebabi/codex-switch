@@ -14,7 +14,7 @@ internal static class NativeUiCapture
     [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")] private static extern nint WindowNumber(IntPtr window, IntPtr selector);
     [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")] private static extern byte NativeVisible(IntPtr window, IntPtr selector);
     [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")] private static extern void Display(IntPtr window, IntPtr selector);
-    public static async Task SaveAsync(Window window, string path)
+    public static async Task SaveAsync(TopLevel window, string path)
     {
         Dispatcher.UIThread.VerifyAccess();
         var handle = window.TryGetPlatformHandle();
@@ -23,7 +23,7 @@ internal static class NativeUiCapture
         if (id <= 0) throw new InvalidOperationException("Native Mac window identity unavailable");
         var visibleSelector = Selector("isVisible");
         var wasVisible = NativeVisible(handle.Handle, visibleSelector) != 0;
-        window.Activate();
+        if (window is Window ownedWindow) ownedWindow.Activate();
         await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
         var ready = Stopwatch.StartNew();
         while (NativeVisible(handle.Handle, visibleSelector) == 0 && ready.Elapsed < TimeSpan.FromSeconds(2)) await Task.Delay(16);

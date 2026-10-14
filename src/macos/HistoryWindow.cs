@@ -56,11 +56,14 @@ internal sealed class HistoryWindow : Window
                 cell.Children.Add(number); Grid.SetColumn(cell, i); metrics.Children.Add(cell);
             }
             Grid.SetRow(metrics, 1); root.Children.Add(metrics);
-            var chart = new HistoryChart { Points = points, Palette = _theme, Hours = _service.Vault.Data.TrendHours, MinHeight = 80 };
+            var chart = new HistoryChart { Points = points, Palette = _theme, Hours = _service.Vault.Data.TrendHours, MinHeight = 160 };
             Grid.SetRow(chart, 2); root.Children.Add(chart);
             var hint = _theme.Text(UsagePresentation.Outlook(forecast) + "  " + UsagePresentation.Basis(forecast), 11, "muted"); hint.Margin = new Thickness(0, 12, 0, 0);
             Grid.SetRow(hint, 3); root.Children.Add(hint);
         }
-        Content = root;
+        var scroll = new ScrollViewer { Content = root, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+            VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto };
+        scroll.SizeChanged += (_, _) => root.MinHeight = System.Math.Max(0, scroll.Bounds.Height - root.Margin.Top - root.Margin.Bottom);
+        Content = scroll;
     }
 }
