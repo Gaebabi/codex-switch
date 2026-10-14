@@ -1,6 +1,6 @@
 # Build and install
 
-Use an existing complete package, or build from this repository. Codex desktop/CLI must already be installed. Current source1.30.1 requires .NET10.0.4xx SDK and packages runtime10.0.13; published1.27.6 binaries remain unchanged.
+Use an existing complete package, or build from this repository. Codex desktop/CLI must already be installed. Current source1.30.2 requires .NET10.0.4xx SDK and packages runtime10.0.13; published1.27.6 binaries remain unchanged.
 
 ## Windows
 

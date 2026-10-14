@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "revision": "1458fe0e6bbbc1fd3ac6a401defca98a0ad4a8ce",
+  "os": "Windows",
+  "architecture": "X64",
+  "runtime": ".NET 10.0.13",
+  "appVersion": "1.30.1",
+  "images": [
+    {
+      "file": "en-dark-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "d4d5b4e1b6f413cb447deca5d5082a197b11488944c2e2a380503d720ba1f9c3"
+    },
+    {
+      "file": "en-dark-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "de455e93a77db6f7f58b9fb80548b39b791acd55a8e5a98b77b5f653057c2d3a"
+    },
+    {
+      "file": "en-dark-history.png",
+      "width": 620,
+      "height": 380,
+      "sha256": "117b495059e1c80ef87f2d15a1719ba6dd8b75ce5cc596ff9ab75daa97183f30"
+    },
+    {
+      "file": "en-dark-language.png",
+      "width": 232,
+      "height": 360,
+      "sha256": "c302152e6337c297106e07a11495b174569b0fc0a8411773ec52a49737d2ecd0"
+    },
+    {
+      "file": "en-light-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "ac712d07fc0ea01f8c4a12c5052978048e7d1dbcd8d68e495620a1b636802fe4"
+    },
+    {
+      "file": "en-light-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "e715a7960101144a55dc05e4cac8f099cb3d99f6d5d9c21b013105b672f7c5bb"
+    },
+    {
+      "file": "en-light-history.png",
+      "width": 620,
+      "height": 380,
+      "sha256": "2cb18a5aabaee43529d602899681ff6caa7310895729044eebbb53a9bdacc501"
+    },
+    {
+      "file": "en-light-language.png",
+      "width": 232,
+      "height": 360,
+      "sha256": "d59b83ddc33194f3183c636fed6125200ced7eade0f1265303e2235b456d6aa7"
+    },
+    {
+      "file": "ko-dark-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "e573485062554632498c36a1943c1fe047b7bd5201fa59f20b31357fa3b8ad4e"
+    },
+    {
+      "file": "ko-dark-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "a235ab28244dd5e3887d1e6d63c3839f78f72c090e382d850e78ef4b1482f1c2"
+    },
+    {
+      "file": "ko-light-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "2352df7b592c99d2f29a505bc4358d5079b68080938791f52233914f1fd741c7"
+    },
+    {
+      "file": "ko-light-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "2b6982922aea5f7030954ba1cbeb841b2f4578b71197f13a21ef304477920495"
+    }
+  ],
+  "rendering": "Windows native WPF",
+  "scope": "Native published app on the stated OS; only own app window, synthetic accounts, no personal desktop/credentials/Codex action. No account-switch/resume acceptance."
+}

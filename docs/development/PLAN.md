@@ -5,7 +5,8 @@
 - [x] Install one rounded theme-aware scrollbar for WPF windows/popups and Avalonia windows/popups, keeping native scrolling/track behavior. History/settings and future overflow inherit it.
 - [x] Replace Light/Dark text with sun/moon vector actions; preserve translated tooltips/accessible names, keyboard operation and existing saved-theme callbacks. Source1.30.2.
 - [x] Native isolated Windows dropdown/history overflow scrolling and all eight main-window size/theme/language captures pass; Windows/Mac builds and353-message validation pass. Uniform captures are rejected; Windows diagnostic mode uses software rendering.
-- [ ] Record actual program before/after and native Mac arm64/Intel menu/history confirmation; pass complete-head CI/self-review and merge the focused PR. No real account, personal screen or binary Release.
+- [x] Record actual Windows program before/after and native Mac arm64/Intel menu/history confirmation. Code checkpointa0f875b passes all four jobs in run38631880233; screenshots are inspected and metadata/digests verified.
+- [ ] Complete latest-head CI/self-review and merge PR32. No real account, personal screen or binary Release.
 
 ## Resumed platform roadmap — issues #1 / #3–#7
 

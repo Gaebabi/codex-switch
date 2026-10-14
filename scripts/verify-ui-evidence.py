@@ -26,7 +26,8 @@ images=[]
 for path in paths:
     with Image.open(path) as raw:
         raw.load();rgb=raw.convert('RGB')
-        if rgb.width<160 or rgb.height<160 or rgb.width>4000 or rgb.height>3000 or rgb.entropy()<1 or all(low==high for low,high in rgb.getextrema()):
+        minimum=(160,160) if '-language' in path.name else (400,280)
+        if rgb.width<minimum[0] or rgb.height<minimum[1] or rgb.width>4000 or rgb.height>3000 or rgb.entropy()<1 or all(low==high for low,high in rgb.getextrema()):
             raise SystemExit('Blank or invalid native window image')
         clean=Image.new('RGB',rgb.size);clean.paste(rgb)
         output=args.destination/path.name;clean.save(output,format='PNG')
