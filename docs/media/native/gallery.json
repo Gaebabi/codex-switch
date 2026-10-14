@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "workflowRun": 38633951637,
+  "selection": "Inspected subset of complete native UI artifact exports",
+  "platforms": [
+    {
+      "schema": 1,
+      "revision": "1a2cc586c15a0f772b2e96617fb2e2e1fe0e43e7",
+      "os": "Windows",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "appVersion": "1.30.2",
+      "images": [
+        {
+          "file": "windows-dark.png",
+          "width": 800,
+          "height": 560,
+          "sha256": "815fba9226f175a59312c66ac876be33d9aa48e06faa68fafe85f8d2432a5f41",
+          "nativeArtifactFile": "en-dark-800x560.png"
+        },
+        {
+          "file": "windows-compact-light.png",
+          "width": 500,
+          "height": 360,
+          "sha256": "6d9ae9126b10417eb92e1f3696890feea17a9ff849c3ef7fa014162c16d399c4",
+          "nativeArtifactFile": "en-light-500x360.png"
+        },
+        {
+          "file": "windows-language.png",
+          "width": 227,
+          "height": 360,
+          "sha256": "d024c5ceec328527b3d5100eccc58323af32b48e860d6521f6a3277b2c23d757",
+          "nativeArtifactFile": "en-dark-language.png"
+        }
+      ],
+      "rendering": "Windows native WPF",
+      "scope": "Native published app on the stated OS; only own app window, synthetic accounts, no personal desktop/credentials/Codex action. No account-switch/resume acceptance."
+    },
+    {
+      "schema": 1,
+      "revision": "1a2cc586c15a0f772b2e96617fb2e2e1fe0e43e7",
+      "os": "macOS",
+      "architecture": "Arm64",
+      "runtime": ".NET 10.0.13",
+      "appVersion": "1.30.2",
+      "images": [
+        {
+          "file": "mac-arm64-dark.png",
+          "width": 800,
+          "height": 600,
+          "sha256": "5e84840408d8e2a0e91a60e4795d7f1562bf2fb3854c17c24f39d1010ae9f382",
+          "nativeArtifactFile": "en-dark-800x600-native.png"
+        },
+        {
+          "file": "mac-arm64-language.png",
+          "width": 205,
+          "height": 336,
+          "sha256": "f92e19e2f7391b3964c71b8b2e22836c8ada77ce05af29f205b087fac3ae0811",
+          "nativeArtifactFile": "en-light-language-native.png"
+        }
+      ],
+      "rendering": "Software (CI native window)",
+      "scope": "Native published app on the stated OS; only own app window, synthetic accounts, no personal desktop/credentials/Codex action. No account-switch/resume acceptance."
+    },
+    {
+      "schema": 1,
+      "revision": "1a2cc586c15a0f772b2e96617fb2e2e1fe0e43e7",
+      "os": "macOS",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "appVersion": "1.30.2",
+      "images": [
+        {
+          "file": "mac-intel-light.png",
+          "width": 800,
+          "height": 600,
+          "sha256": "aa51e20833876972290d2b2c70cacba704c005db46cb3c942d97a8b495add55f",
+          "nativeArtifactFile": "en-light-800x600-native.png"
+        }
+      ],
+      "rendering": "Software (CI native window)",
+      "scope": "Native published app on the stated OS; only own app window, synthetic accounts, no personal desktop/credentials/Codex action. No account-switch/resume acceptance."
+    }
+  ]
+}

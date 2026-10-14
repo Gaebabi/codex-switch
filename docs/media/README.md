@@ -16,8 +16,22 @@ Forecasts are calculated by the actual usage predictor from synthetic history. N
 
 ## Native platform gallery
 
-Fresh published-app own-window captures for Windows x64 and macOS15 Apple Silicon/Intel are being collected for [issue33](https://github.com/Gaebabi/codex-switch/issues/33). Gallery exports will be added only after native assertions, image digest/metadata checks and visual inspection pass.
+Fresh published-app own-window captures for Windows x64 and macOS15 Apple Silicon/Intel, source 1.30.2 / runtime .NET10.0.13. All four jobs in [capture run38633951637](https://github.com/Gaebabi/codex-switch/actions/runs/38633951637) pass at exact source `1a2cc586c15a0f772b2e96617fb2e2e1fe0e43e7`. The six selected lossless PNGs are inspected; [source/runtime/dimension/SHA256 receipts](native/gallery.json) contain no private diagnostics.
+
+| Windows x64, dark | Windows minimum 500×360, light |
+| --- | --- |
+| ![Native Windows dark app](native/windows-dark.png) | ![Native Windows minimum light app](native/windows-compact-light.png) |
+
+| macOS15 Apple Silicon, dark | macOS15 Intel, light |
+| --- | --- |
+| ![Native Mac Apple Silicon app](native/mac-arm64-dark.png) | ![Native Mac Intel app](native/mac-intel-light.png) |
+
+| Windows language scrollbar | Mac language scrollbar |
+| --- | --- |
+| ![Native Windows language menu](native/windows-language.png) | ![Native Mac language menu](native/mac-arm64-language.png) |
+
+This is a selected gallery, not duplicate full test output. Complete size/theme/language/menu/history sets are validated by CI before export. Evidence mode uses software rendering on Windows/Mac; production rendering selection is unchanged. The README illustration's [before/after comparison](../evidence/documentation-refresh/README.md) preserves the former image separately.
 
 Only synthetic profiles and simulated resources enter evidence mode. No live Codex action, real account, private chat, personal desktop or home path is captured. Native app-window execution does not establish live switching, resume, physical sensors, signing, Keychain or Linux support.
 
-Older GIFs, size variants and duplicate posters remain removed from the current tree.
+Older GIF recordings remain historical and are not reintroduced.

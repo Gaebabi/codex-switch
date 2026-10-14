@@ -2,7 +2,7 @@
 
 Updated 2026-10-15. Source version **1.30.2**; published binaries **1.27.6**.
 
-Issue33 audits documentation destinations and refreshes source screenshots. Latest-UI navigation now points to the scrollbar/theme checkpoint and current gallery; the original foundation comparison is explicitly historical. Local heading anchors/reference definitions/HTML links join existing tracked-file checks. Screenshot provenance reads the shared managed version instead of the now-empty app-project Version. Fresh captures, inspected exports and final-head CI/review are pending.
+Issue33 audits documentation destinations and refreshes source screenshots. Latest-UI navigation now points to the scrollbar/theme checkpoint and current gallery; the original foundation comparison is explicitly historical. Local heading anchors/reference definitions/HTML links join existing tracked-file checks. Screenshot provenance reads the shared managed version instead of the now-empty app-project Version. Current source1.30.2 README rendering and six fresh native Windows/macOS15 arm64/Intel PNGs are inspected, metadata stripped and SHA256 checked; capture run38633951637 at1a2cc58 passes all four jobs. Complete-head CI/review/promotion are recorded by the linked PR.
 
 Issue31 is complete in merged PR32/main331d735: common rounded scrollbars apply at the window and popup theme boundary; title-bar theme actions use vector sun/moon icons with localized names/tooltips and saved preferences. Native Windows/macOS15 arm64/Intel menu/history and size/theme/language captures pass; all four latest-head jobs in run38632498454 and author self-review passed before merge. No personal data/screen or live Codex process is used.
 

@@ -15,6 +15,15 @@ class DocumentLinks(unittest.TestCase):
     def test_explicit_html_anchors(self):
         self.assertIn('installation', links.anchors('<a id="installation"></a>'))
 
+    def test_heading_collision_and_setext(self):
+        self.assertEqual(links.anchors('# Mac\n## Mac-1\nMac\n---\n'), {'mac', 'mac-1', 'mac-2'})
+
+    def test_missing_fragment_is_not_accepted(self):
+        self.assertNotIn('windows', links.anchors('# Mac'))
+
+    def test_fence_with_info_is_not_a_closing_marker(self):
+        self.assertEqual(links.targets('```text\n```example\n[Fake](missing.md)\n```\n[Real](README.md)'), ['README.md'])
+
     def test_reference_and_html_targets(self):
         self.assertEqual(links.targets('[Mac][setup]\n[setup]: INSTALL.md#mac\n<img src="demo.png">\n'), ['demo.png', 'INSTALL.md#mac'])
 

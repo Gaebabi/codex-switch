@@ -1,0 +1,52 @@
+{
+  "kind": "fictional documentation demo",
+  "actualUiSource": "MainWindow and current resource/account components",
+  "renderedAtUtc": "2026-10-14T00:16:58.0791123+00:00",
+  "width": 800,
+  "height": 560,
+  "profiles": [
+    {
+      "Email": "work@example.invalid",
+      "Plan": "pro",
+      "remaining": 62,
+      "credits": "25500",
+      "resets": 1
+    },
+    {
+      "Email": "personal@example.invalid",
+      "Plan": "pro_lite",
+      "remaining": 37,
+      "credits": "8200",
+      "resets": 0
+    },
+    {
+      "Email": "research@example.invalid",
+      "Plan": "plus",
+      "remaining": 14,
+      "credits": "0",
+      "resets": 0
+    },
+    {
+      "Email": "backup@example.invalid",
+      "Plan": "pro",
+      "remaining": 86,
+      "credits": "12400",
+      "resets": 2
+    }
+  ],
+  "scene": "everyday mixed status",
+  "cornerRadius": 8,
+  "edgePixels": 1,
+  "resourceHistory": "bounded independent fluctuations over two minutes",
+  "running": 5,
+  "queued": 2,
+  "goals": 1,
+  "cpu": 26,
+  "memory": 73,
+  "gpu": 42,
+  "vram": 58,
+  "liveAccountAccess": false,
+  "nativeCodexStarted": false,
+  "liveTaskInjection": false,
+  "sourceVersion": "1.27.6"
+}

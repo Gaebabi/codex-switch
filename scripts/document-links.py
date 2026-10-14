@@ -13,7 +13,7 @@ def without_fences(source):
             run = marker[1]
             if fence is None:
                 fence = run
-            elif run[0] == fence[0] and len(run) >= len(fence):
+            elif run[0] == fence[0] and len(run) >= len(fence) and not line[marker.end():].strip():
                 fence = None
             continue
         if fence is None:
@@ -24,16 +24,28 @@ def without_fences(source):
 def anchors(source):
     source = without_fences(source)
     result = set(re.findall(r'\b(?:id|name)=["\']([^"\']+)["\']', source))
-    headings = re.findall(r'^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$', source, re.M)
-    headings += re.findall(r'<h[1-6]\b[^>]*>(.*?)</h[1-6]>', source, re.I)
-    counts = {}
+    headings = []
+    lines = source.splitlines()
+    for index, line in enumerate(lines):
+        heading = re.match(r'^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$', line)
+        if heading:
+            headings.append(heading[1])
+        elif line.strip() and index + 1 < len(lines) and re.fullmatch(r'\s{0,3}(?:=+|-+)\s*', lines[index + 1]):
+            headings.append(line.strip())
+        else:
+            headings.extend(re.findall(r'<h[1-6]\b[^>]*>(.*?)</h[1-6]>', line, re.I))
+    used = set()
     for heading in headings:
         text = re.sub(r'!?(?:\[([^\]]+)\])\([^)]*\)', r'\1', heading)
         text = html.unescape(re.sub(r'<[^>]+>', '', text)).lower()
         slug = ''.join(c for c in text if c in '_- ' or unicodedata.category(c)[0] in 'LNM').replace(' ', '-')
-        index = counts.get(slug, 0)
-        counts[slug] = index + 1
-        result.add(slug if index == 0 else f'{slug}-{index}')
+        candidate = slug
+        index = 0
+        while candidate in used:
+            index += 1
+            candidate = f'{slug}-{index}'
+        used.add(candidate)
+        result.add(candidate)
     return result
 
 

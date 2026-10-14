@@ -4,7 +4,7 @@
 
 - [x] Inspect tracked README/developer/evidence file destinations; direct latest-UI links to current evidence and label the old foundation comparison as historical.
 - [x] Add heading/reference/HTML-link checks and regression coverage to repository CI; read screenshot source version from the shared version owner.
-- [ ] Re-render and inspect the current source documentation image, preserve the previous image for comparison and collect fresh native Windows/Mac gallery evidence.
+- [x] Re-render and inspect the current source documentation image, preserve the previous image for comparison and collect fresh native Windows/macOS15 arm64/Intel gallery evidence. Capture checkpoint1a2cc58 passes all four jobs in run38633951637; six native PNGs and the component-render before/after are inspected, metadata stripped and digests checked.
 - [ ] Complete scoped privacy/link checks, reviewed-head CI, author review and PR promotion. No binary Release or account action.
 
 ## Common scrollbars and theme icons — issue31

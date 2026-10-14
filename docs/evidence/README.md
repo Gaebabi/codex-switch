@@ -5,6 +5,7 @@
 Source 1.30.2 is the current app UI; published downloads remain 1.27.6. Choose the evidence for the capability being reviewed:
 
 - [Latest documentation screenshots and native platform gallery](../media/README.md#native-platform-gallery): fictional inputs, actual Windows/macOS app windows.
+- [README screenshot before/after and destination audit](documentation-refresh/README.md): source 1.27.6 illustration replaced by source 1.30.2.
 - [Scrollbars and theme actions](scrollbars-theme-icons/README.md): Windows before/after and native Mac menus/history.
 - [UI-neutral core extraction](shared-core/README.md): platform before/after and core contracts.
 - [Runtime migration](platform-runtime/README.md): original .NET 8/10 comparison and native OS/runtime checks.
