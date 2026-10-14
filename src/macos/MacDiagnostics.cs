@@ -176,6 +176,7 @@ internal static class MacDiagnostics
                 catch (Exception error) { failures++; checks.Add(new { name, passed = false, error = error.Message }); }
                 using var bitmap = new RenderTargetBitmap(new PixelSize((int)window.ClientSize.Width * 2, (int)window.ClientSize.Height * 2), new Vector(192, 192));
                 bitmap.Render(window); bitmap.Save(Path.Combine(directory, name + ".png"));
+                if (Program.NativeUiEvidence) await NativeUiCapture.SaveAsync(window, Path.Combine(directory, name + "-native.png"));
             }
             foreach (var count in new[] { 0, 1, 8 })
             {
@@ -210,7 +211,9 @@ internal static class MacDiagnostics
         catch (Exception error) { failures++; checks.Add(new { name = "render", passed = false, error = error.Message }); }
         finally
         {
-            File.WriteAllText(Path.Combine(directory, "render-report.json"), JsonSerializer.Serialize(new { version = "1.25.0", failures, checks,
+            File.WriteAllText(Path.Combine(directory, "render-report.json"), JsonSerializer.Serialize(new { schema = 1, version = typeof(Program).Assembly.GetName().Version!.ToString(3),
+                os = "macOS", architecture = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString(),
+                runtime = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription, nativeWindowCapture = Program.NativeUiEvidence, failures, checks,
                 scope = "Synthetic native Avalonia window renders; no account, Keychain, Codex home or network access." }, new JsonSerializerOptions { WriteIndented = true }));
             Program.DiagnosticExitCode = failures == 0 ? 0 : 1; await window.ExitAsync();
         }

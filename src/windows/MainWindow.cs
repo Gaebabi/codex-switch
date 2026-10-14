@@ -284,6 +284,7 @@ internal sealed class MainWindow : Window
     }
     private async Task StartAsync()
     {
+        if (_options.UiEvidenceDirectory != null) return;
         _sessions.Start();
         _hardware.Start();
         _drives.Configure(_service.Vault.Data.Drives.ToArray()); _drives.Start();
@@ -452,6 +453,11 @@ internal sealed class MainWindow : Window
     {
         if (Dispatcher.HasShutdownStarted) return;
         _ = Dispatcher.InvokeAsync(() => { if (!_closing) { RenderAccounts(); UpdateControls(); UpdateTray(); } }, DispatcherPriority.Background);
+    }
+    internal void PrepareUiEvidence(string language, bool dark)
+    {
+        if (_options.UiEvidenceDirectory == null) throw new InvalidOperationException("An isolated UI evidence window is required");
+        Loc.SetLanguage(language); _theme = new Burn0Theme(dark); ApplyTheme();
     }
     private void SessionChanged(SessionActivity activity)
     {
@@ -774,7 +780,7 @@ internal sealed class MainWindow : Window
         var current = _service.Accounts.FirstOrDefault(a => a.IsCurrent); var tooltip = "Codex · " + (current?.Usage?.LeastRemaining is double value ? Loc.F("잔여 {0:0.#}%", value) + " · " : "") + (current?.DisplayName ?? Loc.T("로그인 정보 없음")); _tray.Text = tooltip[..Math.Min(tooltip.Length, 63)];
     }
     internal void BringToFront() { Show(); if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal; Activate(); }
-    private void OnClosing(object? sender, CancelEventArgs arguments) { if (_exit || _options.ReportPath != null) return; arguments.Cancel = true; foreach (var window in _details.Values) window.Hide(); Hide(); }
+    private void OnClosing(object? sender, CancelEventArgs arguments) { if (_exit || _options.ReportPath != null || _options.UiEvidenceDirectory != null) return; arguments.Cancel = true; foreach (var window in _details.Values) window.Hide(); Hide(); }
     internal async Task ExitAsync()
     {
         if (_closing) return; _closing = true; _refreshTimer.Stop(); _clockTimer.Stop(); _lifetime.Cancel(); _loginCancellation?.Cancel();

@@ -15,6 +15,7 @@ internal static class Program
     public static string CodexHome { get; private set; } = Environment.GetEnvironmentVariable("CODEX_HOME") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
     public static string? PreviewDirectory { get; private set; }
     public static string? WindowProbePath { get; private set; }
+    public static bool NativeUiEvidence { get; private set; }
     public static int DiagnosticExitCode { get; set; }
     [STAThread]
     public static int Main(string[] args)
@@ -28,6 +29,7 @@ internal static class Program
             switch (args[i - 1]) { case "--data-dir": DataDirectory = value; break; case "--codex-home": CodexHome = value; break;
                 case "--verify-macos": nativeReport = value; break; case "--verify-queues": queueReport = value; break; case "--preview-macos": PreviewDirectory = value; break;
                 case "--probe-window": WindowProbePath = value; break;
+                case "--verify-ui": PreviewDirectory = value; NativeUiEvidence = true; break;
                 default: throw new ArgumentException("Unknown command-line option."); }
         }
         if (!OperatingSystem.IsMacOS()) { Console.Error.WriteLine("Use the Windows WPF project on Windows. This application is the macOS edition."); return 1; }

@@ -82,6 +82,23 @@ jobs:
         run: dotnet run --project tests/localization/CodexSwitch.Localization.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - name: Verify temperature parsing and sensor identity contracts
         run: dotnet run --project tests/temperatures/CodexSwitch.Temperatures.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Run the published Windows app in isolated native UI mode
+        shell: pwsh
+        run: |
+          $taskProcess = Start-Process artifacts/win-x64/CodexSwitch.exe -ArgumentList @('--verify-ui','artifacts/native-ui/windows/raw') -WindowStyle Hidden -PassThru
+          if (!$taskProcess.WaitForExit(45000)) { throw 'Owned UI evidence process did not finish' }
+          if ($taskProcess.ExitCode -ne 0) { throw 'Native Windows UI verification failed' }
+      - name: Validate isolated Windows window exports
+        env:
+          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/verify-ui-evidence.py artifacts/native-ui/windows/raw artifacts/native-ui/windows/public --os Windows --revision "${{ env.EVIDENCE_REVISION }}"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-ui-windows
+          path: artifacts/native-ui/windows/public
+          if-no-files-found: error
+          retention-days: 14
 
   macos:
     name: Mac compilation (${{ matrix.rid }})
@@ -110,3 +127,19 @@ jobs:
         run: dotnet run --project tests/localization/CodexSwitch.Localization.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - name: Verify portable temperature parsing and presentation
         run: dotnet run --project tests/temperatures/CodexSwitch.Temperatures.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Run the published Mac app and capture only its native window
+        run: artifacts/macos-ci/${{ matrix.rid }}/CodexSwitch --verify-ui artifacts/native-ui/${{ matrix.rid }}/raw
+      - name: Validate isolated Mac window exports
+        env:
+          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/verify-ui-evidence.py artifacts/native-ui/${{ matrix.rid }}/raw artifacts/native-ui/${{ matrix.rid }}/public --os macOS --revision "$EVIDENCE_REVISION"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-ui-${{ matrix.rid }}
+          path: artifacts/native-ui/${{ matrix.rid }}/public
+          if-no-files-found: error
+          retention-days: 14

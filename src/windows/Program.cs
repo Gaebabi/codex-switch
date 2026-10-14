@@ -34,6 +34,7 @@ internal static class Program
         public string? HardwarePreviewDirectory { get; set; }
         public string? RecordDirectory { get; set; }
         public string? IconDirectory { get; set; }
+        public string? UiEvidenceDirectory { get; set; }
         public static Options Parse(string[] arguments)
         {
             var options = new Options();
@@ -61,10 +62,14 @@ internal static class Program
                     case "--preview-resources": options.HardwarePreviewDirectory = Path.GetFullPath(value); break;
                     case "--record-dashboard": options.RecordDirectory = Path.GetFullPath(value); break;
                     case "--export-icons": options.IconDirectory = Path.GetFullPath(value); break;
+                    case "--verify-ui": options.UiEvidenceDirectory = Path.GetFullPath(value); break;
                     default: throw new ArgumentException("알 수 없는 명령행 옵션입니다.");
                 }
             }
             if (options.PreviewPath != null && options.ReportPath == null) throw new ArgumentException("미리보기는 조회 검증 모드에서 사용할 수 있습니다.");
+            if (options.UiEvidenceDirectory != null && (options.SwitchAccount != null || options.ReportPath != null || options.ExitExisting || options.RecordDirectory != null || options.SelfTest ||
+                options.SessionReportPath != null || options.QueueReportPath != null || options.SwitchProtocolReportPath != null || options.HardwareReportPath != null || options.IconDirectory != null))
+                throw new ArgumentException("Choose isolated UI evidence separately from account and diagnostic operations.");
             if (options.SwitchAccount != null && options.ReportPath != null) throw new ArgumentException("조회 검증 모드에서 계정을 전환할 수 없습니다.");
             if (options.RecordDirectory != null && (options.SwitchAccount != null || options.ReportPath != null || options.ExitExisting || options.IconDirectory != null || options.SelfTest))
                 throw new ArgumentException("Choose dashboard recording separately from other commands.");
@@ -78,6 +83,7 @@ internal static class Program
         try
         {
             var options = Options.Parse(arguments);
+            if (options.UiEvidenceDirectory != null) return NativeUiEvidence.Run(options.UiEvidenceDirectory);
             if (options.IconDirectory != null) { AppIdentity.ExportIcons(options.IconDirectory); return 0; }
             if (options.SelfTest) return Diagnostics.RunSelfTests(options.ReportPath ?? Path.Combine(options.DataDirectory, "self-tests.json"));
             if (options.SessionReportPath != null) return Diagnostics.VerifySessionsAsync(options.CodexHome, options.SessionReportPath).GetAwaiter().GetResult();

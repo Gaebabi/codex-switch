@@ -1,5 +1,15 @@
 # Current plan
 
+## Resumed platform roadmap — issues #1 / #3–#7
+
+- [x] Inventory current issues and open dependency PRs; #3–#7 remain open and no Linux account/handoff support is claimed.
+- [x] Checkpoint P1: add isolated native published-app screenshot modes and sanitized CI artifact validation for Windows/Mac. Local Windows HWND captures and existing93 checks pass; native Mac CI remains a gate.
+- [ ] Checkpoint P2: migrate all projects/scripts/CI to .NET10 LTS and its current security patch; inspect full Windows/Mac packages and dependency vulnerabilities. Manage PR20's overlapping System.Management update only after reviewed replacement.
+- [ ] Checkpoint P3: attach inspected native OS before/after images, complete exact-head regression/review and merge the scoped runtime PR. Close only issue4 when its criteria pass.
+- [ ] Continue core/platform extraction (#3), then Linux credential/client trust (#5), handoff (#6) and package/environment acceptance (#7), each with separate checkpoints and target-OS evidence.
+
+Every checkpoint receives a scoped commit/push. The PR stays draft until target-OS app screenshots are validated and privacy checked. Personal desktops/vaults are not captured or used. Public binary Release/signing and full Linux account support are separate gates.
+
 ## Always-on refresh — issue #25
 
 - [x] Remove Windows footer switch/caption and Mac settings toggle; retire the opt-out preference and use fixed60s initialized-app refresh.
