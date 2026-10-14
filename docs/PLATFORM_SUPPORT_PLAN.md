@@ -43,6 +43,7 @@ src/windows/         Windows WPF application and diagnostics
 src/macos/           Mac Avalonia application and native UI integration
 src/core/            single UI-neutral domain/presentation/catalogue project
 src/platforms/security/ native key/protection/private-file assembly
+src/platforms/client/ native desktop discovery/lifecycle/peer trust assembly
 src/shared/          linked integration services and existing platform adapters
 src/platforms/macos/ Mac native platform helpers
 assets/              canonical brand and Mac icons
@@ -60,7 +61,7 @@ docs/evidence/       sanitized issue/PR screenshots
 
 | Source | Required change |
 | --- | --- |
-| `src/shared/Runtime.cs`, `DesktopShutdown.cs` | Replace Mac/Windows-only discovery and lifecycle branches with verified Linux client capabilities and confirmed normal shutdown |
+| `src/platforms/client/RuntimeLocator.cs`, `DesktopShutdown.cs` | Add verified Linux client capabilities and confirmed normal shutdown beyond the current supported providers |
 | `src/platforms/security/VaultProtection.cs` | Linux is rejected today; add an OS-held key provider with reviewed encrypted format/migration |
 | `src/shared/ReadOnlySqlite.cs` | Resolve Linux SQLite instead of Windows DLL; preserve read-only WAL visibility and database bytes |
 | `src/shared/DesktopSessionMonitor.cs` | Unix sockets exist; add Linux same-UID peer/socket ownership/client identity verification |

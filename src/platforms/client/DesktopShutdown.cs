@@ -30,8 +30,12 @@ internal static class DesktopShutdown
     [DllImport("rstrtmgr.dll")] private static extern uint RmShutdown(uint session, uint flags, IntPtr progress);
     [DllImport("rstrtmgr.dll")] private static extern uint RmCancelCurrentTask(uint session);
     [DllImport("rstrtmgr.dll")] private static extern uint RmEndSession(uint session);
-    public static Task CloseAsync(string executable, CancellationToken cancellation) => OperatingSystem.IsMacOS()
-        ? MacDesktop.CloseAsync(executable, cancellation) : CloseWindowsAsync(executable, cancellation);
+    public static Task CloseAsync(string executable, CancellationToken cancellation)
+    {
+        if (OperatingSystem.IsMacOS()) return MacDesktop.CloseAsync(executable, cancellation);
+        if (OperatingSystem.IsWindows()) return CloseWindowsAsync(executable, cancellation);
+        throw new PlatformNotSupportedException("Codex normal shutdown requires a supported platform provider.");
+    }
     private static Task CloseWindowsAsync(string executable, CancellationToken cancellation) => Task.Run(async () =>
     {
         cancellation.ThrowIfCancellationRequested();

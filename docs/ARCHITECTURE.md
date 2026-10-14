@@ -8,12 +8,15 @@ The coordinator accepts its platform error formatter explicitly; its `IAccountSw
 
 Source1.31.0 adds `src/platforms/security/CodexSwitch.PlatformSecurity.csproj`, independent of the UI and domain core. Both apps and contract tests reference its single internal native implementation. It owns `VaultProtection`, Windows DPAPI, Mac Keychain/CoreFoundation helpers and `SecureFiles` (permissions/atomic writes/owned-runtime cleanup). Existing native algorithm bytes, paths, Keychain service/account hashing, DPAPI description and CADM1 envelope are preserved. `AccountVault`/`VaultData` serialization and refresh/credential revisions remain in integration code. Linux vault protection still rejects explicitly. Other native service projects remain in #3.
 
+Source1.31.1 adds `src/platforms/client/CodexSwitch.DesktopClient.csproj` for existing RuntimeLocator/CodexInstallation, normal desktop shutdown, owned-child lifetime and Mac app discovery/lifecycle/peer verification. It references native security helpers, without a UI or core dependency. RuntimeHome stays in integration code. Supported native algorithms/identities remain unchanged; unsupported discovery/running/launch/thread-open/shutdown rejects before any Windows fallback. Both apps/tests/rendering use the same assembly; no sources remain linked from the former `src/platforms/macos` folder. IPC observation, SQLite and resource-provider extraction are still follow-ups.
+
 | Part | Responsibility |
 | --- | --- |
 | `AccountService`, `AccountVault` | Account identity, encrypted storage and asynchronous query/login coordination |
 | `AccountSwitchCoordinator`, desktop automation | Checkpointed chat naming, normal shutdown, login application and chat resumption |
 | `src/core` | UI-neutral models, quota/forecast, refresh/coordinator policy, language/resource presentation |
 | `src/platforms/security` | UI/domain-independent native key/protection/private-file assembly; no credential migration |
+| `src/platforms/client` | Native client discovery/lifecycle, normal shutdown and Mac peer-identity helper assembly |
 | `DesktopSessionMonitor`, queue stores | Read-only local desktop activity and saved/SQLite queue observations |
 | `HardwareSampler`, `DriveMonitor` | Independent machine-resource and volume collection |
 | `MainWindow`, account/resource panels | Windows WPF UI and shared Burn0 theme |

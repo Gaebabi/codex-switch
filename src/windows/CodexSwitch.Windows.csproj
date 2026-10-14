@@ -19,8 +19,9 @@
   <ItemGroup>
     <ProjectReference Include="../core/CodexSwitch.Core.csproj" />
     <ProjectReference Include="../platforms/security/CodexSwitch.PlatformSecurity.csproj" />
+    <ProjectReference Include="../platforms/client/CodexSwitch.DesktopClient.csproj" />
     <PackageReference Include="System.Management" Version="10.0.13" />
-    <Compile Include="../shared/**/*.cs;../platforms/macos/**/*.cs" Link="Shared/%(Filename)%(Extension)" />
+    <Compile Include="../shared/**/*.cs" Link="Shared/%(Filename)%(Extension)" />
     <EmbeddedResource Include="../../assets/brand/mark.path" LogicalName="CodexAccountDesk.Mark.path" />
     <EmbeddedResource Include="../../assets/brand/mark-body.path" LogicalName="CodexAccountDesk.MarkBody.path" />
     <EmbeddedResource Include="../../assets/brand/app-icon.ico" LogicalName="CodexAccountDesk.AppIcon.ico" />
