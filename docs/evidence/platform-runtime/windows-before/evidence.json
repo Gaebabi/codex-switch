@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "revision": "9e15fe0c9bbad1a6a49547fcba5b74d1b0ea966f",
+  "os": "Windows",
+  "architecture": "X64",
+  "runtime": ".NET 8.0.32",
+  "appVersion": "1.29.3",
+  "images": [
+    {
+      "file": "en-dark-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "4778aa8e52d5f374e84a39965ff7fb50dccf58b2c2149e099052a71747a610f4"
+    },
+    {
+      "file": "en-dark-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "fe8dcd2c740be9aedc1b17206dbd7063bde545087a8ed0599c71e68851b0ecfd"
+    },
+    {
+      "file": "en-light-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "68e33e7dd052b4b0f14d32b5fcee742da6ffa1e7bdef203738d8201e52d699f5"
+    },
+    {
+      "file": "en-light-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "97fc8c5e6a8ca580d4c02b819e71a6c82c6415051308569d76fda406bc1e2ea3"
+    },
+    {
+      "file": "ko-dark-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "8408b5d0add7d3167a24b29ae32eac8045a731ac0997f1277b44b9c12cec451f"
+    },
+    {
+      "file": "ko-dark-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "38b8ada18f1e87bfb9171031a22a6d53894c39467416e54cb19c226d431e2fa6"
+    },
+    {
+      "file": "ko-light-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "4ab382d384410544737297ffafc89d12abf16ce98bea7aed0b41c9050d7e50e5"
+    },
+    {
+      "file": "ko-light-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "389311783a01915e00b96e62c10c82b3a0f80fe6a7417c47144f380dc64c67bd"
+    }
+  ],
+  "scope": "Native published app on the stated OS; only own app window, synthetic accounts, no personal desktop/credentials/Codex action. No account-switch/resume acceptance."
+}

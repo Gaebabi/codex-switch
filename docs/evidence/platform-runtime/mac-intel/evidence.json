@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "revision": "07efba62066b123ac0ed39f43879130e85bc9858",
+  "os": "macOS",
+  "architecture": "X64",
+  "runtime": ".NET 10.0.13",
+  "appVersion": "1.30.0",
+  "images": [
+    {
+      "file": "en-dark-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "49488181e84c622ba9c0874f7c1844c423d9d499fe8d428be290fdd381e8efb0"
+    },
+    {
+      "file": "en-dark-600x420-native.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "72fb20d3561b9ce8b44dd8120c445f659fa5598c2b4313f7c4044e315aaaaa51"
+    },
+    {
+      "file": "en-dark-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "5b073ada01fb8aedec572ce3bd1e05028b2715393a3d06b0c1045e9df47ad103"
+    },
+    {
+      "file": "en-light-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "3c2f8f7005db015effe51ab18951275002582498ec6653056273949db6ac3919"
+    },
+    {
+      "file": "en-light-600x420-native.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "4a7b5187350673669e3848dbaa4ac7f9edc51a32ae9113cb35c66ae5ba94c1d6"
+    },
+    {
+      "file": "en-light-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "da16ac84f91f01dad590c4fd98ca04eea734bde6e056dd73198c49a75c3dc84e"
+    },
+    {
+      "file": "ko-dark-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "4f395b4033efd1a8c697f39f30b839adcd890718ebe20abbb2d7c376ee02f270"
+    },
+    {
+      "file": "ko-dark-600x420-native.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "0c5f0bec3d4a01f0872a8a076cdd45ec7c371565d10fb8f5ff8b2eb4c0507f37"
+    },
+    {
+      "file": "ko-dark-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "af70830ea6ce8338a9fc12b23e36298df2f0ce5e1f44d2a7e05ea66f12fa9372"
+    },
+    {
+      "file": "ko-light-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "631fc3332ff4741cbb1672b1ef87a536c1340607ca5a97c9cd45c852de9b9dde"
+    },
+    {
+      "file": "ko-light-600x420-native.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "821a780d068f1bcaed1632f269146171941edba513debdde648215cf5625b03f"
+    },
+    {
+      "file": "ko-light-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "5c43866873c4a8a55100bd1e6aed036d797f28c9b8193bcbe7b4a42bb5b1422a"
+    }
+  ],
+  "rendering": "Software (CI native window)",
+  "scope": "Native published app on the stated OS; only own app window, synthetic accounts, no personal desktop/credentials/Codex action. No account-switch/resume acceptance."
+}
