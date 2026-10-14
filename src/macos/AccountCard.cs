@@ -12,6 +12,7 @@ internal sealed record QuotaChoice(string BucketId, string Slot, UsageWindow Win
 internal sealed class MacAccountCard : Grid
 {
     private readonly AccountProfile _profile;
+    private readonly DeskTheme _theme;
     private readonly QuotaChoice? _quota;
     private readonly UsageTrendModel _trend;
     private readonly TextBlock _depletion, _reset, _subscription;
@@ -22,7 +23,7 @@ internal sealed class MacAccountCard : Grid
         ?? Choices(profile).OrderBy(q => q.Window.Remaining).FirstOrDefault();
     public MacAccountCard(AccountProfile profile, QuotaChoice? quota, DeskTheme theme, Button switchButton, Button more, Action<string> select)
     {
-        _profile = profile; _quota = quota; _trend = quota == null ? new(ForecastState.Collecting) : UsagePredictor.Learn(quota.Window, UsageHistory.ForWindow(profile, quota.BucketId, quota.Slot, quota.Window));
+        _profile = profile; _theme = theme; _quota = quota; _trend = quota == null ? new(ForecastState.Collecting) : UsagePredictor.Learn(quota.Window, UsageHistory.ForWindow(profile, quota.BucketId, quota.Slot, quota.Window));
         ClipToBounds = true; Margin = new Thickness(4);
         Children.Add(new TankSurface(theme, quota?.Window.Remaining, profile.IsCurrent && !profile.RequiresApply));
         var layout = new Grid { RowDefinitions = new RowDefinitions("28,*,42"), Margin = new Thickness(8, 5) };
@@ -53,7 +54,7 @@ internal sealed class MacAccountCard : Grid
         plan.FlowDirection = FlowDirection.LeftToRight; plan.HorizontalAlignment = HorizontalAlignment.Right; Put(plan, 0, 2);
         var resets = theme.Text(profile.Usage?.AvailableResets is int count ? Loc.F("초기화권 {0}장", count) : Loc.T("초기화권 —"), 11);
         resets.FlowDirection = FlowDirection.LeftToRight; resets.HorizontalAlignment = HorizontalAlignment.Right; Put(resets, 1, 2);
-        _subscription = theme.Text(Subscription(profile.SubscriptionActiveUntil), 10, "muted"); Grid.SetColumnSpan(_subscription, 2); Put(_subscription, 2, 0);
+        _subscription = theme.Text(Subscription(profile.SubscriptionActiveUntil, DateTimeOffset.UtcNow), 10, "muted"); Grid.SetColumnSpan(_subscription, 2); Put(_subscription, 2, 0);
         var bucket = profile.Usage?.Buckets.FirstOrDefault(b => b.Id == quota?.BucketId) ?? profile.Usage?.Buckets.FirstOrDefault();
         var credit = theme.Text(Credits(bucket), 10); credit.FlowDirection = FlowDirection.LeftToRight; credit.HorizontalAlignment = HorizontalAlignment.Right; Put(credit, 2, 2);
         ToolTip.SetTip(credit, bucket?.CreditBalance ?? (bucket?.UnlimitedCredits == true ? Loc.T("크레딧 제한 없음") : Loc.T("크레딧 정보 없음")));
@@ -62,7 +63,9 @@ internal sealed class MacAccountCard : Grid
     public void Update(DateTimeOffset now)
     {
         _depletion.FlowDirection = FlowDirection.LeftToRight; _reset.FlowDirection = FlowDirection.LeftToRight; _subscription.FlowDirection = FlowDirection.LeftToRight;
-        _subscription.Text = Subscription(_profile.SubscriptionActiveUntil);
+        _subscription.Text = Subscription(_profile.SubscriptionActiveUntil, now);
+        _subscription.Foreground = _theme.Brush(AccountDateWarnings.Subscription(_profile.SubscriptionActiveUntil, now) ? "warning" : "muted");
+        _reset.Foreground = _theme.Brush(AccountDateWarnings.Reset(_quota?.Window.ResetsAt, now) ? "warning" : "text");
         if (_quota == null) { _depletion.Text = Loc.T(_profile.IsRefreshing ? "측정중" : "정보 없음"); _reset.Text = "—"; return; }
         var forecast = UsagePredictor.Evaluate(_quota.Window, _trend, now);
         _depletion.Text = forecast.State == ForecastState.ResetsFirst ? Loc.T("리셋 먼저") : forecast.ExhaustsAt is DateTimeOffset end ? Compact(end, now) : Loc.T(forecast.State switch {
@@ -78,10 +81,10 @@ internal sealed class MacAccountCard : Grid
         return minutes <= 0 ? Loc.T("갱신 대기") : minutes >= 1440 ? Loc.F("{0}일 {1}시간", minutes / 1440, minutes % 1440 / 60) :
             minutes >= 60 ? Loc.F("{0}시간 {1}분", minutes / 60, minutes % 60) : Loc.F("{0}분", minutes);
     }
-    private static string Subscription(DateTimeOffset? until)
+    private static string Subscription(DateTimeOffset? until, DateTimeOffset at)
     {
         if (until == null) return "—";
-        var end = UsagePresentation.KoreanTime(until.Value); var now = UsagePresentation.KoreanTime(DateTimeOffset.UtcNow); var days = (end.Date - now.Date).Days;
+        var end = UsagePresentation.KoreanTime(until.Value); var now = UsagePresentation.KoreanTime(at); var days = (end.Date - now.Date).Days;
         return end.ToString("MM/dd", Loc.Culture) + "  " + (days == 0 ? Loc.T("오늘") : days > 0 ? "D-" + days : "D+" + -days);
     }
     private static string Credits(UsageBucket? bucket)

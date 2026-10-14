@@ -168,6 +168,7 @@ internal sealed class AccountTankCard : Grid
             headerActionsAtTop = ReferenceEquals(_header.Actions.Parent, _header) && headerActions.Top <= _layout.Margin.Top + 0.5,
             metadataFits, displayedPlan = _plan.Text, displayedCredits = _credits.Text, displayedResetCredits = _resetCredits.Text, availableResets = _profile.Usage?.AvailableResets,
             displayedSubscriptionEnd = _subscriptionDate.Text, subscriptionCountdown = _subscriptionDays.Text,
+            resetText = _reset.Text, resetColor = _reset.Foreground.ToString(), subscriptionDateColor = _subscriptionDate.Foreground.ToString(), subscriptionCountdownColor = _subscriptionDays.Foreground.ToString(),
             subscriptionActiveUntil = _profile.SubscriptionActiveUntil, compact = _compact };
     }
     internal static string CreditLabel(UsageBucket? bucket)
@@ -196,6 +197,10 @@ internal sealed class AccountTankCard : Grid
     public void Update(DateTimeOffset now)
     {
         _subscriptionDays.Text = SubscriptionCountdown(_profile.SubscriptionActiveUntil, now);
+        var subscriptionWarning = AccountDateWarnings.Subscription(_profile.SubscriptionActiveUntil, now);
+        _subscriptionDate.Foreground = _theme.Color(subscriptionWarning ? "warning" : "muted");
+        _subscriptionDays.Foreground = _theme.Color(subscriptionWarning ? "warning" : "text");
+        _reset.Foreground = _theme.Color(AccountDateWarnings.Reset(_choice?.Window.ResetsAt, now) ? "warning" : "text");
         if (_choice == null)
         {
             _depletion.Text = Loc.T(_profile.IsRefreshing ? "측정중" : "정보 없음"); _reset.Text = "—"; return;

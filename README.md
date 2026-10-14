@@ -28,6 +28,7 @@ Keep the full package together. Packaged apps need no .NET installation; buildin
 ## What you can see
 
 - Remaining quota, reset countdown, plan, subscription end date, reset credits and credit balance.
+- **Source 1.29.2:** subscription expiry date/D-day within three days and quota reset within two days use the theme warning color, refreshed every second. [Date warning scope and application evidence](docs/evidence/date-warnings/README.md)
 - Recent usage and a depletion estimate based on usage history. Open **History** from an account's **...** menu.
 - Local running/queued/goal counts, resource trends and configurable drive free space. Hover a gauge for details.
 - **Source 1.29.0:** right-aligned resource/disk temperatures with independent normal/caution/high colors when supported sensors are available; missing values show `—°C`. Device-reported limits take precedence over documented display defaults. CPU/RAM may require an existing compatible sensor provider. [Temperature support and scope](docs/TEMPERATURES.md)

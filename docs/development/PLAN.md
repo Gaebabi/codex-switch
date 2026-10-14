@@ -1,5 +1,13 @@
 # Current plan
 
+## Account date warnings — issue #23
+
+- [x] Share inclusive future expiry72h/reset48h warning eligibility across Windows/Mac without changing dates, quotas or data identities.
+- [x] Update date/countdown colors through existing one-second ticks, including missing quota/date values and normal-color restoration.
+- [x] Inspect matching actual-program before/after, Korean minimum and light-theme captures; observe real WPF brushes at boundary/time transitions with fictional inputs. Pass Windows93/93, SQLite23/23, Mac compilation and catalogue verification.
+
+[Issue #23](https://github.com/Gaebabi/codex-switch/issues/23) owns the formal PR, final exact-head CI, author review and owner-authorized merge record. Source1.29.2; no new binary Release, installed-app replacement or real-account action.
+
 ## Single-click handoff — issue #21
 
 - [x] Trace the post-close interruption and reproduce the production Windows shutdown boundary using disposable parent/child processes.

@@ -1,6 +1,6 @@
 # Operations
 
-Public `Gaebabi/codex-switch`, baseline `main`, is the canonical source. Clone into any directory. Source/app version is **1.29.1**; published binary version remains **1.27.6**. Binary delivery is manual GitHub Release ZIPs plus SHA256SUMS; no automatic updater or CI release publisher exists.
+Public `Gaebabi/codex-switch`, baseline `main`, is the canonical source. Clone into any directory. Source/app version is **1.29.2**; published binary version remains **1.27.6**. Binary delivery is manual GitHub Release ZIPs plus SHA256SUMS; no automatic updater or CI release publisher exists.
 
 ## Build and verify
 
@@ -41,6 +41,8 @@ Authentication, vaults, raw captures, reports, packages and recovery archives st
 Built-in language resources are `localization/index.json`, `localization/packs/*.json` and `localization/legacy-keys.json`; [schema/import/contribution contracts](../LOCALIZATION.md) are versioned. Local user packs live privately in `<application-data>/languages/pack-<code>.json`, independently of credential encryption. Missing saved packs display English and report their absence while preserving the preference. Do not translate authored account names or change vault/client identities.
 
 Documentation capture accepts `--language`, `--output`, `--width`, `--height` and an optional `--pack` local fixture. Use the actual application minimum of 500×360. The capture process alone enables WPF rendering in a disconnected display session and rejects empty bitmaps; it does not change production graphics or system settings.
+
+Capture `--deadline-preview` for clearly fictional near/far/missing expiry/reset dates and recorded public countdown updates; `--theme dark|light` selects the existing palette. The actual WPF brushes and known off-screen visibility limitation are described in [date evidence](../evidence/date-warnings/README.md). Keep the JSON receipts private. Warning colors use future expiry72h/reset48h, independent of the existing KST calendar-date label.
 
 Resource/disk temperatures use supported Windows read-only WDDM/storage APIs and an existing optional compatible WMI provider. Missing sensors remain unavailable; no driver/service/elevation is installed. Mac temperature collection remains unsupported. [Sources and limits](../TEMPERATURES.md). Capture `--temperature-preview` for fictional sensor-capable layout or `--live-resources` for actual device readings with fictional account/session inputs; keep receipts private and identify each scope accurately.
 

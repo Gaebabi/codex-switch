@@ -59,11 +59,21 @@ internal static class DemoRenderer
         if (args.Length > 5 && args[5].Length > 0) Loc.Install(args[5], Path.Combine(fixture, "languages"));
         Loc.SetLanguage(args.Length > 2 ? args[2] : "en"); var now = DateTimeOffset.UtcNow;
         var vault = new AccountVault(Path.Combine(fixture, "data"));
-        vault.Data.Language = Loc.Language; vault.Data.Theme = "dark";
+        vault.Data.Language = Loc.Language; vault.Data.Theme = args.Length > 8 ? args[8] : "dark";
         vault.Data.Accounts.Add(Profile("work", "pro", 38, 1, "25500", 432, 150, 4, now));
         vault.Data.Accounts.Add(Profile("personal", "pro_lite", 63, 0, "8200", 288, 75, 2, now));
         vault.Data.Accounts.Add(Profile("research", "plus", 86, 0, "0", 168, 105, 6, now));
         vault.Data.Accounts.Add(Profile("backup", "pro", 14, 2, "12400", 624, 165, 0, now));
+        var deadlinePreview = args.Length > 7 && args[7] == "dates";
+        if (deadlinePreview)
+        {
+            vault.Data.Accounts[0].SubscriptionActiveUntil = now.AddDays(3);
+            vault.Data.Accounts[0].Usage!.Buckets[0].Secondary!.ResetsAt = now.AddDays(2).ToUnixTimeSeconds();
+            vault.Data.Accounts[1].SubscriptionActiveUntil = now.AddDays(2);
+            vault.Data.Accounts[1].Usage!.Buckets[0].Secondary!.ResetsAt = now.AddDays(1).ToUnixTimeSeconds();
+            vault.Data.Accounts[3].SubscriptionActiveUntil = null;
+            vault.Data.Accounts[3].Usage!.Buckets[0].Secondary!.ResetsAt = null;
+        }
         var service = new AccountService(vault, Path.Combine(fixture, "home"));
         typeof(AccountService).GetProperty(nameof(AccountService.CurrentKey))!.SetValue(service, "work");
         var width = args.Length > 3 ? int.Parse(args[3], System.Globalization.CultureInfo.InvariantCulture) : 800;
@@ -72,7 +82,7 @@ internal static class DemoRenderer
             CodexHome = service.CodexHome, ReportPath = Path.Combine(fixture, "unused.json") }) { Width = width, Height = height };
         typeof(MainWindow).GetField("_ready", Private)!.SetValue(window, true);
         Call(window, "RenderAccounts"); Call(window, "UpdateControls");
-        var theme = new Burn0Theme(true);
+        var theme = new Burn0Theme(vault.Data.Theme != "light");
         Field<SessionUsagePanel>(window, "_sessionCount").Refresh(new SessionActivity(true, 5, 0, 5, Queued: 2, Goals: 1), theme);
         var history = Enumerable.Range(0, 61).Select(i =>
         {
@@ -117,6 +127,23 @@ internal static class DemoRenderer
         var size = new Size(width, height);
         root.Measure(size); root.Arrange(new Rect(size)); root.UpdateLayout(); Call(window, "LayoutCards");
         root.Measure(size); root.Arrange(new Rect(size)); root.UpdateLayout();
+        var cards = Field<System.Collections.Generic.List<AccountTankCard>>(window, "_tankCards");
+        foreach (var card in cards) card.Update(now);
+        var accountBounds = cards.Select(card => card.ProbeBounds()).ToArray();
+        var dateObservations = new System.Collections.Generic.List<object>();
+        if (deadlinePreview)
+        {
+            foreach (var at in new[] { now.AddSeconds(-1), now, now.AddHours(73) })
+            {
+                foreach (var card in cards) card.Update(at);
+                dateObservations.Add(new { at, readings = cards.Select(card => card.ProbeBounds()).ToArray() });
+            }
+            var noQuota = new AccountTankCard(new AccountProfile { SubscriptionActiveUntil = now.AddDays(2) }, null, theme,
+                new AccountCardHeader("Fictional no-quota account", "", theme, new StackPanel()), new Button(), _ => { });
+            noQuota.Update(now);
+            dateObservations.Add(new { at = now, noQuota = noQuota.ProbeBounds() });
+            foreach (var card in cards) card.Update(now);
+        }
         var hardwareBounds = Field<HardwareUsagePanel>(window, "_hardwarePanel").Probe();
         if (JsonSerializer.SerializeToElement(hardwareBounds).GetProperty("readings").EnumerateArray().Any(value => !value.GetProperty("fits").GetBoolean()))
             throw new InvalidOperationException("Resource usage and temperature labels do not fit the application width.");
@@ -144,6 +171,8 @@ internal static class DemoRenderer
             running = 5, queued = 2, goals = 1, cpu = 26, memory = 73, gpu = 42, vram = 58,
             language = Loc.Language, culture = Loc.Culture.Name,
             temperatures = thermalMode == "live" ? "Actual read-only native resources; fictional account/session inputs" : thermalMode == "demo" ? "Fictional sensor-capable fixture" : "No temperature values injected", hardwareBounds,
+            datePreview = deadlinePreview, theme = vault.Data.Theme, asOfUtc = now, accountBounds, dateObservations,
+            warningColor = theme.Color("warning").ToString(), textColor = theme.Color("text").ToString(), mutedColor = theme.Color("muted").ToString(),
             liveAccountAccess = false, nativeCodexStarted = false, liveTaskInjection = false };
         File.WriteAllText(Path.ChangeExtension(output, ".json"), JsonSerializer.Serialize(receipt, new JsonSerializerOptions { WriteIndented = true }));
         window.Close(); app.Shutdown(); return 0;
@@ -171,6 +200,8 @@ def main():
     parser.add_argument('--width', type=int, default=800)
     parser.add_argument('--height', type=int, default=560)
     parser.add_argument('--pack', type=Path)
+    parser.add_argument('--deadline-preview', action='store_true', help='Show fictional near/far/missing subscription and reset deadlines.')
+    parser.add_argument('--theme', choices=['dark', 'light'], default='dark')
     thermal = parser.add_mutually_exclusive_group()
     thermal.add_argument('--temperature-preview', action='store_true', help='Show clearly fictional sensor-capable Celsius values for layout verification.')
     thermal.add_argument('--live-resources', action='store_true', help='Read actual local hardware/disk counters and sensors; account/session inputs remain fictional.')
@@ -183,7 +214,7 @@ def main():
     (WORK / 'DemoRenderer.cs').write_text(RENDERER + '\n', encoding='utf-8')
     subprocess.run(['dotnet', 'build', str(WORK / 'Demo.csproj'), '-c', 'Release', '--nologo', '-p:UseSharedCompilation=false'], check=True)
     with tempfile.TemporaryDirectory(prefix='fixture-', dir=WORK) as fixture:
-        subprocess.run(['dotnet', str(WORK / 'bin/Release/net8.0-windows/CodexSwitch.Demo.dll'), str(output), fixture, options.language, str(options.width), str(options.height), str(options.pack.resolve()) if options.pack else '', 'live' if options.live_resources else 'demo' if options.temperature_preview else ''], check=True, timeout=30)
+        subprocess.run(['dotnet', str(WORK / 'bin/Release/net8.0-windows/CodexSwitch.Demo.dll'), str(output), fixture, options.language, str(options.width), str(options.height), str(options.pack.resolve()) if options.pack else '', 'live' if options.live_resources else 'demo' if options.temperature_preview else '', 'dates' if options.deadline_preview else '', options.theme], check=True, timeout=30)
     manifest_path = output.with_suffix('.json')
     manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
     manifest['sourceVersion'] = ET.parse(ROOT / 'src/windows/CodexSwitch.Windows.csproj').findtext('PropertyGroup/Version')
