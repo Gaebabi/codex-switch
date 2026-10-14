@@ -6,7 +6,8 @@ namespace CodexAccountDesk;
 
 internal enum TemperatureState { Available, Pending, SensorUnavailable, ProviderMissing, AccessDenied, ReadFailed, PlatformUnsupported, InvalidData }
 internal enum TemperatureScope { Sensor, HighestSensor, BackingDisks }
-internal sealed record TemperatureReading(double? Celsius, DateTimeOffset CheckedAt, string Source, string Detail, TemperatureState State, string? Code = null, TemperatureScope Scope = TemperatureScope.Sensor)
+internal sealed record TemperatureReading(double? Celsius, DateTimeOffset CheckedAt, string Source, string Detail, TemperatureState State, string? Code = null, TemperatureScope Scope = TemperatureScope.Sensor,
+    TemperatureLimits? Limits = null, TemperatureReading[]? Components = null)
 {
     public static bool Valid(double value) => double.IsFinite(value) && value is >= -50 and <= 200;
     public static TemperatureReading From(double value, string source, string detail, DateTimeOffset? at = null) =>
@@ -17,7 +18,7 @@ internal sealed record TemperatureReading(double? Celsius, DateTimeOffset Checke
     {
         var values = readings.Where(r => r.State == TemperatureState.Available && r.Celsius.HasValue && Valid(r.Celsius.Value)).ToArray();
         return values.Length == 0 ? Missing(TemperatureState.SensorUnavailable, source, detail) :
-            new(values.Max(r => r.Celsius), values.Min(r => r.CheckedAt), source, detail, TemperatureState.Available, Scope: scope);
+            new(values.Max(r => r.Celsius), values.Min(r => r.CheckedAt), source, detail, TemperatureState.Available, Scope: scope, Components: values);
     }
 }
 internal static class TemperaturePresentation

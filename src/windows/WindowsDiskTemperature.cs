@@ -39,7 +39,8 @@ internal static class WindowsDiskTemperature
         var composite = sensors.Where(s => s.Index == 0).ToArray();
         var selected = composite.Length == 1 ? composite[0].Value : sensors.Max(s => s.Value);
         var detail = string.Join("; ", sensors.Select(s => "sensor " + s.Index + ": " + s.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) + " °C"));
-        return TemperatureReading.From(selected, source, detail, at);
+        return TemperatureReading.From(selected, source, detail, at) with { Limits = TemperatureLimits.Device(
+            BinaryPrimitives.ReadInt16LittleEndian(bytes[10..]), BinaryPrimitives.ReadInt16LittleEndian(bytes[8..])) };
     }
     public static TemperatureReading Read(string root)
     {

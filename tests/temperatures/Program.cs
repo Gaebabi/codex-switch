@@ -81,6 +81,31 @@ foreach(var info in Loc.Languages)
         var aggregate=WindowsDiskTemperature.Aggregate(new[]{TemperatureReading.From(45,"disk 7","",now),TemperatureReading.From(61,"disk 9","",now)});
         Assert(TemperaturePresentation.Tooltip(aggregate,now).Contains(Loc.T("thermal.backing_disks")));
         foreach(var state in Enum.GetValues<TemperatureState>().Where(s=>s!=TemperatureState.Available)) Assert(!string.IsNullOrWhiteSpace(TemperaturePresentation.Tooltip(TemperatureReading.Missing(state),now)));
+        Assert(TemperatureColors.Tooltip(TemperatureReading.From(53.4,"fixture","",now),TemperatureKind.Gpu).Contains(Loc.T("thermal.default_limits")));
     });
+Check("Temperature colors classify caution/high independently of utilization",()=>{
+    Assert(TemperatureColors.Pressure(TemperatureReading.From(77,"fixture","",now),TemperatureKind.Cpu,ResourcePressure.Normal,now)==ResourcePressure.Warning);
+    Assert(TemperatureColors.Pressure(TemperatureReading.From(92,"fixture","",now),TemperatureKind.Gpu,ResourcePressure.Normal,now)==ResourcePressure.Critical);
+    Assert(TemperatureColors.Pressure(null,TemperatureKind.Gpu,ResourcePressure.Critical,now)==ResourcePressure.Unknown);
+    Assert(TemperatureColors.Color(ResourcePressure.Normal)=="text"&&TemperatureColors.Color(ResourcePressure.Warning)=="warning"&&TemperatureColors.Color(ResourcePressure.Critical)=="danger"&&TemperatureColors.Color(ResourcePressure.Unknown)=="muted");
+});
+Check("Valid reported limits override display defaults without inventing device limits",()=>{
+    var reading=TemperatureReading.From(71,"fixture disk","",now) with {Limits=TemperatureLimits.Device(80,90)};
+    Assert(TemperatureColors.Pressure(reading,TemperatureKind.Disk,ResourcePressure.Normal,now)==ResourcePressure.Normal);
+    Assert(TemperatureLimits.Device(90,80)==null&&TemperatureLimits.Device(0,90)==null&&TemperatureLimits.Device(double.NaN,90)==null);
+});
+Check("Storage warning/critical thresholds preserve native Celsius units",()=>{
+    var bytes=Descriptor((0,71));BinaryPrimitives.WriteInt16LittleEndian(bytes.AsSpan(8),90);BinaryPrimitives.WriteInt16LittleEndian(bytes.AsSpan(10),80);
+    var reading=Parse(bytes);Assert(reading.Limits is {Warning:80,Critical:90,Reported:true});
+});
+Check("Temperature warning colors release three Celsius below thresholds",()=>{
+    var reading=TemperatureReading.From(73,"fixture CPU","",now);
+    Assert(TemperatureColors.Pressure(reading,TemperatureKind.Cpu,ResourcePressure.Warning,now)==ResourcePressure.Warning);
+    Assert(TemperatureColors.Pressure(reading with {Celsius=71},TemperatureKind.Cpu,ResourcePressure.Warning,now)==ResourcePressure.Normal);
+});
+Check("Multi-device color reflects the worst actual device relative to its own limits",()=>{
+    var aggregate=WindowsDiskTemperature.Aggregate(new[]{TemperatureReading.From(71,"disk 1","",now) with {Limits=TemperatureLimits.Device(80,90)},TemperatureReading.From(65,"disk 2","",now) with {Limits=TemperatureLimits.Device(55,60)}});
+    Assert(aggregate.Celsius==71&&TemperatureColors.Pressure(aggregate,TemperatureKind.Disk,ResourcePressure.Normal,now)==ResourcePressure.Critical);
+});
 Loc.SetLanguage("en");
 Console.WriteLine(JsonSerializer.Serialize(new {passed=checks.Count,failed=0,checks,scope="Production storage parsing, identity/channel selection and presentation contracts; synthetic bytes/metadata only, no native device queries, accounts or process actions."},new JsonSerializerOptions {WriteIndented=true}));

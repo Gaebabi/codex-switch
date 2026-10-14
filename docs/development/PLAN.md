@@ -5,10 +5,12 @@
 - [x] Add right-aligned Celsius labels to the four resource gauges and disk gauges without increasing footer height.
 - [x] Read only supported Windows GPU/storage APIs and an optional existing WMI sensor provider; map values to the actual adapter/backing disks.
 - [x] Keep unsupported/denied/malformed readings explicit, with independent VRAM sensors and macOS availability limits; install no driver or elevated service.
-- [x] Update nine packs to 349 messages; pass 24 temperature and 39 language checks, read actual non-elevated GPU/storage values, verify nine minimum-size language layouts and inspect before/after/native-resource screenshots. Windows 93/93 and SQLite/WAL 23/23 pass; both Mac cross-publishes compile. Native Mac GUI/WMI-provider acceptance remains separate.
+- [x] Update nine packs to 353 messages; pass 29 temperature and 39 language checks, read actual non-elevated GPU/storage values, verify nine minimum-size language layouts and inspect before/after/native-resource screenshots. Windows 93/93 and SQLite/WAL 23/23 pass; both Mac cross-publishes compile. Native Mac GUI/WMI-provider acceptance remains separate.
 - [ ] Open a formal PR with issue evidence, review final changes, pass exact-head CI and perform the previously authorized merge. No new binary Release or live account/switch action.
 
 Target source version: 1.29.0. Published downloads remain 1.27.6. The selected sensor source and any missing coverage are described in tooltips/documentation.
+
+The owner's follow-up adds normal/caution/high temperature colors using reported GPU/storage limits where available, documented per-component display defaults and a three-degree release margin. Unknown values stay muted. Portable classification/native-unit/multi-device tests are part of the 29-check suite.
 
 ## Language packs — issue #16
 

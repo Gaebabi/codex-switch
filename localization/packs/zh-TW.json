@@ -354,7 +354,11 @@
     "thermal.invalid_data": "溫度感測器資料無效。",
     "thermal.sensor_unavailable": "相容的溫度感測器未提供讀數。",
     "thermal.highest_sensor": "可用感測器中的最高溫度。",
-    "thermal.backing_disks": "關聯實體磁碟中可讀取的最高溫度；涵蓋範圍顯示於來源中。"
+    "thermal.backing_disks": "關聯實體磁碟中可讀取的最高溫度；涵蓋範圍顯示於來源中。",
+    "thermal.color_limits": "顏色門檻：注意 {0:0.#} °C / 高溫 {1:0.#} °C。",
+    "thermal.reported_limits": "裝置提供的溫度門檻。",
+    "thermal.default_limits": "顯示用預設值，不代表裝置的額定最高溫度。",
+    "thermal.color_release": "低於門檻 {0:0.#} °C 後解除顏色提示。"
   },
   "plurals": {
     "msg.accounts": {

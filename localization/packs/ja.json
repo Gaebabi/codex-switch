@@ -354,7 +354,11 @@
     "thermal.invalid_data": "温度センサーデータが無効です。",
     "thermal.sensor_unavailable": "対応する温度センサーの測定値がありません。",
     "thermal.highest_sensor": "取得できたセンサーの最高温度です。",
-    "thermal.backing_disks": "接続された物理ディスクの取得可能な最高温度です。取得範囲は提供元に表示されます。"
+    "thermal.backing_disks": "接続された物理ディスクの取得可能な最高温度です。取得範囲は提供元に表示されます。",
+    "thermal.color_limits": "色の基準: 注意 {0:0.#} °C / 高温 {1:0.#} °C。",
+    "thermal.reported_limits": "デバイスが提供する温度基準です。",
+    "thermal.default_limits": "表示用の既定値で、デバイスの定格上限ではありません。",
+    "thermal.color_release": "基準より {0:0.#} °C 下がると色が解除されます。"
   },
   "plurals": {
     "msg.accounts": {

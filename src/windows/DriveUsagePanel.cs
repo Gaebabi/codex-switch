@@ -36,7 +36,8 @@ internal sealed class DriveUsagePanel : Grid
         private readonly Border _track = new() { CornerRadius = new CornerRadius(3) }, _fill = new() { HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(3) };
         private readonly TextBlock _text = new() { FontSize = 11, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(5, 0, 4, 0) };
-        private readonly TextBlock _temperature = new() { FontSize = 10, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 5, 0) };
+        private readonly TextBlock _temperature = new() { FontSize = 10, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 5, 0) };
+        private ResourcePressure _temperaturePressure;
         private double _freePercent;
         public DriveCell(string root)
         {
@@ -54,9 +55,12 @@ internal sealed class DriveUsagePanel : Grid
             var label = string.IsNullOrWhiteSpace(reading.Label) ? reading.Root[..2] : reading.Label;
             var value = reading.Free.HasValue ? (reading.Free.Value / 1073741824.0).ToString("0.#", Loc.Culture) + " GiB" : "—";
             _text.Text = label + " " + value; _text.FontFamily = theme.Font; _text.Foreground = theme.Color(color is "warning" or "danger" ? color : "text");
-            var now = DateTimeOffset.UtcNow; _temperature.Text = TemperaturePresentation.Label(reading.Temperature, now); _temperature.FontFamily = theme.Font; _temperature.Foreground = theme.Color("muted");
+            var now = DateTimeOffset.UtcNow; _temperature.Text = TemperaturePresentation.Label(reading.Temperature, now); _temperature.FontFamily = theme.Font;
+            _temperaturePressure = TemperatureColors.Pressure(reading.Temperature, TemperatureKind.Disk, _temperaturePressure, now);
+            _temperature.Foreground = theme.Color(TemperatureColors.Color(_temperaturePressure));
             var details = reading.Root + "\n" + (reading.Free.HasValue ? Loc.F("남음 {0:0.##} / {1:0.##} GiB\n잔여 {2:0.0}%", reading.Free.Value / 1073741824.0, reading.Total!.Value / 1073741824.0, reading.FreePercent) : Loc.T("드라이브 조회 불가"));
             details += "\n\n" + TemperaturePresentation.Tooltip(reading.Temperature, now);
+            details += "\n" + TemperatureColors.Tooltip(reading.Temperature, TemperatureKind.Disk);
             ToolTipTheme.Resource(this, label, value, details, theme, color is "warning" or "danger" ? color : "text");
         }
     }

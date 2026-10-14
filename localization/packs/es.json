@@ -354,7 +354,11 @@
     "thermal.invalid_data": "Datos del sensor de temperatura no válidos.",
     "thermal.sensor_unavailable": "Ningún sensor de temperatura compatible proporcionó una lectura.",
     "thermal.highest_sensor": "Temperatura más alta entre los sensores disponibles.",
-    "thermal.backing_disks": "Temperatura más alta disponible de los discos físicos asociados; la cobertura se muestra en la fuente."
+    "thermal.backing_disks": "Temperatura más alta disponible de los discos físicos asociados; la cobertura se muestra en la fuente.",
+    "thermal.color_limits": "Umbrales de color: precaución {0:0.#} °C / alta {1:0.#} °C.",
+    "thermal.reported_limits": "Umbrales de temperatura proporcionados por el dispositivo.",
+    "thermal.default_limits": "Valores predeterminados de visualización; no son el máximo nominal del dispositivo.",
+    "thermal.color_release": "El color se restablece {0:0.#} °C por debajo del umbral."
   },
   "plurals": {
     "msg.accounts": {

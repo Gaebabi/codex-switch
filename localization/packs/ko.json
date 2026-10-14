@@ -354,7 +354,11 @@
     "thermal.invalid_data": "온도 센서 데이터가 올바르지 않습니다.",
     "thermal.sensor_unavailable": "호환되는 온도 센서의 측정값이 없습니다.",
     "thermal.highest_sensor": "조회 가능한 센서 중 가장 높은 온도입니다.",
-    "thermal.backing_disks": "연결된 실제 디스크 중 조회 가능한 최고 온도이며 조회 범위는 출처에 표시됩니다."
+    "thermal.backing_disks": "연결된 실제 디스크 중 조회 가능한 최고 온도이며 조회 범위는 출처에 표시됩니다.",
+    "thermal.color_limits": "색상 기준: 주의 {0:0.#} °C / 높음 {1:0.#} °C.",
+    "thermal.reported_limits": "장치가 제공한 온도 기준입니다.",
+    "thermal.default_limits": "표시용 기본값이며 장치의 정격 최대 온도가 아닙니다.",
+    "thermal.color_release": "기준보다 {0:0.#} °C 낮아지면 색상을 해제합니다."
   },
   "plurals": {
     "msg.accounts": {

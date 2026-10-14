@@ -354,7 +354,11 @@
     "thermal.invalid_data": "Données du capteur de température non valides.",
     "thermal.sensor_unavailable": "Aucun capteur de température compatible n’a fourni de mesure.",
     "thermal.highest_sensor": "Température la plus élevée parmi les capteurs disponibles.",
-    "thermal.backing_disks": "Température disponible la plus élevée des disques physiques associés ; la couverture figure dans la source."
+    "thermal.backing_disks": "Température disponible la plus élevée des disques physiques associés ; la couverture figure dans la source.",
+    "thermal.color_limits": "Seuils de couleur : attention {0:0.#} °C / élevée {1:0.#} °C.",
+    "thermal.reported_limits": "Seuils de température fournis par le périphérique.",
+    "thermal.default_limits": "Valeurs d’affichage par défaut, pas la température maximale nominale.",
+    "thermal.color_release": "La couleur revient à la normale {0:0.#} °C sous le seuil."
   },
   "plurals": {
     "msg.accounts": {

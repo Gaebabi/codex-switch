@@ -40,7 +40,7 @@ internal sealed class HardwareSampler : IDisposable
     private readonly uint _openStatus;
     private int _collections;
     private DateTimeOffset _adapterRefresh;
-    private (string Id, string Name, ulong Capacity)[] _adapters = Array.Empty<(string, string, ulong)>();
+    private (string Id, string Name, ulong Capacity, uint Vendor)[] _adapters = Array.Empty<(string, string, ulong, uint)>();
     private readonly WindowsGpuTemperature _gpuTemperature = new();
     private readonly WindowsWmiTemperature _wmiTemperature = new();
     public HardwareSampler()
@@ -82,7 +82,7 @@ internal sealed class HardwareSampler : IDisposable
             engineUsage.TryGetValue(a.Id, out var busy) ? busy : null, memoryUsage.TryGetValue(a.Id, out var bytes) ? bytes : null)).ToArray();
         for (var index = 0; index < adapters.Length; index++)
         {
-            var adapter = adapters[index]; var temperatures = _gpuTemperature.Read(adapter.Id);
+            var adapter = adapters[index]; var temperatures = _gpuTemperature.Read(adapter.Id, _adapters[index].Vendor);
             var core = temperatures.Core; var gpuMemory = temperatures.Memory;
             if (core.State != TemperatureState.Available && wmi.Sensors.Length > 0) core = TemperatureSensors.Gpu(wmi.Sensors, adapters, adapter, false, wmi.Source, wmi.CheckedAt);
             if (gpuMemory.State != TemperatureState.Available && wmi.Sensors.Length > 0) gpuMemory = TemperatureSensors.Gpu(wmi.Sensors, adapters, adapter, true, wmi.Source, wmi.CheckedAt);
@@ -126,20 +126,20 @@ internal sealed class HardwareSampler : IDisposable
         }
         return Array.Empty<(string, double)>();
     }
-    private static (string Id, string Name, ulong Capacity)[] ReadAdapters()
+    private static (string Id, string Name, ulong Capacity, uint Vendor)[] ReadAdapters()
     {
         var interfaceId = new Guid("770aae78-f26f-4dba-a829-253c83d1b387");
-        if (CreateDXGIFactory1(ref interfaceId, out var factory) < 0) return Array.Empty<(string, string, ulong)>();
+        if (CreateDXGIFactory1(ref interfaceId, out var factory) < 0) return Array.Empty<(string, string, ulong, uint)>();
         try
         {
-            var enumerate = GetMethod<EnumAdapters>(factory, 12); var adapters = new List<(string, string, ulong)>();
+            var enumerate = GetMethod<EnumAdapters>(factory, 12); var adapters = new List<(string, string, ulong, uint)>();
             for (uint index = 0; ; index++)
             {
                 if (enumerate(factory, index, out var adapter) < 0) break;
                 try
                 {
                     if (GetMethod<GetDescription>(adapter, 10)(adapter, out var description) < 0 || (description.Flags & 2) != 0) continue;
-                    adapters.Add((description.LuidHigh.ToString("x8") + ":" + description.LuidLow.ToString("x8"), description.Description.Trim(), description.DedicatedVideoMemory));
+                    adapters.Add((description.LuidHigh.ToString("x8") + ":" + description.LuidLow.ToString("x8"), description.Description.Trim(), description.DedicatedVideoMemory, description.Vendor));
                 }
                 finally { Marshal.Release(adapter); }
             }

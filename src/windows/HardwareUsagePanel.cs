@@ -12,6 +12,7 @@ internal sealed class HardwareUsagePanel : Grid
     private readonly Grid[] _cells = new Grid[4];
     private readonly ResourceTrendSurface[] _graphs = new ResourceTrendSurface[4];
     private readonly ResourcePressure[] _pressures = new ResourcePressure[4];
+    private readonly ResourcePressure[] _temperaturePressures = new ResourcePressure[4];
     public HardwareUsagePanel()
     {
         Height = 18; VerticalAlignment = VerticalAlignment.Center; HorizontalAlignment = HorizontalAlignment.Stretch;
@@ -26,7 +27,7 @@ internal sealed class HardwareUsagePanel : Grid
             _graphs[index] = new(); cell.Children.Add(_graphs[index]); cell.Children.Add(content);
             _labels[index] = new() { Text = names[index], FontSize = 10, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center };
             _values[index] = new() { FontSize = 13, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
-            _temperatures[index] = new() { FontSize = 10, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) };
+            _temperatures[index] = new() { FontSize = 10, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) };
             primary.Children.Add(_labels[index]); primary.Children.Add(_values[index]); content.Children.Add(primary); SetColumn(_temperatures[index], 1); content.Children.Add(_temperatures[index]); _cells[index] = cell;
             SetColumn(cell, index); Children.Add(cell);
         }
@@ -47,7 +48,9 @@ internal sealed class HardwareUsagePanel : Grid
             _values[index].Foreground = theme.Color(pressure switch { ResourcePressure.Critical => "danger", ResourcePressure.Warning => "warning", ResourcePressure.Unknown => "muted", _ => "text" });
             _values[index].Text = pressure == ResourcePressure.Unknown ? "—" : reading.Percent!.Value.ToString("0", Loc.Culture) + "%";
             _temperatures[index].Text = TemperaturePresentation.Label(reading.Temperature, now);
-            _temperatures[index].Foreground = theme.Color("muted");
+            var temperatureKind = (TemperatureKind)index;
+            _temperaturePressures[index] = TemperatureColors.Pressure(reading.Temperature, temperatureKind, _temperaturePressures[index], now);
+            _temperatures[index].Foreground = theme.Color(TemperatureColors.Color(_temperaturePressures[index]));
             var tooltip = Loc.T(scopes[index]);
             if (pressure == ResourcePressure.Unknown) tooltip += "\n" + Loc.T(reading.Problem ?? "사용률 측정 중…");
             else
@@ -64,12 +67,13 @@ internal sealed class HardwareUsagePanel : Grid
             tooltip += "\n" + Loc.F("2초 간격\n경고 {0}% / 위험 {1}%\n해제 기준 {2}%p 낮음", HardwareMath.WarningPercent, HardwareMath.CriticalPercent, HardwareMath.ReleaseMargin);
             tooltip += "\n" + (_graphs[index].SampleCount < 2 ? Loc.T("그래프 수집 시작…") : Loc.F("최근 {0:0}초 수집\n0–100% 고정 범위", _graphs[index].DurationSeconds));
             tooltip += "\n\n" + TemperaturePresentation.Tooltip(reading.Temperature, now);
+            tooltip += "\n" + TemperatureColors.Tooltip(reading.Temperature, temperatureKind);
             ToolTipTheme.Resource(_cells[index], _labels[index].Text, pressure == ResourcePressure.Unknown ? "—" : reading.Percent!.Value.ToString("0.0", Loc.Culture) + "%", tooltip, theme,
                 pressure switch { ResourcePressure.Critical => "danger", ResourcePressure.Warning => "warning", ResourcePressure.Unknown => "muted", _ => "text" });
         }
     }
     internal object Probe() => new { width = ActualWidth, height = ActualHeight,
-        readings = _values.Select((value, index) => new { label = _labels[index].Text, text = value.Text, temperature = _temperatures[index].Text, pressure = _pressures[index].ToString(), color = value.Foreground.ToString(),
+        readings = _values.Select((value, index) => new { label = _labels[index].Text, text = value.Text, temperature = _temperatures[index].Text, temperaturePressure = _temperaturePressures[index].ToString(), temperatureColor = _temperatures[index].Foreground.ToString(), pressure = _pressures[index].ToString(), color = value.Foreground.ToString(),
             graphPercent = _graphs[index].Percent, graphSamples = _graphs[index].SampleCount, graphSegments = _graphs[index].SegmentCount,
             graphSeconds = _graphs[index].DurationSeconds, graphWidth = _graphs[index].ActualWidth,
             fits = value.DesiredSize.Width + _labels[index].DesiredSize.Width + _temperatures[index].DesiredSize.Width + 9 <= _cells[index].ActualWidth + 0.5 }).ToArray() };

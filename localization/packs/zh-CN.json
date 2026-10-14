@@ -354,7 +354,11 @@
     "thermal.invalid_data": "温度传感器数据无效。",
     "thermal.sensor_unavailable": "兼容的温度传感器未提供读数。",
     "thermal.highest_sensor": "可用传感器中的最高温度。",
-    "thermal.backing_disks": "关联物理磁盘中可读取的最高温度；覆盖范围显示在来源中。"
+    "thermal.backing_disks": "关联物理磁盘中可读取的最高温度；覆盖范围显示在来源中。",
+    "thermal.color_limits": "颜色阈值：注意 {0:0.#} °C / 高温 {1:0.#} °C。",
+    "thermal.reported_limits": "设备提供的温度阈值。",
+    "thermal.default_limits": "显示默认值，不代表设备的额定最高温度。",
+    "thermal.color_release": "低于阈值 {0:0.#} °C 后解除颜色提示。"
   },
   "plurals": {
     "msg.accounts": {

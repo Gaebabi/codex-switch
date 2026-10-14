@@ -354,7 +354,11 @@
     "thermal.invalid_data": "Invalid temperature sensor data.",
     "thermal.sensor_unavailable": "No compatible temperature sensor reported a value.",
     "thermal.highest_sensor": "Highest available sensor temperature.",
-    "thermal.backing_disks": "Highest available backing-disk temperature; coverage is shown in the source."
+    "thermal.backing_disks": "Highest available backing-disk temperature; coverage is shown in the source.",
+    "thermal.color_limits": "Color thresholds: caution {0:0.#} °C / high {1:0.#} °C.",
+    "thermal.reported_limits": "Device-reported temperature thresholds.",
+    "thermal.default_limits": "Display defaults; not the device’s rated maximum.",
+    "thermal.color_release": "Color clears {0:0.#} °C below its threshold."
   },
   "plurals": {
     "msg.accounts": {

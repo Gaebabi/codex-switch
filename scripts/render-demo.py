@@ -93,9 +93,9 @@ internal static class DemoRenderer
         {
             TemperatureReading Sensor(double value) => TemperatureReading.From(value, "Documentation sensor fixture", "Fictional temperature", now);
             Field<HardwareUsagePanel>(window, "_hardwarePanel").Refresh(new HardwareUsage(now,
-                new(26, Temperature: Sensor(63)), new(73, Temperature: Sensor(44)), new(42, Temperature: Sensor(53)), new(58, Temperature: Sensor(74)), Array.Empty<GpuResource>(), 0, history), theme);
+                new(26, Temperature: Sensor(77)), new(73, Temperature: Sensor(44)), new(42, Temperature: Sensor(92)), new(58, Temperature: Sensor(98)), Array.Empty<GpuResource>(), 0, history), theme);
             Field<DriveUsagePanel>(window, "_drivePanel").Refresh(new[] {
-                new DriveReading("C:\\", "C:", (long)(40.6*gib), 512*gib, Sensor(55)), new DriveReading("D:\\", "D:", 624*gib, 1024*gib, Sensor(49)) }, theme);
+                new DriveReading("C:\\", "C:", (long)(40.6*gib), 512*gib, Sensor(71)), new DriveReading("D:\\", "D:", 624*gib, 1024*gib, Sensor(49)) }, theme);
         }
         else if (thermalMode == "live")
         {

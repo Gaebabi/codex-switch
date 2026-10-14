@@ -6,7 +6,7 @@ Related [issue #18](https://github.com/Gaebabi/codex-switch/issues/18). Lossless
 | --- | --- |
 | ![Before program](../language-packs/app-en.png) | ![After temperature program](app-after.png) |
 
-The after image uses fictional temperatures to verify separate right alignment on all six gauges. Minimum-size confirmation: [Korean 500×360](app-compact-ko.png).
+The after image uses fictional temperatures to verify separate right alignment and normal/yellow/red temperature colors on all six gauges. Temperature colors are independent of utilization/free-space colors. Minimum-size confirmation: [Korean 500×360](app-compact-ko.png).
 
 ![Actual native resource and temperature readings, fictional accounts](app-live-sensors.png)
 
