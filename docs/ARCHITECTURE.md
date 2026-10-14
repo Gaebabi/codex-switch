@@ -6,11 +6,14 @@
 
 The coordinator accepts its platform error formatter explicitly; its `IAccountSwitchBackend` still owns actual client/storage/IPC actions. Language installation accepts an `ILanguagePackWriter`; the existing private-directory/atomic-write adapter preserves file protection before publishing the new in-memory catalogue. Vault configuration/default drives remain in the integration layer. Unsupported vault defaults/discovery now fail before taking a Windows path. `Directory.Build.props` owns the managed version; Mac bundle metadata must match it.
 
+Source1.31.0 adds `src/platforms/security/CodexSwitch.PlatformSecurity.csproj`, independent of the UI and domain core. Both apps and contract tests reference its single internal native implementation. It owns `VaultProtection`, Windows DPAPI, Mac Keychain/CoreFoundation helpers and `SecureFiles` (permissions/atomic writes/owned-runtime cleanup). Existing native algorithm bytes, paths, Keychain service/account hashing, DPAPI description and CADM1 envelope are preserved. `AccountVault`/`VaultData` serialization and refresh/credential revisions remain in integration code. Linux vault protection still rejects explicitly. Other native service projects remain in #3.
+
 | Part | Responsibility |
 | --- | --- |
 | `AccountService`, `AccountVault` | Account identity, encrypted storage and asynchronous query/login coordination |
 | `AccountSwitchCoordinator`, desktop automation | Checkpointed chat naming, normal shutdown, login application and chat resumption |
 | `src/core` | UI-neutral models, quota/forecast, refresh/coordinator policy, language/resource presentation |
+| `src/platforms/security` | UI/domain-independent native key/protection/private-file assembly; no credential migration |
 | `DesktopSessionMonitor`, queue stores | Read-only local desktop activity and saved/SQLite queue observations |
 | `HardwareSampler`, `DriveMonitor` | Independent machine-resource and volume collection |
 | `MainWindow`, account/resource panels | Windows WPF UI and shared Burn0 theme |

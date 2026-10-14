@@ -2,6 +2,8 @@
 
 Tracking [#1](https://github.com/Gaebabi/codex-switch/issues/1). Updated 2026-10-15. Resumed checkpoints and reviewed native evidence are tracked in [PR27](https://github.com/Gaebabi/codex-switch/pull/27). Account switching and safe automatic continuation are the core product; a window that launches is not evidence of either capability.
 
+The owner resumed work toward the complete remaining roadmap. [P6–P10 delivery gates](development/PLAN.md#multiplatform-delivery-goal--resumed2026-10-15) begin with [native security extraction37](https://github.com/Gaebabi/codex-switch/issues/37), followed by remaining provider boundaries3, Linux trust5, handoff6 and packages7. Every part receives a scoped issue/PR, checkpoint push and actual application evidence. Finishing a provider extraction does not complete Linux support. Current source1.31.0 and published downloads1.27.6 remain distinct.
+
 Runtime issue4 is completed by merged PR27: source1.30.0/.NET10.0.13, native Windows x64 and macOS15 arm64/Intel app-window evidence, complete runtime/package inspection and four-job reviewed-head CI. Core issue3 starts with a shared UI-neutral project in source1.30.1; native integration-provider boundaries and Linux5/6/7 remain open. Public binaries remain1.27.6 until separately released.
 
 The first core part is now merged as [PR28](https://github.com/Gaebabi/codex-switch/pull/28), main18d33a7. [Actual native program before/after evidence](evidence/shared-core/README.md) and [complete-head four-job CI](https://github.com/Gaebabi/codex-switch/actions/runs/38627343669) pass. Issue3 remains open for its native service projects; [next provider checkpoints](development/PLAN.md) keep those dependencies ahead of Linux enablement. Historical text privacy coordination is tracked in [29](https://github.com/Gaebabi/codex-switch/issues/29) without publishing its private values.
@@ -40,6 +42,7 @@ The foundation and focused core extraction use the following structure while kee
 src/windows/         Windows WPF application and diagnostics
 src/macos/           Mac Avalonia application and native UI integration
 src/core/            single UI-neutral domain/presentation/catalogue project
+src/platforms/security/ native key/protection/private-file assembly
 src/shared/          linked integration services and existing platform adapters
 src/platforms/macos/ Mac native platform helpers
 assets/              canonical brand and Mac icons

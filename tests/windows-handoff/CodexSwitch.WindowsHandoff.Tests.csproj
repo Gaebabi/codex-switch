@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/core/CodexSwitch.Core.csproj" />
+    <ProjectReference Include="../../src/platforms/security/CodexSwitch.PlatformSecurity.csproj" />
     <Compile Include="../../src/shared/*.cs;../../src/platforms/macos/*.cs;Program.cs" />
   </ItemGroup>
 </Project>

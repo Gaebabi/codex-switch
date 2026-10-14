@@ -1,11 +1,32 @@
 # Current plan
 
+## Multiplatform delivery goal — resumed2026-10-15
+
+The owner requests implementation through verified completion of the remaining roadmap, with issue-linked checkpoint commits/pushes, actual private-data-free program images, exact-head CI, author review and authorized merges. Binary Release/signing remains a separate gate. A build or screenshot alone cannot close native account/handoff criteria.
+
+| Checkpoint | Deliverable | Completion gate |
+| --- | --- | --- |
+| P6 — #37, part of #3 | Independent native vault/private-file assembly consumed by both apps/tests | Existing algorithm/identity/format preserved; native protection/file checks, complete packages and Windows/Mac app comparison pass |
+| P7 — remaining #3 | Explicit client lifecycle/discovery, authenticated IPC, SQLite and resource service boundaries | Focused PRs preserve trust/cancellation/read-only/unknown semantics and existing native app contracts |
+| P8 — #5 | Linux keyring/private storage and verified client capabilities | Native missing/locked/restart/tamper tests; same-user trust; no Windows/plaintext fallback or credential migration |
+| P9 — #6 | Shared Linux UI and complete manual switch/recovery/automatic eligible continuation | Target-client chat identity/model/folder/permission and one-send recovery verified on declared native desktop |
+| P10 — #7 | Declared Linux install packages and inclusive environment coverage | Clean-machine install/update/uninstall/data preservation; actual architecture/desktop and accessibility evidence |
+
+First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distro/arm64 support has separate native gates. Unsupported environments report unavailable capabilities. Do not mark remaining #3/#5/#6/#7 complete by finishing P6.
+
+### P6 security extraction
+
+- [x] Reconcile live issues/PRs; #3/#5/#6/#7 remain open, runtime #4 is complete. Dependency major upgrades remain separate proposals.
+- [x] Extract native protection/Keychain/secure-file primitives byte-preserving into `CodexSwitch.PlatformSecurity`; keep account serialization in the integration layer. Both apps/tests/rendering reference one assembly; complete packages require it.
+- [x] Local Windows native protection/file10, existing core/language41, publish/runtime and own-window UI pass. Add Linux refusal/POSIX and native Mac Keychain tests to read-only CI; native Mac confirmation remains required.
+- [ ] Inspect exact-revision native Windows/Mac before/after and record final-head CI/review/merge in a focused PR for #37. No personal storage/client action or new Release.
+
 ## Tooltip style lifetime — issue35
 
 - [x] Reproduce loss of the window-scoped implicit WPF tooltip style when a delayed popup references an account control replaced by refresh. Normal resource gauge reopen/update tests retain their explicit styles.
 - [x] Install the common WPF tooltip style at application scope, preserving popup service, data updates, positioning, animation and accessibility. Source1.30.3.
 - [x] Inspect baseline/corrected actual tooltip component images and native app evidence; verify repeated resource/disk updates, replaced-owner and both-theme boundaries. Capture checkpoint386cde7 passes all four jobs in run38638804892; Windows and both native Mac confirmations are metadata/hash checked.
-- [ ] Finish exact-head CI, author review and owner-authorized PR promotion. No personal capture, installed-app replacement, real account action or binary Release.
+- [x] Finish exact-head779171d CI (run38654957797), author review and PR36 merge to mainc658f408. No personal capture, installed-app replacement, real account action or binary Release.
 
 ## Documentation destinations and screenshots — issue33
 
