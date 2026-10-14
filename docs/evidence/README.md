@@ -1,28 +1,27 @@
-# Repository foundation evidence
+# Application screenshots and verification
 
 Related: [roadmap #1](https://github.com/Gaebabi/codex-switch/issues/1), [foundation #2](https://github.com/Gaebabi/codex-switch/issues/2), [PR #8](https://github.com/Gaebabi/codex-switch/pull/8).
 
-Actual public GitHub pages, captured anonymously as lossless PNGs at 2160×1800. Identity text is replaced before blur/capture, avatars are excluded and exported metadata is empty. No authenticated profile, live account data, private chat or home path is captured.
+The comparison shows the application's actual Windows WPF `MainWindow`/account/resource components, built and rendered from the baseline and reorganized sources with the same isolated fictional inputs. These are application UI images, not repository pages. They are synthetic rendering evidence, not screenshots of live account switching.
 
 | Before: source `0ed757e` | After: source `0545810` |
 | --- | --- |
-| ![Original root with scattered source files](root-before.png) | ![Organized source and documentation directories](root-after.png) |
+| ![Application UI before source reorganization, fictional accounts](app-before.png) | ![Application UI after source reorganization, same fictional accounts](app-after.png) |
 
-Git tree inspection confirms **70 → 11 tracked root files**. 88 tracked files were moved with original hashes checked; all 63 C# sources are unchanged. Project/build/resource/link paths changed to match the structure, while data/key/IPC identities and product version remain 1.27.6.
+Both exports are 800×560 lossless PNGs, 73,560 bytes and byte-identical. The source move preserves the program's UI. No real identity, private chat, credential or home path is present. The displayed addresses use reserved `example.invalid`; raw personal pixels never enter these exports. Final metadata is inspected. A real-account capture must replace private pixels before blur and must never upload originals.
 
-## Current confirmations
+Git inspection confirms **70 → 11 tracked root files**, 88 source/resource/doc moves and all **63 C# files byte-preserved**. Project/build/resource/link paths match the new structure; product version, executable/namespace, data/key and IPC identities remain unchanged.
 
-- [Issue metadata and milestones](issues-confirmation.png): seven roadmap/foundation issues with minimal type, area and priority attributes; six native sub-issues are attached to #1.
-- [Windows renderer confirmation](windows-confirmation.png): current UI with explicitly fictional example identities/data. New source paths render the same PNG bytes; this is UI-resource/build evidence, not actual login/switch/resume.
+## Issue-specific evidence boundary
 
-## Planned-feature baselines
-
-| Issue | Actual baseline | Pending evidence |
+| Issue | Current application evidence | Required before completion |
 | --- | --- | --- |
-| [#3 core/platform projects](https://github.com/Gaebabi/codex-switch/issues/3) | [Original source layout](root-before.png), [organized foundation](root-after.png) | Extracted platform-free projects and native regression acceptance |
-| [#4 supported runtime](https://github.com/Gaebabi/codex-switch/issues/4) | [Existing .NET 8 project](runtime-before.png) | Upgraded runtime/package and regression confirmation |
-| [#5 Linux credential/client trust](https://github.com/Gaebabi/codex-switch/issues/5) | [Vault rejects unsupported Linux](vault-before.png) | Linux key-provider lock/unlock/restart/tamper acceptance |
-| [#6 Linux desktop handoff](https://github.com/Gaebabi/codex-switch/issues/6) | [Unix IPC verifies only Mac peers](ipc-before.png) | Linux authenticated peer, intended shutdown and same-chat continuation |
-| [#7 wider packages/environments](https://github.com/Gaebabi/codex-switch/issues/7) | [Current Windows/Mac release](release-before.png) | Native Linux packages and clean-machine lifecycle acceptance |
+| [#1 roadmap](https://github.com/Gaebabi/codex-switch/issues/1) | Existing program baseline above | Native Linux functionality and download-ready release confirmation |
+| [#2 foundation](https://github.com/Gaebabi/codex-switch/issues/2) | Before/after program UI preserved | Repository checks, architecture builds, isolated tests, PR CI and review |
+| [#3 core/platform projects](https://github.com/Gaebabi/codex-switch/issues/3) | Existing program before/after repository organization | After-extraction application screenshots and regression evidence |
+| [#4 runtime](https://github.com/Gaebabi/codex-switch/issues/4) | Existing Windows program | Upgraded application/runtime package and regression confirmation |
+| [#5 Linux credential/client trust](https://github.com/Gaebabi/codex-switch/issues/5) | Existing supported program | Actual Linux app key-provider states and lock/unlock/restart/tamper tests |
+| [#6 Linux handoff](https://github.com/Gaebabi/codex-switch/issues/6) | Existing supported program | Actual Linux switch/recovery/same-chat continuation screenshots and native results |
+| [#7 package/coverage](https://github.com/Gaebabi/codex-switch/issues/7) | Existing supported program | Installed Linux app confirmation and clean-machine lifecycle/environment evidence |
 
-These screenshots establish current problems and completed repository work. No screenshot claims an unimplemented Linux/runtime feature has passed. Implementation PRs must add before/after or native new-feature confirmation before closing those issues. Automated/CI results are recorded on PR #8; screenshots complement them.
+Unimplemented features explicitly have pending application confirmation. No repository screenshot or mockup can close a functional acceptance gate. Invisible security/storage behavior also requires automated/native results; a dashboard alone cannot prove it.
