@@ -17,10 +17,19 @@ Every checkpoint receives a scoped commit/push. The PR stays draft until target-
 - [x] Checkpoint P4: move eleven domain/presentation/catalogue files into one UI-neutral `src/core` project consumed by Windows/Mac/tests/rendering; centralize managed version1.30.1. Keep native integration and vault defaults outside it, inject existing error/private-file-write adapters, and reject unsupported discovery/vault defaults explicitly.
 - [x] Local Windows93/SQLite23, core/language41, temperature29 and Windows/Mac compilation pass. Catalogue resource identity and refusal-before-cache-update are verified.
 - [x] Checkpoint P5 evidence: inspect and attach native Windows/Mac arm64/Intel before/after program screenshots from source9433b79, all four jobs in run38626725906 pass. Windows's eight PNGs are byte-identical; Mac strict UI checks pass. Missing-core packages are rejected.
-- [ ] P5 promotion: latest complete-head native/portable CI, self-review and merge the focused extraction PR. Keep issue3 open for remaining native-provider boundaries.
+- [x] P5 promotion: complete-head572de6d passed all four jobs in run38627343669, author self-review recorded and PR28 merged to main18d33a7. Reviewed/merged trees match and the completed branch is removed. Issue3 remains open for native-provider boundaries.
 - [x] Checkpoint P4.1: add bounded own-window capture failure diagnostics after Intel CI's OS screenshot command failed. Windows/Apple Silicon and all Intel non-capture checks passed; no fallback, retries or relaxed assertions are introduced. Failed raw stderr remains private and is never exported with PNGs. Native Intel success is still required.
 - [x] Checkpoint P4.2: repeated Intel failures identify the first window's WindowServer image as unavailable. Capture preparation now activates only the app's own window, checks AppKit native visibility with a bounded deadline and displays pending views before the single OS capture. Native state is reported safely on failure; no capture retries/fallbacks or weakened UI assertions. Package inspection also requires all declared project runtime DLLs, including the new core assembly. Native confirmation remains required.
 - [ ] Continue explicit key provider, lifecycle/discovery, authenticated IPC, SQLite and hardware adapters before Linux credential/client acceptance5 and handoff6. Unsupported Linux remains disabled; no insecure fallback or release claim.
+
+## Next provider checkpoints
+
+1. Issue3: isolate existing Windows/Mac key/private-file and client lifecycle/discovery adapters, then authenticated IPC, read-only SQLite and hardware providers. Each focused part must preserve identities/async/revisions and pass native before/after evidence before merge.
+2. Issue5: enable secure Linux primitives only after explicit providers exist. Native GNOME/KWallet lock/missing-key/restart/tamper/private-XDG/SQLite preservation and verified client/backend discovery are required; no plaintext or Windows fallback.
+3. Issue6: add Linux GUI/IPC/shutdown/recovery and prove unchanged chat IDs/models/permissions with one eligible continuation. X11/XWayland and native architecture evidence are separate from a window launch.
+4. Issue7: promote declared packages only after clean-VM lifecycle and their advertised capabilities pass. Signing, binary publication, native Wayland and broader architecture/desktop coverage remain separate gates.
+
+Historical privacy coordination29 has its own approval boundary: no public history rewrite/force-push without explicit owner authorization. No private path values or raw evidence are posted.
 
 ## Always-on refresh — issue #25
 

@@ -4,6 +4,8 @@ Tracking [#1](https://github.com/Gaebabi/codex-switch/issues/1). Updated 2026-10
 
 Runtime issue4 is completed by merged PR27: source1.30.0/.NET10.0.13, native Windows x64 and macOS15 arm64/Intel app-window evidence, complete runtime/package inspection and four-job reviewed-head CI. Core issue3 starts with a shared UI-neutral project in source1.30.1; native integration-provider boundaries and Linux5/6/7 remain open. Public binaries remain1.27.6 until separately released.
 
+The first core part is now merged as [PR28](https://github.com/Gaebabi/codex-switch/pull/28), main18d33a7. [Actual native program before/after evidence](evidence/shared-core/README.md) and [complete-head four-job CI](https://github.com/Gaebabi/codex-switch/actions/runs/38627343669) pass. Issue3 remains open for its native service projects; [next provider checkpoints](development/PLAN.md) keep those dependencies ahead of Linux enablement. Historical text privacy coordination is tracked in [29](https://github.com/Gaebabi/codex-switch/issues/29) without publishing its private values.
+
 ## Current support
 
 | Environment | Package | Evidence boundary |
