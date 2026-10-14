@@ -45,12 +45,13 @@ internal sealed class MacResourceSampler : IDisposable
     public HardwareUsage Sample()
     {
         var clock = Stopwatch.StartNew(); var now = DateTimeOffset.UtcNow;
-        var cpu = Cpu(); var memory = Memory(); _gpu = Gpu(now);
+        var unavailable = TemperatureReading.Missing(TemperatureState.PlatformUnsupported, "macOS", at: now);
+        var cpu = Cpu() with { Temperature = unavailable }; var memory = Memory() with { Temperature = unavailable }; _gpu = Gpu(now);
         var busiest = _gpu.Where(g => g.Percent.HasValue).OrderByDescending(g => g.Percent).FirstOrDefault();
         var fullest = _gpu.Where(g => g.UsedBytes.HasValue && g.Capacity > 0).OrderByDescending(g => HardwareMath.Percentage(g.UsedBytes!.Value, g.Capacity)).FirstOrDefault();
-        return new(now, cpu, memory, new(busiest?.Percent, Device: busiest?.Name, Problem: busiest == null ? "GPU 사용률을 제공하지 않는 드라이버입니다." : null),
-            fullest == null ? new(null, Problem: "전용 VRAM 정보가 없습니다. Apple Silicon은 통합 메모리를 사용합니다.") :
-                new(HardwareMath.Percentage(fullest.UsedBytes!.Value, fullest.Capacity), fullest.UsedBytes, fullest.Capacity, fullest.Name), _gpu, clock.Elapsed.TotalMilliseconds);
+        return new(now, cpu, memory, new(busiest?.Percent, Device: busiest?.Name, Problem: busiest == null ? "GPU 사용률을 제공하지 않는 드라이버입니다." : null, Temperature: unavailable),
+            fullest == null ? new(null, Problem: "전용 VRAM 정보가 없습니다. Apple Silicon은 통합 메모리를 사용합니다.", Temperature: unavailable) :
+                new(HardwareMath.Percentage(fullest.UsedBytes!.Value, fullest.Capacity), fullest.UsedBytes, fullest.Capacity, fullest.Name, Temperature: unavailable), _gpu, clock.Elapsed.TotalMilliseconds);
     }
     private ResourceReading Cpu()
     {

@@ -343,7 +343,18 @@
     "pack.restore_built_in_language_pack": "恢復內建語言包",
     "pack.local_translations_replaced_with_the_built": "本地翻譯已替換為內建語言包。",
     "pack.choose_a_trusted_language_pack_imported": "請選擇可信的語言包。匯入的包會修改標籤和提示，僅包含文字。",
-    "pack.invalid_local_packs": "{0} 個本地語言包無效，內建語言仍可使用。"
+    "pack.invalid_local_packs": "{0} 個本地語言包無效，內建語言仍可使用。",
+    "thermal.value": "溫度：{0:0.#} °C",
+    "thermal.unavailable": "溫度資訊無法取得",
+    "thermal.stale": "溫度讀數已過期。",
+    "thermal.provider_missing": "需要相容的 WMI 硬體感測器提供者。",
+    "thermal.access_denied": "裝置或作業系統拒絕了溫度查詢權限。",
+    "thermal.read_failed": "無法讀取溫度感測器。",
+    "thermal.platform_unsupported": "此平台沒有可用的受支援溫度感測器。",
+    "thermal.invalid_data": "溫度感測器資料無效。",
+    "thermal.sensor_unavailable": "相容的溫度感測器未提供讀數。",
+    "thermal.highest_sensor": "可用感測器中的最高溫度。",
+    "thermal.backing_disks": "關聯實體磁碟中可讀取的最高溫度；涵蓋範圍顯示於來源中。"
   },
   "plurals": {
     "msg.accounts": {

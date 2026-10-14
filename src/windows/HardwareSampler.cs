@@ -41,6 +41,8 @@ internal sealed class HardwareSampler : IDisposable
     private int _collections;
     private DateTimeOffset _adapterRefresh;
     private (string Id, string Name, ulong Capacity)[] _adapters = Array.Empty<(string, string, ulong)>();
+    private readonly WindowsGpuTemperature _gpuTemperature = new();
+    private readonly WindowsWmiTemperature _wmiTemperature = new();
     public HardwareSampler()
     {
         _openStatus = PdhOpenQueryW(null, IntPtr.Zero, out _query);
@@ -72,13 +74,25 @@ internal sealed class HardwareSampler : IDisposable
             var id = instance.Value.Adapter;
             memoryUsage[id] = checked(memoryUsage.GetValueOrDefault(id) + (ulong)value);
         }
+        _wmiTemperature.Refresh(now);
+        var wmi = _wmiTemperature;
+        cpu = cpu with { Temperature = wmi.Sensors.Length == 0 ? wmi.Status : TemperatureSensors.Resource(wmi.Sensors, "Cpu", wmi.Source, wmi.CheckedAt) };
+        ram = ram with { Temperature = wmi.Sensors.Length == 0 ? wmi.Status : TemperatureSensors.Resource(wmi.Sensors, "Memory", wmi.Source, wmi.CheckedAt) };
         var adapters = _adapters.Select(a => new GpuResource(a.Id, a.Name, a.Capacity,
             engineUsage.TryGetValue(a.Id, out var busy) ? busy : null, memoryUsage.TryGetValue(a.Id, out var bytes) ? bytes : null)).ToArray();
+        for (var index = 0; index < adapters.Length; index++)
+        {
+            var adapter = adapters[index]; var temperatures = _gpuTemperature.Read(adapter.Id);
+            var core = temperatures.Core; var gpuMemory = temperatures.Memory;
+            if (core.State != TemperatureState.Available && wmi.Sensors.Length > 0) core = TemperatureSensors.Gpu(wmi.Sensors, adapters, adapter, false, wmi.Source, wmi.CheckedAt);
+            if (gpuMemory.State != TemperatureState.Available && wmi.Sensors.Length > 0) gpuMemory = TemperatureSensors.Gpu(wmi.Sensors, adapters, adapter, true, wmi.Source, wmi.CheckedAt);
+            adapters[index] = adapter with { Temperature = core, MemoryTemperature = gpuMemory };
+        }
         var busiest = adapters.Where(a => a.Percent != null).OrderByDescending(a => a.Percent).FirstOrDefault();
         var fullest = adapters.Where(a => a.UsedBytes != null && HardwareMath.Percentage(a.UsedBytes.Value, a.Capacity) != null)
             .OrderByDescending(a => HardwareMath.Percentage(a.UsedBytes!.Value, a.Capacity)).FirstOrDefault();
-        var gpu = busiest == null ? new ResourceReading(null, Problem: "GPU 조회 불가") : new ResourceReading(busiest.Percent, Device: busiest.Name);
-        var vram = fullest == null ? new ResourceReading(null, Problem: "VRAM 조회 불가") : new ResourceReading(HardwareMath.Percentage(fullest.UsedBytes!.Value, fullest.Capacity), fullest.UsedBytes, fullest.Capacity, fullest.Name);
+        var gpu = busiest == null ? new ResourceReading(null, Problem: "GPU 조회 불가") : new ResourceReading(busiest.Percent, Device: busiest.Name, Temperature: busiest.Temperature);
+        var vram = fullest == null ? new ResourceReading(null, Problem: "VRAM 조회 불가") : new ResourceReading(HardwareMath.Percentage(fullest.UsedBytes!.Value, fullest.Capacity), fullest.UsedBytes, fullest.Capacity, fullest.Name, Temperature: fullest.MemoryTemperature);
         return new(now, cpu, ram, gpu, vram, adapters, watch.Elapsed.TotalMilliseconds);
     }
     private ResourceReading ReadCpu()
@@ -135,7 +149,7 @@ internal sealed class HardwareSampler : IDisposable
     }
     private static T GetMethod<T>(IntPtr instance, int index) where T : Delegate =>
         Marshal.GetDelegateForFunctionPointer<T>(Marshal.ReadIntPtr(Marshal.ReadIntPtr(instance), index * IntPtr.Size));
-    public void Dispose() { if (_query != IntPtr.Zero) PdhCloseQuery(_query); }
+    public void Dispose() { _gpuTemperature.Dispose(); if (_query != IntPtr.Zero) PdhCloseQuery(_query); }
     [StructLayout(LayoutKind.Sequential)] private struct CounterValue { public uint Status; public double Value; }
     [StructLayout(LayoutKind.Sequential)] private struct CounterItem { public IntPtr Name; public CounterValue Value; }
     [StructLayout(LayoutKind.Sequential)] private struct MemoryStatus

@@ -343,7 +343,18 @@
     "pack.restore_built_in_language_pack": "内蔵言語パックに戻す",
     "pack.local_translations_replaced_with_the_built": "ローカル翻訳を内蔵パックに戻しました。",
     "pack.choose_a_trusted_language_pack_imported": "信頼する言語パックを選んでください。取り込むパックは表示文を変更し、テキストのみを含みます。",
-    "pack.invalid_local_packs": "ローカル言語パック {0}件が無効です。内蔵言語は引き続き使えます。"
+    "pack.invalid_local_packs": "ローカル言語パック {0}件が無効です。内蔵言語は引き続き使えます。",
+    "thermal.value": "温度: {0:0.#} °C",
+    "thermal.unavailable": "温度情報なし",
+    "thermal.stale": "温度の測定値が古くなっています。",
+    "thermal.provider_missing": "互換性のある WMI ハードウェアセンサーの提供元が必要です。",
+    "thermal.access_denied": "デバイスまたは OS により温度へのアクセスが拒否されました。",
+    "thermal.read_failed": "温度センサーを読み取れませんでした。",
+    "thermal.platform_unsupported": "このプラットフォームでは対応する温度センサーを利用できません。",
+    "thermal.invalid_data": "温度センサーデータが無効です。",
+    "thermal.sensor_unavailable": "対応する温度センサーの測定値がありません。",
+    "thermal.highest_sensor": "取得できたセンサーの最高温度です。",
+    "thermal.backing_disks": "接続された物理ディスクの取得可能な最高温度です。取得範囲は提供元に表示されます。"
   },
   "plurals": {
     "msg.accounts": {

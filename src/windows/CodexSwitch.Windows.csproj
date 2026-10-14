@@ -11,13 +11,14 @@
     <RootNamespace>CodexAccountDesk</RootNamespace>
     <Title>Codex Switch</Title>
     <Product>Codex Switch</Product>
-    <Version>1.28.0</Version>
+    <Version>1.29.0</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>../../assets/brand/app-icon.ico</ApplicationIcon>
     <DebugType>none</DebugType>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="System.Management" Version="8.0.0" />
     <Compile Include="../shared/**/*.cs;../platforms/macos/**/*.cs" Link="Shared/%(Filename)%(Extension)" />
     <EmbeddedResource Include="../../assets/brand/mark.path" LogicalName="CodexAccountDesk.Mark.path" />
     <EmbeddedResource Include="../../assets/brand/mark-body.path" LogicalName="CodexAccountDesk.MarkBody.path" />

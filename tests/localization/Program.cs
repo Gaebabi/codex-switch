@@ -26,7 +26,7 @@ var englishBytes = Resource("en.json");
 var basis = LanguagePack.Parse(englishBytes, null, false);
 byte[] Mutate(Action<JsonObject> action)
 { var json = JsonNode.Parse(englishBytes)!.AsObject(); action(json); return Encoding.UTF8.GetBytes(json.ToJsonString()); }
-Check("Nine complete built-in packs preserve English/Korean source aliases", () => { Loc.ValidateCatalogs(); Assert(Loc.Languages.Count == 9 && basis.Strings.Count == 338); Loc.SetLanguage("ko"); Assert(Loc.T("계정 추가") == "계정 추가"); Loc.SetLanguage("en"); Assert(Loc.T("계정 추가") == "Add account"); });
+Check("Nine complete built-in packs preserve English/Korean source aliases", () => { Loc.ValidateCatalogs(); Assert(Loc.Languages.Count == 9); Loc.SetLanguage("ko"); Assert(Loc.T("계정 추가") == "계정 추가"); Loc.SetLanguage("en"); Assert(Loc.T("계정 추가") == "Add account"); });
 foreach (var info in Loc.Languages)
 {
     Check(info.Code + " messages/culture/calendar/formats", () =>
@@ -99,7 +99,7 @@ try
     File.WriteAllText(packPath,partial.ToJsonString(),Encoding.UTF8);
     Check("Real install/reload uses data-only JSON and English plural fallback", () =>
     {
-        var info=Loc.Install(packPath,installed); Assert(info.IsCustom && info.Translated==1 && info.Total==338);
+        var info=Loc.Install(packPath,installed); Assert(info.IsCustom && info.Translated==1 && info.Total==basis.Strings.Count);
         Loc.SetLanguage("ca"); Assert(Loc.T("계정 추가")=="Afegeix un compte" && Loc.T("새로 고침")=="Refresh" && Loc.Count("msg.accounts",1)=="1 account");
         Assert(File.Exists(Path.Combine(installed,"pack-ca.json"))); Loc.LoadInstalled(installed); Assert(Loc.RestoreLanguage("ca") && Loc.Language=="ca");
     });

@@ -1,0 +1,94 @@
+using System;
+using System.Globalization;
+using System.IO;
+using System.Runtime.InteropServices;
+
+namespace CodexAccountDesk;
+
+internal sealed class WindowsGpuTemperature : IDisposable
+{
+    private readonly IntPtr _nvml;
+    private readonly Shutdown? _shutdown;
+    private readonly DeviceByPci? _deviceByPci;
+    private readonly FieldValues? _fieldValues;
+    private readonly bool _initialized;
+    public WindowsGpuTemperature()
+    {
+        var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "nvml.dll");
+        if (!File.Exists(path)) return;
+        _nvml = LoadLibraryExW(path, IntPtr.Zero, 0x900);
+        if (_nvml == IntPtr.Zero) return;
+        var initialize = Export<Initialize>("nvmlInit_v2"); _shutdown = Export<Shutdown>("nvmlShutdown");
+        _deviceByPci = Export<DeviceByPci>("nvmlDeviceGetHandleByPciBusId_v2"); _fieldValues = Export<FieldValues>("nvmlDeviceGetFieldValues");
+        _initialized = initialize != null && _shutdown != null && _deviceByPci != null && _fieldValues != null && initialize() == 0;
+    }
+    private T? Export<T>(string name) where T : Delegate => NativeLibrary.TryGetExport(_nvml, name, out var address) ? Marshal.GetDelegateForFunctionPointer<T>(address) : null;
+    public (TemperatureReading Core, TemperatureReading Memory) Read(string id)
+    {
+        var at = DateTimeOffset.UtcNow;
+        var missing = TemperatureReading.Missing(TemperatureState.SensorUnavailable, "Windows GPU driver", at: at);
+        if (id.Length != 17 || id[8] != ':' || !uint.TryParse(id.AsSpan(0, 8), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var high) ||
+            !uint.TryParse(id.AsSpan(9, 8), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var low)) return (missing, missing);
+        var open = new OpenAdapter { Low = low, High = high };
+        var status = D3DKMTOpenAdapterFromLuid(ref open);
+        if (status != 0) return (Failure(status, at), missing);
+        try
+        {
+            var count = 0u;
+            if (Query(open.Handle, 30, ref count) != 0 || count != 1) return (missing, missing);
+            var data = new AdapterPerformance(); status = Query(open.Handle, 62, ref data);
+            var core = status == 0 && data.Temperature > 0 ? TemperatureReading.From(data.Temperature / 10.0, "Windows GPU driver", id, at) : status != 0 ? Failure(status, at) : missing;
+            var memory = missing;
+            var address = new AdapterAddress();
+            if (_initialized && Query(open.Handle, 6, ref address) == 0)
+            {
+                var pci = string.Create(CultureInfo.InvariantCulture, $"00000000:{address.Bus:x2}:{address.Device:x2}.{address.Function:x1}");
+                if (_deviceByPci!(pci, out var device) == 0)
+                {
+                    var field = new NvmlField { Id = 82 };
+                    var queryStatus = _fieldValues!(device, 1, ref field);
+                    if (queryStatus == 0 && field.Status == 0)
+                    {
+                        double? value = field.Type switch { 0 => BitConverter.Int64BitsToDouble(unchecked((long)field.Value)), 1 or 2 => (uint)field.Value,
+                            3 => field.Value, 4 => unchecked((long)field.Value), 5 => unchecked((int)field.Value), 6 => (ushort)field.Value, _ => null };
+                        memory = value.HasValue ? TemperatureReading.From(value.Value, "NVIDIA NVML · VRAM", id, at) : TemperatureReading.Missing(TemperatureState.InvalidData, "NVIDIA NVML", at: at);
+                    }
+                    else memory = TemperatureReading.Missing(queryStatus == 4 || field.Status == 4 ? TemperatureState.AccessDenied : TemperatureState.SensorUnavailable,
+                        "NVIDIA NVML · VRAM", code: "NVML " + (queryStatus == 0 ? field.Status : queryStatus), at: at);
+                }
+            }
+            return (core, memory);
+        }
+        finally { var handle = open.Handle; D3DKMTCloseAdapter(ref handle); }
+    }
+    private static TemperatureReading Failure(int status, DateTimeOffset at) => TemperatureReading.Missing(status == unchecked((int)0xc0000022) ? TemperatureState.AccessDenied : TemperatureState.SensorUnavailable,
+        "Windows GPU driver", code: "NTSTATUS 0x" + unchecked((uint)status).ToString("x8", CultureInfo.InvariantCulture), at: at);
+    private static int Query<T>(uint handle, int type, ref T value) where T : struct
+    {
+        var size = Marshal.SizeOf<T>(); var pointer = Marshal.AllocHGlobal(size);
+        try
+        {
+            Marshal.StructureToPtr(value, pointer, false);
+            var request = new QueryAdapter { Handle = handle, Type = type, Data = pointer, Size = (uint)size };
+            var status = D3DKMTQueryAdapterInfo(ref request);
+            if (status == 0) value = Marshal.PtrToStructure<T>(pointer);
+            return status;
+        }
+        finally { Marshal.FreeHGlobal(pointer); }
+    }
+    public void Dispose() { if (_initialized) _shutdown!(); if (_nvml != IntPtr.Zero) NativeLibrary.Free(_nvml); }
+    [StructLayout(LayoutKind.Sequential)] private struct OpenAdapter { public uint Low, High, Handle; }
+    [StructLayout(LayoutKind.Sequential)] private struct QueryAdapter { public uint Handle; public int Type; public IntPtr Data; public uint Size; }
+    [StructLayout(LayoutKind.Sequential)] private struct AdapterAddress { public uint Bus, Device, Function; }
+    [StructLayout(LayoutKind.Sequential)] private struct AdapterPerformance
+    { public uint PhysicalAdapter; public ulong MemoryFrequency, MaxMemoryFrequency, MaxMemoryFrequencyOc, MemoryBandwidth, PcieBandwidth; public uint FanRpm, Power, Temperature; public byte PowerOverride; }
+    [StructLayout(LayoutKind.Sequential)] private struct NvmlField { public uint Id, Scope; public long Timestamp, Latency; public int Type, Status; public ulong Value; }
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate int Initialize();
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate int Shutdown();
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate int DeviceByPci([MarshalAs(UnmanagedType.LPStr)] string address, out IntPtr device);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate int FieldValues(IntPtr device, int count, ref NvmlField values);
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern IntPtr LoadLibraryExW(string path, IntPtr reserved, uint flags);
+    [DllImport("gdi32.dll")] private static extern int D3DKMTOpenAdapterFromLuid(ref OpenAdapter adapter);
+    [DllImport("gdi32.dll")] private static extern int D3DKMTQueryAdapterInfo(ref QueryAdapter query);
+    [DllImport("gdi32.dll")] private static extern int D3DKMTCloseAdapter(ref uint adapter);
+}

@@ -6,12 +6,14 @@ using System.Threading.Tasks;
 
 namespace CodexAccountDesk;
 
-internal sealed record DriveReading(string Root, string Label, long? Free, long? Total)
+internal sealed record DriveReading(string Root, string Label, long? Free, long? Total, TemperatureReading? Temperature = null)
 {
     public double? FreePercent => Free.HasValue && Total > 0 ? 100.0 * Free.Value / Total.Value : null;
 }
 internal sealed class DriveMonitor : IAsyncDisposable
 {
+    private readonly Func<string, TemperatureReading> _temperature;
+    public DriveMonitor(Func<string, TemperatureReading>? temperature = null) => _temperature = temperature ?? (_ => TemperatureReading.Missing(TemperatureState.PlatformUnsupported));
     private DrivePreference[] _configuration = Array.Empty<DrivePreference>();
     private DriveReading[] _current = Array.Empty<DriveReading>();
     private readonly CancellationTokenSource _stop = new();
@@ -42,13 +44,13 @@ internal sealed class DriveMonitor : IAsyncDisposable
         }
         catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
     }
-    private static DriveReading Read(DrivePreference preference)
+    private DriveReading Read(DrivePreference preference)
     {
         try
         {
             var drive = new DriveInfo(preference.Root);
             if (drive.DriveType is not (DriveType.Fixed or DriveType.Removable) || !drive.IsReady) return new(preference.Root, preference.Label, null, null);
-            return new(preference.Root, preference.Label, drive.AvailableFreeSpace, drive.TotalSize);
+            return new(preference.Root, preference.Label, drive.AvailableFreeSpace, drive.TotalSize, _temperature(preference.Root));
         }
         catch (IOException) { return new(preference.Root, preference.Label, null, null); }
         catch (UnauthorizedAccessException) { return new(preference.Root, preference.Label, null, null); }

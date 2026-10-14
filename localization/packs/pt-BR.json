@@ -343,7 +343,18 @@
     "pack.restore_built_in_language_pack": "Restaurar pacote integrado",
     "pack.local_translations_replaced_with_the_built": "Traduções locais substituídas pelo pacote integrado.",
     "pack.choose_a_trusted_language_pack_imported": "Escolha um pacote confiável. Pacotes importados alteram rótulos e mensagens e contêm apenas texto.",
-    "pack.invalid_local_packs": "{0} pacotes locais são inválidos; os idiomas integrados continuam disponíveis."
+    "pack.invalid_local_packs": "{0} pacotes locais são inválidos; os idiomas integrados continuam disponíveis.",
+    "thermal.value": "Temperatura: {0:0.#} °C",
+    "thermal.unavailable": "Temperatura indisponível",
+    "thermal.stale": "A leitura de temperatura está desatualizada.",
+    "thermal.provider_missing": "É necessário um provedor compatível de sensores de hardware WMI.",
+    "thermal.access_denied": "O dispositivo ou o sistema operacional negou o acesso à temperatura.",
+    "thermal.read_failed": "Não foi possível ler o sensor de temperatura.",
+    "thermal.platform_unsupported": "Esta plataforma não oferece sensores de temperatura compatíveis.",
+    "thermal.invalid_data": "Dados inválidos do sensor de temperatura.",
+    "thermal.sensor_unavailable": "Nenhum sensor de temperatura compatível forneceu uma leitura.",
+    "thermal.highest_sensor": "Temperatura mais alta entre os sensores disponíveis.",
+    "thermal.backing_disks": "Maior temperatura disponível dos discos físicos associados; a cobertura aparece na fonte."
   },
   "plurals": {
     "msg.accounts": {

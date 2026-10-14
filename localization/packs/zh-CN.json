@@ -343,7 +343,18 @@
     "pack.restore_built_in_language_pack": "恢复内置语言包",
     "pack.local_translations_replaced_with_the_built": "本地翻译已替换为内置语言包。",
     "pack.choose_a_trusted_language_pack_imported": "请选择可信的语言包。导入的包会修改标签和提示，仅包含文本。",
-    "pack.invalid_local_packs": "{0} 个本地语言包无效，内置语言仍可使用。"
+    "pack.invalid_local_packs": "{0} 个本地语言包无效，内置语言仍可使用。",
+    "thermal.value": "温度：{0:0.#} °C",
+    "thermal.unavailable": "温度不可用",
+    "thermal.stale": "温度读数已过期。",
+    "thermal.provider_missing": "需要兼容的 WMI 硬件传感器提供程序。",
+    "thermal.access_denied": "设备或操作系统拒绝了温度查询权限。",
+    "thermal.read_failed": "无法读取温度传感器。",
+    "thermal.platform_unsupported": "此平台没有可用的受支持温度传感器。",
+    "thermal.invalid_data": "温度传感器数据无效。",
+    "thermal.sensor_unavailable": "兼容的温度传感器未提供读数。",
+    "thermal.highest_sensor": "可用传感器中的最高温度。",
+    "thermal.backing_disks": "关联物理磁盘中可读取的最高温度；覆盖范围显示在来源中。"
   },
   "plurals": {
     "msg.accounts": {

@@ -313,6 +313,7 @@ internal sealed class DeskWindow : Window
     private void RenderHardware()
     {
         var usage = _resources.Current;
+        var now = DateTimeOffset.UtcNow;
         var readings = new[] { usage.Cpu, usage.Memory, usage.Gpu, usage.Vram }; var labels = new[] { "CPU", "MEM", "GPU", "VRAM" };
         var scopes = new[] { "PC 전체 CPU", "PC 전체 물리 메모리", "가장 바쁜 GPU 엔진", "가장 높은 전용 GPU 메모리 사용률" };
         for (var i = 0; i < 4; i++)
@@ -323,18 +324,22 @@ internal sealed class DeskWindow : Window
             if (_hardware.Children.Count <= i)
             {
                 _hardware.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star)); cell = new Grid { ClipToBounds = true, Margin = new Thickness(1) }; cell.Children.Add(new PercentChart());
-                var text = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+                var content = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(5, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center };
+                var text = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
                 var label = _theme.Text(labels[i], 10, "muted"); label.VerticalAlignment = VerticalAlignment.Center; text.Children.Add(label);
-                text.Children.Add(_theme.Text("", 12)); cell.Children.Add(text); Grid.SetColumn(cell, i); _hardware.Children.Add(cell);
+                text.Children.Add(_theme.Text("", 12)); content.Children.Add(text);
+                var temperature = _theme.Text("", 10, "muted"); temperature.Margin = new Thickness(6, 0, 0, 0); temperature.HorizontalAlignment = HorizontalAlignment.Right; Grid.SetColumn(temperature, 1); content.Children.Add(temperature);
+                cell.Children.Add(content); Grid.SetColumn(cell, i); _hardware.Children.Add(cell);
             }
             else cell = (Grid)_hardware.Children[i];
             var chart = (PercentChart)cell.Children[0]; chart.Palette = _theme; chart.ColorName = color;
             chart.Points = (usage.History ?? Array.Empty<HardwareObservation>()).Select(p => new ResourceTrendPoint(p.At, index switch { 0 => p.Cpu, 1 => p.Memory, 2 => p.Gpu, _ => p.Vram })).ToArray(); chart.InvalidateVisual();
-            var value = (TextBlock)((StackPanel)cell.Children[1]).Children[1]; value.Text = reading.Percent is double actual ? actual.ToString("0", Loc.Culture) + "%" : "—";
+            var contentGrid = (Grid)cell.Children[1]; var value = (TextBlock)((StackPanel)contentGrid.Children[0]).Children[1]; value.Text = reading.Percent is double actual ? actual.ToString("0", Loc.Culture) + "%" : "—";
+            ((TextBlock)contentGrid.Children[1]).Text = TemperaturePresentation.Label(reading.Temperature, now);
             value.Foreground = _theme.Brush(_pressure[i] is ResourcePressure.Warning or ResourcePressure.Critical ? color : "text");
             var details = Loc.T(scopes[i]) + (reading.Device == null ? "" : "\n" + reading.Device) + (reading.Problem == null ? "" : "\n" + Loc.Error(reading.Problem)) +
                 (reading.UsedBytes.HasValue && reading.TotalBytes.HasValue ? "\n" + Loc.F("{0:0.##} / {1:0.##} GiB", reading.UsedBytes.Value / 1073741824.0, reading.TotalBytes.Value / 1073741824.0) : "") +
-                "\n" + Loc.F("2초 간격\n경고 {0}% / 위험 {1}%\n해제 기준 {2}%p 낮음", HardwareMath.WarningPercent, HardwareMath.CriticalPercent, HardwareMath.ReleaseMargin);
+                "\n" + Loc.F("2초 간격\n경고 {0}% / 위험 {1}%\n해제 기준 {2}%p 낮음", HardwareMath.WarningPercent, HardwareMath.CriticalPercent, HardwareMath.ReleaseMargin) + "\n\n" + TemperaturePresentation.Tooltip(reading.Temperature, now);
             MacToolTipTheme.Resource(cell, labels[i], reading.Percent is double percent ? percent.ToString("0.0", Loc.Culture) + "%" : "—", details, _theme,
                 _pressure[i] switch { ResourcePressure.Warning or ResourcePressure.Critical => color, ResourcePressure.Unknown => "muted", _ => "text" });
         }
@@ -342,25 +347,31 @@ internal sealed class DeskWindow : Window
     private void RenderVolumes()
     {
         var readings = _drives.Current;
-        var visibleCount = Math.Min(readings.Length, Math.Max(1, (int)((Bounds.Width - 170) / 91)));
+        var visibleCount = Math.Min(readings.Length, Math.Max(1, (int)((Bounds.Width - 170) / 125)));
         var visible = readings.Take(visibleCount).ToArray();
         if (!_volumes.Children.Select(control => (string?)control.Tag).SequenceEqual(visible.Select(drive => drive.Root))) _volumes.Children.Clear();
         for (var index = 0; index < visible.Length; index++)
         {
-            var drive = visible[index]; var width = Math.Min(160, Math.Max(85, (Bounds.Width - 170) / visibleCount - 6));
+            var drive = visible[index]; var width = Math.Min(180, Math.Max(119, (Bounds.Width - 170) / visibleCount - 6));
             Grid cell;
             if (_volumes.Children.Count <= index)
             {
                 cell = new Grid { Height = 22, ClipToBounds = true, Tag = drive.Root }; cell.Children.Add(new Border { CornerRadius = new CornerRadius(6) });
-                cell.Children.Add(new Border { HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(6) }); cell.Children.Add(_theme.Text("", 10)); _volumes.Children.Add(cell);
+                cell.Children.Add(new Border { HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(6) });
+                var content = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(5, 2) };
+                var label = _theme.Text("", 10); label.TextTrimming = TextTrimming.CharacterEllipsis; content.Children.Add(label);
+                var temperature = _theme.Text("", 10, "muted"); temperature.Margin = new Thickness(6, 0, 0, 0); temperature.HorizontalAlignment = HorizontalAlignment.Right;
+                Grid.SetColumn(temperature, 1); content.Children.Add(temperature); cell.Children.Add(content); _volumes.Children.Add(cell);
             }
             else cell = (Grid)_volumes.Children[index];
             cell.Width = width; ((Border)cell.Children[0]).Background = _theme.Brush("surface");
             var fill = (Border)cell.Children[1]; fill.Width = width * (drive.FreePercent ?? 0) / 100;
             var color = drive.FreePercent is double value ? value <= 15 ? "danger" : value <= 30 ? "warning" : "selected" : "muted"; fill.Background = _theme.Brush(color);
             var freeText = drive.Free.HasValue ? (drive.Free.Value / 1073741824.0).ToString("0.#", Loc.Culture) + " GiB" : "—";
-            var text = (TextBlock)cell.Children[2]; text.Text = drive.Label + " " + freeText; text.Margin = new Thickness(5, 2);
+            var contentGrid = (Grid)cell.Children[2]; var text = (TextBlock)contentGrid.Children[0]; text.Text = drive.Label + " " + freeText;
+            var now = DateTimeOffset.UtcNow; ((TextBlock)contentGrid.Children[1]).Text = TemperaturePresentation.Label(drive.Temperature, now);
             var details = drive.Root + "\n" + (drive.Free.HasValue ? Loc.F("남음 {0:0.##} / {1:0.##} GiB\n잔여 {2:0.0}%", drive.Free.Value / 1073741824.0, drive.Total!.Value / 1073741824.0, drive.FreePercent) : Loc.T("드라이브 조회 불가"));
+            details += "\n\n" + TemperaturePresentation.Tooltip(drive.Temperature, now);
             MacToolTipTheme.Resource(cell, drive.Label, freeText, details, _theme, color is "warning" or "danger" ? color : "text");
         }
     }

@@ -6,8 +6,8 @@ using System.Text.RegularExpressions;
 namespace CodexAccountDesk;
 
 internal enum ResourcePressure { Unknown, Normal, Warning, Critical }
-internal sealed record ResourceReading(double? Percent, ulong? UsedBytes = null, ulong? TotalBytes = null, string? Device = null, string? Problem = null);
-internal sealed record GpuResource(string Id, string Name, ulong Capacity, double? Percent, ulong? UsedBytes);
+internal sealed record ResourceReading(double? Percent, ulong? UsedBytes = null, ulong? TotalBytes = null, string? Device = null, string? Problem = null, TemperatureReading? Temperature = null);
+internal sealed record GpuResource(string Id, string Name, ulong Capacity, double? Percent, ulong? UsedBytes, TemperatureReading? Temperature = null, TemperatureReading? MemoryTemperature = null);
 internal sealed record HardwareObservation(DateTimeOffset At, double? Cpu, double? Memory, double? Gpu, double? Vram);
 internal sealed record HardwareUsage(DateTimeOffset CheckedAt, ResourceReading Cpu, ResourceReading Memory, ResourceReading Gpu, ResourceReading Vram,
     GpuResource[] Adapters, double SampleMilliseconds, HardwareObservation[]? History = null)

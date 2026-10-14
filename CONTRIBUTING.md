@@ -43,6 +43,8 @@ UI catalogues are versioned JSON files in `localization/packs/`, indexed in `loc
 
 Windows `python scripts/render-demo.py` renders a fictional screenshot from current UI components, using .NET 8 and Python's standard library. It does not prove real switching. Inspect the result when UI changes.
 
+Temperature changes also run `dotnet run --project tests/temperatures/CodexSwitch.Temperatures.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false`. [Sensor/presentation contracts and capture modes](docs/TEMPERATURES.md) distinguish fictional layout inputs from actual read-only hardware observations. Do not install a privileged driver or relabel another component's temperature to make an unavailable sensor appear supported.
+
 ## Privacy and review
 
 Use disposable storage/databases/test accounts. Never stop another person's Codex or switch their real account to test a PR. Report source/build/isolated/native results separately. Screenshots must contain no credentials, private chats, account identities or home paths: irreversibly replace those pixels, then blur the replacement if desired. Strip private metadata and inspect the final export; blur alone is insufficient.

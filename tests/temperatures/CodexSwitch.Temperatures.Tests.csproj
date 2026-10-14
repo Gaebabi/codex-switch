@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings><AssemblyName>CodexSwitch.Temperatures.Tests</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/shared/*.cs;../../src/platforms/macos/*.cs;../../src/windows/WindowsDiskTemperature.cs" Link="Product/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../localization/packs/*.json;../../localization/index.json;../../localization/legacy-keys.json" WithCulture="false" LogicalName="CodexAccountDesk.LanguagePacks.%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

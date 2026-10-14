@@ -343,7 +343,18 @@
     "pack.restore_built_in_language_pack": "Restore built-in language pack",
     "pack.local_translations_replaced_with_the_built": "Local translations replaced with the built-in pack.",
     "pack.choose_a_trusted_language_pack_imported": "Choose a trusted language pack. Imported packs change labels and messages, and contain text only.",
-    "pack.invalid_local_packs": "{0} local language packs are invalid; built-in languages remain available."
+    "pack.invalid_local_packs": "{0} local language packs are invalid; built-in languages remain available.",
+    "thermal.value": "Temperature: {0:0.#} °C",
+    "thermal.unavailable": "Temperature unavailable",
+    "thermal.stale": "Temperature reading is stale.",
+    "thermal.provider_missing": "Requires a compatible WMI hardware sensor provider.",
+    "thermal.access_denied": "Temperature access was denied by the device or operating system.",
+    "thermal.read_failed": "The temperature sensor could not be read.",
+    "thermal.platform_unsupported": "Supported temperature sensors are not available on this platform.",
+    "thermal.invalid_data": "Invalid temperature sensor data.",
+    "thermal.sensor_unavailable": "No compatible temperature sensor reported a value.",
+    "thermal.highest_sensor": "Highest available sensor temperature.",
+    "thermal.backing_disks": "Highest available backing-disk temperature; coverage is shown in the source."
   },
   "plurals": {
     "msg.accounts": {

@@ -343,7 +343,18 @@
     "pack.restore_built_in_language_pack": "기본 언어팩 복원",
     "pack.local_translations_replaced_with_the_built": "로컬 번역을 기본 언어팩으로 바꿨습니다.",
     "pack.choose_a_trusted_language_pack_imported": "신뢰하는 언어팩을 선택하세요. 가져온 언어팩은 문구를 바꾸며 텍스트만 포함합니다.",
-    "pack.invalid_local_packs": "로컬 언어팩 {0}개가 올바르지 않습니다. 기본 언어팩은 사용할 수 있습니다."
+    "pack.invalid_local_packs": "로컬 언어팩 {0}개가 올바르지 않습니다. 기본 언어팩은 사용할 수 있습니다.",
+    "thermal.value": "온도: {0:0.#} °C",
+    "thermal.unavailable": "온도 정보 없음",
+    "thermal.stale": "온도 측정값이 오래되었습니다.",
+    "thermal.provider_missing": "호환되는 WMI 하드웨어 센서 제공자가 필요합니다.",
+    "thermal.access_denied": "장치 또는 운영체제에서 온도 조회 접근을 거부했습니다.",
+    "thermal.read_failed": "온도 센서를 읽지 못했습니다.",
+    "thermal.platform_unsupported": "이 플랫폼에서는 지원되는 온도 센서를 사용할 수 없습니다.",
+    "thermal.invalid_data": "온도 센서 데이터가 올바르지 않습니다.",
+    "thermal.sensor_unavailable": "호환되는 온도 센서의 측정값이 없습니다.",
+    "thermal.highest_sensor": "조회 가능한 센서 중 가장 높은 온도입니다.",
+    "thermal.backing_disks": "연결된 실제 디스크 중 조회 가능한 최고 온도이며 조회 범위는 출처에 표시됩니다."
   },
   "plurals": {
     "msg.accounts": {

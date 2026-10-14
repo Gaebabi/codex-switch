@@ -1,8 +1,10 @@
 # Current status
 
-Updated 2026-10-14. Source version **1.28.0**; published binaries **1.27.6**.
+Updated 2026-10-15. Source version **1.29.0**; published binaries **1.27.6**.
 
 - Canonical public source: [Gaebabi/codex-switch](https://github.com/Gaebabi/codex-switch), baseline `main`.
+- [Temperature issue #18](https://github.com/Gaebabi/codex-switch/issues/18): independent right-aligned Celsius on resource/disk gauges, accurate unavailable/access/stale status, Windows WDDM/NVML/storage sources and optional existing WMI provider. Native non-elevated read-only observations returned GPU and the correctly mapped C:/D: device temperatures; CPU/RAM were provider-missing and VRAM unsupported. [Support/evidence](../TEMPERATURES.md). Mac native temperature collection and native GUI acceptance remain unimplemented/unverified.
+- Temperature parsing/device/channel/format contracts pass 24 checks, and all nine catalogues now contain 349 messages. Existing 1.28.0 language-pack evidence below records its original 338 messages; published downloads remain 1.27.6. The temperature issue/PR records final build/CI/review/merge results.
 - Current [Release 1.27.6](https://github.com/Gaebabi/codex-switch/releases/tag/v1.27.6): Windows x64 / Mac arm64 / Mac x64 self-contained ZIPs and checksums. Last release verification: Windows internal 93/93 and isolated SQLite/WAL 23/23; Mac cross-publish/package checks. Native Mac login/switch/resume and notarization remain separate.
 - Account switching, checkpoint recovery and one Continue for eligible idle unfinished chats are described in all four README languages. Existing account data and protocol identities remain unchanged.
 - [Language packs, issue #16](https://github.com/Gaebabi/codex-switch/issues/16): source 1.28.0 provides nine built-in catalogues with 338 messages each, stable English-based IDs, immediate/persistent language selection and validated local JSON import/restoration on Windows/Mac. English fallback, Gregorian/culture formatting, integer plurals and RTL behavior are covered by 39 production API checks. Existing binary downloads retain English/Korean.

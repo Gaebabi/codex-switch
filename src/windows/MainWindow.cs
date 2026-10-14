@@ -25,7 +25,7 @@ internal sealed class MainWindow : Window
     private readonly DesktopSessionMonitor _sessions;
     private readonly HardwareResourceMonitor _hardware = new();
     private readonly HardwareUsagePanel _hardwarePanel = new();
-    private readonly DriveMonitor _drives = new();
+    private readonly DriveMonitor _drives = new(WindowsDiskTemperature.Read);
     private readonly DriveUsagePanel _drivePanel;
     private readonly Program.Options _options;
     private Burn0Theme _theme;
