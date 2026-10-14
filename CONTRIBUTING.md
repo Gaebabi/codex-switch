@@ -35,6 +35,8 @@ python scripts/verify-queues.py --executable artifacts/win-x64/CodexSwitch.exe
 
 Mac: `bash scripts/verify-macos.sh` runs isolated native checks. [Mac development](docs/development/MACOS.md) explains packaging/limits. Linux runs repository tooling only; **there is no supported Linux application build yet**. Docs/translation contributions do not need an app build on an unsupported OS.
 
+Windows shutdown/handoff changes run the native disposable parent/child regression described in [operations](docs/development/OPERATIONS.md). It verifies the production lifecycle without stopping Codex or accessing real accounts/chats; synthetic credential/launch/resume endpoints do not certify native account acceptance.
+
 ## Editing and compatibility
 
 Use UTF-8, `.editorconfig` and focused patches; avoid mass formatting. Preserve async account reads, credential revisions, unavailable-versus-zero behavior, existing data/key identities and read-only databases. Fix causes rather than weakening security or hiding failures.

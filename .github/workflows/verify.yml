@@ -74,6 +74,10 @@ jobs:
         run: ./scripts/build.ps1 -Verify
       - name: Verify read-only SQLite and WAL
         run: python scripts/verify-queues.py --executable artifacts/win-x64/CodexSwitch.exe
+      - name: Publish disposable native shutdown fixture
+        run: dotnet publish tests/windows-handoff/fixture/HandoffFixture.csproj -c Release -r win-x64 --self-contained true -p:UseSharedCompilation=false -o artifacts/handoff-fixture
+      - name: Verify single-click handoff and normal Windows shutdown
+        run: dotnet run --project tests/windows-handoff/CodexSwitch.WindowsHandoff.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- artifacts/handoff-fixture/HandoffFixture.exe
       - name: Verify language-pack parsing and lifecycle
         run: dotnet run --project tests/localization/CodexSwitch.Localization.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - name: Verify temperature parsing and sensor identity contracts

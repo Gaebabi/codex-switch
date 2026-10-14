@@ -1,5 +1,12 @@
 # Current plan
 
+## Single-click handoff — issue #21
+
+- [x] Trace the post-close interruption and reproduce the production Windows shutdown boundary using disposable parent/child processes.
+- [x] Await actual process exit after successful normal shutdown, bounded to 30 seconds and cancellable; preserve shutdown refusal, identity checks and uncertain-send handling.
+- [x] Pass five native Windows disposable-process/coordinator checks, Windows 93/93 and SQLite/WAL 23/23, compile Mac and confirm nine catalogues. Inspect actual WPF application before/after layout; the UI is unchanged and these screenshots do not claim native account acceptance. Run repository/privacy checks before pushing.
+- [ ] Open the issue-linked PR, review the exact head, pass CI and complete the owner's authorized merge. Source 1.29.1; no binary Release or real-account switch test.
+
 ## Resource and disk temperatures — issue #18
 
 - [x] Add right-aligned Celsius labels to the four resource gauges and disk gauges without increasing footer height.

@@ -32,7 +32,7 @@ internal static class DesktopShutdown
     [DllImport("rstrtmgr.dll")] private static extern uint RmEndSession(uint session);
     public static Task CloseAsync(string executable, CancellationToken cancellation) => OperatingSystem.IsMacOS()
         ? MacDesktop.CloseAsync(executable, cancellation) : CloseWindowsAsync(executable, cancellation);
-    private static Task CloseWindowsAsync(string executable, CancellationToken cancellation) => Task.Run(() =>
+    private static Task CloseWindowsAsync(string executable, CancellationToken cancellation) => Task.Run(async () =>
     {
         cancellation.ThrowIfCancellationRequested();
         var processes = new List<UniqueProcess>();
@@ -61,7 +61,10 @@ internal static class DesktopShutdown
             var result = RmShutdown(session, 0, IntPtr.Zero);
             cancellation.ThrowIfCancellationRequested();
             if (result != 0) throw new IOException("Codex를 정상 종료하지 못했습니다. Codex 메뉴에서 종료한 뒤 다시 전환해 주세요.", new Win32Exception((int)result));
-            if (RuntimeLocator.IsDesktopRunning(executable)) throw new IOException("Codex가 아직 실행 중입니다. Codex 메뉴에서 완전히 종료해 주세요.");
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation); timeout.CancelAfter(TimeSpan.FromSeconds(30));
+            try { while (RuntimeLocator.IsDesktopRunning(executable)) await Task.Delay(100, timeout.Token); }
+            catch (OperationCanceledException) when (!cancellation.IsCancellationRequested)
+            { throw new IOException("Codex가 아직 실행 중입니다. Codex 메뉴에서 완전히 종료해 주세요."); }
         }
         finally { RmEndSession(session); }
     }, cancellation);

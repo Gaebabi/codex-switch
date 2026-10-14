@@ -38,6 +38,7 @@ The title bar has language and light/dark settings. **Source 1.28.0** adds nine 
 
 - **Back up before switching:** save active local chat names with a date prefix and verify them, then back up the current login before applying the selected account. Naming or normal-shutdown failures stop the login change.
 - **Automatically resume unfinished work:** restart Codex, reopen the same chat IDs with their existing folders/models/permissions, and send one **Continue** to eligible idle chats. Already running or completed work is left alone.
+- **Source 1.29.1:** after normal Windows shutdown, wait for child processes to finish before applying the account and reopening Codex in the same manual Switch invocation. Current downloads do not contain this correction.
 - **Recover an interrupted handoff:** progress is checkpointed in the encrypted vault. Use **Resume chats** when a handoff remains pending; cancellation is available from the account menu/tray. Unclear sends are not automatically repeated.
 
 **Switching restarts Codex** and can also affect CLI/IDE clients sharing the login. [Switching details](docs/SWITCHING.md)
