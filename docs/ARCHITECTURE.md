@@ -31,6 +31,8 @@ The coordinator accepts its platform error formatter explicitly; its `IAccountSw
 
 Core assembly/resource identity and platform write-failure preservation are checked by the production language API tests. Windows/Mac native screenshot CI still runs the published app after extraction; a successful portable core build does not establish Linux account support. Key provider, lifecycle/discovery, peer-authenticated IPC, SQLite and resource-provider project boundaries remain follow-ups.
 
+[Native program before/after and core contracts](evidence/shared-core/README.md) record the first extraction checkpoint. Complete package inspection also requires all declared project runtime DLLs, including the core; a folder containing only the app/runtime is rejected.
+
 `scripts/build.ps1 -Verify` runs Windows isolated checks. `scripts/verify-queues.py` uses disposable SQLite/WAL fixtures. Mac checks run through `scripts/verify-macos.sh` on a Mac. Do not stop the user's Codex or switch a real account as a test.
 
 `python scripts/render-demo.py` renders one fictional Windows screenshot using the current UI sources. It uses a temporary synthetic vault, never starts the native Codex, and does not observe or inject live tasks.
