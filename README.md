@@ -9,7 +9,7 @@ Switch Codex accounts, automatically resume eligible unfinished local chats, and
 
 ![Fictional everyday demo: varied balances, stable resources and status colors](docs/media/demo.png)
 
-*Fictional everyday data: different account balances, gentle resource fluctuations and normal/caution states. Rendered with the current Windows UI and rounded window frame.*
+*Source 1.30.2 Windows UI with fictional accounts and resources; published downloads remain 1.27.6. [Current screenshots and native Windows/Mac gallery](docs/media/README.md#native-platform-gallery).*
 
 ## Get started
 
@@ -50,6 +50,6 @@ The title bar has language and light/dark settings. **Source 1.28.0** adds nine 
 
 [Mac setup](docs/MACOS.md) / [Forecast](docs/FORECAST.md) / [Security](SECURITY.md) / [Contributing](CONTRIBUTING.md) / [Roadmap](docs/PLATFORM_SUPPORT_PLAN.md)
 
-Developer reference: [Architecture](docs/ARCHITECTURE.md) / [CI](docs/CI.md) / [Operations](docs/development/OPERATIONS.md) / [Application comparison](docs/evidence/README.md).
+Developer reference: [Architecture](docs/ARCHITECTURE.md) / [CI](docs/CI.md) / [Operations](docs/development/OPERATIONS.md) / [Current application comparison](docs/evidence/scrollbars-theme-icons/README.md) / [Evidence index](docs/evidence/README.md).
 
 This is independent open-source software, not an official OpenAI product. Credentials stay in a local encrypted vault. [MIT](LICENSE) / [Asset notices](licenses/Burn0Assets.LICENSE.txt)

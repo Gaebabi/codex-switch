@@ -1,12 +1,19 @@
 # Current plan
 
+## Documentation destinations and screenshots — issue33
+
+- [x] Inspect tracked README/developer/evidence file destinations; direct latest-UI links to current evidence and label the old foundation comparison as historical.
+- [x] Add heading/reference/HTML-link checks and regression coverage to repository CI; read screenshot source version from the shared version owner.
+- [ ] Re-render and inspect the current source documentation image, preserve the previous image for comparison and collect fresh native Windows/Mac gallery evidence.
+- [ ] Complete scoped privacy/link checks, reviewed-head CI, author review and PR promotion. No binary Release or account action.
+
 ## Common scrollbars and theme icons — issue31
 
 - [x] Install one rounded theme-aware scrollbar for WPF windows/popups and Avalonia windows/popups, keeping native scrolling/track behavior. History/settings and future overflow inherit it.
 - [x] Replace Light/Dark text with sun/moon vector actions; preserve translated tooltips/accessible names, keyboard operation and existing saved-theme callbacks. Source1.30.2.
 - [x] Native isolated Windows dropdown/history overflow scrolling and all eight main-window size/theme/language captures pass; Windows/Mac builds and353-message validation pass. Uniform captures are rejected; Windows diagnostic mode uses software rendering.
 - [x] Record actual Windows program before/after and native Mac arm64/Intel menu/history confirmation. Code checkpointa0f875b passes all four jobs in run38631880233; screenshots are inspected and metadata/digests verified.
-- [ ] Complete latest-head CI/self-review and merge PR32. No real account, personal screen or binary Release.
+- [x] Complete latest-head34f96cd CI (run38632498454), author self-review and merge PR32 to main331d735. No real account, personal screen or binary Release.
 
 ## Resumed platform roadmap — issues #1 / #3–#7
 

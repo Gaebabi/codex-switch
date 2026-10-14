@@ -1,5 +1,19 @@
 # Application screenshots and verification
 
+## Current source evidence
+
+Source 1.30.2 is the current app UI; published downloads remain 1.27.6. Choose the evidence for the capability being reviewed:
+
+- [Latest documentation screenshots and native platform gallery](../media/README.md#native-platform-gallery): fictional inputs, actual Windows/macOS app windows.
+- [Scrollbars and theme actions](scrollbars-theme-icons/README.md): Windows before/after and native Mac menus/history.
+- [UI-neutral core extraction](shared-core/README.md): platform before/after and core contracts.
+- [Runtime migration](platform-runtime/README.md): original .NET 8/10 comparison and native OS/runtime checks.
+- [Language packs](language-packs/README.md), [temperatures](temperatures/README.md), [single-click handoff](single-click-handoff/README.md), [date warnings](date-warnings/README.md), [always-on refresh](always-refresh/README.md): feature-specific results and their original source checkpoints.
+
+## Historical repository foundation
+
+The images and roadmap table below record the original source-reorganization checkpoint, not the latest UI or current completion status. Current gates belong to the linked issues and [development status](../development/STATUS.md).
+
 Related: [roadmap #1](https://github.com/Gaebabi/codex-switch/issues/1), [foundation #2](https://github.com/Gaebabi/codex-switch/issues/2), [PR #8](https://github.com/Gaebabi/codex-switch/pull/8).
 
 The comparison shows the application's actual Windows WPF `MainWindow`/account/resource components, built and rendered from the baseline and reorganized sources with the same isolated fictional inputs. These are application UI images, not repository pages. They are synthetic rendering evidence, not screenshots of live account switching.

@@ -2,7 +2,9 @@
 
 Updated 2026-10-15. Source version **1.30.2**; published binaries **1.27.6**.
 
-Issue31: common rounded scrollbars now apply at the window and popup theme boundary; title-bar theme actions use vector sun/moon icons with existing localized names/tooltips and save behavior. Mac history uses a scrollable content layout with a readable chart minimum; settings/future scroll viewers inherit the same theme. Isolated native Windows menu/history scrolling and all size/theme/language captures pass; Mac compiles. Native Mac images, final-head CI/review/merge remain gates. No personal data/screen or live Codex process is used.
+Issue33 audits documentation destinations and refreshes source screenshots. Latest-UI navigation now points to the scrollbar/theme checkpoint and current gallery; the original foundation comparison is explicitly historical. Local heading anchors/reference definitions/HTML links join existing tracked-file checks. Screenshot provenance reads the shared managed version instead of the now-empty app-project Version. Fresh captures, inspected exports and final-head CI/review are pending.
+
+Issue31 is complete in merged PR32/main331d735: common rounded scrollbars apply at the window and popup theme boundary; title-bar theme actions use vector sun/moon icons with localized names/tooltips and saved preferences. Native Windows/macOS15 arm64/Intel menu/history and size/theme/language captures pass; all four latest-head jobs in run38632498454 and author self-review passed before merge. No personal data/screen or live Codex process is used.
 
 [Program comparison/confirmation](../evidence/scrollbars-theme-icons/README.md) now includes native language/history scrollbars and theme icons in Windows/macOS15 arm64/Intel. All56 PNGs contain fictional data only and stripped metadata. Run38631880233 passes all four jobs, including real overflow/offset assertions and Mac's visible language scrollbar. [PR32](https://github.com/Gaebabi/codex-switch/pull/32) owns final-head CI/review/merge. The Mac arrow-only menu template was replaced at the shared menu boundary; production rendering/storage/IPC behavior remains unchanged.
 

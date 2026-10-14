@@ -9,7 +9,7 @@
 
 ![展示不同余额、平稳资源变化和状态颜色的日常虚构演示](media/demo.png)
 
-*虚构数据呈现的日常使用示例：不同账号余额、平缓的资源变化以及正常/注意状态，使用当前Windows UI和圆角窗口外框渲染。*
+*源码1.30.2的Windows界面，使用虚构账号和资源。公开下载仍为1.27.6。[最新截图及Windows/Mac实际应用图库](media/README.md#native-platform-gallery)。*
 
 ## 开始使用
 

@@ -6,6 +6,11 @@ import subprocess
 from urllib.parse import unquote, urlsplit
 import xml.etree.ElementTree as ET
 import yaml
+import importlib.util
+
+spec = importlib.util.spec_from_file_location('document_links', Path(__file__).with_name('document-links.py'))
+document_links = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(document_links)
 
 root = Path(__file__).resolve().parents[1]
 names = subprocess.check_output(["git", "-C", str(root), "ls-files", "-z"]).decode("utf-8").split("\0")
@@ -38,16 +43,16 @@ for name in filter(None, names):
         errors.append(f"{name}: Unicode replacement character")
     if path.suffix == ".md":
         documents += 1
-        targets = re.findall(r"\[[^\]\n]*\]\((<[^>]+>|[^)\s]+)(?:\s+\"[^\"]*\")?\)", source)
-        targets += re.findall(r'<(?:img|a)\b[^>]*(?:src|href)="([^"]+)"', source)
-        for target in targets:
-            target = target.removeprefix("<").removesuffix(">")
+        for target in document_links.targets(source):
             parsed = urlsplit(target)
-            if parsed.scheme or parsed.netloc or not parsed.path:
+            if parsed.scheme or parsed.netloc:
                 continue
-            resolved = (path.parent / unquote(parsed.path)).resolve()
+            resolved = (path.parent / unquote(parsed.path)).resolve() if parsed.path else path.resolve()
             if not resolved.is_relative_to(root) or not resolved.exists():
                 errors.append(f"{name}: missing or external local target {target}")
+            elif parsed.fragment and resolved.suffix == '.md':
+                if unquote(parsed.fragment) not in document_links.anchors(resolved.read_text(encoding='utf-8')):
+                    errors.append(f"{name}: missing heading anchor {target}")
             links += 1
     else:
         configurations += 1

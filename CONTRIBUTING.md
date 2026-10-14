@@ -19,6 +19,7 @@ Python 3.12 repository checks run on Windows, Mac and Linux:
 ```text
 python -m pip install -r requirements-dev.txt
 python scripts/verify-repository.py
+python scripts/test-document-links.py
 python scripts/test-audit-public.py
 python scripts/audit-public.py --tree-only
 git diff --check
