@@ -32,6 +32,9 @@ try
     if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())
     {
         Check("Unsupported desktop IPC refuses before unauthenticated Unix connection", () => Rejected<PlatformNotSupportedException>(() => monitor.Start()));
+    }
+    if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS() && !OperatingSystem.IsLinux())
+    {
         Check("Unsupported SQLite refuses before Windows library fallback", () => Rejected<PlatformNotSupportedException>(() => new ReadOnlySqlite(absent)));
     }
     else
@@ -49,6 +52,13 @@ try
             });
         }
         finally { File.Delete(corrupt); }
+        Check("Metadata reader binds Unicode parameters and rejects a prepared write", () =>
+        {
+            using var database = new ReadOnlySqlite(":memory:");
+            Assert(database.Read("SELECT ?", "Synthetic 한글 日本語").Single().Single() == "Synthetic 한글 日本語");
+            Rejected<InvalidOperationException>(() => database.Read("CREATE TABLE forbidden (id INTEGER)"));
+            Assert(database.Read("SELECT name FROM sqlite_master").Count == 0);
+        });
     }
 }
 finally { await monitor.DisposeAsync(); }

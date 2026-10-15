@@ -9,11 +9,12 @@ internal sealed class ReadOnlySqlite : IDisposable
 {
     private const string Library = "codex_account_desk_sqlite";
     static ReadOnlySqlite() => NativeLibrary.SetDllImportResolver(typeof(ReadOnlySqlite).Assembly, (name, assembly, searchPath) => name == Library
-        ? NativeLibrary.Load(OperatingSystem.IsMacOS() ? "/usr/lib/libsqlite3.dylib" : "winsqlite3.dll") : IntPtr.Zero);
+        ? NativeLibrary.Load(OperatingSystem.IsMacOS() ? "/usr/lib/libsqlite3.dylib" : OperatingSystem.IsLinux() ? "libsqlite3.so.0" : "winsqlite3.dll") : IntPtr.Zero);
     private IntPtr _database;
     public ReadOnlySqlite(string path)
     {
-        if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())
+        if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS() &&
+            !(OperatingSystem.IsLinux() && RuntimeInformation.ProcessArchitecture is Architecture.X64 or Architecture.Arm64))
             throw new PlatformNotSupportedException("SQLite metadata requires a supported platform provider.");
         var result = sqlite3_open_v2(path, out _database, 0x00000001 | 0x00008000, IntPtr.Zero);
         if (result != 0) { Dispose(); throw new IOException("Cannot open queue metadata database (SQLite " + result + ")."); }

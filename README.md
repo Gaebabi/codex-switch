@@ -19,7 +19,7 @@ Switch Codex accounts, automatically resume eligible unfinished local chats, and
 
 **Linux:** planned; no Linux package yet. Follow the [support roadmap](docs/PLATFORM_SUPPORT_PLAN.md) and [issue #1](https://github.com/Gaebabi/codex-switch/issues/1). Contributions across languages, distributions and accessibility needs are welcome.
 
-Source1.33.0 contributors can build the [Linux storage/UI preview](docs/development/LINUX.md). Account/client/handoff actions are disabled while their native acceptance remains in progress; it is not a supported Linux release.
+Source1.33.1 contributors can build the [Linux storage/UI preview](docs/development/LINUX.md). Account/client/handoff actions are disabled while their native acceptance remains in progress; it is not a supported Linux release.
 
 1. Use a complete Windows or Mac package. Windows: run `CodexSwitch.exe`. Mac: run `Install.command`, then open **Codex Switch.app**. [Build and install](docs/INSTALL.md)
 2. Select **+** in the title bar to add accounts. On Windows, right-click **↻** to import the current Codex login.
@@ -27,7 +27,7 @@ Source1.33.0 contributors can build the [Linux storage/UI preview](docs/developm
 
 **Source1.29.3:** automatic refresh is always enabled at60seconds. Its Windows footer switch/caption and Mac settings toggle are removed; an older disabled preference no longer stops reads. [Application comparison and scope](docs/evidence/always-refresh/README.md)
 
-Keep the full package together. Packaged apps need no .NET installation; building current source requires .NET10.0.4xx and installed Codex desktop/CLI. Source1.33.0 uses .NET10 LTS/runtime10.0.13; its current supported Mac baseline is macOS15+. Published1.27.6 downloads remain unchanged until separately released.
+Keep the full package together. Packaged apps need no .NET installation; building current source requires .NET10.0.4xx and installed Codex desktop/CLI. Source1.33.1 uses .NET10 LTS/runtime10.0.13; its current supported Mac baseline is macOS15+. Published1.27.6 downloads remain unchanged until separately released.
 
 ## What you can see
 

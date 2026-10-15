@@ -17,7 +17,7 @@
 2. 点击标题栏的 **+** 添加账号。Windows 可右键点击 **↻** 导入当前登录。
 3. 比较剩余额度并点击 **Switch**。每60秒自动刷新，也可点击 **↻** 或按 **F5** 立即刷新。
 
-请保留完整的程序包。运行包无需安装 .NET；当前源码构建需要 .NET10.0.4xx SDK 和已安装的 Codex 应用/CLI。源码1.33.0使用 .NET10 LTS/runtime10.0.13，已评估的Mac支持基线为macOS15及以上。公开下载1.27.6在单独发布前保持不变。
+请保留完整的程序包。运行包无需安装 .NET；当前源码构建需要 .NET10.0.4xx SDK 和已安装的 Codex 应用/CLI。源码1.33.1使用 .NET10 LTS/runtime10.0.13，已评估的Mac支持基线为macOS15及以上。公开下载1.27.6在单独发布前保持不变。
 
 ## 一眼查看
 
@@ -35,7 +35,7 @@
 
 Linux 支持正在规划中，尚无执行包。[支持计划](PLATFORM_SUPPORT_PLAN.md) / [Issue #1](https://github.com/Gaebabi/codex-switch/issues/1)。欢迎不同语言、环境和无障碍相关的贡献。
 
-源码1.33.0提供面向贡献者的 [Linux 存储/UI 预览版](development/LINUX.md)，可用于构建和验证。账户、客户端和聊天恢复功能在原生验证完成前保持禁用；这不是正式 Linux 发布版。
+源码1.33.1提供面向贡献者的 [Linux 存储/UI 预览版](development/LINUX.md)，可用于构建和验证。账户、客户端和聊天恢复功能在原生验证完成前保持禁用；这不是正式 Linux 发布版。
 
 [Mac](MACOS.md) / [预测](FORECAST.md) / [安全](../SECURITY.md) / [开发](../CONTRIBUTING.md)
 

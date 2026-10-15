@@ -21,6 +21,8 @@ internal static class QueueDiagnostics
         catch (JsonException) { error = "Invalid saved queue JSON."; }
         catch (InvalidOperationException) { error = "Invalid queue metadata."; }
         catch (UnauthorizedAccessException) { error = "Queue metadata access denied."; }
+        catch (DllNotFoundException) { error = "Native SQLite is unavailable."; }
+        catch (EntryPointNotFoundException) { error = "Native SQLite does not provide the required metadata interface."; }
         var total = snapshot?.Saved.Keys.Concat(snapshot.Server.Keys).Distinct().Sum(id => DesktopQueueState.Count(
             snapshot.Saved.GetValueOrDefault(id) ?? Array.Empty<DesktopQueueMessage>(),
             snapshot.Server.GetValueOrDefault(id) ?? Array.Empty<DesktopQueueMessage>()).Total);

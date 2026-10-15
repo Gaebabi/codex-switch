@@ -3,9 +3,11 @@ import hashlib
 from contextlib import closing
 import argparse
 import json
+import os
 from pathlib import Path
 import sqlite3
 import subprocess
+import sys
 import tempfile
 import uuid
 
@@ -24,13 +26,16 @@ def check(name, condition):
 
 
 def probe(home, name, expected=None):
-    report = home / (name + ".json")
+    reports = home / "reports"
+    reports.mkdir(exist_ok=True)
+    report = reports / (name + ".json")
     watched = [home / "queue_1.sqlite", home / "queue_1.sqlite-wal", home / "state_5.sqlite", home / "state_5.sqlite-wal"]
     before = {p: hashlib.sha256(p.read_bytes()).digest() for p in watched if p.exists()}
     process = subprocess.run([str(EXE), "--codex-home", str(home), "--verify-queues", str(report)], timeout=10,
                              capture_output=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     data = json.loads(report.read_text(encoding="utf-8"))
-    check(name + " leaves database and WAL bytes unchanged", all(p.exists() and hashlib.sha256(p.read_bytes()).digest() == digest for p, digest in before.items()))
+    after = {p: hashlib.sha256(p.read_bytes()).digest() for p in watched if p.exists()}
+    check(name + " leaves database and WAL presence/bytes unchanged", after == before)
     if expected is None:
         check(name + " reports unknown", process.returncode == 1 and not data["available"] and data["total"] is None and bool(data["error"]))
     else:
@@ -72,6 +77,18 @@ with tempfile.TemporaryDirectory(prefix="queue-검증-", dir=ROOT / "artifacts")
     check("WAL-only committed fixture is absent from main file", immutable.execute("SELECT COUNT(*) FROM queued_items").fetchone()[0] == 0)
     immutable.close()
     probe(home, "server-plus-saved-dedup-and-child-cli-exclusion", (2, 2, 3))
+    if sys.platform == "linux":
+        paths = [home / name for name in ("queue_1.sqlite", "queue_1.sqlite-wal", "queue_1.sqlite-shm", "state_5.sqlite")]
+        modes = {path: path.stat().st_mode & 0o777 for path in paths}
+        home_mode = home.stat().st_mode & 0o777
+        try:
+            for path in paths: path.chmod(0o400)
+            home.chmod(0o500)
+            check("Native read-only directory/file fixture cannot be written", os.geteuid() != 0 and not os.access(home, os.W_OK) and all(not os.access(path, os.W_OK) for path in paths))
+            probe(home, "read-only-permissions-retain-committed-WAL", (2, 2, 3))
+        finally:
+            home.chmod(home_mode)
+            for path, mode in modes.items(): path.chmod(mode)
     insert("uncommitted", client="new-client")
     probe(home, "uncommitted-message-stays-invisible", (2, 2, 3))
     queue.commit()

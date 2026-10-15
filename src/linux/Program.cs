@@ -20,13 +20,18 @@ internal static class Program
         { Console.Error.WriteLine("This source preview requires Linux x64 or ARM64."); return 1; }
         var data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CodexAccountDesk");
         var home = Environment.GetEnvironmentVariable("CODEX_HOME") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
-        string? evidence = null;
+        string? evidence = null, queueReport = null; var explicitHome = false;
         for (var i = 0; i < args.Length; i++)
         {
-            if (args[i] == "--help") { Console.WriteLine("CodexSwitch [--data-dir <directory>] [--codex-home <directory>] [--verify-ui <directory>]. Linux source preview; account/client/handoff support is still being verified."); return 0; }
+            if (args[i] == "--help") { Console.WriteLine("CodexSwitch [--data-dir <directory>] [--codex-home <directory>] [--verify-ui <directory> | --verify-queues <report>]. Queue diagnostics require an explicit --codex-home. Linux source preview; account/client/handoff support is still being verified."); return 0; }
             if (i + 1 >= args.Length) throw new ArgumentException("Command-line option needs a value.");
             var name = args[i]; var value = Path.GetFullPath(args[++i]);
-            switch (name) { case "--data-dir": data = value; break; case "--codex-home": home = value; break; case "--verify-ui": evidence = value; break; default: throw new ArgumentException("Unknown command-line option."); }
+            switch (name) { case "--data-dir": data = value; break; case "--codex-home": home = value; explicitHome = true; break; case "--verify-ui": evidence = value; break; case "--verify-queues": queueReport = value; break; default: throw new ArgumentException("Unknown command-line option."); }
+        }
+        if (queueReport != null)
+        {
+            if (!explicitHome || evidence != null) throw new ArgumentException("Queue verification requires an explicit home and cannot be combined with UI verification.");
+            return QueueDiagnostics.VerifyAsync(home, queueReport).GetAwaiter().GetResult();
         }
         using var single = new Mutex(true, "CodexAccountDesk-" + SecureFiles.Hash(Environment.UserName + "\n" + (evidence ?? data))[..24], out var first);
         if (!first) return 0;

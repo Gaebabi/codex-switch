@@ -46,7 +46,7 @@ jobs:
       - name: Install the native test provider and D-Bus tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install --no-install-recommends -y libsecret-1-0 gnome-keyring dbus-x11 libglib2.0-bin xvfb xauth x11-apps imagemagick libfontconfig1 fonts-dejavu-core fonts-noto-cjk
+          sudo apt-get install --no-install-recommends -y libsecret-1-0 libsqlite3-0 gnome-keyring dbus-x11 libglib2.0-bin xvfb xauth x11-apps imagemagick libfontconfig1 fonts-dejavu-core fonts-noto-cjk
       - name: Build the native storage contract executable
         run: dotnet build tests/linux-vault/CodexSwitch.LinuxVault.Tests.csproj -c Release --nologo -p:UseSharedCompilation=false -o artifacts/linux-native/${{ matrix.rid }}/tests
       - name: Verify actual keyring lifecycle on an owned disposable bus
@@ -55,6 +55,10 @@ jobs:
         run: dotnet publish src/linux/CodexSwitch.Linux.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:UseSharedCompilation=false -o artifacts/linux-native/${{ matrix.rid }}/app
       - name: Inspect the complete Linux runtime package
         run: python scripts/verify-runtime-package.py artifacts/linux-native/${{ matrix.rid }}/app --rid ${{ matrix.rid }} --output artifacts/linux-native/${{ matrix.rid }}/runtime.json
+      - name: Verify native read-only SQLite and committed WAL without content mutation
+        run: python scripts/verify-queues.py --executable artifacts/linux-native/${{ matrix.rid }}/app/CodexSwitch
+      - name: Verify native protocol and read-only SQLite boundaries
+        run: dotnet run --project tests/protocol/CodexSwitch.Protocol.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - run: python -m pip install -r requirements-dev.txt
       - name: Capture only the published preview's native X11 window
         run: xvfb-run -a -s "-screen 0 1920x1080x24" artifacts/linux-native/${{ matrix.rid }}/app/CodexSwitch --verify-ui artifacts/linux-native/${{ matrix.rid }}/raw

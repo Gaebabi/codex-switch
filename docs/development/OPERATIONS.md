@@ -1,10 +1,10 @@
 # Operations
 
-Public `Gaebabi/codex-switch`, baseline `main`, is the canonical source. Clone into any directory. Source/app version is **1.33.0**; published binary version remains **1.27.6**. Binary delivery is manual GitHub Release ZIPs plus SHA256SUMS; no automatic updater or CI release publisher exists.
+Public `Gaebabi/codex-switch`, baseline `main`, is the canonical source. Clone into any directory. Source/app version is **1.33.1**; published binary version remains **1.27.6**. Binary delivery is manual GitHub Release ZIPs plus SHA256SUMS; no automatic updater or CI release publisher exists.
 
 ## Build and verify
 
-Run from the repository root with .NET10.0.4xx, currently SDK10.0.402/runtime10.0.13. `global.json` allows current patch updates. Use clean output folders for package candidates. .NET10's reviewed current Mac support baseline is macOS15+; the bundle minimum and app version match source1.33.0.
+Run from the repository root with .NET10.0.4xx, currently SDK10.0.402/runtime10.0.13. `global.json` allows current patch updates. Use clean output folders for package candidates. .NET10's reviewed current Mac support baseline is macOS15+; the bundle minimum and app version match source1.33.1.
 
 ```powershell
 .\scripts\build.ps1 -Verify
@@ -53,7 +53,7 @@ Capture `--deadline-preview` for clearly fictional near/far/missing expiry/reset
 
 Resource/disk temperatures use supported Windows read-only WDDM/storage APIs and an existing optional compatible WMI provider. Missing sensors remain unavailable; no driver/service/elevation is installed. Mac temperature collection remains unsupported. [Sources and limits](../TEMPERATURES.md). Capture `--temperature-preview` for fictional sensor-capable layout or `--live-resources` for actual device readings with fictional account/session inputs; keep receipts private and identify each scope accurately.
 
-Application integration now builds once in `src/application`; Avalonia UI builds once in `src/desktop`. No consumer compiles the former `src/shared` sources. Desktop native probes add `--native-ui` to the composition test command on a declared Windows/Mac runner; this displays the actual shared UI with synthetic profiles/pending resources, verifies ordinary trayless close/disposal and never creates a data/home directory. Initialize Avalonia before creating themed controls/brushes in a native probe; an earlier unbound dispatcher cannot run its native event loop. Production Mac still supplies its native tray, appearance and diagnostic/capture adapters. Linux needs its own verified host/providers before support is advertised.
+Application integration now builds once in `src/application`; Avalonia UI builds once in `src/desktop`. No consumer compiles the former `src/shared` sources. Desktop native probes add `--native-ui` to the composition test command on a declared Windows/Mac runner; this displays the actual shared UI with synthetic profiles/pending resources, verifies ordinary trayless close/disposal and never creates a data/home directory. Initialize Avalonia before creating themed controls/brushes in a native probe; an earlier unbound dispatcher cannot run its native event loop. Production Mac still supplies its native tray, appearance and diagnostic/capture adapters. Linux now composes the shared source preview host, with account/client/handoff actions disabled pending their native gates. Its explicit-home `--verify-queues` path reads only queue metadata before GUI/vault/client initialization; `verify-queues.py` uses owned disposable fixtures.
 
 ## Git and publication
 

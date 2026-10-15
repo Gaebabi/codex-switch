@@ -59,7 +59,15 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 - [x] Add descriptor-relative no-follow private directories/reads/atomic writes, UID/mode checks and exclusive cross-process key creation. Existing ciphertext refuses missing-key replacement.
 - [x] Pass the first actual isolated GNOME Keyring x64/arm64 suite: source3b64249/run38666392438 passes18 checks across12 lifecycle phases on each native architecture, including genuine in-place unlock and original-PID verification. Later host/evidence/final commits must pass both native jobs again.
 - [x] Add the source Linux host and inspect [ten selected native images](../evidence/linux-vault/README.md): four Linux x64/ARM64 confirmations plus six Windows/Mac regression images, exact source6480524. Verify38668709259 passes four jobs and Linux native38668709256 passes both jobs, each with18 provider checks/12 actual X11 app images. Windows same-scale dark is byte-identical. Account/client/handoff and resources remain explicitly unavailable in the source preview.
-- [ ] Complete exact-head Verify and Linux native workflows, privacy/evidence checks and author review, then focused PR merge. KDE/KWallet/client/SQLite/actual handoff/packages remain in #5/#6/#7.
+- [x] Complete exact-head0b075e0 Verify38670348861 (four jobs) and Linux native38670348951 (two jobs), privacy/evidence checks and author self-review; PR51 merged to main3b67458b with identical reviewed/merged trees. Final native coverage includes nonblocking FIFO read/replacement refusal and retained pipe type. KDE/KWallet/client/SQLite/actual handoff/packages remain in #5/#6/#7.
+
+### P8.2 native Linux read-only metadata — issue52
+
+- [ ] Resolve the Linux system libsqlite3 provider on declared x64/ARM64; preserve Windows/Mac native selection and keep unsupported IPC disabled. Source1.33.1.
+- [ ] Expose the existing headless queue diagnostic through the Linux source host, requiring an explicit home and reporting missing native libraries as unavailable. Never initialize a vault/keyring/client or GUI for this diagnostic.
+- [ ] Pass actual x64/ARM64 SQLite/WAL fixtures: committed visibility, uncommitted isolation, dedup/filtering/removal/unknown, absent/corrupt/write refusal, read-only permission acceptance and unchanged database/WAL presence/bytes. SHM coordination is a separate SQLite behavior; no immutable shortcut.
+- [ ] Inspect source-bound actual native Linux/Windows/Mac app comparison, privacy/metadata/hash receipts and complete packages. Program images establish UI regression separately from native database tests.
+- [ ] Pass all six exact-head CI jobs, author review and focused PR promotion. Client/backend/KWallet, full handoff and clean packages remain required parent gates.
 
 ## Tooltip style lifetime — issue35
 
@@ -91,7 +99,7 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 - [x] Checkpoint P3 evidence: attach inspected native Windows before/after and native Mac arm64/Intel confirmation images, with metadata-free PNGs and exact-source receipts. Run38622544372 passes all four jobs; runtime folders and Mac ZIP bytes/modes are checked.
 - [x] P3 promotion: latest-head run38623109273 passed all four jobs, author review recorded, PR27 squash-merged to main de66231 and issue4 closed. Superseded Dependabot20 closed. No new binary Release.
 - [x] Checkpoint P2.2: correct the Mac minimum-window content budget exposed by native CI; preserve126px row minimum and strict no-clipping/no-scroll checks. Align current installation/developer guides with .NET10 and disclose software rendering in exported Mac provenance. Native confirmation remains required.
-- [ ] Continue core/platform extraction (#3), then Linux credential/client trust (#5), handoff (#6) and package/environment acceptance (#7), each with separate checkpoints and target-OS evidence.
+- [x] Complete core/platform extraction #3 through PR47. Linux credential/client trust #5, handoff #6 and package/environment acceptance #7 continue through the current P8–P10 gates above.
 
 Every checkpoint receives a scoped commit/push. The PR stays draft until target-OS app screenshots are validated and privacy checked. Personal desktops/vaults are not captured or used. Public binary Release/signing and full Linux account support are separate gates.
 

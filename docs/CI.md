@@ -6,12 +6,15 @@
 
 The Linux jobs also publish the source preview for the actual runner, inspect the complete runtime, run its synthetic own-window mode on X11/Xvfb and export12 lossless native PNGs per architecture. XID-only capture cannot fall back to desktop capture or managed rendering. Common export removes metadata and binds the PR head revision; checkout explicitly selects that head. Source account/client/handoff actions remain disabled. These screenshots complement the separate18-check provider suite and do not certify real account/handoff, native Wayland or full desktop-session support.
 
+Source1.33.1 additionally runs the published Linux executable's explicit-home queue diagnostic through `verify-queues.py` on both native architectures, including committed WAL visibility on non-writable database/WAL/SHM files and parent directory. The writable reports subdirectory is explicit. Presence/hash comparisons protect database/WAL content; SQLite SHM read coordination is a separate behavior. Linux26 fixture assertions and native protocol7 are gates alongside existing Windows/Mac SQLite23/protocol6. This does not connect to installed-client IPC or use real account/home data.
+
 | Check | Host | Evidence |
 | --- | --- | --- |
 | Repository checks | Ubuntu 24.04 | UTF-8/local links/YAML, audit rejection tests, targeted tracked-tree scan and whitespace |
 | Windows isolated checks | Windows 2022 x64 | Complete publish, internal checks, disposable SQLite/WAL byte preservation |
 | Windows shutdown regression | Windows 2022 x64, same job | Production Restart Manager/coordinator with disposable GUI parent/child: delayed exit, cancellation, deadline and refusal; synthetic account/launch/resume endpoints |
 | Native app UI and queues | macOS 15 arm64 and Intel | Architecture publish, own-window screenshots, strict layout/menu assertions and disposable SQLite/WAL checks |
+| Native Linux storage/UI/queues | Ubuntu 24.04 x64 and ARM64 | Owned GNOME Keyring18, source own-window12, SQLite/WAL26 and protocol7 checks; no client/account/handoff acceptance |
 
 These do not prove live installed-account login/switch/resume, Metal rendering, notarization, native Wayland or full desktop-session acceptance. Native protection suites separately exercise actual disposable Windows DPAPI/Mac Keychain/Linux Secret Service primitives. The Verify Ubuntu job runs portable contracts; Linux native separately exercises its real provider and source preview. Workflows upload no binaries, key material or raw diagnostics. [Current native UI screenshots](media/README.md#native-platform-gallery) and [feature verification index](evidence/README.md) distinguish capability evidence from historical runtime checkpoints.
 
