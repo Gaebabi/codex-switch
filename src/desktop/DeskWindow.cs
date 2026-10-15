@@ -38,7 +38,7 @@ internal sealed class DeskWindow : Window
     private ScrollViewer _accountScroll = new();
     private StackPanel _sessionValues = new(), _volumes = new();
     private TextBlock _status = new();
-    private Button _add = new(), _cancel = new(), _refresh = new(), _settingsButton = new();
+    private Button _add = new(), _cancel = new(), _refresh = new(), _settingsButton = new(), _startCodex = new();
     private IDesktopMenuBar? _tray;
     private readonly Dictionary<string, NativeMenuItem> _nativeItems = new();
     private CancellationTokenSource? _login, _switch;
@@ -127,7 +127,7 @@ internal sealed class DeskWindow : Window
             BeginMoveDrag(args); args.Handled = true;
         };
         titlebar.Children.Add(dragRegion);
-        var startCodex = _theme.IconButton(DeskButtonIconKind.Launch, Loc.T("msg.linux_start_codex"), () => _ = RunAsync(async token =>
+        var startCodex = _startCodex = _theme.IconButton(DeskButtonIconKind.Launch, Loc.T("msg.linux_start_codex"), () => _ = RunAsync(async token =>
         {
             if (!_ready || _switch != null) return;
             await _service!.StartDesktopAsync(token);
@@ -221,6 +221,7 @@ internal sealed class DeskWindow : Window
         _accounts.Children.Clear(); _accounts.ColumnDefinitions.Clear(); _accounts.RowDefinitions.Clear(); _cards.Clear();
         if (_tray != null) UpdateTray();
         _add.IsEnabled = _ready && _login == null; _cancel.IsVisible = _login != null || _switch != null;
+        _startCodex.IsEnabled = _ready && _login == null && _switch == null;
         _refresh.IsEnabled = !_initializing && _preview == null && _host.AccountUnavailableReason == null;
         var profiles = (_preview ?? _service?.Accounts ?? Array.Empty<AccountProfile>()).OrderByDescending(p => p.IsCurrent).ThenBy(p => p.DisplayName, StringComparer.CurrentCulture).ToArray();
         if (profiles.Length == 0)
