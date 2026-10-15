@@ -19,7 +19,7 @@ Switch Codex accounts, automatically resume eligible unfinished local chats, and
 
 **Linux:** planned; no Linux package yet. Follow the [support roadmap](docs/PLATFORM_SUPPORT_PLAN.md) and [issue #1](https://github.com/Gaebabi/codex-switch/issues/1). Contributions across languages, distributions and accessibility needs are welcome.
 
-Source1.37.0 contributors can build the [Linux storage/UI preview](docs/development/LINUX.md). Account/client/handoff actions are disabled while their native acceptance remains in progress; it is not a supported Linux release.
+Source1.39.0 contributors can build the [Linux storage/UI preview](docs/development/LINUX.md) and [complete unsigned installation candidates](docs/development/LINUX_PACKAGES.md). Ordinary account/handoff actions are gated while native authenticated acceptance remains in progress; these are not a supported Linux account-switching release.
 
 Source1.36.0 verifies encrypted KWallet5 storage on native Ubuntu24.04 x64/ARM64 while preserving existing keys and vault data. [Native storage verification and actual app screenshots](docs/evidence/linux-kwallet-storage/README.md). Linux desktop switching and packages remain separate support gates.
 

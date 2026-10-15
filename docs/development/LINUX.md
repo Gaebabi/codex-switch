@@ -1,5 +1,7 @@
 # Linux implementation and verification
 
+Source1.39.0 adds controlled normal X11 close and [complete Linux preview package candidates](LINUX_PACKAGES.md) in issue66/PR67. Native architecture, fresh installed-app/data-preservation and supported-OS CI are required before that scoped promotion. Ordinary account/handoff UI remains gated; no supported account-switching Linux Release is claimed.
+
 Source1.38.0 adds [native desktop IPC identity and controlled launch](LINUX_IPC.md), checkpoint62. Actual peer-bound pidfd/image/resource and private socket checks precede IPC; erased startup metadata needs original managed-launch provenance. This is independent of normal desktop shutdown, authenticated handoff and installation acceptance, which remain required in5/6/7. Account/handoff UI remains gated.
 
 Linux support is in progress in [issue5](https://github.com/Gaebabi/codex-switch/issues/5), starting with [native storage50](https://github.com/Gaebabi/codex-switch/issues/50). Source1.33.0 introduces Secret Service protection; native provider verification, Linux host evidence, client trust, actual manual handoff and packages are required before advertising supported account switching. Published downloads remain1.27.6, without a Linux package. KDE/KWallet, broader environments and actual account/handoff acceptance remain separate gates.
