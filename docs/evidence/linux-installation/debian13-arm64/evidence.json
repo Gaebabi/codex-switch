@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "revision": "fc548875557efb3af98430ef42684545d7c46580",
+  "os": "Linux",
+  "architecture": "Arm64",
+  "runtime": ".NET 10.0.13",
+  "appVersion": "1.39.0",
+  "images": [
+    {
+      "file": "en-dark-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "0f194b8e75141a18f0482ba65e35479f48fd8eca485b7039217ba77b8d42d6df",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "26951bc20d8c5743cb093bd873c46757a79380f5af727099ab53cb015ae2441a",
+      "capture": "Native own window or popup"
+    }
+  ],
+  "rendering": "Software (X11 native window)",
+  "scope": "Published app on the stated OS; native own windows/popups and explicitly labeled WPF tooltip component renders, synthetic accounts only. No personal desktop/credentials/Codex action or account-switch/resume acceptance.",
+  "fullArtifactImagesValidated": 12
+}

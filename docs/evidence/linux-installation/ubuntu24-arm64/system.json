@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "sourceRevision": "fc548875557efb3af98430ef42684545d7c46580",
+  "version": "1.39.0",
+  "architecture": "Arm64",
+  "rid": "linux-arm64",
+  "distribution": "Ubuntu 24.04",
+  "image": "ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55",
+  "nativePackages": [
+    "libc6 2.39-0ubuntu8.9",
+    "libgcrypt20 1.10.3-2ubuntu0.2",
+    "libglib2.0-0t64 2.80.0-6ubuntu3.9",
+    "libicu74 74.2-1ubuntu3.1",
+    "libicu76 ",
+    "libicu78 ",
+    "libiculx63 ",
+    "libsqlite3-0 3.45.1-1ubuntu2.8"
+  ],
+  "passed": 9,
+  "failed": 0,
+  "checks": [
+    "No global .NET host/SDK/runtime is installed",
+    "System package installation preserves pre-existing private marker bytes/modes",
+    "System package installation preserves pre-existing private marker bytes/modes",
+    "The installed complete native application runs without .NET installation",
+    "Menu and canonical icon are installed through the package manager",
+    "The actual installed program renders12 own-window source UI confirmations",
+    "Package-manager removal deletes program/menu/icon integration",
+    "Removal preserves existing private account/vault marker bytes/modes",
+    "Removal preserves existing private account/vault marker bytes/modes"
+  ],
+  "globalDotnetAbsent": true,
+  "accountsUsed": false,
+  "kernel": "6.17.0-1022-azure",
+  "scope": "Actual package-manager install/removal, self-contained startup and installed own-window X11/Xvfb source UI on an owned fresh minimal container. Synthetic data only; not a full GNOME/KDE/Wayland/accessibility or authenticated switch/resume acceptance."
+}

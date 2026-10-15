@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "sourceRevision": "fc548875557efb3af98430ef42684545d7c46580",
+  "version": "1.39.0",
+  "architecture": "X64",
+  "rid": "linux-x64",
+  "distribution": "Debian 13",
+  "image": "debian@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5",
+  "nativePackages": [
+    "libc6 2.41-12+deb13u4",
+    "libgcrypt20 1.11.0-7+deb13u1",
+    "libglib2.0-0t64 2.84.4-3~deb13u5",
+    "libicu74 ",
+    "libicu76 76.1-4",
+    "libicu78 ",
+    "libiculx63 ",
+    "libsqlite3-0 3.46.1-7+deb13u2"
+  ],
+  "passed": 9,
+  "failed": 0,
+  "checks": [
+    "No global .NET host/SDK/runtime is installed",
+    "System package installation preserves pre-existing private marker bytes/modes",
+    "System package installation preserves pre-existing private marker bytes/modes",
+    "The installed complete native application runs without .NET installation",
+    "Menu and canonical icon are installed through the package manager",
+    "The actual installed program renders12 own-window source UI confirmations",
+    "Package-manager removal deletes program/menu/icon integration",
+    "Removal preserves existing private account/vault marker bytes/modes",
+    "Removal preserves existing private account/vault marker bytes/modes"
+  ],
+  "globalDotnetAbsent": true,
+  "accountsUsed": false,
+  "kernel": "6.17.0-1022-azure",
+  "scope": "Actual package-manager install/removal, self-contained startup and installed own-window X11/Xvfb source UI on an owned fresh minimal container. Synthetic data only; not a full GNOME/KDE/Wayland/accessibility or authenticated switch/resume acceptance."
+}

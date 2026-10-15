@@ -2,11 +2,11 @@
 
 Tracking [#1](https://github.com/Gaebabi/codex-switch/issues/1). Updated 2026-10-15. Resumed checkpoints and reviewed native evidence are tracked in [PR27](https://github.com/Gaebabi/codex-switch/pull/27). Account switching and safe automatic continuation are the core product; a window that launches is not evidence of either capability.
 
-Source1.35.1/[PR58](https://github.com/Gaebabi/codex-switch/pull/58) adds explicit KDE encrypted-session incompatibility refusal and data-preservation tests. **KWallet storage remains unavailable**, with positive provider acceptance still open in issue55. [Actual source-app confirmation and native provider scope](evidence/linux-kwallet/README.md) do not complete Linux switching/continuation or package support.
+Declared native GNOME/KWallet5 storage is verified in PR51/59, [KWallet6/KSecrets in PR61](evidence/linux-kde6/README.md), and [authenticated Linux IPC/controlled startup in merged PR63](evidence/linux-desktop-peer/README.md), all on actual x64/ARM64 with existing key/data preservation. The former PR58 incompatibility refusal is historical; declared KWallet storage is available. Source1.39.0/[PR67](https://github.com/Gaebabi/codex-switch/pull/67) adds controlled normal close and [complete unsigned installation/UI preview candidates](development/LINUX_PACKAGES.md). None of these checkpoints proves authenticated account switching/automatic continuation.
 
-The owner resumed work toward the complete remaining roadmap. [P6–P10 delivery gates](development/PLAN.md#multiplatform-delivery-goal--resumed2026-10-15) have completed native core/provider/application/UI separation in issue3/PR28/38/40/42/44/47. Current [Linux storage50/PR51](https://github.com/Gaebabi/codex-switch/pull/51) completes native GNOME Keyring x64/arm64 storage verification and a shared source UI preview; [SQLite52](https://github.com/Gaebabi/codex-switch/issues/52) continues read-only metadata, followed by remaining client/KWallet trust5, handoff6 and packages7. Every part receives checkpoint pushes and actual application evidence. Current source1.36.0 and published downloads1.27.6 remain distinct; a preview window does not complete Linux account switching.
+The owner requests implementation/isolated native verification/package candidates first while a separate disposable Linux account environment is unavailable. [P6–P10 delivery gates](development/PLAN.md#multiplatform-delivery-goal--resumed2026-10-15) retain checkpoint pushes, actual private-data-free program images, final-head CI and author review/merge. Native read-only SQLite52/PR53 and context-aware client/account-policy54/PR56/57 are complete. Source1.39.0 and published1.27.6 remain distinct. Parent5/6/7 stay open for remaining capabilities, authenticated handoff and full desktop/package promotion.
 
-Runtime issue4 is completed by merged PR27: source1.30.0/.NET10.0.13, native Windows x64 and macOS15 arm64/Intel app-window evidence, complete runtime/package inspection and four-job reviewed-head CI. Core/provider/application/UI extraction issue3 is completed through PR28/38/40/42/44/47. Source1.35.0 adds context-aware account policy after verified native storage/SQLite/client inspection; remaining KDE/KWallet/peer and authenticated integration in5, actual handoff6 and environment/packages7 stay open. Public binaries remain1.27.6 until separately released.
+Runtime4 and core/provider/application/UI separation3 are complete through reviewed native PR27/28/38/40/42/44/47. Windows/Mac regressions remain mandatory for every Linux checkpoint. Public binaries remain1.27.6 until separately released; unsigned Linux PR/CI candidates are not that supported Release.
 
 The first core part is now merged as [PR28](https://github.com/Gaebabi/codex-switch/pull/28), main18d33a7. [Actual native program before/after evidence](evidence/shared-core/README.md) and [complete-head four-job CI](https://github.com/Gaebabi/codex-switch/actions/runs/38627343669) pass. Issue3 is now complete through PR47; [remaining Linux checkpoints](development/PLAN.md) keep capability/trust gates ahead of account enablement. Historical text privacy coordination is tracked in [29](https://github.com/Gaebabi/codex-switch/issues/29) without publishing its private values.
 
@@ -16,7 +16,7 @@ The first core part is now merged as [PR28](https://github.com/Gaebabi/codex-swi
 | --- | --- | --- |
 | Windows x64 | 1.27.6 self-contained ZIP | 93 internal / 23 isolated SQLite-WAL checks; live client acceptance is separate |
 | Mac arm64 / x64 | 1.27.6 self-contained ZIP | Cross-publish/package checks; native login/switch/resume, Intel-device acceptance and notarization remain open |
-| Linux x64 / arm64 | No supported download; source preview | Native Ubuntu24.04 GNOME storage/UI and read-only SQLite checkpoints; account/client/handoff and clean-package acceptance remain pending |
+| Linux x64 / arm64 | Unsigned tar.gz/deb/rpm installation/UI preview candidates | Declared storage/client/policy/SQLite/peer and controlled close; fresh Ubuntu24.04/Debian13/Fedora44 minimal-container install/update/removal/bootstrap UI. Actual account/handoff, full desktop/display/accessibility and supported Release promotion remain pending |
 | WSL / remote / headless / CLI-only | No dedicated supported setup | Do not assume desktop restoration or share credentials across homes/OSes |
 
 English stays the shared default. Published 1.27.6 UI supports English/Korean. Source 1.28.0 adds nine UI catalogues and extensible local packs, tracked in [#16](https://github.com/Gaebabi/codex-switch/issues/16) and the [translator guide](LOCALIZATION.md). Contributions in other languages and for other environments are welcome.
@@ -67,10 +67,10 @@ Completed #3 extracts a platform-free core project, independent platform service
 
 | Source | Required change |
 | --- | --- |
-| `src/platforms/client/RuntimeLocator.cs`, `DesktopShutdown.cs` | Add verified Linux client capabilities and confirmed normal shutdown beyond the current supported providers |
-| `src/platforms/security/LinuxVaultProtection.cs` | GNOME Secret Service/native private files complete in PR51; independently verify KDE/KWallet and preserve explicit foreign-format refusal |
-| `src/platforms/sqlite/ReadOnlySqlite.cs` | Native Linux SQLite/WAL26 and protocol7 pass in PR53; finish exact-head promotion and retain installed-client acceptance separately |
-| `src/platforms/protocol/DesktopSessionMonitor.cs` | Add Linux same-UID peer/socket ownership/client identity verification before allowing the currently rejected IPC start |
+| `src/platforms/client/RuntimeLocator.cs`, `DesktopShutdown.cs` and Linux session adapters | Integrate managed native close/relaunch/thread-open with ordinary handoff, retaining original client/child identity and actual effective desktop/context policy |
+| `src/platforms/security/LinuxVaultProtection.cs` | Declared GNOME/KWallet5/KWallet6/KSecrets native storage is complete; broader provider builds need explicit attestation, not a guessed compatible version |
+| `src/platforms/sqlite/ReadOnlySqlite.cs` | Native read-only SQLite/WAL26 is complete in merged PR53; retain actual installed-client/session acceptance separately |
+| `src/platforms/protocol/DesktopSessionMonitor.cs` | Verified native Linux IPC is complete in merged PR63; actual chat ownership/settings/one-Continue/recovery acceptance remains in6 |
 | `src/desktop`, `src/linux` | Source host/UI is implemented; account/client/handoff remain gated until trusted providers and complete native acceptance pass |
 | Hardware/drive collectors and defaults | Implement Linux capabilities/mount selection; unsupported readings remain unknown |
 

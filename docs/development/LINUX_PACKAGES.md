@@ -2,6 +2,8 @@
 
 Issue [66](https://github.com/Gaebabi/codex-switch/issues/66) / [PR67](https://github.com/Gaebabi/codex-switch/pull/67), within parent5/6/7. Source1.39.0 builds complete native **x64 and ARM64** `tar.gz`, `.deb` and `.rpm` candidates. These are unsigned source previews; ordinary account/handoff UI remains gated until authorized actual-account and desktop acceptance. They are not promoted Linux Release downloads.
 
+[Actual installed-program confirmations, supported-OS comparisons and native source/runtime/hash/package receipts](../evidence/linux-installation/README.md) bind codefc548875 to all six passing CI jobs. Each architecture passes native controlled lifecycle18 and per-user544; all six fresh system targets pass9. Candidate artifacts are linked there; final reviewed-head promotion is recorded by PR67.
+
 ## Use a complete candidate
 
 Keep the entire extracted tar folder. It contains its .NET10.0.13 runtime, application assemblies/native libraries, canonical1024px icon, licenses, LGPL libsecret source/patch/relink recipe and a package file inventory. No .NET, Python or source build is needed to run it. System C/C++/ICU/OpenSSL/Kerberos/zlib/GLib/libgcrypt/SQLite and X11/XCB/ICE/SM/fontconfig dependencies remain distribution-provided. Current framework/client use X11/XWayland; pure Wayland is a separate gate.

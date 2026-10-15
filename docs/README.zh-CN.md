@@ -33,9 +33,9 @@
 
 切换前保存并验证带日期的本地主聊天名称，备份当前登录。**切换会重启 Codex**，重新打开相同聊天 ID、目录、模型和权限，并向符合条件的空闲聊天发送一次 **Continue**，自动继续未完成的工作。已运行或完成的工作不重复启动。中断的交接可用 **Resume chats** 恢复；发送结果不明确时不会自动重发。名称保存或正常退出失败会阻止登录变更，也可能影响使用相同登录的 CLI/IDE。[切换详情](SWITCHING.md)
 
-Linux 支持正在规划中，尚无执行包。[支持计划](PLATFORM_SUPPORT_PLAN.md) / [Issue #1](https://github.com/Gaebabi/codex-switch/issues/1)。欢迎不同语言、环境和无障碍相关的贡献。
+Linux 的[未签名安装/UI 预览候选包](development/LINUX_PACKAGES.md)与正式账户切换支持分开验证。[支持计划](PLATFORM_SUPPORT_PLAN.md) / [Issue #1](https://github.com/Gaebabi/codex-switch/issues/1)。真实认证、聊天恢复与完整桌面环境验证仍在进行，欢迎不同语言、环境和无障碍相关的贡献。
 
-源码1.35.0提供面向贡献者的 [Linux 存储/UI 预览版](development/LINUX.md)，可用于构建和验证。账户、客户端和聊天恢复功能在原生验证完成前保持禁用；这不是正式 Linux 发布版。
+源码1.39.0的 [Linux 存储/UI 预览版](development/LINUX.md)提供 x64/ARM64 完整 tar.gz、deb、rpm 候选包及用户级安装、更新、卸载。普通账户与聊天恢复操作在真实认证验证完成前保持禁用；这不是正式的账户切换发布版。
 
 [Mac](MACOS.md) / [预测](FORECAST.md) / [安全](../SECURITY.md) / [开发](../CONTRIBUTING.md)
 

@@ -37,9 +37,9 @@ Codex アカウントを切り替え、次に使うアカウントの残り利�
 
 切り替え前に日付付きのローカルチャット名を保存・確認し、現在のログインをバックアップします。**Codex を再起動**して同じチャット ID・フォルダー・モデル・権限を開き、再開可能な待機中チャットに一度だけ **Continue** を送り、未完了の作業を自動で再開します。実行中・完了済みの作業は重複実行しません。中断した引き継ぎは **Resume chats** で続けられ、送信結果が不明な場合は自動再送しません。名前保存や正常終了に失敗するとログイン変更を停止します。同じログインを使う CLI/IDE にも影響する場合があります。[詳細](SWITCHING.md)
 
-Linux 版は計画中で、実行パッケージはまだありません。[対応計画](PLATFORM_SUPPORT_PLAN.md) / [Issue #1](https://github.com/Gaebabi/codex-switch/issues/1)。さまざまな言語・環境・アクセシビリティに関する貢献を歓迎します。
+Linux は[未署名のインストール・UIプレビュー候補](development/LINUX_PACKAGES.md)を、正式なアカウント切り替え対応とは分けて検証しています。[対応計画](PLATFORM_SUPPORT_PLAN.md) / [Issue #1](https://github.com/Gaebabi/codex-switch/issues/1)。実際の認証・チャット再開と完全なデスクトップ検証は継続中です。
 
-ソース1.35.0では、貢献者向けの[Linuxストレージ/UIプレビュー](development/LINUX.md)をビルドできます。アカウント・クライアント・チャット再開機能は検証が完了するまで無効で、正式なLinuxリリースではありません。
+ソース1.39.0の[Linuxストレージ/UIプレビュー](development/LINUX.md)は、x64・ARM64の完全なtar.gz・deb・rpm候補とユーザー単位のインストール・更新・削除を提供します。通常のアカウント・チャット再開操作は実際の認証検証まで無効で、正式なアカウント切り替えリリースではありません。
 
 [Mac](MACOS.md) / [予測](FORECAST.md) / [セキュリティ](../SECURITY.md) / [開発](../CONTRIBUTING.md)
 

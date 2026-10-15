@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "architecture": "X64",
+  "passed": 18,
+  "failed": 0,
+  "contracts": {
+    "schema": 1,
+    "passed": 11,
+    "failed": 0,
+    "architecture": "X64",
+    "checks": [
+      "Absent sockets refuse without creating home credentials or a socket",
+      "Regular-file and symlink collisions refuse with original bytes intact",
+      "Unsafe socket permissions and IPC/home directories refuse without rewriting permissions",
+      "Directory symlinks refuse without following an alternate socket",
+      "A same-UID forged listener is rejected before receiving an application byte",
+      "The ordinary production connector rejects the same forged listener before initialization",
+      "Only the verified packaged entry and explicitly supported arguments are admitted",
+      "Loader/Node/Electron injection and another selected home refuse without inspecting credentials",
+      "Wrong application-resource checksums refuse without changing the root-managed file",
+      "Cancelled connections cannot publish a peer stream",
+      "A real stale native socket reports unavailable and remains unchanged for its owning client"
+    ],
+    "scope": "Owned native sockets and the actual approved sandboxed desktop, without accounts, credentials, inference, normal client shutdown, chat mutation or authenticated handoff acceptance."
+  },
+  "actualPeer": {
+    "schema": 1,
+    "passed": 7,
+    "failed": 0,
+    "architecture": "X64",
+    "checks": [
+      "Actual sandboxed official desktop authenticates with a peer-bound pidfd and exact root-managed image/resources",
+      "Actual desktop answers the existing framed initialize protocol successfully",
+      "No authentication file is created by peer verification",
+      "The actual managed native launch excludes a parent Node preload without executing its marker",
+      "The original verified native client exits normally through WM_DELETE and its captured children exit without force",
+      "An independently running real pinned Codex CLI is preserved by intended-client shutdown",
+      "A retained connection refuses sends after the original native peer exits"
+    ],
+    "scope": "Actual sandboxed official desktop with controlled normal X11 close, captured child exits and a preserved independent real Codex CLI. No accounts, credentials, inference, chat mutation or authenticated handoff acceptance."
+  },
+  "kernel": "6.17.0-1022-azure",
+  "display": "Owned X11/Xvfb; official Chromium sandbox enabled",
+  "officialPackage": "26.1007.71326",
+  "accountsUsed": false,
+  "normalShutdownIncluded": true,
+  "scope": "Actual sandboxed official desktop IPC, controlled normal X11 shutdown/captured child exit and preserved independent real CLI. No authenticated accounts, chat mutation or switch/resume acceptance.",
+  "sourceRevision": "fc548875557efb3af98430ef42684545d7c46580",
+  "artifact": {
+    "run": 38710642681,
+    "head": "fc548875557efb3af98430ef42684545d7c46580",
+    "id": 11961196665,
+    "digest": "sha256:dcfd3a1c8bcc26166aafc69c408f036676159c792f95ace840e380ed4b3cd242",
+    "name": "desktop-peer-linux-x64"
+  },
+  "image": {
+    "file": "official-client-native.png",
+    "width": 1280,
+    "height": 800,
+    "sha256": "10c4d0be0d2c0e8354fdcad7b0229adc85474badc4185e40830a54c2b417b44a"
+  }
+}

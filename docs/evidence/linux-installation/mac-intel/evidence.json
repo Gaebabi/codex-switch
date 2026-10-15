@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "revision": "fc548875557efb3af98430ef42684545d7c46580",
+  "os": "macOS",
+  "architecture": "X64",
+  "runtime": ".NET 10.0.13",
+  "appVersion": "1.39.0",
+  "images": [
+    {
+      "file": "en-light-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "57b1a42025a5232c4a24924b7dff44a8f3be3368307daccdb779e506c7580a4a",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "1433bb63eec89814cae537751dbafde37c6b68bd7c606644be392bad6b4a30a6",
+      "capture": "Native own window or popup"
+    }
+  ],
+  "rendering": "Software (CI native window)",
+  "scope": "Published app on the stated OS; native own windows/popups and explicitly labeled WPF tooltip component renders, synthetic accounts only. No personal desktop/credentials/Codex action or account-switch/resume acceptance.",
+  "fullArtifactImagesValidated": 16
+}

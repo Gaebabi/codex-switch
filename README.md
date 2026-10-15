@@ -17,7 +17,7 @@ Switch Codex accounts, automatically resume eligible unfinished local chats, and
 
 [Release notes and checksums](https://github.com/Gaebabi/codex-switch/releases/tag/v1.27.6). No source build or .NET installation is needed. Mac packages are not notarized; see [Mac setup](docs/MACOS.md).
 
-**Linux:** planned; no Linux package yet. Follow the [support roadmap](docs/PLATFORM_SUPPORT_PLAN.md) and [issue #1](https://github.com/Gaebabi/codex-switch/issues/1). Contributions across languages, distributions and accessibility needs are welcome.
+**Linux:** [unsigned installation/UI preview candidates](docs/development/LINUX_PACKAGES.md) are verified separately from supported account switching. Follow the [support roadmap](docs/PLATFORM_SUPPORT_PLAN.md) and [issue #1](https://github.com/Gaebabi/codex-switch/issues/1); authenticated switching/continuation and full desktop acceptance remain in progress. Contributions across languages, distributions and accessibility needs are welcome.
 
 Source1.39.0 contributors can build the [Linux storage/UI preview](docs/development/LINUX.md) and [complete unsigned installation candidates](docs/development/LINUX_PACKAGES.md). Ordinary account/handoff actions are gated while native authenticated acceptance remains in progress; these are not a supported Linux account-switching release.
 
