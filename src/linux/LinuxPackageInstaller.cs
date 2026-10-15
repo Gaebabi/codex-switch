@@ -80,10 +80,15 @@ internal static class LinuxPackageInstaller
         if (geteuid() == 0 || getuid() != geteuid()) throw new IOException("Run per-user installation as your normal desktop user, without sudo.");
         var data = Full(Environment.GetEnvironmentVariable("XDG_DATA_HOME") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local/share"));
         var prefix = Path.Combine(data, "codex-switch"); var versions = Path.Combine(prefix, "versions");
+        var codexHome = Full(Environment.GetEnvironmentVariable("CODEX_HOME") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex"));
+        if (prefix == codexHome || prefix.StartsWith(codexHome + "/", StringComparison.Ordinal) || codexHome.StartsWith(prefix + "/", StringComparison.Ordinal)) throw Refused();
         var statePath = Path.Combine(prefix, ".installation.json"); var current = Path.Combine(prefix, "current");
         var desktop = Path.Combine(data, "applications/codex-switch.desktop"); var icon = Path.Combine(data, "icons/hicolor/1024x1024/apps/codex-switch.png");
         if (uninstall && !Directory.Exists(prefix)) return 0;
         EnsureDirectory(prefix); EnsureDirectory(versions);
+        var lockPath = Path.Combine(prefix, ".installation.lock"); if (Exists(lockPath)) VerifyPath(lockPath, false);
+        using var installationLock = new FileStream(lockPath, new FileStreamOptions { Mode = FileMode.OpenOrCreate, Access = FileAccess.ReadWrite, Share = FileShare.None, UnixCreateMode = (UnixFileMode)0x180 });
+        VerifyPath(lockPath, false);
         State? state = null;
         if (Exists(statePath))
         {

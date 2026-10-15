@@ -19,6 +19,7 @@ p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--app',type=Path,required=True)
 p.add_argument('--rid',choices=['linux-x64','linux-arm64'],required=True)
 p.add_argument('--output',type=Path,required=True)
+p.add_argument('--tar-only',action='store_true',help='Build only an explicit version-override upgrade fixture; do not publish it as a candidate set')
 a=p.parse_args()
 repository=Path(__file__).resolve().parents[1];app=a.app.resolve();output=a.output.resolve()
 if os.name!='posix' or {'x86_64':'linux-x64','aarch64':'linux-arm64'}.get(platform.machine())!=a.rid:raise SystemExit('Build packages on the declared native Linux architecture')
@@ -99,12 +100,20 @@ spdx['relationships']=[{'spdxElementId':'SPDXRef-DOCUMENT','relationshipType':'D
 (output/'SBOM.spdx.json').write_text(json.dumps(spdx,indent=2)+'\n',encoding='utf-8')
 (output/'DEPENDENCIES.json').write_text(json.dumps({'schema':1,'rid':a.rid,'nuget':packages,'nativeSecret':native,'systemDependencies':'Distribution C/C++/ICU/OpenSSL/Kerberos/zlib/GLib/libgcrypt, X11/XCB/ICE/SM/fontconfig, read-only SQLite and a configured Secret Service for future account capabilities. Full desktop/account acceptance remains separate.'},indent=2)+'\n',encoding='utf-8')
 stem='CodexSwitch-v'+version+'-preview-'+a.rid
+def finish(artifacts):
+ source_version=ET.parse(repository/'Directory.Build.props').findtext('./PropertyGroup/Version')
+ provenance={'schema':1,'sourceRevision':revision,'version':version,'sourceVersion':source_version,'verificationOnlyVersionOverride':version!=source_version,'rid':a.rid,'runtime':info['runtime'],'nativeArchitecture':info['architecture'],'unsignedPreview':True,'supportedAccountHandoff':False,'payloadFiles':len(files),'artifacts':[{'file':file.name,'sha256':digest(file),'bytes':file.stat().st_size} for file in artifacts],'scope':'Native source-built unsigned candidate packages only. Checksums/inventory do not establish publisher authentication, actual account handoff or clean-desktop support.'}
+ (output/'PROVENANCE.json').write_text(json.dumps(provenance,indent=2)+'\n',encoding='utf-8')
+ (output/'SHA256SUMS').write_text(''.join(digest(file)+'  '+file.name+'\n' for file in [*artifacts,output/'SBOM.spdx.json',output/'DEPENDENCIES.json',output/'PROVENANCE.json']),encoding='utf-8')
+ print(json.dumps(provenance))
 with (output/(stem+'.tar.gz')).open('wb') as raw,gzip.GzipFile(filename='',mode='wb',fileobj=raw,mtime=epoch) as compressed,tarfile.open(fileobj=compressed,mode='w',format=tarfile.PAX_FORMAT) as archive:
  for file in sorted(payload.rglob('*')):
   entry=archive.gettarinfo(str(file),stem+'/'+file.relative_to(payload).as_posix());entry.uid=entry.gid=0;entry.uname=entry.gname='';entry.mtime=epoch
   if file.is_file():
    with file.open('rb') as source:archive.addfile(entry,source)
   else:archive.addfile(entry)
+if a.tar_only:
+ finish([output/(stem+'.tar.gz')]);raise SystemExit(0)
 stage=output/'system-root';destination=stage/'opt/codex-switch';shutil.copytree(payload,destination)
 desktop=stage/'usr/share/applications/codex-switch.desktop';desktop.parent.mkdir(parents=True)
 desktop.write_text('[Desktop Entry]\nType=Application\nName=Codex Switch\nComment=Linux source preview; account handoff is under native acceptance\nExec=/opt/codex-switch/CodexSwitch\nIcon=codex-switch\nTerminal=false\nCategories=Utility;Development;\nStartupNotify=true\n',encoding='utf-8')
@@ -143,7 +152,4 @@ rpms=list((rpmroot/'RPMS').rglob('*.rpm'))
 if len(rpms)!=1:raise SystemExit('Expected exactly one architecture-specific RPM')
 shutil.copyfile(rpms[0],output/(stem+'.rpm'))
 artifacts=[output/(stem+suffix) for suffix in ('.tar.gz','.deb','.rpm')]
-provenance={'schema':1,'sourceRevision':revision,'version':version,'rid':a.rid,'runtime':info['runtime'],'nativeArchitecture':info['architecture'],'unsignedPreview':True,'supportedAccountHandoff':False,'payloadFiles':len(files),'artifacts':[{'file':file.name,'sha256':digest(file),'bytes':file.stat().st_size} for file in artifacts],'scope':'Native source-built unsigned candidate packages only. Checksums/inventory do not establish publisher authentication, actual account handoff or clean-desktop support.'}
-(output/'PROVENANCE.json').write_text(json.dumps(provenance,indent=2)+'\n',encoding='utf-8')
-(output/'SHA256SUMS').write_text(''.join(digest(file)+'  '+file.name+'\n' for file in [*artifacts,output/'SBOM.spdx.json',output/'DEPENDENCIES.json',output/'PROVENANCE.json']),encoding='utf-8')
-print(json.dumps(provenance))
+finish(artifacts)

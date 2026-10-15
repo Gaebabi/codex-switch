@@ -21,10 +21,10 @@ internal sealed class LinuxDesktopLaunch : IDisposable
     internal ulong Started { get; }
     public int Id { get; }
     public bool ExitedNormally => _process.HasExited && _process.ExitCode == 0;
-    private LinuxDesktopLaunch(LinuxClientInstallation installation, Process process, string home, string argumentZero, ulong started)
+    private LinuxDesktopLaunch(LinuxClientInstallation installation, Process process, string home, string argumentZero, ulong started, ProcessStartInfo start)
     {
         _installation = installation; _process = process; Id = process.Id; Home = home; ArgumentZero = argumentZero; Started = started;
-        _display = Environment.GetEnvironmentVariable("DISPLAY"); _authority = Environment.GetEnvironmentVariable("XAUTHORITY"); _userHome = Environment.GetEnvironmentVariable("HOME");
+        start.Environment.TryGetValue("DISPLAY", out _display); start.Environment.TryGetValue("XAUTHORITY", out _authority); start.Environment.TryGetValue("HOME", out _userHome);
     }
     public static LinuxDesktopLaunch Start(string home, CancellationToken cancellation)
     {
@@ -50,7 +50,7 @@ internal sealed class LinuxDesktopLaunch : IDisposable
             cancellation.ThrowIfCancellationRequested();
             process = Process.Start(start) ?? throw new IOException("The approved Linux desktop could not be started.");
             process.BeginOutputReadLine(); process.BeginErrorReadLine();
-            var launched = new LinuxDesktopLaunch(installation, process, home, executable, LinuxPeerProcess.StartTime(process.Id));
+            var launched = new LinuxDesktopLaunch(installation, process, home, executable, LinuxPeerProcess.StartTime(process.Id), start);
             if (!Owned.TryAdd(process.Id, launched)) throw LinuxPeerProcess.Refused();
             return launched;
         }
