@@ -3,6 +3,8 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text;
+using Microsoft.Win32.SafeHandles;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -20,9 +22,11 @@ internal static class Program
         { Console.Error.WriteLine("This source preview requires Linux x64 or ARM64."); return 1; }
         if (args.Length == 1 && args[0] is "--install-package" or "--uninstall-package")
         {
-            try { return LinuxPackageInstaller.Execute(args[0] == "--uninstall-package"); }
+            using var output = new StreamWriter(new FileStream(new SafeFileHandle((IntPtr)1, false), FileAccess.Write), new UTF8Encoding(false)) { AutoFlush = true };
+            using var errorOutput = new StreamWriter(new FileStream(new SafeFileHandle((IntPtr)2, false), FileAccess.Write), new UTF8Encoding(false)) { AutoFlush = true };
+            try { return LinuxPackageInstaller.Execute(args[0] == "--uninstall-package", output); }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or System.Text.Json.JsonException)
-            { Console.Error.WriteLine("Package operation failed: " + error.Message); return 1; }
+            { errorOutput.WriteLine("Package operation failed: " + error.Message); return 1; }
         }
         if (args.Length == 1 && args[0] == "--package-info")
         { Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { version = typeof(Program).Assembly.GetName().Version!.ToString(3), architecture = RuntimeInformation.ProcessArchitecture.ToString(), runtime = RuntimeInformation.FrameworkDescription, scope = "Linux source preview; ordinary account/handoff actions remain gated." })); return 0; }

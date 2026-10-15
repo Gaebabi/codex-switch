@@ -2,11 +2,14 @@
 import hashlib
 import json
 import os
+import errno
+import pty
 from pathlib import Path
 import platform
 import re
 import secrets
 import selectors
+import select
 import shutil
 import subprocess
 import sys
@@ -159,6 +162,12 @@ try:
         run(['xdotool', 'windowsize', '--sync', window, str(width), str(height)])
         time.sleep(0.6)
         capture(window, pid, f'ordinary-dark-{width}x{height}')
+    run(['xdotool', 'mousemove', '--window', window, '758', '17', 'click', '1'])
+    run(['xdotool', 'mousemove', '--window', window, '20', '80'])
+    time.sleep(0.5)
+    capture(window, pid, 'ordinary-light-800x600')
+    with Image.open(results / 'ordinary-dark-800x600.png') as before, Image.open(results / 'ordinary-light-800x600.png') as after:
+        check('Ordinary theme button changes the rendered application theme', sum(after.convert('RGB').getpixel((5, 80))) > sum(before.convert('RGB').getpixel((5, 80))) + 200)
     run(['xdotool', 'key', '--window', window, 'F5'])
     check('Ordinary refresh keeps the installed program alive', Path('/proc/' + str(pid)).exists())
     run(['xdotool', 'key', '--window', window, 'ctrl+w'])
@@ -171,8 +180,33 @@ try:
     run(['xdotool', 'windowactivate', '--sync', window])
     run(['xdotool', 'key', '--window', window, 'ctrl+w'])
     wait_for(lambda: not Path('/proc/' + str(pid)).exists())
-    run([str(executable), '--uninstall-package'], stdout=private_log, stderr=private_log)
+    removed = json.loads(run([str(executable), '--uninstall-package'], capture_output=True).stdout)
+    check('Fresh installed self-uninstall returns successful JSON through redirected output', removed['uninstalled'] is True)
     check('Per-user uninstall removes only owned menu/current integration', not entry.exists() and not (root / 'share/codex-switch/current').exists())
+    run([app, '--install-package'], stdout=private_log, stderr=private_log)
+    master, slave = pty.openpty()
+    terminal = subprocess.Popen([str(executable), '--uninstall-package'], stdin=subprocess.DEVNULL, stdout=slave, stderr=slave)
+    os.close(slave)
+    terminal_output = bytearray()
+    try:
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline:
+            if select.select([master], [], [], 0.1)[0]:
+                try:
+                    block = os.read(master, 8192)
+                except OSError as error:
+                    if error.errno != errno.EIO:
+                        raise
+                    break
+                if not block:
+                    break
+                terminal_output.extend(block)
+            elif terminal.poll() is not None:
+                break
+        terminal.wait(timeout=5)
+    finally:
+        os.close(master)
+    check('Fresh installed self-uninstall also succeeds on a real PTY', terminal.returncode == 0 and json.loads(terminal_output)['uninstalled'] is True and not entry.exists() and not executable.exists())
     for attempt in (1, 2):
         home = root / 'codex-linux-desktop-test-session-peer'
         if not home.exists():
