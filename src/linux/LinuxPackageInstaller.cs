@@ -79,7 +79,9 @@ internal static class LinuxPackageInstaller
     public static int Execute(bool uninstall)
     {
         if (geteuid() == 0 || getuid() != geteuid()) throw new IOException("Run per-user installation as your normal desktop user, without sudo.");
-        var data = Full(Environment.GetEnvironmentVariable("XDG_DATA_HOME") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local/share"));
+        var selectedData = Environment.GetEnvironmentVariable("XDG_DATA_HOME");
+        if (selectedData != null && !Path.IsPathFullyQualified(selectedData)) throw Refused();
+        var data = Full(selectedData ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local/share"));
         var prefix = Path.Combine(data, "codex-switch"); var versions = Path.Combine(prefix, "versions");
         var codexHome = Full(Environment.GetEnvironmentVariable("CODEX_HOME") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex"));
         if (prefix == codexHome || prefix.StartsWith(codexHome + "/", StringComparison.Ordinal) || codexHome.StartsWith(prefix + "/", StringComparison.Ordinal)) throw Refused();
@@ -159,10 +161,12 @@ internal static class LinuxPackageInstaller
         EnsureDirectory(Path.GetDirectoryName(desktop)!); EnsureDirectory(Path.GetDirectoryName(icon)!);
         var next = new State(1, (state?.Versions ?? Array.Empty<string>()).Append(package.Version).Distinct().ToArray(), Digest(desktopBytes), Digest(iconBytes));
         Atomic(statePath, JsonSerializer.SerializeToUtf8Bytes(next)); Atomic(desktop, desktopBytes); Atomic(icon, iconBytes);
-        var pending = Path.Combine(prefix, ".current-" + Guid.NewGuid().ToString("N")); File.CreateSymbolicLink(pending, "versions/" + package.Version); File.Move(pending, current, true);
+        var pending = Path.Combine(prefix, ".current-" + Guid.NewGuid().ToString("N")); File.CreateSymbolicLink(pending, "versions/" + package.Version);
+        if (rename(pending, current) != 0) throw new IOException("The package activation link could not be atomically replaced (errno " + Marshal.GetLastPInvokeError() + ").");
         Console.WriteLine(JsonSerializer.Serialize(new { installed = true, version = package.Version, package.Rid, scope = "Per-user package/menu/icon files only; account/vault/home/keyring data is never opened or migrated." })); return 0;
     }
     [DllImport("libc", SetLastError = true)] private static extern int statx(int directory, [MarshalAs(UnmanagedType.LPUTF8Str)] string path, int flags, uint mask, out Stat value);
     [DllImport("libc")] private static extern uint getuid();
     [DllImport("libc")] private static extern uint geteuid();
+    [DllImport("libc", SetLastError = true)] private static extern int rename([MarshalAs(UnmanagedType.LPUTF8Str)] string source, [MarshalAs(UnmanagedType.LPUTF8Str)] string destination);
 }
