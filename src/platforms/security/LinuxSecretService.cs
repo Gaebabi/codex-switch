@@ -85,9 +85,9 @@ internal static class LinuxSecretService
                 _registration = _deadline.Token.Register(() => g_cancellable_cancel(_cancel));
                 _service = secret_service_get_sync(0, _cancel, out var error); Checked(error); if (_service == IntPtr.Zero) throw Unavailable();
                 var owner = VerifyOwner();
-                var kwallet = IsKWallet(owner);
+                var legacyKde = UsesLegacyKdeEncoding(owner);
                 var original = _service; _service = IntPtr.Zero;
-                try { _service = secret_codex_service_open_sync(owner, kwallet ? 1 : 0, _cancel, out error); Checked(error); if (_service == IntPtr.Zero) throw Unavailable(); }
+                try { _service = secret_codex_service_open_sync(owner, legacyKde ? 1 : 0, _cancel, out error); Checked(error); if (_service == IntPtr.Zero) throw Unavailable(); }
                 finally { g_object_unref(original); }
                 _attributes = g_hash_table_new_full(NativeLibrary.GetExport(GlibLibrary.Value, "g_str_hash"), NativeLibrary.GetExport(GlibLibrary.Value, "g_str_equal"),
                     NativeLibrary.GetExport(GlibLibrary.Value, "g_free"), NativeLibrary.GetExport(GlibLibrary.Value, "g_free"));
@@ -123,7 +123,7 @@ internal static class LinuxSecretService
             }
             finally { g_free(owner); }
         }
-        private bool IsKWallet(string owner)
+        private bool UsesLegacyKdeEncoding(string owner)
         {
             var kwallet5 = false;
             string? modern = null;

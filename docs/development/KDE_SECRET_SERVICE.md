@@ -6,6 +6,7 @@ Issue [60](https://github.com/Gaebabi/codex-switch/issues/60) extends encrypted 
 | --- | --- | --- | --- |
 | KWallet6 | Debian `kwallet6`6.13.0-1 | QCA minimal shared secret; positive129-byte public key | x64, ARM64 |
 | KSecrets | Debian `kwallet6`6.26.0-1 (`ksecretd`) | normalized128-byte shared secret/public key | x64, ARM64 |
+| KSecrets6.30 | Debian `kwallet6`6.30.0-1 (`ksecretd`) | normalized128-byte shared secret/public key; current PAM/GUI unlock API | x64, ARM64 |
 
 The [audited manifest](../../src/platforms/security/LinuxSecretProviders.json) pins each native daemon SHA256, package SHA256/download and disposable base image. Its packages come from the [Debian snapshot archive](https://snapshot.debian.org/package/kf6-kwallet/). This is an explicit list of verified builds, not a claim that every distribution/version is supported. Changed or unlisted builds need their own source and native verification before adding a manifest entry. No provider is installed or replaced by the application.
 
@@ -22,7 +23,9 @@ Legacy KWallet5 retains its verified encoding. GNOME and normalized KSecrets use
 - [ ] Retain GNOME/KWallet5/client/SQLite and Windows/Mac checks. Inspect actual own-window app confirmations and publish stripped, synthetic-only source/runtime/architecture/hash receipts.
 - [ ] Complete exact-head Verify/Linux native CI, author self-review and expected-SHA merge. Author review is not independent approval.
 
-Provider tests use separate owned private file-socket D-Bus/HOME/XDG sessions, test-only PAM controls and Qt offscreen. Application captures use own XIDs on X11/Xvfb. Neither proves a complete KDE/Wayland desktop, authenticated Codex switching/resumption (#6), clean-machine packages (#7) or a new binary Release.
+Provider tests use separate owned private file-socket D-Bus/HOME/XDG sessions. KWallet6/early KSecrets use test-only PAM controls and Qt offscreen. KSecrets6.30 removed the old public PAM control: its test starts through the actual PAM pipe/socket interface with an ephemeral synthetic password/hash, then proves in-place unlock through its real own-PID Qt password dialog on a newly owned Xvfb display. The password is passed only through stdin; hashes travel only through inherited pipes, never argv/environment/logs. Test-only salt/PAM/dialog helpers cannot unlock a production wallet. Original provider PID and original stored key/ciphertext are rechecked after unlock and restart.
+
+Actual source-app captures use own XIDs on X11/Xvfb with a separate non-activating private session D-Bus and private HOME/XDG. The identical published app hangs during initialization in a container without a desktop session bus; providing a proper private session fixes the capture environment. No production UI or timeout was relaxed. Container runs have exact named/labelled ownership and clean up on failures as well as success. These tests do not prove a complete KDE/Wayland desktop, authenticated Codex switching/resumption (#6), clean-machine packages (#7) or a new binary Release.
 
 ## Actual application baseline; confirmation pending
 

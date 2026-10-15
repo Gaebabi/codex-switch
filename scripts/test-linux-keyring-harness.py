@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock
 import subprocess
+import re
 
 tree=ast.parse(Path(__file__).with_name('verify-linux-keyring.py').read_text(encoding='utf-8'))
 stop=next(node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name=='stop')
@@ -37,5 +38,11 @@ class ProviderCleanup(unittest.TestCase):
         state,process=self.environment();process.wait.side_effect=[subprocess.TimeoutExpired('owned-provider',10),0]
         state['stop'](persist=False)
         process.kill.assert_called_once();self.assertEqual(process.wait.call_count,2)
+
+    def test_current_ksecrets_persistence_failure_still_terminates_original_process(self):
+        state,process=self.environment();state['a'].provider='ksecrets-current';state['re']=re
+        state['dbus'].return_value.stdout="(objectpath '/',)"
+        with self.assertRaisesRegex(RuntimeError,'unavailable during persistence'):state['stop']()
+        process.terminate.assert_called_once();process.wait.assert_called_once_with(timeout=10)
 
 if __name__=='__main__':unittest.main()

@@ -41,7 +41,7 @@ try
         case "provider-identity":
             Check("A declared KDE version and service cannot substitute for the original provider executable/PID", () =>
             {
-                foreach (var provider in new[] { ("org.kde.kwalletd6", "6.13.0"), ("org.kde.ksecretd", "6.26.0") })
+                foreach (var provider in new[] { ("org.kde.kwalletd6", "6.13.0"), ("org.kde.ksecretd", "6.26.0"), ("org.kde.ksecretd", "6.30.0") })
                     KeyFailure(LinuxKeyFailure.ProviderIncompatible, () => LinuxSecretProvider.UsesLegacyEncoding(provider.Item1, provider.Item2, (uint)Environment.ProcessId, CancellationToken.None));
             });
             break;
@@ -178,7 +178,7 @@ try
                 Assert(VaultProtection.Unprotect(SecureFiles.ReadPrivateBytes(file), directory).SequenceEqual(plain)));
             break;
         case "kwallet-unlock":
-            Check("Native KDE Secret Service connects to the already PAM-opened wallet", KWalletControl.ConnectUnlockedCollection);
+            Check("Native KDE Secret Service collection unlock completes on the original provider", KWalletControl.ConnectUnlockedCollection);
             break;
         case "missing":
             var original = File.ReadAllBytes(file); LinuxSecretService.DeleteDiagnosticKey(directory); VaultProtection.ReleaseKeys();

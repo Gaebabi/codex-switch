@@ -23,7 +23,7 @@ Source1.37.0 contributors can build the [Linux storage/UI preview](docs/developm
 
 Source1.36.0 verifies encrypted KWallet5 storage on native Ubuntu24.04 x64/ARM64 while preserving existing keys and vault data. [Native storage verification and actual app screenshots](docs/evidence/linux-kwallet-storage/README.md). Linux desktop switching and packages remain separate support gates.
 
-Source1.37.0 adds [attested KWallet6/KSecrets encoding contracts](docs/development/KDE_SECRET_SERVICE.md). Declared Debian6.13.0/6.26.0 builds require independent native x64/ARM64 acceptance; unverified distribution builds are not inferred from their service name or version string.
+Source1.37.0 adds [attested KWallet6/KSecrets encoding contracts](docs/development/KDE_SECRET_SERVICE.md). Declared Debian6.13.0/6.26.0/6.30.0 builds require independent native x64/ARM64 acceptance; unverified distribution builds are not inferred from their service name or version string.
 
 1. Use a complete Windows or Mac package. Windows: run `CodexSwitch.exe`. Mac: run `Install.command`, then open **Codex Switch.app**. [Build and install](docs/INSTALL.md)
 2. Select **+** in the title bar to add accounts. On Windows, right-click **↻** to import the current Codex login.

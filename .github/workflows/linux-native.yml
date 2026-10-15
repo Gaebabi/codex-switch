@@ -114,3 +114,9 @@ jobs:
           path: artifacts/linux-native/${{ matrix.rid }}/kde6/ksecrets/results/public
           if-no-files-found: error
           retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ksecrets-current-ui-${{ matrix.rid }}
+          path: artifacts/linux-native/${{ matrix.rid }}/kde6/ksecrets-current/results/public
+          if-no-files-found: error
+          retention-days: 14
