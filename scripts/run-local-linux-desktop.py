@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -29,14 +30,30 @@ head = git('rev-parse', 'HEAD')
 if git('status', '--porcelain'):
     raise SystemExit('Commit the scoped test recipe before source-bound verification')
 packages = a.packages.resolve(strict=True)
-provenance = json.loads((packages / 'PROVENANCE.json').read_text(encoding='utf-8'))
-if provenance['rid'] != 'linux-x64' or provenance['verificationOnlyVersionOverride'] or not provenance['unsignedPreview'] or provenance['supportedAccountHandoff']:
+manifest = packages / 'PROVENANCE.json'
+if manifest.is_symlink() or not manifest.is_file() or manifest.stat().st_size > 128 * 1024:
+    raise SystemExit('Use a regular bounded candidate provenance file')
+provenance = json.loads(manifest.read_text(encoding='utf-8'))
+revision = provenance.get('sourceRevision')
+if not isinstance(revision, str) or re.fullmatch(r'[0-9a-f]{40}', revision) is None:
+    raise SystemExit('Exact committed candidate revision is required before host Git operations')
+if provenance['rid'] != 'linux-x64' or provenance['verificationOnlyVersionOverride'] is not False or provenance['unsignedPreview'] is not True or provenance['supportedAccountHandoff'] is not False:
     raise SystemExit('Use the complete native x64 unsigned preview candidate')
-git('diff', '--exit-code', provenance['sourceRevision'], head, '--', 'src', 'tests', 'Directory.Build.props')
+if git('cat-file', '-t', revision) != 'commit':
+    raise SystemExit('The exact candidate source must be a local commit')
+inputs = ('src', 'tests', 'Directory.Build.props', 'global.json', 'localization', 'resources', 'assets', 'licenses', 'LICENSE')
+git('diff', '--exit-code', '--end-of-options', revision, head, '--', *inputs)
+if not isinstance(provenance.get('version'), str) or re.fullmatch(r'\d+\.\d+\.\d+', provenance['version']) is None:
+    raise SystemExit('Expected semantic candidate version')
+if not isinstance(provenance.get('artifacts'), list) or len(provenance['artifacts']) != 3:
+    raise SystemExit('Exactly three declared candidate formats are required')
 artifacts = {entry['file']: entry for entry in provenance['artifacts']}
+if len(artifacts) != 3:
+    raise SystemExit('Candidate artifact names must be unique')
 for name, entry in artifacts.items():
     file = packages / name
-    if file.parent != packages or digest(file) != entry['sha256']:
+    pattern = r'CodexSwitch-v' + re.escape(provenance['version']) + r'-preview-linux-x64\.(tar\.gz|deb|rpm)'
+    if re.fullmatch(pattern, name) is None or file.parent != packages or file.is_symlink() or not file.is_file() or digest(file) != entry['sha256']:
         raise SystemExit('Candidate artifact identity mismatch')
 deb = [packages / name for name in artifacts if name.endswith('.deb')]
 tar = [packages / name for name in artifacts if name.endswith('.tar.gz')]
@@ -44,7 +61,7 @@ if len(deb) != 1 or len(tar) != 1:
     raise SystemExit('Exactly one complete tar and deb candidate is required')
 client = json.loads((repository / 'src/platforms/client/LinuxClients.json').read_text(encoding='utf-8'))
 upstream = a.upstream_package.resolve(strict=True)
-if digest(upstream) != client['architectures']['X64']['packageSha256']:
+if not upstream.is_file() or digest(upstream) != client['architectures']['X64']['packageSha256']:
     raise SystemExit('The actual upstream package must match the reviewed checksum')
 engine = json.loads(run(['docker', 'info', '--format', '{{json .}}'], capture_output=True, text=True).stdout)
 if engine['OSType'] != 'linux' or engine['Architecture'] not in ('x86_64', 'amd64'):
@@ -56,7 +73,7 @@ output.mkdir(parents=True, mode=0o700)
 context = output / 'context'
 context.mkdir(mode=0o700)
 with (context / 'source.tar').open('wb') as archive:
-    run(['git', 'archive', provenance['sourceRevision'], 'src', 'tests', 'Directory.Build.props', 'global.json', 'localization', 'resources', 'assets', 'licenses'], cwd=repository, stdout=archive)
+    run(['git', 'archive', revision, *inputs], cwd=repository, stdout=archive)
 shutil.copyfile(deb[0], context / 'candidate.deb')
 shutil.copyfile(tar[0], context / 'candidate.tar.gz')
 shutil.copyfile(upstream, context / 'upstream.deb')
