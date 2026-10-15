@@ -193,6 +193,7 @@ try:
     value={'schema':1,'provider':a.provider,'providerVersion':provider_version,'providerCompatibility':'unavailable' if a.provider=='kwallet5' else 'verified-storage','architecture':a.architecture,'passed':sum(v['passed'] for v in results),'failed':0,'phases':results,
         'scope':'Actual declared Secret Service/Linux private-file contracts on a disposable file-socket D-Bus/XDG session. KDE uses offscreen Qt, not a full KDE/Wayland desktop. No personal bus, accounts, Codex, key material or private paths exported.'}
     report.parent.mkdir(parents=True,exist_ok=True);report.write_text(json.dumps(value,indent=2)+'\n',encoding='utf-8')
+    print(json.dumps({key:value[key] for key in ('provider','providerVersion','providerCompatibility','architecture','passed','failed')} | {'phaseCount':len(results)}),flush=True)
 finally:
     try:
         if daemon is not None:
