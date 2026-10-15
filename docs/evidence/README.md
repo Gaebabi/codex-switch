@@ -4,6 +4,7 @@
 
 Source 1.31.3 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
 
+- [Hardware provider extraction](hardware-services/README.md): native Windows/Mac before/after, real read-only sampler and wrong-OS refusal contracts.
 - [Codex protocol/read-only SQLite extraction](protocol-sqlite/README.md): native Windows/Mac before/after and protocol/unknown/read-only refusal contracts.
 
 - [Native desktop client extraction](desktop-client/README.md): Windows/Mac application before/after and unsupported-lifecycle refusal contracts.

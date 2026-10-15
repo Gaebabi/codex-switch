@@ -40,8 +40,9 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 
 - [x] Move Windows/Mac sampling, temperatures and drive monitoring into one `CodexSwitch.Hardware` project, consumed by both apps/rendering/tests. Move only the unchanged serializable DrivePreference model into core; vault defaults/format stay in integration. Source1.31.3.
 - [x] Preserve supported sampling, sensor selection/unknown states and non-elevated APIs; refuse wrong-OS native entry points before library/port acquisition or background tasks. Local native Windows hardware8 pass.
-- [ ] Complete existing temperature29/native app regressions and native Mac hardware checks. Package validation requires the hardware DLL; Dependabot follows the relocated System.Management dependency.
-- [ ] Inspect exact-source actual Windows/Mac before/after with privacy/metadata/hash receipts, then final-head CI, author review and focused PR promotion. Shared desktop composition and Linux5/6/7 remain open.
+- [x] Complete existing temperature29/native app regressions and native Mac hardware checks. Source2e7f8f0/run38660081487 passes all four jobs, including hardware8Windows/9eachMac/10Ubuntu and Windows93/SQLite23/handoff5, both native Mac SQLite/UI and existing language/security/client/protocol checks. Full-package omission of Hardware.dll is rejected and the owned folder restored.
+- [x] Inspect six exact-source [actual Windows/Mac before/after](../evidence/hardware-services/README.md) with privacy/metadata/hash receipts. Same-host Windows dark PNGs are byte-identical.
+- [ ] Finish final-head CI, author review and PR44 promotion. Shared desktop composition and Linux5/6/7 remain open.
 
 ## Tooltip style lifetime — issue35
 
