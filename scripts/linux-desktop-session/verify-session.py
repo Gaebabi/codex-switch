@@ -140,7 +140,7 @@ try:
     run([app, '--install-package'], stdout=private_log, stderr=private_log)
     entry = root / 'share/applications/codex-switch.desktop'
     run(['desktop-file-validate', str(entry)])
-    run(['gtk-launch', 'codex-switch'], stdout=private_log, stderr=private_log)
+    run(['gio', 'launch', str(entry)], stdout=private_log, stderr=private_log)
     executable = (root / 'share/codex-switch/current/CodexSwitch').resolve()
     def find_app():
         for process in Path('/proc').glob('[0-9]*'):
@@ -164,7 +164,7 @@ try:
     run(['xdotool', 'key', '--window', window, 'ctrl+w'])
     wait_for(lambda: not Path('/proc/' + str(pid)).exists())
     check('Ordinary trayless close exits the installed process', not Path('/proc/' + str(pid)).exists())
-    run(['gtk-launch', 'codex-switch'], stdout=private_log, stderr=private_log)
+    run(['gio', 'launch', str(entry)], stdout=private_log, stderr=private_log)
     pid, window = wait_for(find_app, 30)
     time.sleep(0.6)
     capture(window, pid, 'ordinary-reopened')
