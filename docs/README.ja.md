@@ -41,6 +41,8 @@ Linux は[未署名のインストール・UIプレビュー候補](development/
 
 ソース1.40.0の[Linuxアカウント・デスクトップ統合プレビュー](development/LINUX.md)は、既存の暗号化された切り替え・復旧・再開処理に接続します。作業前にアプリから Codex を起動し、アカウントは手動で切り替えます。既存の file 認証設定と検証済みクライアントが必要です。明示的なチェックサムを指定する CLI 専用モードはアカウント・使用量機能のみです。[完全なインストール候補](development/LINUX_PACKAGES.md)はプレビューで、実際の二つのアカウントでの切り替え・再開と幅広いデスクトップ検証は未完了です。
 
+[実際のLinuxアプリの前後画像・CLI専用画面とDocker42検証](evidence/linux-account-handoff/README.md)。空のホームと架空の認証データを使用し、実認証の切り替え・Continue検証とは区別しています。
+
 [Mac](MACOS.md) / [予測](FORECAST.md) / [セキュリティ](../SECURITY.md) / [開発](../CONTRIBUTING.md)
 
 公開オープンソースです。[Windows / Mac 実行パッケージ](https://github.com/Gaebabi/codex-switch/releases/tag/v1.27.6)はビルドや .NET のインストールなしで使用できます。Mac は未公証です。OpenAI 公式製品ではありません。認証情報はローカルで暗号化して保存します。[MIT](../LICENSE)

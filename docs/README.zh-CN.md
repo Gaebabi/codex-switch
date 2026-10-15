@@ -37,6 +37,8 @@ Linux 的[未签名安装/UI 预览候选包](development/LINUX_PACKAGES.md)与�
 
 源码1.40.0的 [Linux 账户与桌面集成预览版](development/LINUX.md)连接现有的加密切换、恢复和聊天续接流程。工作前从本工具启动 Codex，账户切换仍需手动操作。需要现有的 file 认证设置和已验证客户端。显式指定校验和的 CLI 专用模式仅提供账户及用量功能。[完整安装候选包](development/LINUX_PACKAGES.md)仍为预览版，真实双账户切换、聊天续接与更多桌面环境验证尚未完成。
 
+[真实Linux应用前后截图、CLI专用界面与Docker42项验证](evidence/linux-account-handoff/README.md)。使用空账户目录和虚构认证数据，与真实认证账户的切换及Continue验证明确区分。
+
 [Mac](MACOS.md) / [预测](FORECAST.md) / [安全](../SECURITY.md) / [开发](../CONTRIBUTING.md)
 
 公开开源。[Windows / Mac 执行包](https://github.com/Gaebabi/codex-switch/releases/tag/v1.27.6)无需源码构建或安装 .NET。Mac 包未公证。本项目不是OpenAI官方产品。认证信息在本地加密保存。[MIT](../LICENSE)

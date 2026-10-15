@@ -2,7 +2,9 @@
 
 ## Current source evidence
 
-Source1.39.1 is the current app; published downloads remain1.27.6. Each entry retains its capture-time scope; earlier pending states are historical. Declared KWallet5/6/KSecrets, SQLite/client-policy and controlled peer capabilities have later acceptance; ordinary authenticated Linux handoff remains in5/6/7. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
+Source1.40.0 is the current app; published downloads remain1.27.6. Each entry retains its capture-time scope; earlier pending states are historical. Declared storage/client/peer and ordinary integration have separate native evidence; authenticated Linux handoff/full desktop acceptance remains in5/6/7. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
+
+- [Ordinary Linux account and managed desktop integration](linux-account-handoff/README.md): source1.40.0, actual installed account/CLI-only UI and Start Codex input,42 local checks/36 overlapping native assertions including eight production contracts. Eight inspected actual program images and before/after receipts; fictional local credentials/offline native client are distinct from pending real authenticated Switch/Continue.
 
 - [Actual local Linux desktop session, ordinary installed UI and same-home relaunch](linux-desktop-session/README.md): source1.39.1; Debian13/Xfce/real GNOME Keyring,35 orchestration checks/28 overlapping native assertions, installed self-uninstall with redirected output/PTY, pinned original-client normal Quit and same-home relaunch with US/French mappings. Seven individually inspected actual program PNGs; no accounts or full desktop/VM/Wayland/ARM64 claim.
 

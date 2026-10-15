@@ -21,6 +21,8 @@ Switch Codex accounts, automatically resume eligible unfinished local chats, and
 
 Source1.40.0 connects the [Linux account and managed desktop integration preview](docs/development/LINUX.md) to the existing encrypted switch/recovery/eligible-Continue flow. Start Codex from the app before working; switching remains manual. An existing file credential policy and the approved installed client are required. Explicit checksum CLI-only mode provides account/usage actions without desktop resumption. [Complete unsigned candidates](docs/development/LINUX_PACKAGES.md) remain previews: authenticated two-account handoff and broader desktop acceptance are still pending.
 
+[Actual ordinary Linux app before/after, CLI-only confirmation and42 offline Docker checks](docs/evidence/linux-account-handoff/README.md). Empty account homes and fictional local credential contracts are distinct from authenticated switching/Continue acceptance.
+
 Source1.36.0 verifies encrypted KWallet5 storage on native Ubuntu24.04 x64/ARM64 while preserving existing keys and vault data. [Native storage verification and actual app screenshots](docs/evidence/linux-kwallet-storage/README.md). Linux desktop switching and packages remain separate support gates.
 
 Source 1.37.0 adds [verified KWallet6/KSecrets storage](docs/evidence/linux-kde6/README.md) for declared Debian 6.13.0/6.26.0/6.30.0 builds on native x64/ARM64, preserving original keys and vault data. [Package and security contracts](docs/development/KDE_SECRET_SERVICE.md) require the original provider PID and exact native executable checksum; service/version names alone are insufficient.

@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "publishedAt": "237f6a433558229d0aefe22089eb4cc827389e42",
+  "expected": {
+    "schema": 1,
+    "testRevision": "dc320a86053629cd316a30105e16db5054af06d3",
+    "candidateRevision": "dc320a86053629cd316a30105e16db5054af06d3",
+    "candidateVersion": "1.39.1",
+    "candidateSha256": "2074932bcd679ac5ea91454ca6ced9f4fff2d5d818076541f7ea0e6df1dd692d",
+    "upstreamSha256": "0e006b4931712f5a90d4cd04972c6e0b533cedcdfdb2b51946d5b9367471f556",
+    "architecture": "X64"
+  },
+  "image": {
+    "file": "ordinary-dark-800x600.png",
+    "width": 800,
+    "height": 600,
+    "sha256": "5799f2b906de6b77a26acd7c0248da7c3d15e62cf0703b472555c70695dea481",
+    "capture": "Actual ordinary installed application own XID; no --verify-ui or synthetic account injection",
+    "publication": "Selected and individually visually inspected; no personal pixels or metadata",
+    "visuallyInspected": true
+  },
+  "scope": "Actual ordinary installed source1.39.1 UI before account integration; no identities or personal pixels."
+}

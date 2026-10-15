@@ -17,6 +17,8 @@ Codex 계정을 전환하고, 재개 가능한 미완료 로컬 작업을 자동
 
 소스1.40.0의 [Linux 계정·데스크톱 통합 미리보기](development/LINUX.md)는 기존 암호화 전환·복구·재개 흐름을 연결합니다. 작업 전에 앱에서 Codex를 시작하며, 계정 전환은 수동입니다. 기존 file 인증 정책과 검증된 설치본이 필요합니다. 명시적 체크섬의 CLI 전용 모드는 계정·사용량 기능만 제공합니다. [전체 설치 후보](development/LINUX_PACKAGES.md)는 미리보기이며, 실제 두 계정의 전환·재개 및 다양한 데스크톱 검증은 남아 있습니다.
 
+[실제 Linux 앱 전후 화면·CLI 전용 확인과 Docker42개 검증](evidence/linux-account-handoff/README.md). 빈 계정 홈과 가상 인증 데이터의 검증이며, 실제 인증 계정의 전환·Continue 검증은 별도입니다.
+
 1. Windows는 전체 패키지의 `CodexSwitch.exe`를 실행하세요. Mac은 `Install.command`로 설치한 뒤 **Codex Switch.app**을 여세요. [빌드와 설치](INSTALL.md)
 2. 타이틀바의 **+**로 계정을 추가하세요. Windows에서 현재 로그인은 **↻**를 우클릭해 가져올 수 있습니다.
 3. 카드의 잔량을 비교한 뒤 **전환**을 누르세요. 60초마다 자동 조회하며 **↻**나 **F5**로 즉시 갱신할 수 있습니다.
