@@ -2,6 +2,8 @@
 
 ## Main parts
 
+Current Linux source1.33.1 composes `src/linux` with the shared desktop, native Secret Service/private files and explicit-home read-only SQLite diagnostics. Account/client/IPC/handoff stays gated and resources remain unknown. [Linux contracts](development/LINUX.md) and [native metadata/program evidence](evidence/linux-sqlite/README.md) define the actual verified scope. The versioned paragraphs below record extraction contracts at their original checkpoints; extraction #3 is complete.
+
 `src/core/CodexSwitch.Core.csproj` builds one UI-neutral .NET10 assembly consumed by both desktop apps and contract tests. It owns account/quota/authentication models, usage/resource presentation, refresh scheduling, checkpointed switch policy and language catalogues. It references no WPF, Avalonia, native P/Invoke or platform-service project. `src/application` owns account/storage/switch integration once; consumers no longer link the former `src/shared` files. Provider/composition work is tracked in [issue3](https://github.com/Gaebabi/codex-switch/issues/3).
 
 The coordinator accepts its platform error formatter explicitly; its `IAccountSwitchBackend` still owns actual client/storage/IPC actions. Language installation accepts an `ILanguagePackWriter`; the existing private-directory/atomic-write adapter preserves file protection before publishing the new in-memory catalogue. Vault configuration/default drives remain in the integration layer. Unsupported vault defaults/discovery now fail before taking a Windows path. `Directory.Build.props` owns the managed version; Mac bundle metadata must match it.
@@ -45,7 +47,7 @@ Source1.32.0 adds `src/application/CodexSwitch.Application.csproj` and `src/desk
 
 ## Verification
 
-Core assembly/resource identity and platform write-failure preservation are checked by the production language API tests. Windows/Mac native screenshot CI still runs the published app after extraction; a successful portable core build does not establish Linux account support. Security/client/protocol/SQLite/resource projects own the native services, while application and desktop projects own integration and reusable views. Linux-specific vault, lifecycle/peer trust, database/resource capabilities, host composition and native handoff acceptance remain follow-ups.
+Core assembly/resource identity and platform write-failure preservation are checked by the production language API tests. Windows/Mac native screenshot CI still runs the published app after extraction; a successful portable core build does not establish Linux account support. Security/client/protocol/SQLite/resource projects own the native services, while application and desktop projects own integration and reusable views. Linux GNOME vault/private storage and source host are verified; read-only SQLite has its own native checkpoint. Remaining KWallet/client/backend/peer/resource capabilities and native handoff/package acceptance stay separate gates.
 
 [Native program before/after and core contracts](evidence/shared-core/README.md) record the first extraction checkpoint. Complete package inspection also requires all declared project runtime DLLs, including the core; a folder containing only the app/runtime is rejected.
 

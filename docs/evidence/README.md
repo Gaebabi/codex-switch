@@ -4,6 +4,8 @@
 
 Source 1.33.1 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
 
+- [Native Linux read-only metadata and five-target app comparison](linux-sqlite/README.md): source1.33.1, actual native x64/ARM64 SQLite/WAL26/protocol7 and existing supported-host regressions, with ten own-window after PNGs. Account/client/handoff and full desktop/package acceptance remain separate.
+
 - [Linux native storage/source preview](linux-vault/README.md): genuine GNOME Keyring x64/ARM64 contracts, actual native X11 source-window confirmation and supported-host comparisons; account/client/handoff remains pending.
 - [Shared application/desktop composition](desktop-composition/README.md): native Windows/Mac before/after, common assembly boundaries and actual trayless close/disposal.
 - [Hardware provider extraction](hardware-services/README.md): native Windows/Mac before/after, real read-only sampler and wrong-OS refusal contracts.

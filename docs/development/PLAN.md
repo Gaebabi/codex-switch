@@ -63,10 +63,10 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 
 ### P8.2 native Linux read-only metadata — issue52
 
-- [ ] Resolve the Linux system libsqlite3 provider on declared x64/ARM64; preserve Windows/Mac native selection and keep unsupported IPC disabled. Source1.33.1.
-- [ ] Expose the existing headless queue diagnostic through the Linux source host, requiring an explicit home and reporting missing native libraries as unavailable. Never initialize a vault/keyring/client or GUI for this diagnostic.
-- [ ] Pass actual x64/ARM64 SQLite/WAL fixtures: committed visibility, uncommitted isolation, dedup/filtering/removal/unknown, absent/corrupt/write refusal, read-only permission acceptance and unchanged database/WAL presence/bytes. SHM coordination is a separate SQLite behavior; no immutable shortcut.
-- [ ] Inspect source-bound actual native Linux/Windows/Mac app comparison, privacy/metadata/hash receipts and complete packages. Program images establish UI regression separately from native database tests.
+- [x] Resolve the Linux system libsqlite3 provider on declared x64/ARM64; preserve Windows/Mac native selection and keep unsupported IPC disabled. Source1.33.1.
+- [x] Expose the existing headless queue diagnostic through the Linux source host, requiring an explicit home and reporting missing native libraries as unavailable. Never initialize a vault/keyring/client or GUI for this diagnostic.
+- [x] Pass actual x64/ARM64 SQLite/WAL fixtures: committed visibility, uncommitted isolation, dedup/filtering/removal/unknown, absent/corrupt/write refusal, read-only permission acceptance and unchanged database/WAL presence/bytes. SHM coordination is a separate SQLite behavior; no immutable shortcut.
+- [x] Inspect source-bound actual native Linux/Windows/Mac app comparison, privacy/metadata/hash receipts and complete packages. Program images establish UI regression separately from native database tests.
 - [ ] Pass all six exact-head CI jobs, author review and focused PR promotion. Client/backend/KWallet, full handoff and clean packages remain required parent gates.
 
 ## Tooltip style lifetime — issue35

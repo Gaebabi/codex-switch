@@ -6,7 +6,7 @@ The owner resumed work toward the complete remaining roadmap. [P6–P10 delivery
 
 Runtime issue4 is completed by merged PR27: source1.30.0/.NET10.0.13, native Windows x64 and macOS15 arm64/Intel app-window evidence, complete runtime/package inspection and four-job reviewed-head CI. Core/provider/application/UI extraction issue3 is completed through PR28/38/40/42/44/47. Source1.33.1 starts native Linux storage and a capability-limited source preview; remaining KDE/KWallet/client/SQLite in5, actual handoff6 and environment/packages7 stay open. Public binaries remain1.27.6 until separately released.
 
-The first core part is now merged as [PR28](https://github.com/Gaebabi/codex-switch/pull/28), main18d33a7. [Actual native program before/after evidence](evidence/shared-core/README.md) and [complete-head four-job CI](https://github.com/Gaebabi/codex-switch/actions/runs/38627343669) pass. Issue3 remains open for its native service projects; [next provider checkpoints](development/PLAN.md) keep those dependencies ahead of Linux enablement. Historical text privacy coordination is tracked in [29](https://github.com/Gaebabi/codex-switch/issues/29) without publishing its private values.
+The first core part is now merged as [PR28](https://github.com/Gaebabi/codex-switch/pull/28), main18d33a7. [Actual native program before/after evidence](evidence/shared-core/README.md) and [complete-head four-job CI](https://github.com/Gaebabi/codex-switch/actions/runs/38627343669) pass. Issue3 is now complete through PR47; [remaining Linux checkpoints](development/PLAN.md) keep capability/trust gates ahead of account enablement. Historical text privacy coordination is tracked in [29](https://github.com/Gaebabi/codex-switch/issues/29) without publishing its private values.
 
 ## Current support
 
@@ -14,7 +14,7 @@ The first core part is now merged as [PR28](https://github.com/Gaebabi/codex-swi
 | --- | --- | --- |
 | Windows x64 | 1.27.6 self-contained ZIP | 93 internal / 23 isolated SQLite-WAL checks; live client acceptance is separate |
 | Mac arm64 / x64 | 1.27.6 self-contained ZIP | Cross-publish/package checks; native login/switch/resume, Intel-device acceptance and notarization remain open |
-| Linux x64 / arm64 | None | No supported executable, credential provider or desktop handoff yet |
+| Linux x64 / arm64 | No supported download; source preview | Native Ubuntu24.04 GNOME storage/UI and read-only SQLite checkpoints; account/client/handoff and clean-package acceptance remain pending |
 | WSL / remote / headless / CLI-only | No dedicated supported setup | Do not assume desktop restoration or share credentials across homes/OSes |
 
 English stays the shared default. Published 1.27.6 UI supports English/Korean. Source 1.28.0 adds nine UI catalogues and extensible local packs, tracked in [#16](https://github.com/Gaebabi/codex-switch/issues/16) and the [translator guide](LOCALIZATION.md). Contributions in other languages and for other environments are welcome.
@@ -23,9 +23,9 @@ English stays the shared default. Published 1.27.6 UI supports English/Korean. S
 
 | Phase / issue | Deliverable | Completion |
 | --- | --- | --- |
-| 0 — [Foundation #2](https://github.com/Gaebabi/codex-switch/issues/2) | Organize root/source/resources/docs, portable contributor workflow, issue evidence/attributes and safe CI | Source bytes/identity preserved; build/render/isolated tests and actual PR checks/review pass |
-| 1 — [Core/platform projects #3](https://github.com/Gaebabi/codex-switch/issues/3) | UI-neutral core and explicit OS services beyond the current linked-source layout | Focused behavior-preserving PRs, compatibility and Windows/Mac regression gates |
-| 1 — [Supported runtime #4](https://github.com/Gaebabi/codex-switch/issues/4) | Reviewed .NET 10 LTS migration and SDK/dependency maintenance | Full packages/runtime inspection and regression before .NET 8 end of support |
+| 0 — [Foundation #2](https://github.com/Gaebabi/codex-switch/issues/2) | Organized root/source/resources/docs, contributor workflow and evidence/CI | Complete through PR8 |
+| 1 — [Core/platform projects #3](https://github.com/Gaebabi/codex-switch/issues/3) | UI-neutral core, independent native services and shared composition | Complete through PR28/38/40/42/44/47 with native regression evidence |
+| 1 — [Supported runtime #4](https://github.com/Gaebabi/codex-switch/issues/4) | Reviewed .NET10 LTS migration | Complete through PR27; package/runtime/native regression gates retained |
 | 2 — [Linux security/client adapters #5](https://github.com/Gaebabi/codex-switch/issues/5) | Secret Service keys, private storage, verified client discovery and read-only SQLite | Native Linux lock/unlock/restart/tamper/database-preservation evidence |
 | 3 — [Linux handoff #6](https://github.com/Gaebabi/codex-switch/issues/6) | Shared Avalonia UI, peer-authenticated IPC, graceful shutdown and continuation | Native disposable-account proof of complete switch/resume/recovery without duplication |
 | 4 — [Packages/coverage #7](https://github.com/Gaebabi/codex-switch/issues/7) | Download-ready packages, wider environments and accessible use | Clean-VM install/update/uninstall and declared native capability matrix before promotion |
@@ -41,6 +41,7 @@ The foundation and focused core extraction use the following structure while kee
 ```text
 src/windows/         Windows WPF application and diagnostics
 src/macos/           Mac Avalonia application and native UI integration
+src/linux/           capability-gated shared source host and native diagnostics
 src/core/            single UI-neutral domain/presentation/catalogue project
 src/platforms/security/ native key/protection/private-file assembly
 src/platforms/client/ native desktop discovery/lifecycle/peer trust assembly
@@ -58,17 +59,17 @@ docs/development/    plan, status, operations and contributor evidence conventio
 docs/evidence/       sanitized issue/PR screenshots
 ```
 
-#3 subsequently extracts a platform-free core project, Windows/Mac/Linux service projects, shared Avalonia desktop composition and conventional unit/integration test projects. The core owns decisions/checkpoints; OS services own credential protection, client lifecycle, IPC trust, SQLite loading and resource sampling. Select unsupported platforms explicitly instead of falling through Windows paths. Move responsibilities in focused PRs, separate from mass formatting/runtime upgrades.
+Completed #3 extracts a platform-free core project, independent platform services, shared Avalonia desktop composition and conventional contract/integration test projects. The core owns decisions/checkpoints; OS services own credential protection, client lifecycle, IPC trust, SQLite loading and resource sampling. Select unsupported platforms explicitly instead of falling through Windows paths. Move responsibilities in focused PRs, separate from mass formatting/runtime upgrades.
 
 ## Current Linux blockers
 
 | Source | Required change |
 | --- | --- |
 | `src/platforms/client/RuntimeLocator.cs`, `DesktopShutdown.cs` | Add verified Linux client capabilities and confirmed normal shutdown beyond the current supported providers |
-| `src/platforms/security/VaultProtection.cs` | Linux is rejected today; add an OS-held key provider with reviewed encrypted format/migration |
-| `src/platforms/sqlite/ReadOnlySqlite.cs` | Add a reviewed Linux SQLite provider after current explicit rejection; preserve read-only WAL visibility and database bytes |
+| `src/platforms/security/LinuxVaultProtection.cs` | GNOME Secret Service/native private files complete in PR51; independently verify KDE/KWallet and preserve explicit foreign-format refusal |
+| `src/platforms/sqlite/ReadOnlySqlite.cs` | Native Linux SQLite/WAL26 and protocol7 pass in PR53; finish exact-head promotion and retain installed-client acceptance separately |
 | `src/platforms/protocol/DesktopSessionMonitor.cs` | Add Linux same-UID peer/socket ownership/client identity verification before allowing the currently rejected IPC start |
-| `src/desktop`, future Linux host | Compose the shared UI with verified Linux providers; no AppKit/Mach or required tray. Mac-only adapters remain in its host |
+| `src/desktop`, `src/linux` | Source host/UI is implemented; account/client/handoff remain gated until trusted providers and complete native acceptance pass |
 | Hardware/drive collectors and defaults | Implement Linux capabilities/mount selection; unsupported readings remain unknown |
 
 The upstream Linux ChatGPT desktop preview includes Codex and uses a `chatgpt` launcher. Its availability does not prove this switcher's auth/IPC/chat compatibility. Inspect the installed client before enabling actions. [Official Linux documentation](https://learn.chatgpt.com/docs/linux/linux-app)
