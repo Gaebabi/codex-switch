@@ -34,5 +34,24 @@
   "correctedMemoryLimitBytes": 4294967296,
   "observedOomKillsAfterCorrection": 0,
   "registeredAccountsPreserved": true,
-  "probeSourceSha256": "48035c9a5c6de73f6e853f21ea70ec6e589bf3bb9181da6ee45fc519c801fe5f"
+  "probeSourceSha256": "48035c9a5c6de73f6e853f21ea70ec6e589bf3bb9181da6ee45fc519c801fe5f",
+  "afterImage": {
+    "file": "after.png",
+    "width": 610,
+    "height": 454,
+    "sha256": "1763d746dc75a6820d69933c0a1bc9790a866641526c7d7934f230d5eeb995c6"
+  },
+  "afterCandidateRevision": "3a1f8132eb928a67a235191618605a834596dc86",
+  "afterVersion": "1.40.1",
+  "existingAccountPreservedOnCandidateReopen": true,
+  "oneAccountProbeRepeatedAfterCandidateReopen": true,
+  "managedClientStability": {
+    "actualOriginalManagedClientAlive": true,
+    "sameOriginalProcessStart": true,
+    "secondsSinceStart": 62,
+    "newOomKills": 0,
+    "candidateVersion": "1.40.1",
+    "accountCount": 1,
+    "crossAccountSwitchVerified": false
+  }
 }

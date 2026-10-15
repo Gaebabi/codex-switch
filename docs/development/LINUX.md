@@ -1,5 +1,7 @@
 # Linux implementation and verification
 
+Source1.40.1 retains the native Linux window title/controls and combines session counters with toolbar actions, avoiding a duplicated client caption. [Owner-operated native acceptance and sanitized actual program comparison](../evidence/linux-interactive-desktop/README.md) verifies one real account's existing encrypted storage, active identity and authenticated usage. Only one account is available; cross-account switching/automatic continuation remains unverified. Use the separate [local interactive recipe](LINUX_INTERACTIVE_DESKTOP.md) for direct owner login; credentials never enter public CI.
+
 ## Source1.40.0 ordinary integration — issue74 / PR75
 
 Ordinary account/usage actions use the verified client and existing encrypted vault. The selected context must already allow ChatGPT **file** credentials; the app does not rewrite backend/login/workspace policy. Use **Start Codex** in the title bar before working so the original process has a verified in-memory launch receipt. An external or previously unmanaged client must be quit normally first. Closing this utility leaves Codex running; restarting the utility requires a new managed start before desktop handoff.

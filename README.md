@@ -23,6 +23,8 @@ Source1.40.0 connects the [Linux account and managed desktop integration preview
 
 [Actual ordinary Linux app before/after, CLI-only confirmation and42 offline Docker checks](docs/evidence/linux-account-handoff/README.md). Empty account homes and fictional local credential contracts are distinct from authenticated switching/Continue acceptance.
 
+Source1.40.1 adds a single native Linux titlebar and [owner-operated desktop verification](docs/evidence/linux-interactive-desktop/README.md). One real Linux account passes encrypted storage, active identity and authenticated usage checks. Two-account switching/automatic continuation and broader desktop acceptance remain pending; complete Linux packages are still unsigned integration previews.
+
 Source1.36.0 verifies encrypted KWallet5 storage on native Ubuntu24.04 x64/ARM64 while preserving existing keys and vault data. [Native storage verification and actual app screenshots](docs/evidence/linux-kwallet-storage/README.md). Linux desktop switching and packages remain separate support gates.
 
 Source 1.37.0 adds [verified KWallet6/KSecrets storage](docs/evidence/linux-kde6/README.md) for declared Debian 6.13.0/6.26.0/6.30.0 builds on native x64/ARM64, preserving original keys and vault data. [Package and security contracts](docs/development/KDE_SECRET_SERVICE.md) require the original provider PID and exact native executable checksum; service/version names alone are insufficient.

@@ -13,6 +13,8 @@
 
 ## 开始使用
 
+源码1.40.1消除了Linux重复标题栏，并添加了[由用户直接登录的桌面验证](evidence/linux-interactive-desktop/README.md)。已使用一个真实账号验证加密存储、当前身份一致及经过身份验证的额度查询。双账号切换、自动继续及更广泛的桌面验证仍待完成。完整Linux安装包仍是未签名的集成预览版。
+
 1. Windows 完整解压后运行 `CodexSwitch.exe`。Mac 运行 `Install.command` 安装，再打开 **Codex Switch.app**。[构建与安装](INSTALL.md)
 2. 点击标题栏的 **+** 添加账号。Windows 可右键点击 **↻** 导入当前登录。
 3. 比较剩余额度并点击 **Switch**。每60秒自动刷新，也可点击 **↻** 或按 **F5** 立即刷新。
