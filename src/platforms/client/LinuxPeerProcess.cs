@@ -47,7 +47,8 @@ internal sealed class LinuxPeerProcess : IDisposable
             var count = file.Read(buffer); if (count == 0) break;
             if (bytes.Length + count > maximum) throw Refused(); bytes.Write(buffer, 0, count);
         }
-        return new UTF8Encoding(false, true).GetString(bytes.GetBuffer(), 0, checked((int)bytes.Length));
+        try { return new UTF8Encoding(false, true).GetString(bytes.GetBuffer(), 0, checked((int)bytes.Length)); }
+        catch (DecoderFallbackException error) { throw new InvalidDataException("Linux desktop startup metadata is not valid UTF-8.", error); }
     }
     internal static ulong StartTime(int id)
     {
@@ -59,13 +60,7 @@ internal sealed class LinuxPeerProcess : IDisposable
     }
     internal static void VerifyArguments(string[] arguments)
     {
-        if (arguments.Length == 0 || arguments[0] != LinuxClientDiscovery.DesktopPath) throw Refused();
-        foreach (var argument in arguments.Skip(1))
-        {
-            if (argument is "--ozone-platform=x11" or "--ozone-platform-hint=auto") continue;
-            const string prefix = "codex://threads/";
-            if (!argument.StartsWith(prefix, StringComparison.Ordinal) || !Guid.TryParseExact(argument[prefix.Length..], "D", out _)) throw Refused();
-        }
+        if (arguments.Length != 1 || arguments[0] != LinuxClientDiscovery.DesktopPath) throw Refused();
     }
     internal static void VerifyEnvironment(string[] environment, string home)
     {
@@ -94,11 +89,7 @@ internal sealed class LinuxPeerProcess : IDisposable
             uid[4..].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries) is not { Length: 4 } ids ||
             ids.Any(id => !uint.TryParse(id, out var value) || value != LinuxPrivateFiles.UserId)) throw Refused();
         var arguments = Read(Id, "cmdline", 32768).Split('\0', StringSplitOptions.RemoveEmptyEntries);
-        if (!LinuxDesktopLaunch.Verify(Id, _home, _started, arguments))
-        {
-            VerifyArguments(arguments);
-            VerifyEnvironment(Read(Id, "environ", 1024 * 1024).Split('\0', StringSplitOptions.RemoveEmptyEntries), _home);
-        }
+        if (!LinuxDesktopLaunch.Verify(Id, _home, _started, arguments)) throw Refused();
         if (StartTime(Id) != _started || poll(ref state, 1, 0) != 0) throw Refused();
     }
     public void Dispose() => _pidfd.Dispose();

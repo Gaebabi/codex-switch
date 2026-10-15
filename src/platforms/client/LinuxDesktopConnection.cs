@@ -66,6 +66,7 @@ internal static class LinuxDesktopConnection
             if (after.Inode != before.Inode || after.Major != before.Major || after.Minor != before.Minor || after.Mode != before.Mode || after.Uid != before.Uid) throw LinuxPeerProcess.Refused();
             return socket;
         }
+        catch (SocketException error) { socket.Dispose(); throw new IOException("The Linux desktop IPC socket is unavailable.", error); }
         catch { socket.Dispose(); throw; }
     }
     public static async Task<Stream> ConnectAsync(string home, CancellationToken cancellation)
@@ -83,6 +84,8 @@ internal static class LinuxDesktopConnection
             peer = LinuxPeerProcess.Open(socket, installed.Desktop!, home);
             return new PeerStream(new NetworkStream(socket, true), peer, installed);
         }
+        catch (OperationCanceledException) when (!cancellation.IsCancellationRequested)
+        { peer?.Dispose(); socket?.Dispose(); installed.Dispose(); throw new TimeoutException("Linux desktop IPC verification exceeded its deadline."); }
         catch { peer?.Dispose(); socket?.Dispose(); installed.Dispose(); throw; }
     }
     private sealed class PeerStream : Stream

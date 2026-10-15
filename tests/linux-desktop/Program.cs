@@ -61,8 +61,7 @@ if (args[0] == "--contracts")
     Check("Only the verified packaged entry and explicitly supported arguments are admitted", () =>
     {
         LinuxPeerProcess.VerifyArguments(new[] { LinuxClientDiscovery.DesktopPath });
-        LinuxPeerProcess.VerifyArguments(new[] { LinuxClientDiscovery.DesktopPath, "--ozone-platform=x11", "codex://threads/00000000-0000-4000-8000-000000000001" });
-        foreach (var argument in new[] { "--inspect=0", "--remote-debugging-port=0", "--no-sandbox", "--require=untrusted.js", "untrusted.js", "--type=renderer", "--enable-codex", "codex://threads/not-a-guid" })
+        foreach (var argument in new[] { "--inspect=0", "--remote-debugging-port=0", "--no-sandbox", "--require=untrusted.js", "untrusted.js", "--type=renderer", "--enable-codex", "--ozone-platform=x11", "codex://threads/00000000-0000-4000-8000-000000000001", "codex://threads/not-a-guid" })
             Refused(() => LinuxPeerProcess.VerifyArguments(new[] { LinuxClientDiscovery.DesktopPath, argument }));
         Refused(() => LinuxPeerProcess.VerifyArguments(new[] { "/untrusted/ChatGPT" }));
     });
@@ -82,6 +81,15 @@ if (args[0] == "--contracts")
         using var stopped = new CancellationTokenSource(); stopped.Cancel();
         try { LinuxDesktopConnection.ConnectAsync(home, stopped.Token).GetAwaiter().GetResult().Dispose(); }
         catch (OperationCanceledException) { return; } throw new InvalidOperationException("Cancelled peer connection was accepted.");
+    });
+    Check("A real stale native socket reports unavailable and remains unchanged for its owning client", () =>
+    {
+        listener.Dispose(); if (File.Exists(path)) File.Delete(path);
+        var address = new byte[110]; address[0] = 1; var name = Encoding.UTF8.GetBytes(path); Assert(name.Length < 108); name.CopyTo(address, 2);
+        var file = NativeSocket.socket(1, 1 | 0x80000, 0); Assert(file >= 0);
+        try { Assert(NativeSocket.bind(file, address, (uint)(2 + name.Length + 1)) == 0); }
+        finally { Assert(NativeSocket.close(file) == 0); }
+        File.SetUnixFileMode(path, (UnixFileMode)0x180); ConnectRefused(); Assert(File.Exists(path) && File.GetUnixFileMode(path) == (UnixFileMode)0x180);
     });
 }
 else
@@ -114,3 +122,10 @@ else
 }
 Console.WriteLine(JsonSerializer.Serialize(new { schema = 1, passed = checks.Count, failed = 0, architecture = RuntimeInformation.ProcessArchitecture.ToString(), checks,
     scope = "Owned native sockets and the actual approved sandboxed desktop, without accounts, credentials, inference, client shutdown, chat mutation or authenticated handoff acceptance." }));
+
+internal static class NativeSocket
+{
+    [DllImport("libc", SetLastError = true)] internal static extern int socket(int domain, int type, int protocol);
+    [DllImport("libc", SetLastError = true)] internal static extern int bind(int socket, byte[] address, uint length);
+    [DllImport("libc", SetLastError = true)] internal static extern int close(int descriptor);
+}

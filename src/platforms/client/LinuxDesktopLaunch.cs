@@ -58,6 +58,7 @@ internal sealed class LinuxDesktopLaunch : IDisposable
             if (launched._disposed || launched.Home != home || launched.Started != started || launched._process.HasExited ||
                 arguments.Length != 1 || arguments[0] != launched.ArgumentZero && arguments[0] != LinuxClientDiscovery.DesktopPath ||
                 !launched._installation.Desktop!.IsProcessImage((uint)id)) throw LinuxPeerProcess.Refused();
+            LinuxPeerProcess.VerifyArguments(arguments[0] == launched.ArgumentZero ? new[] { LinuxClientDiscovery.DesktopPath } : arguments);
             return true;
         }
     }
