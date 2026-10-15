@@ -47,10 +47,6 @@ if base['Config']['User'] != '1000:1000' or base['Config'].get('Volumes'):
 digest = base['Id']
 if re.fullmatch(r'sha256:[0-9a-f]{64}', digest) is None:
     raise SystemExit('Expected an immutable local desktop image ID')
-references = [entry for entry in base.get('RepoDigests', []) if re.fullmatch(r'codex-switch-desktop-session@sha256:[0-9a-f]{64}', entry)]
-if len(references) != 1 or inspect(references[0])['Id'] != digest:
-    raise SystemExit('The local image store must expose its verified content-addressed desktop reference')
-base_reference = references[0]
 output.mkdir(parents=True, mode=0o700)
 probe_name = 'codex-switch-image-check-' + uuid.uuid4().hex
 probe = value(['docker', 'create', '--name', probe_name, '--network', 'none', '--cap-drop', 'ALL',
@@ -79,10 +75,23 @@ recipe = repository / 'scripts/linux-desktop-session'
 for name in ('interactive.Dockerfile', 'interactive-session.py', 'prepare-keyring.py'):
     shutil.copyfile(recipe / name, context / name)
 image = 'codex-switch-interactive:' + uuid.uuid4().hex
-with (output / 'build-private.log').open('wb') as log:
-    run(['docker', 'build', '--file', str(context / 'interactive.Dockerfile'), '--build-arg', 'DESKTOP_IMAGE=' + base_reference,
-         '--tag', image, str(context)], stdout=log, stderr=subprocess.STDOUT, timeout=600)
-image_id = inspect(image)['Id']
+base_reference = 'codex-switch-interactive-base:' + uuid.uuid4().hex
+run(['docker', 'image', 'tag', digest, base_reference], capture_output=True)
+try:
+    if inspect(base_reference)['Id'] != digest:
+        raise RuntimeError('The local build reference must retain the original image ID')
+    with (output / 'build-private.log').open('wb') as log:
+        run(['docker', 'build', '--pull=false', '--file', str(context / 'interactive.Dockerfile'), '--build-arg', 'DESKTOP_IMAGE=' + base_reference,
+             '--tag', image, str(context)], stdout=log, stderr=subprocess.STDOUT, timeout=600)
+    built = inspect(image)
+    original_layers = base['RootFS']['Layers']
+    if inspect(base_reference)['Id'] != digest or not original_layers or built['RootFS']['Layers'][:len(original_layers)] != original_layers:
+        raise RuntimeError('The built overlay must retain every original immutable base layer')
+    image_id = built['Id']
+finally:
+    if inspect(base_reference)['Id'] != digest:
+        raise RuntimeError('Refuse to remove a changed temporary image reference')
+    run(['docker', 'image', 'rm', base_reference], capture_output=True)
 name = 'codex-switch-owner-desktop-' + uuid.uuid4().hex
 network = 'codex-switch-owner-' + uuid.uuid4().hex
 value(['docker', 'network', 'create', '--label', 'codex-switch-owner-session=true', network])
