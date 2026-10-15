@@ -32,7 +32,7 @@ jobs:
             runner: ubuntu-24.04-arm
             architecture: Arm64
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -86,6 +86,10 @@ jobs:
       - name: Verify genuine client identity, effective backend and managed policy with unchanged inputs
         run: python scripts/verify-linux-client.py --architecture ${{ matrix.architecture }} --executable artifacts/linux-native/${{ matrix.rid }}/app/CodexSwitch --tests artifacts/linux-native/${{ matrix.rid }}/client-tests/CodexSwitch.LinuxClient.Tests.dll --report artifacts/linux-native/${{ matrix.rid }}/client-summary.json
       - run: python -m pip install -r requirements-dev.txt
+      - name: Verify attested legacy KWallet6 and normalized KSecrets with actual native app captures
+        env:
+          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/verify-kde6-containers.py --architecture ${{ matrix.architecture }} --tests artifacts/linux-native/${{ matrix.rid }}/tests --app artifacts/linux-native/${{ matrix.rid }}/app --client-package artifacts/linux-native/${{ matrix.rid }}/upstream-client.deb --output artifacts/linux-native/${{ matrix.rid }}/kde6 --revision "$EVIDENCE_REVISION"
       - name: Capture only the published preview's native X11 window
         run: xvfb-run -a -s "-screen 0 1920x1080x24" artifacts/linux-native/${{ matrix.rid }}/app/CodexSwitch --verify-ui artifacts/linux-native/${{ matrix.rid }}/raw
       - name: Validate synthetic native Linux own-window exports
@@ -96,5 +100,17 @@ jobs:
         with:
           name: native-ui-${{ matrix.rid }}
           path: artifacts/linux-native/${{ matrix.rid }}/public
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: kwallet6-ui-${{ matrix.rid }}
+          path: artifacts/linux-native/${{ matrix.rid }}/kde6/kwallet6/results/public
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ksecrets-ui-${{ matrix.rid }}
+          path: artifacts/linux-native/${{ matrix.rid }}/kde6/ksecrets/results/public
           if-no-files-found: error
           retention-days: 14
