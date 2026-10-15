@@ -18,6 +18,10 @@ internal static class Program
     {
         if (!OperatingSystem.IsLinux() || RuntimeInformation.ProcessArchitecture is not (Architecture.X64 or Architecture.Arm64))
         { Console.Error.WriteLine("This source preview requires Linux x64 or ARM64."); return 1; }
+        if (args.Length == 1 && args[0] is "--install-package" or "--uninstall-package")
+            return LinuxPackageInstaller.Execute(args[0] == "--uninstall-package");
+        if (args.Length == 1 && args[0] == "--package-info")
+        { Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { version = typeof(Program).Assembly.GetName().Version!.ToString(3), architecture = RuntimeInformation.ProcessArchitecture.ToString(), runtime = RuntimeInformation.FrameworkDescription, scope = "Linux source preview; ordinary account/handoff actions remain gated." })); return 0; }
         var data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CodexAccountDesk");
         var home = Environment.GetEnvironmentVariable("CODEX_HOME") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
         string? evidence = null, queueReport = null, clientReport = null, clientPath = null, clientSha256 = null, clientContext = null; var explicitHome = false;

@@ -4,4 +4,5 @@
     <Title>Codex Switch</Title><Product>Codex Switch</Product><Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings><UseAppHost>true</UseAppHost><DebugType>none</DebugType>
   </PropertyGroup>
   <ItemGroup><ProjectReference Include="../desktop/CodexSwitch.Desktop.csproj" /></ItemGroup>
+  <ItemGroup><None Include="../../assets/macos/app-icon.png" Link="icons/codex-switch.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" /></ItemGroup>
 </Project>

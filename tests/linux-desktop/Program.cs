@@ -1,6 +1,7 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
@@ -15,7 +16,7 @@ var checks = new List<string>();
 void Assert(bool value) { if (!value) throw new InvalidOperationException("Native desktop contract failed."); }
 void Check(string name, Action action) { action(); checks.Add(name); }
 void Refused(Action action) { try { action(); } catch (IOException) { return; } throw new InvalidOperationException("Expected desktop refusal was not observed."); }
-if (args.Length != 2 || args[0] is not ("--contracts" or "--peer")) throw new ArgumentException("Select the owned contract root or actual peer home.");
+if (args.Length != 2 || args[0] is not ("--contracts" or "--peer" or "--lifecycle")) throw new ArgumentException("Select the owned contract root or actual peer home.");
 var root = Path.GetFullPath(args[1]);
 if (!Path.GetFileName(root).StartsWith("codex-linux-desktop-test-", StringComparison.Ordinal) || new DirectoryInfo(root).LinkTarget != null || File.GetUnixFileMode(root) != (UnixFileMode)0x1c0 || LinuxPrivateFiles.UserId == 0)
     throw new InvalidOperationException("Only an owned disposable private native desktop sandbox is permitted.");
@@ -94,7 +95,7 @@ if (args[0] == "--contracts")
 }
 else
 {
-    using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+    using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(args[0] == "--lifecycle" ? 60 : 25));
     var marker = Path.Combine(root, "injected-marker"); var injected = Path.Combine(root, "injected.js");
     File.WriteAllText(injected, "require('node:fs').writeFileSync(" + JsonSerializer.Serialize(marker) + ", 'unexpected');");
     var originalOptions = Environment.GetEnvironmentVariable("NODE_OPTIONS"); LinuxDesktopLaunch owned;
@@ -114,18 +115,47 @@ else
     Check("Actual desktop answers the existing framed initialize protocol successfully", () => Assert(result.GetProperty("type").GetString() == "response" && result.GetProperty("requestId").GetString() == id && result.GetProperty("resultType").GetString() == "success"));
     Check("No authentication file is created by peer verification", () => Assert(!File.Exists(Path.Combine(root, "auth.json"))));
     Check("The actual managed native launch excludes a parent Node preload without executing its marker", () => Assert(!File.Exists(marker)));
+    using var otherClient = args[0] == "--lifecycle" ? new OtherClient(Path.Combine(root, "other-cli-home")) : null;
     Console.WriteLine(JsonSerializer.Serialize(new { phase = "peer-connected", ownedProcess = launch.Id })); Console.Out.Flush();
-    if (await Console.In.ReadLineAsync(deadline.Token) != "owned-peer-exited") throw new InvalidOperationException("The owned peer-exit synchronization is missing.");
-    launch.WaitForExit(deadline.Token);
+    if (await Console.In.ReadLineAsync(deadline.Token) != (args[0] == "--lifecycle" ? "request-normal-close" : "owned-peer-exited")) throw new InvalidOperationException("The owned peer-exit synchronization is missing.");
+    if (args[0] == "--lifecycle")
+    {
+        await launch.CloseAsync(deadline.Token);
+        Check("The original verified native client exits normally through WM_DELETE and its captured children exit without force", () => Assert(launch.ExitedNormally));
+        Check("An independently running real pinned Codex CLI is preserved by intended-client shutdown", () => Assert(otherClient != null && otherClient.Running));
+    }
+    else launch.WaitForExit(deadline.Token);
     Check("A retained connection refuses sends after the original native peer exits", () =>
         Refused(() => stream.WriteAsync(frame, deadline.Token).GetAwaiter().GetResult()));
 }
 Console.WriteLine(JsonSerializer.Serialize(new { schema = 1, passed = checks.Count, failed = 0, architecture = RuntimeInformation.ProcessArchitecture.ToString(), checks,
-    scope = "Owned native sockets and the actual approved sandboxed desktop, without accounts, credentials, inference, client shutdown, chat mutation or authenticated handoff acceptance." }));
+    scope = args[0] == "--lifecycle" ? "Actual sandboxed official desktop with controlled normal X11 close, captured child exits and a preserved independent real Codex CLI. No accounts, credentials, inference, chat mutation or authenticated handoff acceptance." : "Owned native sockets and the actual approved sandboxed desktop, without accounts, credentials, inference, normal client shutdown, chat mutation or authenticated handoff acceptance." }));
 
 internal static class NativeSocket
 {
     [DllImport("libc", SetLastError = true)] internal static extern int socket(int domain, int type, int protocol);
     [DllImport("libc", SetLastError = true)] internal static extern int bind(int socket, byte[] address, uint length);
     [DllImport("libc", SetLastError = true)] internal static extern int close(int descriptor);
+}
+
+internal sealed class OtherClient : IDisposable
+{
+    private readonly LinuxClientInstallation _installed = LinuxClientDiscovery.Open();
+    private readonly Process _process;
+    public bool Running => !_process.HasExited;
+    public OtherClient(string home)
+    {
+        LinuxPrivateFiles.CreateDirectory(home);
+        var start = new ProcessStartInfo(_installed.Cli.ExecutionPath) { UseShellExecute = false, WorkingDirectory = home, RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true };
+        start.ArgumentList.Add("app-server"); start.ArgumentList.Add("--listen"); start.ArgumentList.Add("stdio://");
+        start.Environment.Clear(); start.Environment["HOME"] = Environment.GetEnvironmentVariable("HOME"); start.Environment["CODEX_HOME"] = home; start.Environment["PATH"] = "/usr/bin:/bin";
+        _process = Process.Start(start) ?? throw new IOException("The independent disposable CLI did not start.");
+        _process.BeginOutputReadLine(); _process.BeginErrorReadLine();
+        if (!Running) throw new IOException("The independent disposable CLI exited.");
+    }
+    public void Dispose()
+    {
+        try { if (!_process.HasExited) { _process.StandardInput.Close(); if (!_process.WaitForExit(5000)) { _process.Kill(true); _process.WaitForExit(); } } }
+        finally { _process.Dispose(); _installed.Dispose(); }
+    }
 }

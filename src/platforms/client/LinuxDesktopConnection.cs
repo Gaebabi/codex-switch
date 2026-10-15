@@ -88,11 +88,13 @@ internal static class LinuxDesktopConnection
         { peer?.Dispose(); socket?.Dispose(); installed.Dispose(); throw new TimeoutException("Linux desktop IPC verification exceeded its deadline."); }
         catch { peer?.Dispose(); socket?.Dispose(); installed.Dispose(); throw; }
     }
+    internal static int PeerId(Stream stream) => stream is PeerStream peer ? peer.ProcessId : throw LinuxPeerProcess.Refused();
     private sealed class PeerStream : Stream
     {
         private readonly NetworkStream _stream;
         private readonly LinuxPeerProcess _peer;
         private readonly LinuxClientInstallation _installation;
+        public int ProcessId => _peer.Id;
         public PeerStream(NetworkStream stream, LinuxPeerProcess peer, LinuxClientInstallation installation)
         { _stream = stream; _peer = peer; _installation = installation; }
         public override bool CanRead => _stream.CanRead;
