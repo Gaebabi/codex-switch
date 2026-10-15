@@ -194,6 +194,7 @@ try:
         time.sleep(0.6)
         capture(window, pid, f'ordinary-dark-{width}x{height}')
     run(['xdotool', 'windowsize', '--sync', window, '500', '360'])
+    before_login_vault = (root / 'share/CodexAccountDesk/accounts.vault').read_bytes()
     run(['xdotool', 'mousemove', '--window', window, '359', '17', 'click', '1'])
     def login_controls(pending):
         raw = root / 'login-controls-private.xwd'
@@ -208,7 +209,7 @@ try:
     capture(window, pid, 'ordinary-pending-login-500x360')
     run(['xdotool', 'mousemove', '--window', window, '32', '17', 'click', '1'])
     wait_for(lambda: login_controls(False), 20)
-    check('Ordinary Cancel restores the ready toolbar without creating authentication or accounts', not (ordinary_home / 'auth.json').exists())
+    check('Ordinary Cancel restores the ready toolbar without changing existing ciphertext or creating authentication', not (ordinary_home / 'auth.json').exists() and (root / 'share/CodexAccountDesk/accounts.vault').read_bytes() == before_login_vault)
     run(['xdotool', 'windowsize', '--sync', window, '800', '600'])
     run(['xdotool', 'mousemove', '--window', window, '631', '17', 'click', '1'])
     def managed_client():
