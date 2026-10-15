@@ -106,8 +106,10 @@ try
                 }
             });
             break;
-        case "read":
-            Check("OS key and encrypted app data survive process/provider restart", () =>
+        case "read-after-unlock":
+        case "read-after-restart":
+        case "read-after-timeout":
+            Check("Existing OS key decrypts unchanged vault/application data: " + phase, () =>
             { Assert(VaultProtection.Unprotect(SecureFiles.ReadPrivateBytes(file), directory).SequenceEqual(plain)); Assert(new AccountVault(appDirectory).Data.Theme == "light"); });
             break;
         case "locked":

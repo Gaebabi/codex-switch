@@ -358,7 +358,22 @@
     "thermal.color_limits": "Limites de cor: atenção {0:0.#} °C / alta {1:0.#} °C.",
     "thermal.reported_limits": "Limites de temperatura informados pelo dispositivo.",
     "thermal.default_limits": "Padrões de exibição; não são a temperatura máxima nominal do dispositivo.",
-    "thermal.color_release": "A cor volta ao normal {0:0.#} °C abaixo do limite."
+    "thermal.color_release": "A cor volta ao normal {0:0.#} °C abaixo do limite.",
+    "msg.linux_preview_accounts_unavailable": "Prévia do Linux: as ações de conta ainda não estão disponíveis.",
+    "msg.linux_preview_resources_unavailable": "O monitoramento de recursos do Linux não está disponível nesta prévia.",
+    "msg.linux_keyring_locked": "Desbloqueie o chaveiro do Linux e tente novamente.",
+    "msg.linux_keyring_missing": "Chave do cofre ausente. Restaure o chaveiro original.",
+    "msg.linux_keyring_ambiguous": "Foram encontradas chaves duplicadas do cofre. Resolva as duplicatas primeiro.",
+    "msg.linux_keyring_invalid": "Chave do cofre inválida. Os dados existentes foram preservados.",
+    "msg.linux_keyring_busy": "Outro processo está usando a chave do cofre. Tente novamente quando ele terminar.",
+    "msg.linux_keyring_timeout": "O chaveiro excedeu o tempo limite. Verifique-o e tente novamente.",
+    "msg.linux_keyring_cancelled": "A operação do chaveiro foi cancelada. Os dados existentes foram preservados.",
+    "msg.linux_keyring_unavailable": "O Secret Service está indisponível. Instale e desbloqueie um chaveiro compatível.",
+    "msg.linux_private_directory": "O armazenamento exige um diretório do usuário com permissões 0700 e sem links simbólicos.",
+    "msg.linux_private_file": "O armazenamento exige um arquivo do usuário com permissões 0600 e sem links simbólicos.",
+    "msg.linux_foreign_vault": "Este cofre pertence a outra plataforma. Adicione as contas separadamente.",
+    "msg.linux_storage_access_denied": "Verifique o proprietário e as permissões do armazenamento do Linux.",
+    "msg.linux_process_start_failed": "Não foi possível iniciar o programa do Linux. Verifique o executável e suas permissões."
   },
   "plurals": {
     "msg.accounts": {

@@ -9,19 +9,19 @@ from PIL import Image
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('source',type=Path)
 parser.add_argument('destination',type=Path)
-parser.add_argument('--os',choices=['Windows','macOS'],required=True)
+parser.add_argument('--os',choices=['Windows','macOS','Linux'],required=True)
 parser.add_argument('--revision',required=True)
 args=parser.parse_args()
 if not re.fullmatch('[a-f0-9]{40}',args.revision):raise SystemExit('Exact source revision required')
 report=args.source/('receipt.json' if args.os=='Windows' else 'render-report.json')
 data=json.loads(report.read_text(encoding='utf-8'))
 if data['os']!=args.os or data['failures']!=0:raise SystemExit('Native UI verification did not pass')
-if args.os=='macOS' and data.get('nativeWindowCapture') is not True:raise SystemExit('Native Mac screenshots required')
+if args.os!='Windows' and data.get('nativeWindowCapture') is not True:raise SystemExit('Native own-window screenshots required')
 pattern=re.compile(r'(en|ko)-(dark|light)-(500x360|600x420|800x560|800x600)'+('' if args.os=='Windows' else '-native')+r'\.png')
 extra=re.compile(r'en-(dark|light)-(language|history)'+('' if args.os=='Windows' else '-native')+r'\.png')
 tooltip=re.compile(r'en-(dark|light)-tooltip\.png') if args.os=='Windows' else None
 paths=sorted(p for p in args.source.glob('*.png') if pattern.fullmatch(p.name) or extra.fullmatch(p.name) or tooltip and tooltip.fullmatch(p.name))
-if len(paths)!=(14 if args.os=='Windows' else 16):raise SystemExit('Complete language/theme/size/menu/history/tooltip evidence required')
+if len(paths)!=(14 if args.os=='Windows' else 12 if args.os=='Linux' else 16):raise SystemExit('Complete declared language/theme/size/menu/history/tooltip evidence required')
 args.destination.mkdir(parents=True,exist_ok=True)
 images=[]
 for path in paths:
@@ -41,6 +41,7 @@ if not re.fullmatch(r'\.NET \d+\.\d+\.\d+',runtime) or not re.fullmatch(r'\d+\.\
     raise SystemExit('Unexpected runtime/version/architecture metadata')
 rendering='Windows native WPF' if args.os=='Windows' else data.get('rendering')
 if args.os=='macOS' and rendering!='Software (CI native window)':raise SystemExit('Unexpected Mac evidence rendering mode')
+if args.os=='Linux' and (rendering!='Software (X11 native window)' or data.get('display')!='X11/Xvfb'):raise SystemExit('Unexpected Linux evidence rendering/display mode')
 value={'schema':1,'revision':args.revision,'os':args.os,'architecture':architecture,'runtime':runtime,'appVersion':version,'images':images,
     'rendering':rendering,
     'scope':'Published app on the stated OS; native own windows/popups and explicitly labeled WPF tooltip component renders, synthetic accounts only. No personal desktop/credentials/Codex action or account-switch/resume acceptance.'}

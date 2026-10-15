@@ -358,7 +358,22 @@
     "thermal.color_limits": "색상 기준: 주의 {0:0.#} °C / 높음 {1:0.#} °C.",
     "thermal.reported_limits": "장치가 제공한 온도 기준입니다.",
     "thermal.default_limits": "표시용 기본값이며 장치의 정격 최대 온도가 아닙니다.",
-    "thermal.color_release": "기준보다 {0:0.#} °C 낮아지면 색상을 해제합니다."
+    "thermal.color_release": "기준보다 {0:0.#} °C 낮아지면 색상을 해제합니다.",
+    "msg.linux_preview_accounts_unavailable": "Linux 미리보기: 계정 작업은 아직 사용할 수 없습니다.",
+    "msg.linux_preview_resources_unavailable": "이 미리보기에서는 Linux 리소스 모니터링을 지원하지 않습니다.",
+    "msg.linux_keyring_locked": "Linux 키링의 잠금을 해제한 뒤 다시 시도하세요.",
+    "msg.linux_keyring_missing": "저장소 키가 없습니다. 원래 키링을 복원하세요.",
+    "msg.linux_keyring_ambiguous": "중복된 저장소 키가 있습니다. 먼저 키링의 중복을 해결하세요.",
+    "msg.linux_keyring_invalid": "저장소 키가 올바르지 않습니다. 기존 데이터는 보존되었습니다.",
+    "msg.linux_keyring_busy": "다른 프로세스가 저장소 키를 사용 중입니다. 작업이 끝난 뒤 다시 시도하세요.",
+    "msg.linux_keyring_timeout": "키링 응답 시간이 초과되었습니다. 상태를 확인한 뒤 다시 시도하세요.",
+    "msg.linux_keyring_cancelled": "키링 작업이 취소되었습니다. 기존 데이터는 보존되었습니다.",
+    "msg.linux_keyring_unavailable": "Secret Service를 사용할 수 없습니다. 호환되는 키링을 설치하고 잠금을 해제하세요.",
+    "msg.linux_private_directory": "저장소 디렉터리는 현재 사용자 소유이며 권한이 0700이어야 하고 심볼릭 링크가 없어야 합니다.",
+    "msg.linux_private_file": "저장소 파일은 현재 사용자 소유이며 권한이 0600이어야 하고 심볼릭 링크가 아니어야 합니다.",
+    "msg.linux_foreign_vault": "다른 플랫폼에서 생성한 저장소입니다. 계정을 별도로 추가하세요.",
+    "msg.linux_storage_access_denied": "Linux 저장소의 소유자와 권한을 확인하세요.",
+    "msg.linux_process_start_failed": "Linux 프로그램을 시작하지 못했습니다. 실행 파일과 권한을 확인하세요."
   },
   "plurals": {
     "msg.accounts": {

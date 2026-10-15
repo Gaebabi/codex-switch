@@ -358,7 +358,22 @@
     "thermal.color_limits": "Farbgrenzen: Achtung {0:0.#} °C / hoch {1:0.#} °C.",
     "thermal.reported_limits": "Vom Gerät gemeldete Temperaturgrenzen.",
     "thermal.default_limits": "Anzeige-Standardwerte, keine zulässige Maximaltemperatur des Geräts.",
-    "thermal.color_release": "Die Farbe wird {0:0.#} °C unter der Grenze zurückgesetzt."
+    "thermal.color_release": "Die Farbe wird {0:0.#} °C unter der Grenze zurückgesetzt.",
+    "msg.linux_preview_accounts_unavailable": "Linux-Vorschau: Kontoaktionen sind noch nicht verfügbar.",
+    "msg.linux_preview_resources_unavailable": "Die Linux-Ressourcenüberwachung ist in dieser Vorschau nicht verfügbar.",
+    "msg.linux_keyring_locked": "Entsperren Sie den Linux-Schlüsselbund und versuchen Sie es erneut.",
+    "msg.linux_keyring_missing": "Tresorschlüssel fehlt. Stellen Sie den ursprünglichen Schlüsselbund wieder her.",
+    "msg.linux_keyring_ambiguous": "Doppelte Tresorschlüssel gefunden. Bereinigen Sie zuerst die Duplikate.",
+    "msg.linux_keyring_invalid": "Ungültiger Tresorschlüssel. Vorhandene Daten wurden beibehalten.",
+    "msg.linux_keyring_busy": "Ein anderer Prozess verwendet den Tresorschlüssel. Versuchen Sie es nach dessen Abschluss erneut.",
+    "msg.linux_keyring_timeout": "Zeitüberschreitung beim Schlüsselbund. Prüfen Sie ihn und versuchen Sie es erneut.",
+    "msg.linux_keyring_cancelled": "Schlüsselbundvorgang abgebrochen. Vorhandene Daten wurden beibehalten.",
+    "msg.linux_keyring_unavailable": "Secret Service ist nicht verfügbar. Installieren und entsperren Sie einen kompatiblen Schlüsselbund.",
+    "msg.linux_private_directory": "Der Speicherordner muss dem Benutzer gehören, Modus 0700 haben und frei von symbolischen Links sein.",
+    "msg.linux_private_file": "Die Speicherdatei muss dem Benutzer gehören, Modus 0600 haben und darf kein symbolischer Link sein.",
+    "msg.linux_foreign_vault": "Dieser Tresor stammt von einer anderen Plattform. Fügen Sie die Konten separat hinzu.",
+    "msg.linux_storage_access_denied": "Prüfen Sie Eigentümer und Berechtigungen des Linux-Speichers.",
+    "msg.linux_process_start_failed": "Das Linux-Programm konnte nicht gestartet werden. Prüfen Sie die Programmdatei und ihre Berechtigungen."
   },
   "plurals": {
     "msg.accounts": {

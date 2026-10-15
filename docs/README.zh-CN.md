@@ -35,6 +35,8 @@
 
 Linux 支持正在规划中，尚无执行包。[支持计划](PLATFORM_SUPPORT_PLAN.md) / [Issue #1](https://github.com/Gaebabi/codex-switch/issues/1)。欢迎不同语言、环境和无障碍相关的贡献。
 
+源码1.33.0提供面向贡献者的 [Linux 存储/UI 预览版](development/LINUX.md)，可用于构建和验证。账户、客户端和聊天恢复功能在原生验证完成前保持禁用；这不是正式 Linux 发布版。
+
 [Mac](MACOS.md) / [预测](FORECAST.md) / [安全](../SECURITY.md) / [开发](../CONTRIBUTING.md)
 
 公开开源。[Windows / Mac 执行包](https://github.com/Gaebabi/codex-switch/releases/tag/v1.27.6)无需源码构建或安装 .NET。Mac 包未公证。本项目不是OpenAI官方产品。认证信息在本地加密保存。[MIT](../LICENSE)

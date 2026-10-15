@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType><TargetFramework>net10.0</TargetFramework><AssemblyName>CodexSwitch</AssemblyName><RootNamespace>CodexAccountDesk</RootNamespace>
+    <Title>Codex Switch</Title><Product>Codex Switch</Product><Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings><UseAppHost>true</UseAppHost><DebugType>none</DebugType>
+  </PropertyGroup>
+  <ItemGroup><ProjectReference Include="../desktop/CodexSwitch.Desktop.csproj" /></ItemGroup>
+</Project>

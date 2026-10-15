@@ -358,7 +358,22 @@
     "thermal.color_limits": "Seuils de couleur : attention {0:0.#} °C / élevée {1:0.#} °C.",
     "thermal.reported_limits": "Seuils de température fournis par le périphérique.",
     "thermal.default_limits": "Valeurs d’affichage par défaut, pas la température maximale nominale.",
-    "thermal.color_release": "La couleur revient à la normale {0:0.#} °C sous le seuil."
+    "thermal.color_release": "La couleur revient à la normale {0:0.#} °C sous le seuil.",
+    "msg.linux_preview_accounts_unavailable": "Aperçu Linux : les actions de compte ne sont pas encore disponibles.",
+    "msg.linux_preview_resources_unavailable": "La surveillance des ressources Linux est indisponible dans cet aperçu.",
+    "msg.linux_keyring_locked": "Déverrouillez le trousseau Linux et réessayez.",
+    "msg.linux_keyring_missing": "Clé du coffre manquante. Restaurez le trousseau d’origine.",
+    "msg.linux_keyring_ambiguous": "Des clés du coffre sont en double. Résolvez les doublons avant de continuer.",
+    "msg.linux_keyring_invalid": "Clé du coffre invalide. Les données existantes ont été conservées.",
+    "msg.linux_keyring_busy": "Un autre processus utilise la clé du coffre. Réessayez lorsqu’il aura terminé.",
+    "msg.linux_keyring_timeout": "Le délai du trousseau est dépassé. Vérifiez-le et réessayez.",
+    "msg.linux_keyring_cancelled": "Opération du trousseau annulée. Les données existantes ont été conservées.",
+    "msg.linux_keyring_unavailable": "Secret Service est indisponible. Installez et déverrouillez un trousseau compatible.",
+    "msg.linux_private_directory": "Le stockage nécessite un dossier appartenant à l’utilisateur, de mode 0700 et sans liens symboliques.",
+    "msg.linux_private_file": "Le stockage nécessite un fichier appartenant à l’utilisateur, de mode 0600 et sans lien symbolique.",
+    "msg.linux_foreign_vault": "Ce coffre provient d’une autre plateforme. Ajoutez les comptes séparément.",
+    "msg.linux_storage_access_denied": "Vérifiez le propriétaire et les permissions du stockage Linux.",
+    "msg.linux_process_start_failed": "Impossible de démarrer le programme Linux. Vérifiez son exécutable et ses permissions."
   },
   "plurals": {
     "msg.accounts": {

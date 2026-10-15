@@ -308,6 +308,8 @@ internal static class UserErrors
 {
     public static string Describe(Exception error)
     {
+        if (OperatingSystem.IsLinux() && error is UnauthorizedAccessException) return Loc.T("msg.linux_storage_access_denied");
+        if (OperatingSystem.IsLinux() && error is System.ComponentModel.Win32Exception) return Loc.T("msg.linux_process_start_failed");
         if (error is UnauthorizedAccessException) return OperatingSystem.IsWindows() ? "로그인 정보나 저장 폴더에 접근할 수 없습니다. Windows 권한을 확인해 주세요." : "로그인 정보나 저장 폴더에 접근할 수 없습니다. macOS 권한을 확인해 주세요.";
         if (error is JsonException or FormatException) return "로그인 정보 또는 Codex 응답의 형식이 올바르지 않습니다. 다시 로그인해 주세요.";
         if (error is System.ComponentModel.Win32Exception) return OperatingSystem.IsWindows() ? "Windows에서 프로그램 실행 또는 암호화 저장소를 사용할 수 없습니다." : "macOS에서 프로그램을 실행할 수 없습니다.";

@@ -358,7 +358,22 @@
     "thermal.color_limits": "顏色門檻：注意 {0:0.#} °C / 高溫 {1:0.#} °C。",
     "thermal.reported_limits": "裝置提供的溫度門檻。",
     "thermal.default_limits": "顯示用預設值，不代表裝置的額定最高溫度。",
-    "thermal.color_release": "低於門檻 {0:0.#} °C 後解除顏色提示。"
+    "thermal.color_release": "低於門檻 {0:0.#} °C 後解除顏色提示。",
+    "msg.linux_preview_accounts_unavailable": "Linux 預覽版：暫不支援帳戶操作。",
+    "msg.linux_preview_resources_unavailable": "此預覽版暫不支援 Linux 資源監控。",
+    "msg.linux_keyring_locked": "請解鎖 Linux 鑰匙圈後重試。",
+    "msg.linux_keyring_missing": "保管庫金鑰遺失。請還原原本的鑰匙圈。",
+    "msg.linux_keyring_ambiguous": "發現重複的保管庫金鑰。請先處理重複項目。",
+    "msg.linux_keyring_invalid": "保管庫金鑰無效。現有資料已保留。",
+    "msg.linux_keyring_busy": "其他程序正在使用保管庫金鑰。請待其完成後重試。",
+    "msg.linux_keyring_timeout": "鑰匙圈操作逾時。請檢查後重試。",
+    "msg.linux_keyring_cancelled": "鑰匙圈操作已取消。現有資料已保留。",
+    "msg.linux_keyring_unavailable": "Secret Service 無法使用。請安裝相容的鑰匙圈並解鎖。",
+    "msg.linux_private_directory": "儲存目錄必須由目前使用者擁有、權限為 0700，且不含符號連結。",
+    "msg.linux_private_file": "儲存檔案必須由目前使用者擁有、權限為 0600，且不能是符號連結。",
+    "msg.linux_foreign_vault": "此保管庫來自其他平台。請另外新增帳戶。",
+    "msg.linux_storage_access_denied": "請檢查 Linux 儲存目錄的擁有者與權限。",
+    "msg.linux_process_start_failed": "無法啟動 Linux 程式。請檢查執行檔及其權限。"
   },
   "plurals": {
     "msg.accounts": {

@@ -54,6 +54,7 @@ internal sealed class DeskWindow : Window
     public DeskWindow(DesktopHost host, AccountProfile[]? preview = null, Func<DeskWindow, Task>? diagnostic = null)
     {
         _host = host; _sessions = new(host.CodexHome); _resources = host.Resources; _theme = new(true, host.Appearance);
+        _statusMessage = host.AccountUnavailableReason == null ? "" : Loc.T(host.AccountUnavailableReason);
         _preview = preview;
         Title = host.WindowTitle; Icon = new WindowIcon(Avalonia.Platform.AssetLoader.Open(new Uri("avares://CodexSwitch.Desktop/Assets/app-icon.png"))); Width = 600; Height = 420; MinWidth = 500; MinHeight = 360;
         ExtendClientAreaToDecorationsHint = true; ExtendClientAreaChromeHints = ExtendClientAreaChromeHints.PreferSystemChrome;
@@ -89,6 +90,7 @@ internal sealed class DeskWindow : Window
         _initializing = true;
         try
         {
+            if (_host.AccountUnavailableReason != null) { _statusMessage = Loc.T(_host.AccountUnavailableReason); Build(); return; }
             if (_service == null)
             {
                 var vault = await Task.Run(() => { var result = new AccountVault(_host.DataDirectory); result.Save(); return result; }, token);
@@ -108,6 +110,7 @@ internal sealed class DeskWindow : Window
     private Task RefreshAsync() => RunAsync(_ready ? token => _service!.RefreshAllAsync(null, token) : InitializeAsync);
     private void Build()
     {
+        if (_host.AccountUnavailableReason != null) _statusMessage = Loc.T(_host.AccountUnavailableReason);
         _theme.Apply(this);
         FlowDirection = Loc.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         var shell = new Grid { RowDefinitions = new RowDefinitions("34,22,*,50") };
@@ -208,11 +211,11 @@ internal sealed class DeskWindow : Window
         _accounts.Children.Clear(); _accounts.ColumnDefinitions.Clear(); _accounts.RowDefinitions.Clear(); _cards.Clear();
         if (_tray != null) UpdateTray();
         _add.IsEnabled = _ready && _login == null; _cancel.IsVisible = _login != null || _switch != null;
-        _refresh.IsEnabled = !_initializing && _preview == null;
+        _refresh.IsEnabled = !_initializing && _preview == null && _host.AccountUnavailableReason == null;
         var profiles = (_preview ?? _service?.Accounts ?? Array.Empty<AccountProfile>()).OrderByDescending(p => p.IsCurrent).ThenBy(p => p.DisplayName, StringComparer.CurrentCulture).ToArray();
         if (profiles.Length == 0)
         {
-            var message = _theme.Text(Loc.T("현재 계정을 가져오거나 다른 계정으로 로그인하세요."), 13, "muted");
+            var message = _theme.Text(Loc.T(_host.AccountUnavailableReason ?? "현재 계정을 가져오거나 다른 계정으로 로그인하세요."), 13, "muted");
             message.HorizontalAlignment = HorizontalAlignment.Center; message.VerticalAlignment = VerticalAlignment.Center;
             message.TextWrapping = TextWrapping.Wrap; message.Margin = new Thickness(24); _accounts.Children.Add(message); ResizeAccounts(); return;
         }

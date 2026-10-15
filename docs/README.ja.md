@@ -39,6 +39,8 @@ Codex アカウントを切り替え、次に使うアカウントの残り利�
 
 Linux 版は計画中で、実行パッケージはまだありません。[対応計画](PLATFORM_SUPPORT_PLAN.md) / [Issue #1](https://github.com/Gaebabi/codex-switch/issues/1)。さまざまな言語・環境・アクセシビリティに関する貢献を歓迎します。
 
+ソース1.33.0では、貢献者向けの[Linuxストレージ/UIプレビュー](development/LINUX.md)をビルドできます。アカウント・クライアント・チャット再開機能は検証が完了するまで無効で、正式なLinuxリリースではありません。
+
 [Mac](MACOS.md) / [予測](FORECAST.md) / [セキュリティ](../SECURITY.md) / [開発](../CONTRIBUTING.md)
 
 公開オープンソースです。[Windows / Mac 実行パッケージ](https://github.com/Gaebabi/codex-switch/releases/tag/v1.27.6)はビルドや .NET のインストールなしで使用できます。Mac は未公証です。OpenAI 公式製品ではありません。認証情報はローカルで暗号化して保存します。[MIT](../LICENSE)

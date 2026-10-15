@@ -15,6 +15,8 @@ Codex 계정을 전환하고, 재개 가능한 미완료 로컬 작업을 자동
 
 **Linux:** 지원을 계획 중이며 아직 실행 패키지는 없습니다. [지원 계획](PLATFORM_SUPPORT_PLAN.md) / [이슈 #1](https://github.com/Gaebabi/codex-switch/issues/1). 다양한 언어·배포판·접근성 관련 기여를 환영합니다.
 
+소스1.33.0의 [Linux 저장소/UI 미리보기](development/LINUX.md)를 빌드해 기여 검증을 진행할 수 있습니다. 계정·클라이언트·채팅 재개 기능은 검증이 끝날 때까지 비활성화되며, 정식 Linux 릴리즈가 아닙니다.
+
 1. Windows는 전체 패키지의 `CodexSwitch.exe`를 실행하세요. Mac은 `Install.command`로 설치한 뒤 **Codex Switch.app**을 여세요. [빌드와 설치](INSTALL.md)
 2. 타이틀바의 **+**로 계정을 추가하세요. Windows에서 현재 로그인은 **↻**를 우클릭해 가져올 수 있습니다.
 3. 카드의 잔량을 비교한 뒤 **전환**을 누르세요. 60초마다 자동 조회하며 **↻**나 **F5**로 즉시 갱신할 수 있습니다.

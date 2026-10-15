@@ -57,7 +57,7 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 
 - [x] Implement a distinct Linux AES-GCM envelope and configured Secret Service key lookup/creation, explicit key failure states, same-UID owner pinning and bounded native operations. Existing Windows/Mac formats and algorithms remain unchanged. Source1.33.0.
 - [x] Add descriptor-relative no-follow private directories/reads/atomic writes, UID/mode checks and exclusive cross-process key creation. Existing ciphertext refuses missing-key replacement.
-- [ ] Pass actual isolated GNOME Keyring x64/arm64 lifecycle/tamper/permissions/concurrency/offline/deadline tests in the new Linux native workflow. Local compilation is not native provider acceptance.
+- [x] Pass the first actual isolated GNOME Keyring x64/arm64 suite: source3b64249/run38666392438 passes18 checks across12 lifecycle phases on each native architecture, including genuine in-place unlock and original-PID verification. Later host/evidence/final commits must pass both native jobs again.
 - [ ] Add the source Linux host and inspect actual native own-window evidence with synthetic accounts and explicit pending client/handoff capabilities; preserve Windows/Mac regressions and attach confirmation before promotion.
 - [ ] Complete exact-head Verify and Linux native workflows, privacy/evidence checks and author review, then focused PR merge. KDE/KWallet/client/SQLite/actual handoff/packages remain in #5/#6/#7.
 

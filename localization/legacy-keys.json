@@ -335,5 +335,16 @@
   "Language pack installed. Language changed without restarting.": "pack.language_pack_installed_language_changed_without",
   "Restore built-in language pack": "pack.restore_built_in_language_pack",
   "Local translations replaced with the built-in pack.": "pack.local_translations_replaced_with_the_built",
-  "Choose a trusted language pack. Imported packs change labels and messages, and contain text only.": "pack.choose_a_trusted_language_pack_imported"
+  "Choose a trusted language pack. Imported packs change labels and messages, and contain text only.": "pack.choose_a_trusted_language_pack_imported",
+  "Linux keyring is locked. Unlock it and try again.": "msg.linux_keyring_locked",
+  "The Linux vault key is missing. Restore the original keyring; the vault has not been replaced.": "msg.linux_keyring_missing",
+  "More than one Linux vault key matches. Resolve the duplicate keyring items before continuing.": "msg.linux_keyring_ambiguous",
+  "The Linux vault key is invalid. The vault has not been replaced.": "msg.linux_keyring_invalid",
+  "The Linux vault key is in use by another process. Try again after it finishes.": "msg.linux_keyring_busy",
+  "The Linux keyring operation timed out. Check the keyring and try again.": "msg.linux_keyring_timeout",
+  "The Linux keyring operation was cancelled. The vault has not been replaced.": "msg.linux_keyring_cancelled",
+  "Linux Secret Service is unavailable. Install and unlock a compatible keyring before using account storage.": "msg.linux_keyring_unavailable",
+  "Linux private directory must be owned by this user with mode0700 and contain no symbolic links.": "msg.linux_private_directory",
+  "Linux private file must be owned by this user with mode0600 and contain no symbolic links.": "msg.linux_private_file",
+  "This is not a Linux vault. Register accounts separately; foreign vaults are not migrated automatically.": "msg.linux_foreign_vault"
 }

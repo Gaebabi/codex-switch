@@ -31,9 +31,11 @@ if not a.inside:
         config=root/'bus.conf'
         config.write_text('<busconfig><type>session</type><listen>unix:tmpdir='+escape(str(root/'bus'))+'</listen><auth>EXTERNAL</auth><policy context="default"><allow user="'+str(os.geteuid())+'"/><allow send_destination="*"/><allow receive_sender="*"/><allow own="*"/></policy></busconfig>',encoding='utf-8')
         config.chmod(0o600)
-        env=dict(os.environ,CODEX_SWITCH_LINUX_TEST_ROOT=str(root),XDG_DATA_HOME=str(root/'share'),XDG_CONFIG_HOME=str(root/'config'),XDG_RUNTIME_DIR=str(root/'runtime'))
-        for folder in ('share','config','runtime','control'):(root/folder).mkdir(mode=0o700)
-        for key in ('G_DBUS_DEBUG','G_MESSAGES_DEBUG','GNOME_KEYRING_DEBUG','LIBSECRET_DEBUG'):env.pop(key,None)
+        env=dict(os.environ,CODEX_SWITCH_LINUX_TEST_ROOT=str(root),XDG_DATA_HOME=str(root/'share'),XDG_CONFIG_HOME=str(root/'config'),XDG_CACHE_HOME=str(root/'cache'),
+            XDG_RUNTIME_DIR=str(root/'runtime'),GNOME_KEYRING_CONTROL=str(root/'control'))
+        for folder in ('share','config','runtime','control','cache'):(root/folder).mkdir(mode=0o700)
+        (root/'share/keyrings').mkdir(mode=0o700)
+        for key in ('G_DBUS_DEBUG','G_MESSAGES_DEBUG','GNOME_KEYRING_DEBUG','GNOME_KEYRING_TEST_PATH','LIBSECRET_DEBUG'):env.pop(key,None)
         command=['dbus-run-session','--config-file',str(config),'--',sys.executable,str(Path(__file__).resolve()),'--inside','--assembly',str(assembly),'--architecture',a.architecture,'--report',str(report)]
         subprocess.run(command,env=env,check=True,timeout=240)
     finally:
@@ -104,11 +106,11 @@ try:
     phase('locked')
     phase('unlock',password)
     verify_owner()
-    phase('read');stop();start();phase('read')
+    phase('read-after-unlock');stop();start();phase('read-after-restart')
     os.kill(daemon.pid,signal.SIGSTOP)
     try:phase('timeout')
     finally:os.kill(daemon.pid,signal.SIGCONT)
-    phase('read');phase('missing');stop();phase('offline')
+    phase('read-after-timeout');phase('missing');stop();phase('offline')
     value={'schema':1,'architecture':a.architecture,'passed':sum(v['passed'] for v in results),'failed':0,'phases':results,
         'scope':'Actual GNOME Keyring/Linux private-file native contracts on a disposable file-socket D-Bus/XDG session. No personal bus, accounts, Codex, key material or private paths exported.'}
     report.parent.mkdir(parents=True,exist_ok=True);report.write_text(json.dumps(value,indent=2)+'\n',encoding='utf-8')

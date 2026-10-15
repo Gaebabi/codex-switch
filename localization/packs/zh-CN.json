@@ -358,7 +358,22 @@
     "thermal.color_limits": "颜色阈值：注意 {0:0.#} °C / 高温 {1:0.#} °C。",
     "thermal.reported_limits": "设备提供的温度阈值。",
     "thermal.default_limits": "显示默认值，不代表设备的额定最高温度。",
-    "thermal.color_release": "低于阈值 {0:0.#} °C 后解除颜色提示。"
+    "thermal.color_release": "低于阈值 {0:0.#} °C 后解除颜色提示。",
+    "msg.linux_preview_accounts_unavailable": "Linux 预览版：暂不支持账户操作。",
+    "msg.linux_preview_resources_unavailable": "此预览版暂不支持 Linux 资源监控。",
+    "msg.linux_keyring_locked": "请解锁 Linux 密钥环后重试。",
+    "msg.linux_keyring_missing": "保险库密钥丢失。请恢复原密钥环。",
+    "msg.linux_keyring_ambiguous": "发现重复的保险库密钥。请先解决重复问题。",
+    "msg.linux_keyring_invalid": "保险库密钥无效。现有数据已保留。",
+    "msg.linux_keyring_busy": "其他进程正在使用保险库密钥。请等待其完成后重试。",
+    "msg.linux_keyring_timeout": "密钥环操作超时。请检查后重试。",
+    "msg.linux_keyring_cancelled": "密钥环操作已取消。现有数据已保留。",
+    "msg.linux_keyring_unavailable": "Secret Service 不可用。请安装兼容的密钥环并将其解锁。",
+    "msg.linux_private_directory": "存储目录必须属于当前用户、权限为 0700，且不含符号链接。",
+    "msg.linux_private_file": "存储文件必须属于当前用户、权限为 0600，且不能是符号链接。",
+    "msg.linux_foreign_vault": "此保险库来自其他平台。请单独添加账户。",
+    "msg.linux_storage_access_denied": "请检查 Linux 存储目录的所有者和权限。",
+    "msg.linux_process_start_failed": "无法启动 Linux 程序。请检查可执行文件及其权限。"
   },
   "plurals": {
     "msg.accounts": {

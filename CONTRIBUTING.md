@@ -34,7 +34,7 @@ Windows:
 python scripts/verify-queues.py --executable artifacts/win-x64/CodexSwitch.exe
 ```
 
-Mac: `bash scripts/verify-macos.sh` runs isolated native checks. [Mac development](docs/development/MACOS.md) explains packaging/limits. Linux runs repository tooling only; **there is no supported Linux application build yet**. Docs/translation contributions do not need an app build on an unsupported OS.
+Mac: `bash scripts/verify-macos.sh` runs isolated native checks. [Mac development](docs/development/MACOS.md) explains packaging/limits. Linux runs portable tests plus the separate isolated native keyring/X11 source-preview workflow; **supported Linux account switching is still incomplete**. Docs/translation contributions do not need an app build.
 
 Windows shutdown/handoff changes run the native disposable parent/child regression described in [operations](docs/development/OPERATIONS.md). It verifies the production lifecycle without stopping Codex or accessing real accounts/chats; synthetic credential/launch/resume endpoints do not certify native account acceptance.
 
@@ -44,7 +44,7 @@ Use UTF-8, `.editorconfig` and focused patches; avoid mass formatting. Preserve 
 
 UI catalogues are versioned JSON files in `localization/packs/`, indexed in `localization/index.json`, with stable English-based message IDs. Nine languages are bundled in source 1.28.0; partial local packs intentionally fall back to English. [Translator guide/schema/review policy](docs/LOCALIZATION.md). Run `python scripts/verify-localization.py` and the cross-platform localization test project before a translation PR. No Node or third-party translation service is needed to contribute.
 
-Windows `python scripts/render-demo.py` renders a fictional screenshot from current UI components, using .NET10 and the pinned Python dependencies in `requirements-dev.txt`; Pillow exports a PNG without metadata. It does not prove real switching. Inspect the result when UI changes. Platform PRs additionally require the published-app native window evidence from `--verify-ui`, validated by CI before export; a Windows render cannot establish Mac/Linux execution.
+Windows `python scripts/render-demo.py` renders a fictional screenshot from current UI components, using .NET10 and the pinned Python dependencies in `requirements-dev.txt`; Pillow exports a PNG without metadata. It does not prove real switching. Inspect the result when UI changes. Platform PRs additionally require the published-app native window evidence from `--verify-ui`, validated by CI before export; a Windows render cannot establish Mac/Linux execution. [Linux source preview/native keyring/X11 commands and pending capabilities](docs/development/LINUX.md) are available for contributor verification; they do not establish supported Linux account switching.
 
 Temperature changes also run `dotnet run --project tests/temperatures/CodexSwitch.Temperatures.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false`. [Sensor/presentation contracts and capture modes](docs/TEMPERATURES.md) distinguish fictional layout inputs from actual read-only hardware observations. Do not install a privileged driver or relabel another component's temperature to make an unavailable sensor appear supported.
 

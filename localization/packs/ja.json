@@ -358,7 +358,22 @@
     "thermal.color_limits": "色の基準: 注意 {0:0.#} °C / 高温 {1:0.#} °C。",
     "thermal.reported_limits": "デバイスが提供する温度基準です。",
     "thermal.default_limits": "表示用の既定値で、デバイスの定格上限ではありません。",
-    "thermal.color_release": "基準より {0:0.#} °C 下がると色が解除されます。"
+    "thermal.color_release": "基準より {0:0.#} °C 下がると色が解除されます。",
+    "msg.linux_preview_accounts_unavailable": "Linuxプレビュー：アカウント操作はまだ利用できません。",
+    "msg.linux_preview_resources_unavailable": "このプレビューではLinuxのリソース監視は利用できません。",
+    "msg.linux_keyring_locked": "Linuxキーリングのロックを解除して再試行してください。",
+    "msg.linux_keyring_missing": "保管庫の鍵がありません。元のキーリングを復元してください。",
+    "msg.linux_keyring_ambiguous": "保管庫の鍵が重複しています。先に重複を解消してください。",
+    "msg.linux_keyring_invalid": "保管庫の鍵が無効です。既存のデータは保持されています。",
+    "msg.linux_keyring_busy": "別のプロセスが保管庫の鍵を使用中です。完了後に再試行してください。",
+    "msg.linux_keyring_timeout": "キーリングがタイムアウトしました。状態を確認して再試行してください。",
+    "msg.linux_keyring_cancelled": "キーリング操作がキャンセルされました。既存のデータは保持されています。",
+    "msg.linux_keyring_unavailable": "Secret Serviceを利用できません。対応するキーリングをインストールしてロックを解除してください。",
+    "msg.linux_private_directory": "保存先は現在のユーザー所有、権限0700で、シンボリックリンクを含まないディレクトリが必要です。",
+    "msg.linux_private_file": "保存先は現在のユーザー所有、権限0600で、シンボリックリンクではないファイルが必要です。",
+    "msg.linux_foreign_vault": "別のプラットフォームで作成された保管庫です。アカウントを個別に追加してください。",
+    "msg.linux_storage_access_denied": "Linux保存先の所有者と権限を確認してください。",
+    "msg.linux_process_start_failed": "Linuxプログラムを起動できませんでした。実行ファイルと権限を確認してください。"
   },
   "plurals": {
     "msg.accounts": {

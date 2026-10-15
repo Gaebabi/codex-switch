@@ -54,6 +54,17 @@ var basis = LanguagePack.Parse(englishBytes, null, false);
 byte[] Mutate(Action<JsonObject> action)
 { var json = JsonNode.Parse(englishBytes)!.AsObject(); action(json); return Encoding.UTF8.GetBytes(json.ToJsonString()); }
 Check("Nine complete built-in packs preserve English/Korean source aliases", () => { Loc.ValidateCatalogs(); Assert(Loc.Languages.Count == 9); Loc.SetLanguage("ko"); Assert(Loc.T("계정 추가") == "계정 추가"); Loc.SetLanguage("en"); Assert(Loc.T("계정 추가") == "Add account"); });
+Check("Linux preview and key failures resolve through every bundled catalogue", () =>
+{
+    foreach (var info in Loc.Languages)
+    {
+        Loc.SetLanguage(info.Code);
+        Assert(Loc.Error(new LinuxVaultException(LinuxKeyFailure.Locked).Message) == Loc.T("msg.linux_keyring_locked"));
+        Assert(Loc.Error(new LinuxVaultException(LinuxKeyFailure.Missing).Message) == Loc.T("msg.linux_keyring_missing"));
+        Assert(!Loc.T("msg.linux_preview_accounts_unavailable").StartsWith("msg.", StringComparison.Ordinal));
+    }
+    Loc.SetLanguage("en");
+});
 foreach (var info in Loc.Languages)
 {
     Check(info.Code + " messages/culture/calendar/formats", () =>

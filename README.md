@@ -19,6 +19,8 @@ Switch Codex accounts, automatically resume eligible unfinished local chats, and
 
 **Linux:** planned; no Linux package yet. Follow the [support roadmap](docs/PLATFORM_SUPPORT_PLAN.md) and [issue #1](https://github.com/Gaebabi/codex-switch/issues/1). Contributions across languages, distributions and accessibility needs are welcome.
 
+Source1.33.0 contributors can build the [Linux storage/UI preview](docs/development/LINUX.md). Account/client/handoff actions are disabled while their native acceptance remains in progress; it is not a supported Linux release.
+
 1. Use a complete Windows or Mac package. Windows: run `CodexSwitch.exe`. Mac: run `Install.command`, then open **Codex Switch.app**. [Build and install](docs/INSTALL.md)
 2. Select **+** in the title bar to add accounts. On Windows, right-click **↻** to import the current Codex login.
 3. Compare the cards and select **Switch**. Reads refresh every 60 seconds; **↻** or **F5** refreshes immediately.

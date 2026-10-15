@@ -4,6 +4,8 @@
 
 [Linux native](../.github/workflows/linux-native.yml) separately declares actual Ubuntu24.04 x64/arm64 GNOME Keyring runs with a private D-Bus/XDG environment. Source1.33.0 storage promotion requires both native jobs at the exact reviewed head in addition to all four Verify jobs. [Native commands, isolation and incomplete support gates](development/LINUX.md). A portable Ubuntu pass is not a native keyring or application acceptance result; KDE/KWallet and Linux client/handoff/packages remain separate.
 
+The Linux jobs also publish the source preview for the actual runner, inspect the complete runtime, run its synthetic own-window mode on X11/Xvfb and export12 lossless native PNGs per architecture. XID-only capture cannot fall back to desktop capture or managed rendering. Common export removes metadata and binds the PR head revision; checkout explicitly selects that head. Source account/client/handoff actions remain disabled. These screenshots complement the separate18-check provider suite and do not certify real account/handoff, native Wayland or full desktop-session support.
+
 | Check | Host | Evidence |
 | --- | --- | --- |
 | Repository checks | Ubuntu 24.04 | UTF-8/local links/YAML, audit rejection tests, targeted tracked-tree scan and whitespace |

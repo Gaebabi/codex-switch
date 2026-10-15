@@ -358,7 +358,22 @@
     "thermal.color_limits": "Color thresholds: caution {0:0.#} °C / high {1:0.#} °C.",
     "thermal.reported_limits": "Device-reported temperature thresholds.",
     "thermal.default_limits": "Display defaults; not the device’s rated maximum.",
-    "thermal.color_release": "Color clears {0:0.#} °C below its threshold."
+    "thermal.color_release": "Color clears {0:0.#} °C below its threshold.",
+    "msg.linux_preview_accounts_unavailable": "Linux preview: account actions are not available yet.",
+    "msg.linux_preview_resources_unavailable": "Linux resource monitoring is not available in this preview.",
+    "msg.linux_keyring_locked": "Unlock your Linux keyring and try again.",
+    "msg.linux_keyring_missing": "Vault key missing. Restore the original keyring.",
+    "msg.linux_keyring_ambiguous": "Duplicate vault keys found. Resolve the duplicates first.",
+    "msg.linux_keyring_invalid": "Invalid vault key. Existing data was preserved.",
+    "msg.linux_keyring_busy": "Vault key is busy. Try again after the other process finishes.",
+    "msg.linux_keyring_timeout": "Keyring timed out. Check it and try again.",
+    "msg.linux_keyring_cancelled": "Keyring operation cancelled. Existing data was preserved.",
+    "msg.linux_keyring_unavailable": "Secret Service unavailable. Install and unlock a compatible keyring.",
+    "msg.linux_private_directory": "Storage requires a user-owned directory with mode 0700 and no symbolic links.",
+    "msg.linux_private_file": "Storage requires a user-owned file with mode 0600 and no symbolic links.",
+    "msg.linux_foreign_vault": "This vault belongs to another platform. Add accounts separately.",
+    "msg.linux_storage_access_denied": "Check Linux storage ownership and permissions.",
+    "msg.linux_process_start_failed": "Could not start the Linux program. Check its executable and permissions."
   },
   "plurals": {
     "msg.accounts": {

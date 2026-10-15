@@ -358,7 +358,22 @@
     "thermal.color_limits": "Umbrales de color: precaución {0:0.#} °C / alta {1:0.#} °C.",
     "thermal.reported_limits": "Umbrales de temperatura proporcionados por el dispositivo.",
     "thermal.default_limits": "Valores predeterminados de visualización; no son el máximo nominal del dispositivo.",
-    "thermal.color_release": "El color se restablece {0:0.#} °C por debajo del umbral."
+    "thermal.color_release": "El color se restablece {0:0.#} °C por debajo del umbral.",
+    "msg.linux_preview_accounts_unavailable": "Vista previa de Linux: las acciones de cuenta aún no están disponibles.",
+    "msg.linux_preview_resources_unavailable": "La supervisión de recursos de Linux no está disponible en esta vista previa.",
+    "msg.linux_keyring_locked": "Desbloquea el llavero de Linux y vuelve a intentarlo.",
+    "msg.linux_keyring_missing": "Falta la clave de la bóveda. Restaura el llavero original.",
+    "msg.linux_keyring_ambiguous": "Se encontraron claves de bóveda duplicadas. Resuelve primero los duplicados.",
+    "msg.linux_keyring_invalid": "La clave de la bóveda no es válida. Se conservaron los datos existentes.",
+    "msg.linux_keyring_busy": "Otro proceso está usando la clave de la bóveda. Inténtalo cuando termine.",
+    "msg.linux_keyring_timeout": "El llavero agotó el tiempo de espera. Compruébalo y vuelve a intentarlo.",
+    "msg.linux_keyring_cancelled": "Se canceló la operación del llavero. Se conservaron los datos existentes.",
+    "msg.linux_keyring_unavailable": "Secret Service no está disponible. Instala y desbloquea un llavero compatible.",
+    "msg.linux_private_directory": "El almacenamiento requiere un directorio del usuario con permisos 0700 y sin enlaces simbólicos.",
+    "msg.linux_private_file": "El almacenamiento requiere un archivo del usuario con permisos 0600 y sin enlaces simbólicos.",
+    "msg.linux_foreign_vault": "Esta bóveda pertenece a otra plataforma. Añade las cuentas por separado.",
+    "msg.linux_storage_access_denied": "Comprueba el propietario y los permisos del almacenamiento de Linux.",
+    "msg.linux_process_start_failed": "No se pudo iniciar el programa de Linux. Comprueba el ejecutable y sus permisos."
   },
   "plurals": {
     "msg.accounts": {
