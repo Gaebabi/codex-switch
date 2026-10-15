@@ -67,7 +67,9 @@ native=json.loads((repository/'src/platforms/security/native/libsecret.json').re
 readme=f'''Codex Switch {version} Linux preview candidate ({a.rid})
 
 This is a complete self-contained source preview, not a supported account-switching release.
-Ordinary Linux account/handoff actions remain gated pending authenticated acceptance.
+Account/usage and managed desktop handoff integration are enabled as a preview.
+Use Start Codex here before working; existing file credential policy is required.
+Real authenticated two-account handoff and full desktop acceptance remain pending.
 No .NET SDK/runtime, Python or source build is needed to run/install this payload.
 Distribution native dependencies and an X11/XWayland display are still required.
 
@@ -100,7 +102,7 @@ spdx['packages'].extend([
  {'SPDXID':'SPDXRef-libsecret','name':'libsecret (private compatible build)','versionInfo':'0.21.8.2','downloadLocation':'https://github.com/Gaebabi/codex-switch/tree/'+revision+'/src/platforms/security/native','filesAnalyzed':False,'licenseConcluded':'LGPL-2.1-or-later','licenseDeclared':'LGPL-2.1-or-later','copyrightText':'NOASSERTION'}])
 spdx['relationships']=[{'spdxElementId':'SPDXRef-DOCUMENT','relationshipType':'DESCRIBES','relatedSpdxElement':'SPDXRef-Application'},*({'spdxElementId':'SPDXRef-Application','relationshipType':'DEPENDS_ON','relatedSpdxElement':item['SPDXID']} for item in spdx['packages'] if item['SPDXID']!='SPDXRef-Application')]
 (output/'SBOM.spdx.json').write_text(json.dumps(spdx,indent=2)+'\n',encoding='utf-8')
-(output/'DEPENDENCIES.json').write_text(json.dumps({'schema':1,'rid':a.rid,'nuget':packages,'nativeSecret':native,'systemDependencies':'Distribution C/C++/ICU/OpenSSL/Kerberos/zlib/GLib/libgcrypt, X11/XCB/ICE/SM/fontconfig, read-only SQLite and a configured Secret Service for future account capabilities. Full desktop/account acceptance remains separate.'},indent=2)+'\n',encoding='utf-8')
+(output/'DEPENDENCIES.json').write_text(json.dumps({'schema':1,'rid':a.rid,'nuget':packages,'nativeSecret':native,'systemDependencies':'Distribution C/C++/ICU/OpenSSL/Kerberos/zlib/GLib/libgcrypt, X11/XCB/ICE/SM/fontconfig, read-only SQLite and a configured Secret Service for account capabilities. Full desktop/account acceptance remains separate.'},indent=2)+'\n',encoding='utf-8')
 stem='CodexSwitch-v'+version+'-preview-'+a.rid
 def finish(artifacts):
  source_version=ET.parse(repository/'Directory.Build.props').findtext('./PropertyGroup/Version')
@@ -123,7 +125,7 @@ icon=stage/'usr/share/icons/hicolor/1024x1024/apps/codex-switch.png';icon.parent
 launcher=stage/'usr/bin/codex-switch';launcher.parent.mkdir(parents=True);launcher.write_text('#!/bin/sh\nexec /opt/codex-switch/CodexSwitch "$@"\n',encoding='utf-8');launcher.chmod(0o755)
 for directory in [stage,*[file for file in stage.rglob('*') if file.is_dir()]]:directory.chmod(0o755)
 deb=output/(stem+'.deb');control=stage/'DEBIAN';control.mkdir(mode=0o755)
-(control/'control').write_text('Package: codex-switch\nVersion: '+version+'~preview.1\nSection: utils\nPriority: optional\nArchitecture: '+('arm64' if a.rid=='linux-arm64' else 'amd64')+'\nMaintainer: Codex Switch contributors <45709904+Gaebabi@users.noreply.github.com>\nHomepage: https://github.com/Gaebabi/codex-switch\nDepends: ca-certificates, tzdata, libc6 (>= 2.39), libgcc-s1, libstdc++6, zlib1g, libgssapi-krb5-2, libssl3t64, libicu74 | libicu76 | libicu78, libglib2.0-0t64 (>= 2.80), libgcrypt20, libsqlite3-0, libx11-6, libxcb1, libice6, libsm6, libfontconfig1\nDescription: Codex Switch Linux source preview\n Complete self-contained preview. Account/handoff actions remain gated.\n No account data, service configuration or credential migration is performed.\n',encoding='utf-8')
+(control/'control').write_text('Package: codex-switch\nVersion: '+version+'~preview.1\nSection: utils\nPriority: optional\nArchitecture: '+('arm64' if a.rid=='linux-arm64' else 'amd64')+'\nMaintainer: Codex Switch contributors <45709904+Gaebabi@users.noreply.github.com>\nHomepage: https://github.com/Gaebabi/codex-switch\nDepends: ca-certificates, tzdata, libc6 (>= 2.39), libgcc-s1, libstdc++6, zlib1g, libgssapi-krb5-2, libssl3t64, libicu74 | libicu76 | libicu78, libglib2.0-0t64 (>= 2.80), libgcrypt20, libsqlite3-0, libx11-6, libxcb1, libice6, libsm6, libfontconfig1\nDescription: Codex Switch Linux source preview\n Complete integration preview; authenticated handoff acceptance is pending.\n No account data, service configuration or credential migration is performed.\n',encoding='utf-8')
 subprocess.run(['dpkg-deb','--root-owner-group','--build',str(stage),str(deb)],check=True,timeout=120)
 shutil.rmtree(control)
 rpmroot=output/'rpmbuild';(rpmroot/'SPECS').mkdir(parents=True)
@@ -138,7 +140,7 @@ BuildArch: {'aarch64' if a.rid=='linux-arm64' else 'x86_64'}
 AutoReqProv: no
 Requires: glibc >= 2.39, libgcc, libstdc++, zlib, krb5-libs, openssl-libs, libicu, glib2, libgcrypt, sqlite-libs, libX11, libxcb, libICE, libSM, fontconfig, ca-certificates, tzdata
 %description
-Complete self-contained preview. Account/handoff actions remain gated.
+Complete self-contained integration preview; authenticated handoff acceptance is pending.
 No account data, service configuration or credential migration is performed.
 %install
 mkdir -p "%{{buildroot}}"
