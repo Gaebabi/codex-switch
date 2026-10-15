@@ -208,7 +208,12 @@ try:
     client_pid, client_window = wait_for(managed_client, 40)
     check('Ordinary Start Codex button launches its own actual approved desktop child', Path('/proc/' + str(client_pid) + '/exe').resolve() == Path('/usr/lib/chatgpt/ChatGPT'))
     run(['xdotool', 'windowactivate', '--sync', client_window])
-    run(['xdotool', 'key', '--window', client_window, 'ctrl+q'])
+    active = run(['xdotool', 'getactivewindow'], capture_output=True, text=True).stdout.strip()
+    if active != client_window:
+        raise RuntimeError('The original managed client must own focus before normal Quit input')
+    # Normal input follows X focus. Explicit-XID key delivery instead sends the
+    # modifier release to an already destroyed window when Quit exits promptly.
+    run(['xdotool', 'key', 'ctrl+q'])
     wait_for(lambda: not Path('/proc/' + str(client_pid)).exists(), 40)
     check('Ordinary managed start keeps authentication empty and allows normal application Quit', not (ordinary_home / 'auth.json').exists())
     run(['xdotool', 'windowactivate', '--sync', window])
