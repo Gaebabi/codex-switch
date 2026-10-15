@@ -1,0 +1,207 @@
+"""Exercise actual installed UI, keyring and sandboxed client in an owned Xfce session."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import platform
+import re
+import secrets
+import selectors
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from xml.sax.saxutils import escape
+from PIL import Image
+
+expected = json.loads(Path('/work/expected.json').read_text())
+results = Path('/results')
+
+def run(command, **kwargs):
+    return subprocess.run(command, check=True, timeout=kwargs.pop('timeout', 20), **kwargs)
+
+def wait_for(probe, timeout=20):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        value = probe()
+        if value:
+            return value
+        time.sleep(0.1)
+    raise TimeoutError('The owned desktop state did not arrive')
+
+if os.geteuid() != 1000 or platform.machine() != 'x86_64' or os.environ.get('CODEX_SWITCH_DISPOSABLE_RUNNER') != 'true':
+    raise SystemExit('Only the declared normal-user disposable native x64 container is allowed')
+if len(sys.argv) == 1:
+    root = Path(tempfile.mkdtemp(prefix='codex-linux-keyring-test-'))
+    for folder in ('home', 'share', 'config', 'cache', 'runtime', 'bus', 'control'):
+        (root / folder).mkdir(mode=0o700)
+    config = root / 'bus.conf'
+    config.write_text('<busconfig><type>session</type><listen>unix:tmpdir=' + escape(str(root / 'bus')) + '</listen><auth>EXTERNAL</auth><policy context="default"><allow user="1000"/><allow send_destination="*"/><allow receive_sender="*"/><allow own="*"/></policy></busconfig>')
+    config.chmod(0o600)
+    env = {'PATH': '/usr/bin:/bin', 'LANG': 'en_US.UTF-8', 'HOME': str(root / 'home'), 'XDG_DATA_HOME': str(root / 'share'), 'XDG_CONFIG_HOME': str(root / 'config'), 'XDG_CACHE_HOME': str(root / 'cache'), 'XDG_RUNTIME_DIR': str(root / 'runtime'), 'GNOME_KEYRING_CONTROL': str(root / 'control'), 'CODEX_HOME': str(root / 'absent-codex'), 'CODEX_SWITCH_LINUX_TEST_ROOT': str(root), 'CODEX_SWITCH_DISPOSABLE_RUNNER': 'true', 'XDG_SESSION_TYPE': 'x11', 'XDG_CURRENT_DESKTOP': 'XFCE', 'XDG_SESSION_DESKTOP': 'xfce', 'GDK_BACKEND': 'x11'}
+    run(['dbus-run-session', '--config-file', str(config), '--', 'xvfb-run', '-a', '-s', '-screen 0 1600x1000x24 -nolisten tcp', sys.executable, __file__, '--inside'], env=env, timeout=450)
+    raise SystemExit(0)
+
+root = Path(os.environ['CODEX_SWITCH_LINUX_TEST_ROOT'])
+if not root.name.startswith('codex-linux-keyring-test-') or root.is_symlink() or root.stat().st_uid != os.geteuid() or not os.environ.get('DBUS_SESSION_BUS_ADDRESS', '').startswith('unix:path=' + str(root / 'bus') + '/'):
+    raise SystemExit('Only the owned private desktop session is allowed')
+checks = []
+images = []
+phases = []
+private_log = (results / 'native-private.log').open('wb')
+
+def check(name, value):
+    if not value:
+        raise RuntimeError('Desktop session contract failed: ' + name)
+    checks.append(name)
+    print(json.dumps({'check': name, 'passed': True}), flush=True)
+
+def gdbus(destination, path, method, *arguments):
+    return run(['gdbus', 'call', '--session', '--dest', destination, '--object-path', path, '--method', method, *arguments], capture_output=True, text=True).stdout.strip()
+
+def phase(name, password=None):
+    value = json.loads(run(['/contracts/vault/CodexSwitch.LinuxVault.Tests', name], input=password, capture_output=True, timeout=90).stdout)
+    check('Actual GNOME Keyring phase: ' + name, value['failed'] == 0 and value['architecture'] == 'X64')
+    phases.append(value)
+
+def owner(daemon):
+    bus = gdbus('org.freedesktop.DBus', '/org/freedesktop/DBus', 'org.freedesktop.DBus.GetNameOwner', 'org.freedesktop.secrets')
+    unique = re.fullmatch(r"\('(:[0-9.]+)',\)", bus)
+    if not unique:
+        raise RuntimeError('Expected private Secret Service owner')
+    pid = gdbus('org.freedesktop.DBus', '/org/freedesktop/DBus', 'org.freedesktop.DBus.GetConnectionUnixProcessID', unique[1])
+    if pid != '(uint32 ' + str(daemon.pid) + ',)':
+        raise RuntimeError('Secret Service was not the original owned provider')
+
+password = secrets.token_urlsafe(32).encode()
+
+def keyring():
+    daemon = subprocess.Popen(['gnome-keyring-daemon', '--foreground', '--unlock', '--components=secrets', '--control-directory', str(root / 'control')], stdin=subprocess.PIPE, stdout=private_log, stderr=private_log)
+    daemon.stdin.write(password)
+    daemon.stdin.close()
+    wait_for(lambda: 'true' in gdbus('org.freedesktop.DBus', '/org/freedesktop/DBus', 'org.freedesktop.DBus.NameHasOwner', 'org.freedesktop.secrets'))
+    owner(daemon)
+    return daemon
+
+def windows(pid):
+    value = subprocess.run(['xdotool', 'search', '--onlyvisible', '--pid', str(pid)], capture_output=True, text=True, timeout=5)
+    return value.stdout.splitlines() if value.returncode == 0 else []
+
+def capture(window, pid, name):
+    check('Capture is bound to original application PID: ' + name, run(['xdotool', 'getwindowpid', window], capture_output=True, text=True).stdout.strip() == str(pid))
+    raw = root / 'capture.xwd'
+    file = results / (name + '.png')
+    run(['xwd', '-silent', '-id', window, '-out', str(raw)])
+    run(['convert', str(raw), '-strip', str(file)])
+    with Image.open(file) as source:
+        rgb = source.convert('RGB')
+        if source.info or rgb.width < 400 or rgb.height < 280 or rgb.entropy() < 1:
+            raise RuntimeError('Invalid/blank/metadata-bearing actual UI capture')
+        image = Image.new('RGB', rgb.size)
+        image.paste(rgb)
+        image.save(file)
+        images.append({'file': file.name, 'width': image.width, 'height': image.height, 'sha256': hashlib.sha256(file.read_bytes()).hexdigest(), 'capture': 'Actual ordinary installed application own XID; no --verify-ui or synthetic account injection'})
+
+daemon = keyring()
+desktop = subprocess.Popen(['xfce4-session'], stdout=private_log, stderr=private_log)
+try:
+    wm = wait_for(lambda: subprocess.run(['xprop', '-root', '_NET_SUPPORTING_WM_CHECK'], capture_output=True, text=True, timeout=5).stdout if 'window id #' in subprocess.run(['xprop', '-root', '_NET_SUPPORTING_WM_CHECK'], capture_output=True, text=True, timeout=5).stdout else None)
+    wm_id = wm.rsplit(' ', 1)[-1].strip()
+    wm_name = run(['xprop', '-id', wm_id, '_NET_WM_NAME'], capture_output=True, text=True).stdout
+    check('Real Xfce session and xfwm4 window manager are running', desktop.poll() is None and 'Xfwm4' in wm_name)
+    check('Real desktop panel is running', run(['pgrep', '-u', str(os.getuid()), '-x', 'xfce4-panel'], capture_output=True).stdout.strip() != b'')
+    check('No global .NET host/SDK/runtime is installed', shutil.which('dotnet') is None and not Path('/usr/share/dotnet').exists())
+    markers = {root / 'absent-codex/auth.json': b'Owned synthetic invalid authentication marker\x00\xff', root / 'data/preserved/accounts.vault': b'Owned synthetic preserved opaque vault marker\x00\xff'}
+    for path, value in markers.items():
+        path.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
+        path.write_bytes(value)
+        path.chmod(0o600)
+    phase('roundtrip')
+    phase('concurrent')
+    alias = gdbus('org.freedesktop.secrets', '/org/freedesktop/secrets', 'org.freedesktop.Secret.Service.ReadAlias', 'default')
+    collection = re.search(r"'(/org/freedesktop/secrets/collection/[^']+)'", alias)[1]
+    gdbus('org.freedesktop.secrets', '/org/freedesktop/secrets', 'org.freedesktop.Secret.Service.Lock', "['" + collection + "']")
+    phase('locked')
+    phase('unlock', password)
+    owner(daemon)
+    phase('read-after-unlock')
+    original_vault = root / 'data/linux-self-test-protector/accounts.vault'
+    original_hash = hashlib.sha256(original_vault.read_bytes()).hexdigest()
+    daemon.terminate()
+    daemon.wait(timeout=10)
+    daemon = keyring()
+    phase('read-after-restart')
+    check('Provider restart preserves original ciphertext bytes', hashlib.sha256(original_vault.read_bytes()).hexdigest() == original_hash)
+    app = '/opt/codex-switch/CodexSwitch'
+    info = json.loads(run([app, '--package-info'], capture_output=True).stdout)
+    check('Installed candidate version/architecture/runtime match', info['version'] == expected['candidateVersion'] and info['architecture'] == 'X64' and info['runtime'] == '.NET 10.0.13')
+    run([app, '--install-package'], stdout=private_log, stderr=private_log)
+    entry = root / 'share/applications/codex-switch.desktop'
+    run(['desktop-file-validate', str(entry)])
+    run(['gtk-launch', 'codex-switch'], stdout=private_log, stderr=private_log)
+    executable = (root / 'share/codex-switch/current/CodexSwitch').resolve()
+    def find_app():
+        for process in Path('/proc').glob('[0-9]*'):
+            try:
+                if (process / 'exe').resolve() == executable:
+                    ids = windows(int(process.name))
+                    if ids:
+                        return int(process.name), ids[0]
+            except (FileNotFoundError, PermissionError):
+                continue
+        return None
+    pid, window = wait_for(find_app, 30)
+    check('Ordinary desktop entry launches the actual per-user installed program', Path('/proc/' + str(pid) + '/exe').resolve() == executable)
+    run(['xdotool', 'windowactivate', '--sync', window])
+    for width, height in ((500, 360), (600, 420), (800, 600)):
+        run(['xdotool', 'windowsize', '--sync', window, str(width), str(height)])
+        time.sleep(0.6)
+        capture(window, pid, f'ordinary-dark-{width}x{height}')
+    run(['xdotool', 'key', '--window', window, 'F5'])
+    check('Ordinary refresh remains alive without reading opaque credentials', Path('/proc/' + str(pid)).exists())
+    run(['xdotool', 'key', '--window', window, 'ctrl+w'])
+    wait_for(lambda: not Path('/proc/' + str(pid)).exists())
+    check('Ordinary trayless close exits the installed process', not Path('/proc/' + str(pid)).exists())
+    run(['gtk-launch', 'codex-switch'], stdout=private_log, stderr=private_log)
+    pid, window = wait_for(find_app, 30)
+    capture(window, pid, 'ordinary-reopened')
+    run(['xdotool', 'windowactivate', '--sync', window])
+    run(['xdotool', 'key', '--window', window, 'ctrl+w'])
+    wait_for(lambda: not Path('/proc/' + str(pid)).exists())
+    run([str(executable), '--uninstall-package'], stdout=private_log, stderr=private_log)
+    check('Per-user uninstall removes only owned menu/current integration', not entry.exists() and not (root / 'share/codex-switch/current').exists())
+    for attempt in (1, 2):
+        home = root / 'codex-linux-desktop-test-session-peer'
+        if not home.exists():
+            home.mkdir(mode=0o700)
+        peer = subprocess.Popen(['/contracts/desktop/CodexSwitch.LinuxDesktop.Tests', '--lifecycle', str(home)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=private_log, text=True)
+        selector = selectors.DefaultSelector()
+        selector.register(peer.stdout, selectors.EVENT_READ)
+        if not selector.select(40):
+            raise TimeoutError('Official sandboxed client did not reach IPC readiness')
+        first = peer.stdout.readline()
+        selector.close()
+        if not first:
+            raise RuntimeError('Official native peer exited before IPC; see private diagnostics')
+        started = json.loads(first)
+        native_pid = started['ownedProcess']
+        native_window = wait_for(lambda: windows(native_pid), 15)[0]
+        capture(native_window, native_pid, 'official-client-start-' + str(attempt))
+        rest, _ = peer.communicate('request-normal-close\n', timeout=45)
+        value = json.loads(rest)
+        check('Actual sandboxed official-client start/IPC/normal close cycle ' + str(attempt), peer.returncode == 0 and value['failed'] == 0 and value['passed'] == 7)
+        phases.append(value)
+    for path, value in markers.items():
+        check('Original opaque synthetic marker bytes/modes preserved', path.read_bytes() == value and path.stat().st_mode & 0o777 == 0o600)
+    phase('read-after-restart')
+    check('Original native-key ciphertext survives desktop/UI/client lifecycle', hashlib.sha256(original_vault.read_bytes()).hexdigest() == original_hash)
+    packages = run(['dpkg-query', '-W', '-f=${Package} ${Version}\n', 'xfce4-session', 'xfwm4', 'xfce4-panel', 'gnome-keyring', 'chatgpt', 'codex-switch'], capture_output=True, text=True).stdout.splitlines()
+    result = {'schema': 1, 'expected': expected, 'passed': len(checks), 'failed': 0, 'checks': checks, 'nativePhases': phases, 'images': images, 'packages': packages, 'kernel': platform.release(), 'ordinaryUi': True, 'accountsUsed': False, 'display': 'X11/Xvfb with actual Xfce session/xfwm4/panel', 'scope': 'Actual normal-user containerized desktop userspace, ordinary installed app/menu/resize/refresh/close/reopen, actual GNOME encrypted storage and sandboxed official-client IPC/normal close/relaunch. No authenticated account switch/Continue, login manager/PAM, booted VM, native GPU, GNOME/KDE/Wayland, ARM64 or supported Release acceptance.'}
+    (results / 'session.json').write_text(json.dumps(result, indent=2) + '\n')
+    print(json.dumps({'passed': len(checks), 'failed': 0, 'images': len(images)}), flush=True)
+finally:
+    for owned in (daemon, desktop):
+        if owned.poll() is None:
+            owned.terminate()
+    private_log.close()
