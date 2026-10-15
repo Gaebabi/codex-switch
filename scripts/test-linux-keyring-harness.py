@@ -14,7 +14,7 @@ class ProviderCleanup(unittest.TestCase):
     def environment(self):
         process=Mock();process.poll.return_value=None
         state={'daemon':process,'a':SimpleNamespace(provider='kwallet5'),'verify_owner':Mock(return_value=':1.1'),
-            'dbus':Mock(return_value=SimpleNamespace(stdout='(0,)')),'ready':Mock(),'subprocess':subprocess}
+            'dbus':Mock(return_value=SimpleNamespace(stdout='(0,)')),'ready':Mock(),'subprocess':subprocess,'kwallet_path':'/modules/kwalletd5'}
         exec(code,state)
         return state,process
 

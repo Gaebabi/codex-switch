@@ -7,6 +7,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using CodexAccountDesk;
 
 if (!OperatingSystem.IsLinux()) throw new PlatformNotSupportedException("Native vault verification requires Linux.");
@@ -37,6 +38,26 @@ try
 {
     switch (phase)
     {
+        case "provider-identity":
+            Check("A declared KDE version and service cannot substitute for the original provider executable/PID", () =>
+            {
+                foreach (var provider in new[] { ("org.kde.kwalletd6", "6.13.0"), ("org.kde.ksecretd", "6.26.0") })
+                    KeyFailure(LinuxKeyFailure.ProviderIncompatible, () => LinuxSecretProvider.UsesLegacyEncoding(provider.Item1, provider.Item2, (uint)Environment.ProcessId, CancellationToken.None));
+            });
+            break;
+        case "provider-refused":
+            Check("An unverified KDE version refuses before reading keys or replacing existing ciphertext", () =>
+            {
+                var before = SecureFiles.ReadPrivateBytes(file); VaultProtection.ReleaseKeys();
+                KeyFailure(LinuxKeyFailure.ProviderIncompatible, () => VaultProtection.Unprotect(before, directory));
+                KeyFailure(LinuxKeyFailure.ProviderIncompatible, () => VaultProtection.Protect(plain, directory));
+                Assert(before.SequenceEqual(SecureFiles.ReadPrivateBytes(file)));
+            });
+            break;
+        case "read-after-provider-check":
+            Check("The original provider and original key reopen existing ciphertext after refused version evidence", () =>
+            { VaultProtection.ReleaseKeys(); Assert(VaultProtection.Unprotect(SecureFiles.ReadPrivateBytes(file), directory).SequenceEqual(plain)); });
+            break;
         case "no-service":
             Check("Missing service refuses encryption without writing a vault", () =>
             { KeyFailure(LinuxKeyFailure.Unavailable, () => VaultProtection.Protect(plain, directory)); Assert(!File.Exists(file)); });

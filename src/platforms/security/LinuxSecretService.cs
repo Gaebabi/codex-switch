@@ -126,6 +126,7 @@ internal static class LinuxSecretService
         private bool IsKWallet(string owner)
         {
             var kwallet5 = false;
+            string? modern = null;
             var names = g_dbus_connection_call_sync(g_dbus_proxy_get_connection(_service), "org.freedesktop.DBus", "/org/freedesktop/DBus",
                 "org.freedesktop.DBus", "ListNames", IntPtr.Zero, IntPtr.Zero, 0, 10000, _cancel, out var error);
             try
@@ -156,8 +157,12 @@ internal static class LinuxSecretService
                                 {
                                     if (Marshal.PtrToStringUTF8(g_variant_get_string(value, out _)) == owner)
                                     {
-                                        if (name is "org.kde.kwalletd6" or "org.kde.ksecretd") throw new LinuxVaultException(LinuxKeyFailure.ProviderIncompatible);
-                                        kwallet5 = true;
+                                        if (name is "org.kde.kwalletd6" or "org.kde.ksecretd")
+                                        {
+                                            if (modern != null && modern != name) throw new LinuxVaultException(LinuxKeyFailure.ProviderIncompatible);
+                                            modern = name;
+                                        }
+                                        else kwallet5 = true;
                                     }
                                 }
                                 finally { g_variant_unref(value); }
@@ -170,7 +175,52 @@ internal static class LinuxSecretService
                 finally { g_variant_unref(array); }
             }
             finally { if (names != IntPtr.Zero) g_variant_unref(names); }
-            return kwallet5;
+            return modern == null ? kwallet5 : VerifiedKdeEncoding(owner, modern);
+        }
+        private bool VerifiedKdeEncoding(string owner, string service)
+        {
+            var parameters = g_variant_ref_sink(g_variant_new_tuple(new[] { g_variant_new_string(owner) }, 1));
+            uint processId;
+            try
+            {
+                var reply = g_dbus_connection_call_sync(g_dbus_proxy_get_connection(_service), "org.freedesktop.DBus", "/org/freedesktop/DBus",
+                    "org.freedesktop.DBus", "GetConnectionUnixProcessID", parameters, IntPtr.Zero, 0, 10000, _cancel, out var error);
+                try
+                {
+                    Checked(error);
+                    if (reply == IntPtr.Zero || Marshal.PtrToStringUTF8(g_variant_get_type_string(reply)) != "(u)") throw Unavailable();
+                    var value = g_variant_get_child_value(reply, 0);
+                    try { processId = g_variant_get_uint32(value); }
+                    finally { g_variant_unref(value); }
+                }
+                finally { if (reply != IntPtr.Zero) g_variant_unref(reply); }
+            }
+            finally { g_variant_unref(parameters); }
+            parameters = g_variant_ref_sink(g_variant_new_tuple(new[] { g_variant_new_string("org.qtproject.Qt.QCoreApplication"), g_variant_new_string("applicationVersion") }, 2));
+            try
+            {
+                var reply = g_dbus_connection_call_sync(g_dbus_proxy_get_connection(_service), owner, "/MainApplication",
+                    "org.freedesktop.DBus.Properties", "Get", parameters, IntPtr.Zero, 0, 10000, _cancel, out var error);
+                try
+                {
+                    Checked(error);
+                    if (reply == IntPtr.Zero || Marshal.PtrToStringUTF8(g_variant_get_type_string(reply)) != "(v)") throw Unavailable();
+                    var child = g_variant_get_child_value(reply, 0);
+                    try
+                    {
+                        var value = g_variant_get_variant(child);
+                        try
+                        {
+                            if (Marshal.PtrToStringUTF8(g_variant_get_type_string(value)) != "s") throw Unavailable();
+                            return LinuxSecretProvider.UsesLegacyEncoding(service, Marshal.PtrToStringUTF8(g_variant_get_string(value, out _)) ?? "", processId, _deadline.Token);
+                        }
+                        finally { g_variant_unref(value); }
+                    }
+                    finally { g_variant_unref(child); }
+                }
+                finally { if (reply != IntPtr.Zero) g_variant_unref(reply); }
+            }
+            finally { g_variant_unref(parameters); }
         }
         public ItemList Search()
         {
@@ -230,6 +280,7 @@ internal static class LinuxSecretService
     internal static int CountDiagnosticKeys(string directory)
     { using var session = new Session(DiagnosticIdentity(directory)); using var items = session.Search(); return items.Items.Count; }
     [DllImport(Secret)] private static extern IntPtr secret_service_get_sync(uint flags, IntPtr cancel, out IntPtr error);
+    [DllImport(Glib)] private static extern IntPtr g_variant_get_variant(IntPtr value);
     [DllImport(Secret)] private static extern IntPtr secret_codex_service_open_sync([MarshalAs(UnmanagedType.LPUTF8Str)] string owner, int kwallet, IntPtr cancel, out IntPtr error);
     [DllImport(Secret)] private static extern IntPtr secret_service_search_sync(IntPtr service, IntPtr schema, IntPtr attributes, uint flags, IntPtr cancel, out IntPtr error);
     [DllImport(Secret)] private static extern int secret_item_get_locked(IntPtr item);

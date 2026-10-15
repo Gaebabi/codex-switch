@@ -1,6 +1,8 @@
 # Current status
 
-Updated 2026-10-15. Source version **1.36.0**; published binaries **1.27.6**.
+Updated 2026-10-15. Source version **1.37.0**; published binaries **1.27.6**.
+
+Issue60 is active: [KWallet6/KSecrets contracts and verification checkpoints](KDE_SECRET_SERVICE.md) pin legacy Debian6.13.0 and normalized6.26.0 on x64/ARM64. The original unique-owner PID and root-owned SHA256-pinned native image determine the representation before key transfer; editable version/service names alone cannot. Local managed build and owned-provider cleanup checks pass; actual provider/account lifecycle, privacy-inspected app captures and exact-head CI/review/merge remain pending. No data/key identity or transport downgrade is introduced.
 
 P8.4b/issue55/PR59 restores positive KWallet5 encrypted storage through the pinned app-private LGPL libsecret0.21.8.2 repair. Codeb2f5b25 passes Verify38689110229 (four jobs) and Linux native38689110385 (actual x64/ARM64): each native target passes KWallet31/15 phases and GNOME29/13 phases,1024 independent encrypted key sessions, legacy-format/original-key preservation and native C vectors/public-key encodings. Existing client120/SQLite26/protocol10/app12 and Windows/Mac regressions pass. [Ten inspected actual own-window after images and native receipts](../evidence/linux-kwallet-storage/README.md) bind exact source/runtime/dimensions/hash/privacy; Windows same-host dark is byte-identical. No system provider/library or existing data identity is changed. Final proof-head six-job CI/review/promotion remains required by PR59; issue55 closure follows that audit. KWallet6/KSecrets, full KDE/Wayland/authenticated GUI/peer/handoff6 and clean packages7 remain separate.
 

@@ -132,6 +132,11 @@ internal sealed class LinuxExecutable : IDisposable
         catch { handle.Dispose(); throw; }
     }
     public void Dispose() => _handle.Dispose();
+    public bool IsProcessImage(uint processId)
+    {
+        using var image = Handle(open("/proc/" + processId + "/exe", CloseOnExec | NonBlocking));
+        return Same(_verified, Inspect(_handle)) && Same(_verified, Inspect(image));
+    }
     [DllImport("libc", SetLastError = true)] private static extern int open([MarshalAs(UnmanagedType.LPUTF8Str)] string path, int flags);
     [DllImport("libc", SetLastError = true)] private static extern int openat(int directory, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, int flags, uint mode);
     [DllImport("libc", SetLastError = true)] private static extern int statx(int directory, [MarshalAs(UnmanagedType.LPUTF8Str)] string path, int flags, uint mask, out Stat value);

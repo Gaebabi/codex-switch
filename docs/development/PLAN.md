@@ -53,6 +53,10 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 - [x] Inspect six exact-source [native Windows/Mac before/after](../evidence/desktop-composition/README.md), complete package dependencies and omission rejection, privacy/metadata/hash receipts and local links. Windows same-host dark comparison is byte-identical.
 - [x] Complete PR47 final-head33c76b7 CI/run38662720762, author self-review and merge to mainaee22785. Issues45/3 are closed after extraction acceptance audit; Linux5/6/7 remain separate completion gates.
 
+### P8.5 KWallet6/KSecrets — issue60
+
+[Declared contracts and acceptance checklist](KDE_SECRET_SERVICE.md) are the active next checkpoint. Preserve the completed KWallet5/GNOME behavior and existing data while proving both legacy and normalized KDE6 providers on actual x64/ARM64. Source1.37.0 selects an embedded native-executable attested contract before key access. Actual provider/normal-account acceptance, privacy-inspected own-window images, checkpoint pushes and six exact-head CI jobs/review/merge remain required.
+
 ### P8.4 Independent KDE provider — issue55
 
 Positive KWallet5 checkpoint PR59/codeb2f5b25: actual Ubuntu24.04 x64/ARM64 passes KWallet31/15 phases and GNOME29/13 phases,1024 encrypted sessions and existing CADL1/original-key preservation, exact-source native C vectors and all six CI jobs. [Program evidence and native receipts](../evidence/linux-kwallet-storage/README.md). Final proof-head CI, author review and merge remain before closing the declared KWallet5 acceptance. KWallet6/KSecrets and full KDE/Wayland/handoff/packages remain separate.

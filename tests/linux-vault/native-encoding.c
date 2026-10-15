@@ -20,6 +20,12 @@ int main (void)
     g_assert_true (codex_derive_session_key (gnome, ikm));
     g_assert_cmpmem (gnome->key, 16, gnome_reference, 16);
     g_bytes_unref (ikm); _secret_session_free (kde); _secret_session_free (gnome);
+    SecretSession *ksecrets = g_new0 (SecretSession, 1);
+    ikm = g_bytes_new (padded, sizeof padded);
+    g_assert_true (codex_derive_session_key (ksecrets, ikm));
+    g_assert_cmpmem (ksecrets->key, 16, gnome_reference, 16);
+    g_bytes_unref (ikm); _secret_session_free (ksecrets);
+    guint high_bit_legacy = 0, high_bit_normalized = 0;
     for (guint i = 0; i < 1024; i++) {
         SecretSession *session = g_new0 (SecretSession, 1);
         session->codex_kwallet = i % 2;
@@ -31,9 +37,15 @@ int main (void)
         g_assert_nonnull (encoded);
         g_assert_cmpuint (length, ==, session->codex_kwallet ? 129 : 128);
         if (session->codex_kwallet) g_assert_cmpuint (encoded[0], ==, 0);
+        if (encoded[length - 128] & 0x80) {
+            if (session->codex_kwallet) high_bit_legacy++;
+            else high_bit_normalized++;
+        }
         g_variant_unref (bytes); g_variant_unref (wrapped); g_variant_unref (request);
         _secret_session_free (session);
     }
-    g_print ("Native encoding: RFC5869 KDE leading-zero vector, unchanged GNOME derivation, 1024 unsigned/sign-safe public keys passed.\n");
+    g_assert_cmpuint (high_bit_legacy, >, 0);
+    g_assert_cmpuint (high_bit_normalized, >, 0);
+    g_print ("Native encoding: RFC5869 legacy KDE and normalized KSecrets leading-zero vectors, unchanged GNOME derivation, 1024 unsigned/sign-safe public keys including high bits passed.\n");
     return 0;
 }
