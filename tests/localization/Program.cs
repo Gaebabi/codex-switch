@@ -33,12 +33,12 @@ Check("Both app policies and catalogues live in one UI-neutral assembly", () =>
         System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Instance)).Any(m => m.IsDefined(typeof(System.Runtime.InteropServices.DllImportAttribute), false)));
 });
 if (OperatingSystem.IsLinux())
-    Check("Linux vault defaults use a POSIX root while unverified client discovery refuses", () =>
+    Check("Linux vault defaults use a POSIX root and unknown package metadata refuses", () =>
     {
         var data = new VaultData(); Assert(data.Drives.Count == 1 && data.Drives[0].Root == "/" && data.Drives[0].Label == "/");
         var rejected = false;
-        try { RuntimeLocator.FindAsync(System.Threading.CancellationToken.None).GetAwaiter().GetResult(); }
-        catch (PlatformNotSupportedException) { rejected = true; }
+        try { LinuxClientDiscovery.VerifyPackageStatus("", "unverified", "unknown"); }
+        catch (IOException) { rejected = true; }
         Assert(rejected);
     });
 else if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())

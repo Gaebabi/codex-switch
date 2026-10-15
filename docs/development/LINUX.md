@@ -1,5 +1,15 @@
 # Linux implementation and verification
 
+## Source1.40.0 ordinary integration — issue74 / PR75
+
+Ordinary account/usage actions use the verified client and existing encrypted vault. The selected context must already allow ChatGPT **file** credentials; the app does not rewrite backend/login/workspace policy. Use **Start Codex** in the title bar before working so the original process has a verified in-memory launch receipt. An external or previously unmanaged client must be quit normally first. Closing this utility leaves Codex running; restarting the utility requires a new managed start before desktop handoff.
+
+Manual Switch uses the shared encrypted checkpoint coordinator: discover active chats, verify date-prefixed names, normally quit only the original client and wait for its descendants, back up/apply the selected login, start the approved client in the same home, open the original thread IDs and send one Continue only when the existing eligible-idle policy allows it. Each thread's cwd is checked against actual upstream context policy. Uncertain sends are retained for recovery without automatic repetition. Real two-account active-identity/settings/inference/Continue acceptance is still pending; source integration and offline contracts are not that acceptance.
+
+For a separately trusted CLI, supply both `--codex-cli <absolute native executable>` and `--codex-cli-sha256 <exact SHA256>`. `--client-context <existing directory>` selects upstream effective project policy. CLI-only mode exposes accounts/usage and credential application, never desktop restart/chat resumption; any running approved desktop still prevents application. No shell, cross-home synchronization or host credential import is used. Normal Linux hardware temperature/resource telemetry remains unavailable.
+
+The older source checkpoints below describe their capture-time gates, before ordinary integration. Unsigned packages and supported Linux Release/full desktop acceptance remain separate.
+
 Source1.39.0 adds controlled normal X11 close and [complete Linux preview package candidates](LINUX_PACKAGES.md) in issue66/PR67. Native architecture, fresh installed-app/data-preservation and supported-OS CI are required before that scoped promotion. Ordinary account/handoff UI remains gated; no supported account-switching Linux Release is claimed.
 
 Source1.38.0 adds [native desktop IPC identity and controlled launch](LINUX_IPC.md), checkpoint62. Actual peer-bound pidfd/image/resource and private socket checks precede IPC; erased startup metadata needs original managed-launch provenance. This is independent of normal desktop shutdown, authenticated handoff and installation acceptance, which remain required in5/6/7. Account/handoff UI remains gated.

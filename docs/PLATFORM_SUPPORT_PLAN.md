@@ -12,6 +12,8 @@ The first core part is now merged as [PR28](https://github.com/Gaebabi/codex-swi
 
 ## Current support
 
+Source1.40.0/issue74/PR75 implements ordinary Linux account/usage, explicit checksum CLI-only mode and managed metadata/shutdown/relaunch/thread-open into the shared encrypted switch/recovery/eligible-Continue coordinator. Offline Docker contracts and own-window screenshots are its scoped verification; real two-account identity/settings/inference/resumption remains pending in6, and full desktop/accessibility/Release promotion remains in7. Earlier source1.39 checkpoint descriptions retain their historical scope.
+
 | Environment | Package | Evidence boundary |
 | --- | --- | --- |
 | Windows x64 | 1.27.6 self-contained ZIP | 93 internal / 23 isolated SQLite-WAL checks; live client acceptance is separate |

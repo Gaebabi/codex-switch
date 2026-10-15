@@ -62,6 +62,8 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
     }
     public async Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken cancellation)
     {
+        if (OperatingSystem.IsLinux() && (_service.LinuxDesktop == null || !_service.LinuxDesktop.RequireOwnedOrStopped(cancellation)))
+            throw new LinuxDesktopOwnershipException();
         var before = await RequestMetadataAsync("thread/read", new { threadId = chat.Id, includeTurns = false }, cancellation);
         await _service.CheckThreadContextAsync(before.GetProperty("thread"), _service.CurrentKey, cancellation);
         chat.OriginalTitle = JsonValue.String(before.GetProperty("thread"), "name") ?? chat.OriginalTitle;

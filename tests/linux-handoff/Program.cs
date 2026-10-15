@@ -16,7 +16,11 @@ var root = Path.GetFullPath(args[0]); LinuxPrivateFiles.CreateDirectory(root);
 var checks = new List<string>();
 using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(180)); var token = deadline.Token;
 void Assert(bool condition) { if (!condition) throw new InvalidOperationException("Linux handoff contract failed."); }
-async Task Check(string name, Func<Task> action) { await action(); checks.Add(name); }
+async Task Check(string name, Func<Task> action)
+{
+    Console.Error.WriteLine("Checking: " + name);
+    await action(); checks.Add(name);
+}
 string Home(string name)
 {
     var home = Path.Combine(root, name); LinuxPrivateFiles.CreateDirectory(home);

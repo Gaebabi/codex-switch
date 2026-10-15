@@ -15,7 +15,7 @@ Codex 계정을 전환하고, 재개 가능한 미완료 로컬 작업을 자동
 
 **Linux:** [서명되지 않은 설치·UI 미리보기 후보](development/LINUX_PACKAGES.md)를 정식 계정 전환 지원과 구분해 검증합니다. [지원 계획](PLATFORM_SUPPORT_PLAN.md) / [이슈 #1](https://github.com/Gaebabi/codex-switch/issues/1). 실제 계정 전환·자동 재개와 전체 데스크톱 검증은 진행 중이며, 다양한 언어·배포판·접근성 관련 기여를 환영합니다.
 
-소스1.39.1의 [Linux 저장소/UI 미리보기](development/LINUX.md)는 x64·ARM64의 전체 tar.gz·deb·rpm 후보와 사용자별 설치·업데이트·제거를 제공합니다. [로컬 데스크톱 검증](development/LINUX_DESKTOP_SESSION.md)에는 설치본의 자기 제거 결과 출력도 포함됩니다. 기본 계정·채팅 재개 기능은 실제 인증 검증이 끝날 때까지 비활성화되며, 정식 Linux 계정 전환 릴리즈가 아닙니다.
+소스1.40.0의 [Linux 계정·데스크톱 통합 미리보기](development/LINUX.md)는 기존 암호화 전환·복구·재개 흐름을 연결합니다. 작업 전에 앱에서 Codex를 시작하며, 계정 전환은 수동입니다. 기존 file 인증 정책과 검증된 설치본이 필요합니다. 명시적 체크섬의 CLI 전용 모드는 계정·사용량 기능만 제공합니다. [전체 설치 후보](development/LINUX_PACKAGES.md)는 미리보기이며, 실제 두 계정의 전환·재개 및 다양한 데스크톱 검증은 남아 있습니다.
 
 1. Windows는 전체 패키지의 `CodexSwitch.exe`를 실행하세요. Mac은 `Install.command`로 설치한 뒤 **Codex Switch.app**을 여세요. [빌드와 설치](INSTALL.md)
 2. 타이틀바의 **+**로 계정을 추가하세요. Windows에서 현재 로그인은 **↻**를 우클릭해 가져올 수 있습니다.
