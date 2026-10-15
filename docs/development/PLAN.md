@@ -16,6 +16,8 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 
 ### Remaining delivery checkpoints — issues5/6/7, resumed2026-10-15
 
+Issue76 continues desktop acceptance with an owner-operated isolated Linux browser/remote screen. The owner now offers direct authentication in that screen. Verify loopback-only access and normal native keyring setup first; capture no authentication screens and keep credentials out of host mounts, CI and GitHub. Checkpoint the verified runner, then record actual two-account identity/settings/one-Continue and recovery separately. Full booted desktop/Wayland/architecture gates remain independent.
+
 Issue74/PR75 implements ordinary Linux integration in source1.40.0: account/usage UI, explicit checksum CLI-only selection, owned startup, production metadata/context policy, normal shutdown/relaunch/thread-open and the existing encrypted checkpoint/eligible one-Continue coordinator. Checkpoints A/B pass at coded0893e5a:42 local Docker checks/36 overlapping native assertions, eight production contracts and [eight inspected actual app images](../evidence/linux-account-handoff/README.md), including observed-ready ordinary UI and native Start Codex button input. Checkpoint C requires exact-head six-job CI, author self-review and expected-SHA promotion, recorded in PR75. Real two-account identity/inference/resumption, full GNOME/KDE/Wayland/accessibility and supported Release acceptance remain parent5/6/7 gates. No personal home or credentials enter Docker.
 
 The owner has no separate Linux test accounts/environment yet and requests implementation, isolated native verification and package candidates first. Real authenticated account acceptance remains pending; public CI must not receive account credentials.

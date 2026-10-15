@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "passed": 8,
+  "failed": 0,
+  "checks": [
+    "Existing account vault retains the CADL1 encrypted format",
+    "The owner registered exactly one real account through ordinary Linux login",
+    "Existing encrypted profile and actual active file credential identity match",
+    "Actual approved upstream native client permits file credentials in this context",
+    "Actual native account/read confirms ChatGPT login and the stored owner identity",
+    "Actual authenticated rate-limit response parses through the production usage model",
+    "Original keyring key reopens the encrypted profile without a migration",
+    "The read-only probe leaves the active credential identity unchanged"
+  ],
+  "realAccounts": 1,
+  "twoAccountSwitchVerified": false,
+  "automaticContinuationVerified": false,
+  "credentialsExported": false,
+  "scope": "Owner-authorized one-account Linux native login/vault/policy/account/read/usage checks; no switching or turn submission.",
+  "candidateRevision": "d0893e5a593db31d37052bf8d9a6999656b776b8",
+  "sourceVersion": "1.40.0",
+  "upstreamVersion": "26.1007.71326",
+  "architecture": "X64",
+  "environment": "Debian13/Xfce/X11 userspace on local Docker Desktop; original sandboxed upstream client",
+  "evidencePrivacy": "All account/chat/device/status content irreversibly replaced with solid pixels before export. No image metadata, credentials or personal screen exported.",
+  "beforeImage": {
+    "file": "before.png",
+    "width": 618,
+    "height": 483,
+    "sha256": "202713c2103b20787ef30a6956958604a26037ee6fb78eb239e585e79192d4a5"
+  },
+  "initialMemoryLimitBytes": 3221225472,
+  "observedOomKillsAtInitialLimit": 6,
+  "correctedMemoryLimitBytes": 4294967296,
+  "observedOomKillsAfterCorrection": 0,
+  "registeredAccountsPreserved": true,
+  "probeSourceSha256": "48035c9a5c6de73f6e853f21ea70ec6e589bf3bb9181da6ee45fc519c801fe5f"
+}
