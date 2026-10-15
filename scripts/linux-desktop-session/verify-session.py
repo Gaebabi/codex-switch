@@ -195,6 +195,21 @@ try:
     run(['xdotool', 'windowactivate', '--sync', window])
     run(['xdotool', 'key', '--window', window, 'ctrl+w'])
     wait_for(lambda: not Path('/proc/' + str(pid)).exists())
+    cli_home = root / 'ordinary-cli-only'
+    cli_home.mkdir(mode=0o700)
+    (cli_home / 'config.toml').write_text('cli_auth_credentials_store = "file"\nanalytics.enabled = false\n')
+    (cli_home / 'config.toml').chmod(0o600)
+    cli = Path('/usr/lib/chatgpt/resources/codex')
+    cli_ui = subprocess.Popen([str(executable), '--codex-home', str(cli_home), '--codex-cli', str(cli), '--codex-cli-sha256', hashlib.sha256(cli.read_bytes()).hexdigest()], stdout=private_log, stderr=private_log)
+    pid, window = wait_for(find_app, 30)
+    check('Ordinary checksum-selected CLI-only UI launches without a desktop or authentication', pid == cli_ui.pid and not (cli_home / 'auth.json').exists())
+    run(['xdotool', 'windowsize', '--sync', window, '800', '600'])
+    time.sleep(1)
+    capture(window, pid, 'ordinary-cli-only-800x600')
+    run(['xdotool', 'windowactivate', '--sync', window])
+    run(['xdotool', 'key', '--window', window, 'ctrl+w'])
+    cli_ui.wait(timeout=30)
+    check('Ordinary CLI-only trayless close preserves its empty auth home', cli_ui.returncode == 0 and not (cli_home / 'auth.json').exists())
     removed = json.loads(run([str(executable), '--uninstall-package'], capture_output=True).stdout)
     check('Fresh installed self-uninstall returns successful JSON through redirected output', removed['uninstalled'] is True)
     check('Per-user uninstall removes only owned menu/current integration', not entry.exists() and not (root / 'share/codex-switch/current').exists())
@@ -261,7 +276,7 @@ try:
     phase('read-after-restart')
     check('Original native-key ciphertext survives desktop/UI/client lifecycle', hashlib.sha256(original_vault.read_bytes()).hexdigest() == original_hash)
     packages = run(['dpkg-query', '-W', '-f=${Package} ${Version}\n', 'xfce4-session', 'xfwm4', 'xfce4-panel', 'gnome-keyring', 'chatgpt', 'codex-switch'], capture_output=True, text=True).stdout.splitlines()
-    result = {'schema': 1, 'expected': expected, 'passed': len(checks), 'failed': 0, 'checks': checks, 'nativePhases': phases, 'images': images, 'packages': packages, 'kernel': platform.release(), 'ordinaryUi': True, 'accountsUsed': False, 'display': 'X11/Xvfb with actual Xfce session/xfwm4/panel', 'scope': 'Actual normal-user containerized desktop userspace, ordinary installed app/menu/resize/refresh/close/reopen, actual GNOME encrypted storage and sandboxed official-client IPC/normal close/relaunch. No authenticated account switch/Continue, login manager/PAM, booted VM, native GPU, GNOME/KDE/Wayland, ARM64 or supported Release acceptance.'}
+    result = {'schema': 1, 'expected': expected, 'passed': len(checks), 'failed': 0, 'checks': checks, 'nativePhases': phases, 'images': images, 'packages': packages, 'kernel': platform.release(), 'ordinaryUi': True, 'accountsUsed': False, 'fictionalCredentialsInContracts': True, 'display': 'X11/Xvfb with actual Xfce session/xfwm4/panel', 'scope': 'Actual normal-user containerized desktop userspace; ordinary installed account/CLI-only UI, resize/refresh/close/reopen, GNOME encrypted storage, fictional local auth/coordinator/recovery/context policy, actual offline CLI metadata and managed desktop discovery/thread-open/normal close/relaunch. No authenticated account switch/Continue, login manager/PAM, booted VM, native GPU, GNOME/KDE/Wayland, ARM64 desktop or supported Release acceptance.'}
     (results / 'session.json').write_text(json.dumps(result, indent=2) + '\n')
     print(json.dumps({'passed': len(checks), 'failed': 0, 'images': len(images)}), flush=True)
 finally:
