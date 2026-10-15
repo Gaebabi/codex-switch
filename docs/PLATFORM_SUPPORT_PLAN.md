@@ -2,7 +2,7 @@
 
 Tracking [#1](https://github.com/Gaebabi/codex-switch/issues/1). Updated 2026-10-15. Resumed checkpoints and reviewed native evidence are tracked in [PR27](https://github.com/Gaebabi/codex-switch/pull/27). Account switching and safe automatic continuation are the core product; a window that launches is not evidence of either capability.
 
-The owner resumed work toward the complete remaining roadmap. [P6–P10 delivery gates](development/PLAN.md#multiplatform-delivery-goal--resumed2026-10-15) start with completed [native security extraction37/PR38](https://github.com/Gaebabi/codex-switch/pull/38) and current [client extraction39/PR40](https://github.com/Gaebabi/codex-switch/pull/40), followed by remaining provider boundaries3, Linux trust5, handoff6 and packages7. Every part receives a scoped issue/PR, checkpoint push and actual application evidence. Finishing a provider extraction does not complete Linux support. Current source1.31.1 and published downloads1.27.6 remain distinct.
+The owner resumed work toward the complete remaining roadmap. [P6–P10 delivery gates](development/PLAN.md#multiplatform-delivery-goal--resumed2026-10-15) include completed [security37/PR38](https://github.com/Gaebabi/codex-switch/pull/38) and [client39/PR40](https://github.com/Gaebabi/codex-switch/pull/40), current [protocol/SQLite41/PR42](https://github.com/Gaebabi/codex-switch/pull/42), then remaining resources3, Linux trust5, handoff6 and packages7. Every part receives a scoped issue/PR, checkpoint push and actual application evidence. Finishing provider extraction does not complete Linux support. Current source1.31.2 and published downloads1.27.6 remain distinct.
 
 Runtime issue4 is completed by merged PR27: source1.30.0/.NET10.0.13, native Windows x64 and macOS15 arm64/Intel app-window evidence, complete runtime/package inspection and four-job reviewed-head CI. Core issue3 starts with a shared UI-neutral project in source1.30.1; native integration-provider boundaries and Linux5/6/7 remain open. Public binaries remain1.27.6 until separately released.
 
@@ -44,6 +44,8 @@ src/macos/           Mac Avalonia application and native UI integration
 src/core/            single UI-neutral domain/presentation/catalogue project
 src/platforms/security/ native key/protection/private-file assembly
 src/platforms/client/ native desktop discovery/lifecycle/peer trust assembly
+src/platforms/protocol/ Codex RPC/IPC/session/queue services
+src/platforms/sqlite/ independent native read-only database assembly
 src/shared/          linked integration services and existing platform adapters
 assets/              canonical brand and Mac icons
 resources/           shared visual tokens/icons
@@ -62,8 +64,8 @@ docs/evidence/       sanitized issue/PR screenshots
 | --- | --- |
 | `src/platforms/client/RuntimeLocator.cs`, `DesktopShutdown.cs` | Add verified Linux client capabilities and confirmed normal shutdown beyond the current supported providers |
 | `src/platforms/security/VaultProtection.cs` | Linux is rejected today; add an OS-held key provider with reviewed encrypted format/migration |
-| `src/shared/ReadOnlySqlite.cs` | Resolve Linux SQLite instead of Windows DLL; preserve read-only WAL visibility and database bytes |
-| `src/shared/DesktopSessionMonitor.cs` | Unix sockets exist; add Linux same-UID peer/socket ownership/client identity verification |
+| `src/platforms/sqlite/ReadOnlySqlite.cs` | Add a reviewed Linux SQLite provider after current explicit rejection; preserve read-only WAL visibility and database bytes |
+| `src/platforms/protocol/DesktopSessionMonitor.cs` | Add Linux same-UID peer/socket ownership/client identity verification before allowing the currently rejected IPC start |
 | `src/macos/Program.cs`, `DeskWindow.cs`, native resources/menu | Share UI by composition; Linux must not load AppKit/Mach or require a tray |
 | Hardware/drive collectors and defaults | Implement Linux capabilities/mount selection; unsupported readings remain unknown |
 

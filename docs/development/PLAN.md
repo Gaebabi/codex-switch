@@ -33,7 +33,8 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 
 - [x] Extract RPC/desktop IPC/session/queue projection into `CodexSwitch.Protocol` and native read-only SQLite into `CodexSwitch.Sqlite`. Both apps/tests/rendering consume one implementation. Shared version preserves RPC client version; no UI/circular dependency.
 - [x] Preserve supported algorithms/protocol versions/IDs/filtering/read-only flags/cancellation, and reject unsupported IPC start/SQLite construction before unauthenticated Unix/Windows-library fallback. Local boundary/refusal/corrupt-byte5, Windows93/SQLite23 and both app builds pass. Source1.31.2.
-- [ ] Verify native supported-OS and Ubuntu contracts, package dependency requirements and actual native Windows/Mac before/after. Finish exact-head CI/review/PR promotion before resource separation. Linux5/6/7 remain open.
+- [x] Verify native supported-OS and Ubuntu contracts and [actual native Windows/Mac before/after](../evidence/protocol-sqlite/README.md). Source5520523/run38658393998 passes all four jobs; protocol5 eachOS, Windows93/SQLite23/handoff5 and native Mac SQLite/UI pass. Six selected after PNGs are inspected and metadata/hash checked; Windows dark comparison is byte-identical.
+- [ ] Finish latest-head CI/author review and PR42 promotion before resource separation. Linux5/6/7 remain open.
 
 ## Tooltip style lifetime — issue35
 
