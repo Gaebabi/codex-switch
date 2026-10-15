@@ -1,6 +1,6 @@
 # Current status
 
-Updated 2026-10-15. Source version **1.40.0**; published binaries **1.27.6**.
+Updated 2026-10-15. Source version **1.40.1**; published binaries **1.27.6**.
 
 Issue76 is active: an owner-operated native x64 Debian13/Xfce Docker desktop is reachable through a host-loopback-only, password-protected noVNC screen. It has no host home, credential, Docker-socket or private-screen mounts and no automatic capture. The owner created its native encrypted keyring and logged in directly. Eight bounded native one-account checks pass: existing CADL1/profile/active identity, actual client credential policy, account/read, authenticated rate-limit parsing and original-key reopening. Only one account is available; two-account handoff and Continue remain unverified. A pending second login correctly disabled Add until normal Cancel; the original account was preserved. Provisioning the absent native default collection and normal utility restart resolved initial storage unavailability. Duplicate Linux captions are being corrected through native title ownership, with actual before/after evidence required. The interactive runner is separate from credential-free offline CI. An initial3GiB desktop limit caused six OOM kills;4GiB and stopping only the empty owned smoke desktop stabilized it. No client sandbox setting was relaxed.
 

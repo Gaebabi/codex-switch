@@ -57,7 +57,7 @@ internal sealed class DeskWindow : Window
         _statusMessage = host.AccountUnavailableReason == null ? "" : Loc.T(host.AccountUnavailableReason);
         _preview = preview;
         Title = host.WindowTitle; Icon = new WindowIcon(Avalonia.Platform.AssetLoader.Open(new Uri("avares://CodexSwitch.Desktop/Assets/app-icon.png"))); Width = 600; Height = 420; MinWidth = 500; MinHeight = 360;
-        ExtendClientAreaToDecorationsHint = true; ExtendClientAreaChromeHints = ExtendClientAreaChromeHints.PreferSystemChrome;
+        ExtendClientAreaToDecorationsHint = !OperatingSystem.IsLinux(); ExtendClientAreaChromeHints = ExtendClientAreaChromeHints.PreferSystemChrome;
         ExtendClientAreaTitleBarHeightHint = 34; WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Build(); UpdateTray();
         Opened += async (_, _) =>
@@ -114,7 +114,8 @@ internal sealed class DeskWindow : Window
         if (_host.AccountUnavailableReason != null) _statusMessage = Loc.T(_host.AccountUnavailableReason);
         _theme.Apply(this);
         FlowDirection = Loc.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
-        var shell = new Grid { RowDefinitions = new RowDefinitions("34,22,*,50") };
+        var nativeTitle = OperatingSystem.IsLinux();
+        var shell = new Grid { RowDefinitions = new RowDefinitions(nativeTitle ? "34,0,*,50" : "34,22,*,50") };
         var titlebar = new Grid { Background = _theme.Brush("chrome"), ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto,Auto,Auto,Auto"), Margin = new Thickness(0) };
         var caption = _theme.Text("Codex Switch", 12); caption.VerticalAlignment = VerticalAlignment.Center;
         var mark = new BrandMark { Width = 18, Height = 18, Ink = _theme.Brush("text") };
@@ -126,7 +127,7 @@ internal sealed class DeskWindow : Window
             if (!args.GetCurrentPoint(dragRegion).Properties.IsLeftButtonPressed) return;
             BeginMoveDrag(args); args.Handled = true;
         };
-        titlebar.Children.Add(dragRegion);
+        if (!nativeTitle) titlebar.Children.Add(dragRegion);
         var startCodex = _startCodex = _theme.IconButton(DeskButtonIconKind.Launch, Loc.T("msg.linux_start_codex"), () => _ = RunAsync(async token =>
         {
             if (!_ready || _switch != null) return;
@@ -163,7 +164,9 @@ internal sealed class DeskWindow : Window
         _cancel.HorizontalAlignment = HorizontalAlignment.Left;
         toolbar.Children.Add(_cancel);
         _sessionValues = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 24, HorizontalAlignment = HorizontalAlignment.Center };
-        toolbar.Children.Add(_sessionValues); Grid.SetRow(toolbar, 1); shell.Children.Add(toolbar);
+        toolbar.Children.Add(_sessionValues);
+        if (nativeTitle) titlebar.Children.Add(toolbar);
+        else { Grid.SetRow(toolbar, 1); shell.Children.Add(toolbar); }
         _accounts = new Grid { Margin = new Thickness(4, 1) };
         _accountScroll = new ScrollViewer { Content = _accounts, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
         _accountScroll.SizeChanged += (_, _) => ResizeAccounts(); Grid.SetRow(_accountScroll, 2); shell.Children.Add(_accountScroll);
