@@ -43,7 +43,7 @@ internal sealed class CodexRpc : IAsyncDisposable
     }
     public async Task InitializeAsync(CancellationToken cancellation)
     {
-        await RequestAsync("initialize", new { clientInfo = new { name = "codex_account_desk", title = "Codex Switch", version = typeof(Program).Assembly.GetName().Version!.ToString(3) } }, cancellation);
+        await RequestAsync("initialize", new { clientInfo = new { name = "codex_account_desk", title = "Codex Switch", version = typeof(CodexRpc).Assembly.GetName().Version!.ToString(3) } }, cancellation);
         await SendAsync(new { method = "initialized" }, cancellation);
     }
     public async Task<JsonElement> RequestAsync(string method, object? parameters, CancellationToken cancellation, TimeSpan? timeout = null)

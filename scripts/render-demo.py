@@ -27,6 +27,7 @@ PROJECT = r'''<Project Sdk="Microsoft.NET.Sdk">
     <ProjectReference Include="../../src/core/CodexSwitch.Core.csproj" />
     <ProjectReference Include="../../src/platforms/security/CodexSwitch.PlatformSecurity.csproj" />
     <ProjectReference Include="../../src/platforms/client/CodexSwitch.DesktopClient.csproj" />
+    <ProjectReference Include="../../src/platforms/protocol/CodexSwitch.Protocol.csproj" />
     <Compile Include="../../src/windows/*.cs;../../src/shared/*.cs" /><Compile Include="DemoRenderer.cs" />
     <EmbeddedResource Include="../../assets/brand/mark.path" LogicalName="CodexAccountDesk.Mark.path" />
     <EmbeddedResource Include="../../assets/brand/mark-body.path" LogicalName="CodexAccountDesk.MarkBody.path" />

@@ -1,6 +1,8 @@
 # Current status
 
-Updated 2026-10-15. Source version **1.31.1**; published binaries **1.27.6**.
+Updated 2026-10-15. Source version **1.31.2**; published binaries **1.27.6**.
+
+P7.1 is complete in merged PR40/main05840d1b after exact-head10b13ec/run38657406694 passed all four jobs and author self-review. Issue39 is closed; parent3 stays open. P7.2/issue41 extracts Codex RPC/desktop IPC/session/queue state into Protocol and the read-only native reader into Sqlite, preserving supported algorithms/versions/IDs and byte-preservation policy. Unsupported IPC start/SQLite construction now reject explicitly. Local Windows93/SQLite23/boundary5 and Windows/Mac builds pass; native images/final-head CI/review are pending. Resource services and Linux5/6/7 remain incomplete; no personal client/account or new Release.
 
 P6 is complete in merged PR38/main878c479a after exact-head22279bd/run38656395280 passed all four jobs and author self-review. Issue37 is closed; issue3 remains open. P7.1 extracts client discovery/lifecycle/peer identity into `CodexSwitch.DesktopClient`, keeps RuntimeHome in integration, removes obsolete Mac linked-source globs and rejects unsupported lifecycle calls before Windows fallback. [Native before/after](../evidence/desktop-client/README.md) and source903fdc0/run38657071888 pass on Windows/macOS15 arm64/Intel; all four jobs include client5Windows/4Mac/7Ubuntu and existing regressions. PR40 owns final-head CI/review/merge. No Linux app, real account/client action or Release is claimed.
 

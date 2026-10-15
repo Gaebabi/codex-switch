@@ -13,6 +13,7 @@
     <InternalsVisibleTo Include="CodexSwitch.Localization.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.Temperatures.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.WindowsHandoff.Tests" />
+    <InternalsVisibleTo Include="CodexSwitch.Protocol" />
     <EmbeddedResource Include="../../localization/packs/*.json;../../localization/index.json;../../localization/legacy-keys.json" WithCulture="false" LogicalName="CodexAccountDesk.LanguagePacks.%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

@@ -28,7 +28,12 @@ internal sealed class DesktopSessionMonitor : IAsyncDisposable
     public event Action<SessionActivity>? Changed;
     public SessionActivity Current => Volatile.Read(ref _current);
     public DesktopSessionMonitor(string home) { _home = home; }
-    public void Start() { _run ??= Task.Run(RunAsync); }
+    public void Start()
+    {
+        if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())
+            throw new PlatformNotSupportedException("Desktop IPC requires a supported peer-verification provider.");
+        _run ??= Task.Run(RunAsync);
+    }
     public DesktopThreadState[] Threads => _ledger.Threads();
     public void RestartDiscovery()
     {

@@ -13,6 +13,8 @@ internal sealed class ReadOnlySqlite : IDisposable
     private IntPtr _database;
     public ReadOnlySqlite(string path)
     {
+        if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())
+            throw new PlatformNotSupportedException("SQLite metadata requires a supported platform provider.");
         var result = sqlite3_open_v2(path, out _database, 0x00000001 | 0x00008000, IntPtr.Zero);
         if (result != 0) { Dispose(); throw new IOException("Cannot open queue metadata database (SQLite " + result + ")."); }
         result = sqlite3_busy_timeout(_database, 250);

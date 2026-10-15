@@ -16,6 +16,7 @@
     <ProjectReference Include="../core/CodexSwitch.Core.csproj" />
     <ProjectReference Include="../platforms/security/CodexSwitch.PlatformSecurity.csproj" />
     <ProjectReference Include="../platforms/client/CodexSwitch.DesktopClient.csproj" />
+    <ProjectReference Include="../platforms/protocol/CodexSwitch.Protocol.csproj" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
     <Compile Include="../shared/**/*.cs" Link="Shared/%(Filename)%(Extension)" />

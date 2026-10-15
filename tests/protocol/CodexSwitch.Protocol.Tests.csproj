@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><AssemblyName>CodexSwitch.Protocol.Tests</AssemblyName><Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../src/platforms/protocol/CodexSwitch.Protocol.csproj" /></ItemGroup>
+</Project>

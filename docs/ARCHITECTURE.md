@@ -10,6 +10,8 @@ Source1.31.0 adds `src/platforms/security/CodexSwitch.PlatformSecurity.csproj`, 
 
 Source1.31.1 adds `src/platforms/client/CodexSwitch.DesktopClient.csproj` for existing RuntimeLocator/CodexInstallation, normal desktop shutdown, owned-child lifetime and Mac app discovery/lifecycle/peer verification. It references native security helpers, without a UI or core dependency. RuntimeHome stays in integration code. Supported native algorithms/identities remain unchanged; unsupported discovery/running/launch/thread-open/shutdown rejects before any Windows fallback. Both apps/tests/rendering use the same assembly; no sources remain linked from the former `src/platforms/macos` folder. IPC observation, SQLite and resource-provider extraction are still follow-ups.
 
+Source1.31.2 adds `src/platforms/protocol` for CodexRpc, desktop IPC/requests, session ledger and saved/server queue projection. It references core/client/SQLite and owns no UI/account storage. RPC client version reads this assembly's shared managed version; client name/title/protocol arguments stay unchanged. `src/platforms/sqlite` owns the native loader/read-only wrapper with no domain/UI dependency; read-only open/query checks and WAL behavior are preserved. Unsupported IPC start/SQLite construction refuse before unverified Unix or Windows-library fallback. Current supported peer/pipe policies are unchanged; Linux trust is still a separate gate. Resource providers remain to extract.
+
 | Part | Responsibility |
 | --- | --- |
 | `AccountService`, `AccountVault` | Account identity, encrypted storage and asynchronous query/login coordination |
@@ -17,6 +19,7 @@ Source1.31.1 adds `src/platforms/client/CodexSwitch.DesktopClient.csproj` for ex
 | `src/core` | UI-neutral models, quota/forecast, refresh/coordinator policy, language/resource presentation |
 | `src/platforms/security` | UI/domain-independent native key/protection/private-file assembly; no credential migration |
 | `src/platforms/client` | Native client discovery/lifecycle, normal shutdown and Mac peer-identity helper assembly |
+| `src/platforms/protocol`, `src/platforms/sqlite` | Codex RPC/desktop IPC/session/queue services and independent native read-only database wrapper |
 | `DesktopSessionMonitor`, queue stores | Read-only local desktop activity and saved/SQLite queue observations |
 | `HardwareSampler`, `DriveMonitor` | Independent machine-resource and volume collection |
 | `MainWindow`, account/resource panels | Windows WPF UI and shared Burn0 theme |

@@ -20,7 +20,7 @@ errors = []
 version = ET.parse(root / "Directory.Build.props").findtext("./PropertyGroup/Version")
 if not version or not re.fullmatch(r"\d+\.\d+\.\d+", version):
     errors.append("Directory.Build.props: expected one semantic managed version")
-for project in ("src/core/CodexSwitch.Core.csproj", "src/platforms/security/CodexSwitch.PlatformSecurity.csproj", "src/platforms/client/CodexSwitch.DesktopClient.csproj", "src/windows/CodexSwitch.Windows.csproj", "src/macos/CodexSwitch.Mac.csproj"):
+for project in ("src/core/CodexSwitch.Core.csproj", "src/platforms/security/CodexSwitch.PlatformSecurity.csproj", "src/platforms/client/CodexSwitch.DesktopClient.csproj", "src/platforms/protocol/CodexSwitch.Protocol.csproj", "src/platforms/sqlite/CodexSwitch.Sqlite.csproj", "src/windows/CodexSwitch.Windows.csproj", "src/macos/CodexSwitch.Mac.csproj"):
     if ET.parse(root / project).find("./PropertyGroup/Version") is not None:
         errors.append(f"{project}: use the shared managed version")
 with (root / "src/macos/Info.plist").open("rb") as bundle:

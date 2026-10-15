@@ -27,7 +27,13 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 - [x] Move RuntimeLocator/CodexInstallation, normal shutdown, owned-child lifetime and Mac desktop/peer verification into one `CodexSwitch.DesktopClient` project. RuntimeHome remains integration code; no UI/domain project dependency. Source1.31.1.
 - [x] Keep supported-OS algorithm bodies and identities; explicitly reject unsupported desktop running/launch/thread-open/shutdown before a Windows fallback. Local Windows refusal/assembly5 pass.
 - [x] Complete existing native handoff/security/SQLite/app checks and [native Windows/Mac before/after](../evidence/desktop-client/README.md). Source903fdc0/run38657071888 passes all four jobs; client5Windows/4Mac/7Ubuntu and six selected native PNGs are checked. Same-scale Windows dark images are byte-identical.
-- [ ] Complete latest-head CI/author review and PR40 merge. Remaining IPC/SQLite/resource separation and all Linux5/6/7 acceptance stay open.
+- [x] Complete latest-head10b13ec CI/run38657406694, author self-review and PR40 merge to main05840d1b. Remaining IPC/SQLite/resource separation and all Linux5/6/7 acceptance stay open.
+
+### P7.2 protocol/SQLite boundary — issue41
+
+- [x] Extract RPC/desktop IPC/session/queue projection into `CodexSwitch.Protocol` and native read-only SQLite into `CodexSwitch.Sqlite`. Both apps/tests/rendering consume one implementation. Shared version preserves RPC client version; no UI/circular dependency.
+- [x] Preserve supported algorithms/protocol versions/IDs/filtering/read-only flags/cancellation, and reject unsupported IPC start/SQLite construction before unauthenticated Unix/Windows-library fallback. Local boundary/refusal/corrupt-byte5, Windows93/SQLite23 and both app builds pass. Source1.31.2.
+- [ ] Verify native supported-OS and Ubuntu contracts, package dependency requirements and actual native Windows/Mac before/after. Finish exact-head CI/review/PR promotion before resource separation. Linux5/6/7 remain open.
 
 ## Tooltip style lifetime — issue35
 
