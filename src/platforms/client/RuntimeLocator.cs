@@ -16,6 +16,11 @@ internal static class RuntimeLocator
     public static async Task<CodexInstallation> FindAsync(CancellationToken cancellation)
     {
         if (OperatingSystem.IsMacOS()) return await MacDesktop.FindAsync(cancellation);
+        if (OperatingSystem.IsLinux())
+        {
+            using var installation = LinuxClientDiscovery.Open(null, cancellation);
+            return new(installation.Cli.Path, installation.Desktop!.Path);
+        }
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Codex discovery requires a supported platform provider.");
         var desktop = await FindDesktopAsync(cancellation);
         var candidates = new List<string>();
@@ -68,6 +73,7 @@ internal static class RuntimeLocator
     }
     public static bool IsDesktopRunning(string executable)
     {
+        if (OperatingSystem.IsLinux()) return executable.Length != 0 && LinuxDesktopRuntime.Running().Length != 0;
         RequirePlatform();
         if (OperatingSystem.IsMacOS()) return MacDesktop.IsRunning(executable);
         if (executable.Length == 0) return false;

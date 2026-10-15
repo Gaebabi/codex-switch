@@ -6,6 +6,10 @@
   "culture": "en-US",
   "direction": "ltr",
   "strings": {
+    "msg.linux_start_codex": "Start Codex",
+    "msg.linux_desktop_ready": "Use Start Codex here before working. Switch stays manual.",
+    "msg.linux_cli_only": "CLI only: account and usage actions; no desktop chat resumption.",
+    "msg.linux_desktop_unmanaged": "Quit the existing Codex normally, then use Start Codex here. Its current launch cannot be verified.",
     "msg.language": "Language",
     "msg.language_settings": "Language settings",
     "msg.importing_the_current_login": "Importing the current login…",

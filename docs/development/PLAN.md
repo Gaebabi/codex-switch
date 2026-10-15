@@ -16,6 +16,8 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 
 ### Remaining delivery checkpoints — issues5/6/7, resumed2026-10-15
 
+Issue74 implements the ordinary Linux integration in source1.40.0: account/usage UI, explicit checksum CLI-only selection, owned desktop startup, production metadata naming/context-policy checks, normal shutdown/relaunch/thread-open and the existing encrypted checkpoint/eligible one-Continue coordinator. Checkpoint A is implementation/compile; B is isolated offline native Docker integration and actual private-data-free ordinary app images; C is exact-head CI, author self-review and expected-SHA merge. Real two-account identity/inference/resumption, full GNOME/KDE/Wayland/accessibility and supported Release acceptance remain explicit parent5/6/7 gates. No personal home or credentials enter Docker.
+
 The owner has no separate Linux test accounts/environment yet and requests implementation, isolated native verification and package candidates first. Real authenticated account acceptance remains pending; public CI must not receive account credentials.
 
 - [x] P9.1/issue62: authenticate the actual official packaged Linux desktop using private socket ownership, peer-bound pidfd, UID/start/image/resource identity and safe launch context. PR63 is merged to main22fb1017 after exact6cbeae8 passed Verify38701864803 (four) and Linux38701864786 (both actual architectures), author self-review and expected-SHA promotion; trees match and issue62 is closed. [12 inspected actual program images/receipts](../evidence/linux-desktop-peer/README.md) retain codefc324761/native16 per architecture. Managed startup proves provenance after the runtime erases its environment; no guessed environment or numeric-PID fallback.

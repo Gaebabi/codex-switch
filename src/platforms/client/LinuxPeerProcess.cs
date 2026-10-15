@@ -38,7 +38,7 @@ internal sealed class LinuxPeerProcess : IDisposable
         }
         catch { pidfd.Dispose(); throw; }
     }
-    private static string Read(int id, string name, int maximum)
+    internal static string Read(int id, string name, int maximum)
     {
         using var file = new FileStream("/proc/" + id + "/" + name, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
         using var bytes = new MemoryStream(); var buffer = new byte[4096];

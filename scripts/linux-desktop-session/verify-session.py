@@ -143,6 +143,14 @@ try:
     daemon = keyring()
     phase('read-after-restart')
     check('Provider restart preserves original ciphertext bytes', hashlib.sha256(original_vault.read_bytes()).hexdigest() == original_hash)
+    handoff = json.loads(run(['/contracts/handoff/CodexSwitch.LinuxHandoff.Tests', str(root / 'codex-linux-handoff-test-integration')], capture_output=True, timeout=200).stdout)
+    check('Production Linux account/coordinator/metadata/managed desktop integration passes offline', handoff['failed'] == 0 and handoff['passed'] == 7)
+    phases.append(handoff)
+    ordinary_home = root / 'ordinary-codex'
+    ordinary_home.mkdir(mode=0o700)
+    (ordinary_home / 'config.toml').write_text('cli_auth_credentials_store = "file"\nanalytics.enabled = false\n')
+    (ordinary_home / 'config.toml').chmod(0o600)
+    os.environ['CODEX_HOME'] = str(ordinary_home)
     app = '/opt/codex-switch/CodexSwitch'
     info = json.loads(run([app, '--package-info'], capture_output=True).stdout)
     check('Installed candidate version/architecture/runtime match', info['version'] == expected['candidateVersion'] and info['architecture'] == 'X64' and info['runtime'] == '.NET 10.0.13')
@@ -163,6 +171,7 @@ try:
         return None
     pid, window = wait_for(find_app, 30)
     check('Ordinary desktop entry launches the actual per-user installed program', Path('/proc/' + str(pid) + '/exe').resolve() == executable)
+    wait_for(lambda: (root / 'share/CodexAccountDesk/accounts.vault').exists(), 30)
     run(['xdotool', 'windowactivate', '--sync', window])
     for width, height in ((500, 360), (600, 420), (800, 600)):
         run(['xdotool', 'windowsize', '--sync', window, str(width), str(height)])

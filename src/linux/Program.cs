@@ -29,13 +29,13 @@ internal static class Program
             { errorOutput.WriteLine("Package operation failed: " + error.Message); return 1; }
         }
         if (args.Length == 1 && args[0] == "--package-info")
-        { Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { version = typeof(Program).Assembly.GetName().Version!.ToString(3), architecture = RuntimeInformation.ProcessArchitecture.ToString(), runtime = RuntimeInformation.FrameworkDescription, scope = "Linux source preview; ordinary account/handoff actions remain gated." })); return 0; }
+        { Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new { version = typeof(Program).Assembly.GetName().Version!.ToString(3), architecture = RuntimeInformation.ProcessArchitecture.ToString(), runtime = RuntimeInformation.FrameworkDescription, scope = "Linux integration preview; authenticated desktop handoff acceptance remains pending." })); return 0; }
         var data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CodexAccountDesk");
         var home = Environment.GetEnvironmentVariable("CODEX_HOME") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".codex");
         string? evidence = null, queueReport = null, clientReport = null, clientPath = null, clientSha256 = null, clientContext = null; var explicitHome = false;
         for (var i = 0; i < args.Length; i++)
         {
-            if (args[i] == "--help") { Console.WriteLine("CodexSwitch [--data-dir <directory>] [--codex-home <directory>] [--verify-ui <directory> | --verify-queues <report> | --verify-client <private report>]. Headless diagnostics require an explicit --codex-home. Client reports must be outside that home. Use --client-context <directory> to inspect a project. An explicitly trusted CLI additionally requires --codex-cli <native path> --codex-cli-sha256 <SHA256>. Linux account/client/handoff actions remain gated."); return 0; }
+            if (args[i] == "--help") { Console.WriteLine("CodexSwitch [--data-dir <directory>] [--codex-home <directory>] [--verify-ui <directory> | --verify-queues <report> | --verify-client <private report>]. Headless diagnostics require an explicit --codex-home. Client reports must be outside that home. Use --client-context <directory> for a project. CLI-only mode requires --codex-cli <native path> --codex-cli-sha256 <SHA256>. Managed desktop handoff requires the approved installed client, X11/XWayland and Start Codex; authenticated acceptance remains pending."); return 0; }
             if (i + 1 >= args.Length) throw new ArgumentException("Command-line option needs a value.");
             var name = args[i]; var value = args[++i];
             switch (name)
@@ -51,9 +51,8 @@ internal static class Program
                 default: throw new ArgumentException("Unknown command-line option.");
             }
         }
-        if ((clientPath == null) != (clientSha256 == null) || clientPath != null && clientReport == null)
+        if ((clientPath == null) != (clientSha256 == null))
             throw new ArgumentException("An explicit native client path and SHA256 must be selected together for client inspection.");
-        if (clientContext != null && clientReport == null) throw new ArgumentException("A client context requires client inspection.");
         if (clientReport != null)
         {
             if (!explicitHome || evidence != null || queueReport != null) throw new ArgumentException("Client inspection requires an explicit home and cannot be combined with other diagnostic modes.");
@@ -70,7 +69,8 @@ internal static class Program
         {
             LinuxNativeText.Initialize();
             var host = new DesktopHost(data, home, "Codex Switch", new UnavailableLinuxResources(), null, KeyModifiers.Control, "/",
-                new DesktopAppearance("DejaVu Sans", () => true, 8), () => DiagnosticExitCode, PreviewMessage);
+                new DesktopAppearance("DejaVu Sans", () => true, 8), () => DiagnosticExitCode, evidence == null ? null : PreviewMessage,
+                vault => new AccountService(vault, home, linuxClient: clientPath == null ? null : new(clientPath, clientSha256!), contextDirectory: clientContext));
             var builder = AppBuilder.Configure(() => new DeskApp(host, evidence == null ? null : SyntheticDashboard.Accounts(),
                 evidence == null ? null : window => LinuxUiEvidence.RenderAsync(window, evidence))).UsePlatformDetect().LogToTrace();
             if (evidence != null) builder.With(new X11PlatformOptions { RenderingMode = new[] { X11RenderingMode.Software } });

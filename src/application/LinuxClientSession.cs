@@ -90,6 +90,12 @@ internal sealed class LinuxClientSession : IAsyncDisposable
     {
         var policy = await ReadPolicyAsync(cancellation).ConfigureAwait(false); RequireFile(policy, workspace); return policy;
     }
+    internal async Task<JsonElement> MetadataAsync(string method, object parameters, CancellationToken cancellation)
+    {
+        if (method is not ("thread/read" or "thread/name/set")) throw new ArgumentException("Unsupported metadata operation.");
+        await RequireFileAsync(cancellation).ConfigureAwait(false);
+        return await _rpc.RequestAsync(method, parameters, cancellation).ConfigureAwait(false);
+    }
     public async Task<CodexRpc> OpenIsolatedRpcAsync(string home, string? workspace, CancellationToken cancellation)
     {
         await RequireFileAsync(cancellation, workspace).ConfigureAwait(false);

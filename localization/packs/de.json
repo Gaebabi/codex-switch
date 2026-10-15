@@ -6,6 +6,10 @@
   "culture": "de-DE",
   "direction": "ltr",
   "strings": {
+    "msg.linux_start_codex": "Codex starten",
+    "msg.linux_desktop_ready": "Starte Codex vor der Arbeit hier. Der Kontowechsel bleibt manuell.",
+    "msg.linux_cli_only": "Nur CLI: Konten und Nutzung; keine Fortsetzung von Desktop-Chats.",
+    "msg.linux_desktop_unmanaged": "Beende Codex regulär und starte es hier. Der aktuelle Start lässt sich nicht verifizieren.",
     "msg.language": "Sprache",
     "msg.language_settings": "Spracheinstellungen",
     "msg.importing_the_current_login": "Aktuelle Anmeldung wird importiert…",

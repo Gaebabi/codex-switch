@@ -29,6 +29,8 @@ internal sealed class AccountService
     private readonly CancellationTokenSource _shutdown = new();
     private readonly LinuxClientSelection? _linuxClient;
     private readonly string _contextDirectory;
+    internal LinuxDesktopRuntime? LinuxDesktop { get; }
+    internal bool HasLinuxDesktop => LinuxDesktop != null;
     private HashSet<string> _switchTargets = new();
     private TaskCompletionSource<bool>? _switchFinished;
     public AccountService(AccountVault vault, string codexHome, Func<string, CancellationToken, Task>? refreshOperation = null,
@@ -36,6 +38,7 @@ internal sealed class AccountService
     {
         Vault = vault; CodexHome = Path.GetFullPath(codexHome);
         _linuxClient = linuxClient; _contextDirectory = Path.GetFullPath(contextDirectory ?? codexHome);
+        if (OperatingSystem.IsLinux() && linuxClient == null) LinuxDesktop = new(CodexHome);
         _queries = new RefreshCoordinator(refreshOperation ?? RefreshCoreAsync);
         _queries.Changed += () => Changed?.Invoke();
     }
@@ -54,6 +57,7 @@ internal sealed class AccountService
     }
     public async Task InitializeAsync(CancellationToken cancellation)
     {
+        if (OperatingSystem.IsLinux()) LinuxPrivateFiles.CreateDirectory(CodexHome);
         await using var client = await OpenLinuxAsync(cancellation).ConfigureAwait(false);
         var policy = client == null ? null : await client.RequireFileAsync(cancellation).ConfigureAwait(false);
         var installation = client?.Installation ?? await RuntimeLocator.FindAsync(cancellation).ConfigureAwait(false);
@@ -276,7 +280,8 @@ internal sealed class AccountService
             lock (Vault.SyncRoot) workspace = Vault.Data.Accounts.Find(a => a.Key == key)?.AccountId;
             await using var client = await OpenLinuxAsync(cancellation, workspace).ConfigureAwait(false);
             var installation = client?.Installation ?? await RuntimeLocator.FindAsync(cancellation).ConfigureAwait(false);
-            bool Running() => desktopRunning?.Invoke() ?? RuntimeLocator.IsDesktopRunning(installation.DesktopPath);
+            bool Running() => OperatingSystem.IsLinux() ? LinuxDesktopRuntime.Running(cancellation).Length != 0 :
+                desktopRunning?.Invoke() ?? RuntimeLocator.IsDesktopRunning(installation.DesktopPath);
             if (Running()) throw new InvalidOperationException("Codex가 아직 실행 중입니다. 앱 메뉴에서 완전히 종료해 주세요.");
             lock (Vault.SyncRoot)
             {
@@ -304,7 +309,11 @@ internal sealed class AccountService
                 SecureFiles.AtomicWriteText(AuthPath, selectedAuth); selected.RequiresApply = false;
                 SynchronizeCurrentCore(policy); Vault.Save();
             }
-            if (launch) RuntimeLocator.LaunchDesktop(installation.DesktopPath);
+            if (launch)
+            {
+                if (OperatingSystem.IsLinux()) { if (LinuxDesktop != null) await LinuxDesktop.StartAsync(cancellation).ConfigureAwait(false); }
+                else RuntimeLocator.LaunchDesktop(installation.DesktopPath);
+            }
         }
         finally
         {
@@ -328,6 +337,20 @@ internal sealed class AccountService
         Changed?.Invoke();
     }
     public Task StopAsync() { _shutdown.Cancel(); return _queries.CancelAndDrainAsync(); }
+    internal void ReleaseDesktop() => LinuxDesktop?.Dispose();
+    internal Task StartDesktopAsync(CancellationToken cancellation) => LinuxDesktop?.StartAsync(cancellation) ??
+        throw new PlatformNotSupportedException("This client selection has no managed Linux desktop.");
+    internal Task<LinuxClientSession> OpenMetadataSessionAsync(CancellationToken cancellation) =>
+        LinuxClientSession.OpenAsync(CodexHome, _contextDirectory, _linuxClient, cancellation);
+    internal async Task CheckThreadContextAsync(JsonElement thread, string? key, CancellationToken cancellation)
+    {
+        if (!OperatingSystem.IsLinux()) return;
+        var cwd = JsonValue.String(thread, "cwd") ?? throw new InvalidDataException("The Linux thread context is unavailable.");
+        string? workspace;
+        lock (Vault.SyncRoot) workspace = key == null ? null : Vault.Data.Accounts.Single(account => account.Key == key).AccountId;
+        await using var session = await LinuxClientSession.OpenAsync(CodexHome, cwd, _linuxClient, cancellation).ConfigureAwait(false);
+        await session.RequireFileAsync(cancellation, workspace).ConfigureAwait(false);
+    }
     public void CheckCredentialBackend(AccountProfile? target = null)
     {
         RequireLegacySync();
@@ -383,6 +406,7 @@ internal static class UserErrors
 {
     public static string Describe(Exception error)
     {
+        if (error is LinuxDesktopOwnershipException) return Loc.T("msg.linux_desktop_unmanaged");
         if (error is LinuxAccountPolicyException policy) return Loc.T(policy.Failure switch
         {
             LinuxAccountPolicyFailure.WorkspaceMismatch => "msg.linux_account_workspace_policy",

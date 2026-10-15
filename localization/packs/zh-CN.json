@@ -6,6 +6,10 @@
   "culture": "zh-CN",
   "direction": "ltr",
   "strings": {
+    "msg.linux_start_codex": "启动 Codex",
+    "msg.linux_desktop_ready": "开始工作前请在此启动 Codex。账号切换仍需手动操作。",
+    "msg.linux_cli_only": "仅 CLI：提供账号和用量功能，不恢复桌面聊天。",
+    "msg.linux_desktop_unmanaged": "请正常退出现有 Codex，然后在此启动。无法验证当前启动来源。",
     "msg.language": "语言",
     "msg.language_settings": "语言设置",
     "msg.importing_the_current_login": "正在导入当前登录…",

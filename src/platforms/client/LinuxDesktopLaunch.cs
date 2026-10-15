@@ -41,14 +41,7 @@ internal sealed class LinuxDesktopLaunch : IDisposable
             var architecture = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString();
             LinuxExecutable.VerifySystemData("/usr/lib/chatgpt/resources/app.asar", manifest.RootElement.GetProperty("architectures").GetProperty(architecture).GetProperty("asarSha256").GetString()!, cancellation);
             var executable = installation.Desktop!.ExecutionPath;
-            var start = new ProcessStartInfo(executable) { UseShellExecute = false, WorkingDirectory = home, RedirectStandardOutput = true, RedirectStandardError = true };
-            start.Environment.Clear();
-            foreach (var name in new[] { "HOME", "PATH", "LANG", "LC_ALL", "LC_CTYPE", "DISPLAY", "XAUTHORITY", "WAYLAND_DISPLAY", "DBUS_SESSION_BUS_ADDRESS",
-                "XDG_RUNTIME_DIR", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_CURRENT_DESKTOP", "XDG_SESSION_DESKTOP", "XDG_SESSION_TYPE", "DESKTOP_SESSION",
-                "SSH_AUTH_SOCK", "PULSE_SERVER", "PIPEWIRE_REMOTE", "TZ" })
-                if (Environment.GetEnvironmentVariable(name) is string value) start.Environment[name] = value;
-            start.Environment["CODEX_HOME"] = home;
-            LinuxPeerProcess.VerifyEnvironment(start.Environment.Select(entry => entry.Key + "=" + entry.Value).ToArray(), home);
+            var start = CreateStart(executable, home);
             cancellation.ThrowIfCancellationRequested();
             process = Process.Start(start) ?? throw new IOException("The approved Linux desktop could not be started.");
             process.BeginOutputReadLine(); process.BeginErrorReadLine();
@@ -57,6 +50,44 @@ internal sealed class LinuxDesktopLaunch : IDisposable
             return launched;
         }
         catch { process?.Dispose(); installation.Dispose(); throw; }
+    }
+    private static ProcessStartInfo CreateStart(string executable, string home)
+    {
+        var start = new ProcessStartInfo(executable) { UseShellExecute = false, WorkingDirectory = home, RedirectStandardOutput = true, RedirectStandardError = true };
+        start.Environment.Clear();
+        foreach (var name in new[] { "HOME", "PATH", "LANG", "LC_ALL", "LC_CTYPE", "DISPLAY", "XAUTHORITY", "WAYLAND_DISPLAY", "DBUS_SESSION_BUS_ADDRESS",
+            "XDG_RUNTIME_DIR", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_CURRENT_DESKTOP", "XDG_SESSION_DESKTOP", "XDG_SESSION_TYPE", "DESKTOP_SESSION",
+            "SSH_AUTH_SOCK", "PULSE_SERVER", "PIPEWIRE_REMOTE", "TZ" })
+            if (Environment.GetEnvironmentVariable(name) is string value) start.Environment[name] = value;
+        start.Environment["CODEX_HOME"] = home;
+        LinuxPeerProcess.VerifyEnvironment(start.Environment.Select(entry => entry.Key + "=" + entry.Value).ToArray(), home);
+        return start;
+    }
+    internal void VerifyOriginal()
+    {
+        lock (_sync)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_process.HasExited || LinuxPeerProcess.StartTime(Id) != Started || !_installation.Desktop!.IsProcessImage((uint)Id)) throw LinuxPeerProcess.Refused();
+        }
+    }
+    public async Task OpenThreadAsync(string id, CancellationToken cancellation)
+    {
+        if (!Guid.TryParseExact(id, "D", out _)) throw new InvalidDataException("Invalid desktop thread ID.");
+        VerifyOriginal();
+        await using var before = await LinuxDesktopConnection.ConnectAsync(Home, cancellation).ConfigureAwait(false);
+        if (LinuxDesktopConnection.PeerId(before) != Id || _display != Environment.GetEnvironmentVariable("DISPLAY") ||
+            _authority != Environment.GetEnvironmentVariable("XAUTHORITY") || _userHome != Environment.GetEnvironmentVariable("HOME")) throw LinuxPeerProcess.Refused();
+        var start = CreateStart(_installation.Desktop!.ExecutionPath, Home);
+        start.ArgumentList.Add("codex://threads/" + id);
+        cancellation.ThrowIfCancellationRequested();
+        using var request = Process.Start(start) ?? throw new IOException("The approved Linux thread-open process could not be started.");
+        request.BeginOutputReadLine(); request.BeginErrorReadLine();
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(25));
+        await request.WaitForExitAsync(deadline.Token).ConfigureAwait(false);
+        VerifyOriginal();
+        if (request.ExitCode != 0) throw new IOException("The approved Linux desktop did not accept the thread-open request.");
+        before.Flush();
     }
     internal static bool Verify(int id, string home, ulong started, string[] arguments)
     {

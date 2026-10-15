@@ -4,6 +4,7 @@ COPY source.tar /tmp/source.tar
 COPY candidate.tar.gz /tmp/candidate.tar.gz
 RUN tar -xf /tmp/source.tar && mkdir /candidate && tar -xzf /tmp/candidate.tar.gz --strip-components=1 -C /candidate
 RUN dotnet publish tests/linux-desktop/CodexSwitch.LinuxDesktop.Tests.csproj -c Release -r linux-x64 --self-contained true -p:UseSharedCompilation=false -p:CodexSecretDir=/candidate -o /contracts/desktop && dotnet publish tests/linux-vault/CodexSwitch.LinuxVault.Tests.csproj -c Release -r linux-x64 --self-contained true -p:UseSharedCompilation=false -p:CodexSecretDir=/candidate -o /contracts/vault
+RUN dotnet publish tests/linux-handoff/CodexSwitch.LinuxHandoff.Tests.csproj -c Release -r linux-x64 --self-contained true -p:UseSharedCompilation=false -p:CodexSecretDir=/candidate -o /contracts/handoff
 
 FROM debian@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5
 ENV DEBIAN_FRONTEND=noninteractive

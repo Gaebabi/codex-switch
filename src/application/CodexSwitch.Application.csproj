@@ -13,5 +13,6 @@
     <InternalsVisibleTo Include="CodexSwitch.WindowsHandoff.Tests" /><InternalsVisibleTo Include="CodexSwitch.Composition.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.LinuxVault.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.LinuxClient.Tests" />
+    <InternalsVisibleTo Include="CodexSwitch.LinuxHandoff.Tests" />
   </ItemGroup>
 </Project>

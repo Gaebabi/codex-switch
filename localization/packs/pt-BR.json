@@ -6,6 +6,10 @@
   "culture": "pt-BR",
   "direction": "ltr",
   "strings": {
+    "msg.linux_start_codex": "Iniciar Codex",
+    "msg.linux_desktop_ready": "Inicie o Codex aqui antes de trabalhar. A troca de conta continua manual.",
+    "msg.linux_cli_only": "Somente CLI: contas e uso; sem retomada de chats do desktop.",
+    "msg.linux_desktop_unmanaged": "Encerre o Codex normalmente e inicie-o aqui. Não é possível verificar a inicialização atual.",
     "msg.language": "Idioma",
     "msg.language_settings": "Configurações de idioma",
     "msg.importing_the_current_login": "Importando o login atual…",

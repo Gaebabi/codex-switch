@@ -6,6 +6,10 @@
   "culture": "zh-TW",
   "direction": "ltr",
   "strings": {
+    "msg.linux_start_codex": "啟動 Codex",
+    "msg.linux_desktop_ready": "開始工作前請在此啟動 Codex。帳號切換仍需手動操作。",
+    "msg.linux_cli_only": "僅 CLI：提供帳號和用量功能，不恢復桌面聊天。",
+    "msg.linux_desktop_unmanaged": "請正常結束現有 Codex，然後在此啟動。無法驗證目前的啟動來源。",
     "msg.language": "語言",
     "msg.language_settings": "語言設定",
     "msg.importing_the_current_login": "正在匯入當前登入…",

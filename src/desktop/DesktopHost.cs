@@ -7,7 +7,8 @@ internal sealed record DesktopAppearance(string FontFamily, Func<bool> ReducedMo
 
 internal sealed record DesktopHost(string DataDirectory, string CodexHome, string WindowTitle,
     IResourceMonitor Resources, Func<IDesktopMenuBar>? CreateMenuBar, KeyModifiers CommandModifier,
-    string RootVolumeLabel, DesktopAppearance Appearance, Func<int> ExitCode, string? AccountUnavailableReason = null);
+    string RootVolumeLabel, DesktopAppearance Appearance, Func<int> ExitCode, string? AccountUnavailableReason = null,
+    Func<AccountVault, AccountService>? CreateAccountService = null);
 
 internal interface IDesktopMenuBar : IDisposable
 {

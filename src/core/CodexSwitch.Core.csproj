@@ -8,6 +8,7 @@
     <DebugType>none</DebugType>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="CodexSwitch.LinuxHandoff.Tests" />
     <InternalsVisibleTo Include="CodexSwitch" />
     <InternalsVisibleTo Include="CodexSwitch.Demo" />
     <InternalsVisibleTo Include="CodexSwitch.Localization.Tests" />

@@ -6,6 +6,10 @@
   "culture": "ja-JP",
   "direction": "ltr",
   "strings": {
+    "msg.linux_start_codex": "Codex を起動",
+    "msg.linux_desktop_ready": "作業前にここから Codex を起動してください。アカウント切り替えは手動です。",
+    "msg.linux_cli_only": "CLI 専用：アカウントと使用量の操作のみ。デスクトップのチャットは再開しません。",
+    "msg.linux_desktop_unmanaged": "既存の Codex を通常終了し、ここから起動してください。現在の起動元を検証できません。",
     "msg.language": "言語",
     "msg.language_settings": "言語設定",
     "msg.importing_the_current_login": "現在のログインを取り込み中…",
