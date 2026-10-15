@@ -37,7 +37,7 @@ if len(sys.argv) == 1:
     for folder in ('home', 'share', 'config', 'cache', 'runtime', 'bus', 'control'):
         (root / folder).mkdir(mode=0o700)
     config = root / 'bus.conf'
-    config.write_text('<busconfig><type>session</type><listen>unix:tmpdir=' + escape(str(root / 'bus')) + '</listen><auth>EXTERNAL</auth><policy context="default"><allow user="1000"/><allow send_destination="*"/><allow receive_sender="*"/><allow own="*"/></policy></busconfig>')
+    config.write_text('<busconfig><type>session</type><listen>unix:tmpdir=' + escape(str(root / 'bus')) + '</listen><auth>EXTERNAL</auth><servicedir>/usr/share/dbus-1/services</servicedir><policy context="default"><allow user="1000"/><allow send_destination="*"/><allow receive_sender="*"/><allow own="*"/></policy></busconfig>')
     config.chmod(0o600)
     env = {'PATH': '/usr/bin:/bin', 'LANG': 'en_US.UTF-8', 'HOME': str(root / 'home'), 'XDG_DATA_HOME': str(root / 'share'), 'XDG_CONFIG_HOME': str(root / 'config'), 'XDG_CACHE_HOME': str(root / 'cache'), 'XDG_RUNTIME_DIR': str(root / 'runtime'), 'GNOME_KEYRING_CONTROL': str(root / 'control'), 'CODEX_HOME': str(root / 'absent-codex'), 'CODEX_SWITCH_LINUX_TEST_ROOT': str(root), 'CODEX_SWITCH_DISPOSABLE_RUNNER': 'true', 'XDG_SESSION_TYPE': 'x11', 'XDG_CURRENT_DESKTOP': 'XFCE', 'XDG_SESSION_DESKTOP': 'xfce', 'GDK_BACKEND': 'x11'}
     run(['dbus-run-session', '--config-file', str(config), '--', 'xvfb-run', '-a', '-s', '-screen 0 1600x1000x24 -nolisten tcp', sys.executable, __file__, '--inside'], env=env, timeout=450)

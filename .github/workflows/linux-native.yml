@@ -106,6 +106,18 @@ jobs:
           python scripts/package-linux.py --app artifacts/linux-native/${{ matrix.rid }}/previous-app --rid ${{ matrix.rid }} --output artifacts/linux-native/${{ matrix.rid }}/previous-package --tar-only
       - name: Verify installed native app and data-preserving lifecycle on fresh Ubuntu/Debian/Fedora images
         run: python scripts/verify-linux-packages.py --packages artifacts/linux-native/${{ matrix.rid }}/packages --previous artifacts/linux-native/${{ matrix.rid }}/previous-package --rid ${{ matrix.rid }} --output artifacts/linux-native/${{ matrix.rid }}/fresh-packages
+      - name: Verify ordinary installed UI and native lifecycles in a real isolated desktop session
+        if: matrix.rid == 'linux-x64'
+        run: python scripts/run-local-linux-desktop.py --packages artifacts/linux-native/${{ matrix.rid }}/packages --upstream-package artifacts/linux-native/${{ matrix.rid }}/upstream-client.deb --output artifacts/linux-native/${{ matrix.rid }}/desktop-session
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: matrix.rid == 'linux-x64'
+        with:
+          name: desktop-session-linux-x64
+          path: |
+            artifacts/linux-native/${{ matrix.rid }}/desktop-session/results/*.png
+            artifacts/linux-native/${{ matrix.rid }}/desktop-session/results/session.json
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: linux-preview-candidates-${{ matrix.rid }}

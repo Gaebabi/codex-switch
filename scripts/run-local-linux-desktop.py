@@ -56,7 +56,7 @@ output.mkdir(parents=True, mode=0o700)
 context = output / 'context'
 context.mkdir(mode=0o700)
 with (context / 'source.tar').open('wb') as archive:
-    run(['git', 'archive', head, 'src', 'tests', 'Directory.Build.props', 'global.json', 'localization', 'resources', 'assets', 'licenses'], cwd=repository, stdout=archive)
+    run(['git', 'archive', provenance['sourceRevision'], 'src', 'tests', 'Directory.Build.props', 'global.json', 'localization', 'resources', 'assets', 'licenses'], cwd=repository, stdout=archive)
 shutil.copyfile(deb[0], context / 'candidate.deb')
 shutil.copyfile(tar[0], context / 'candidate.tar.gz')
 shutil.copyfile(upstream, context / 'upstream.deb')
