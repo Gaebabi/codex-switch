@@ -4,6 +4,8 @@
 
 Source 1.35.1 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
 
+- [KDE incompatibility refusal and five-target program comparison](linux-kwallet/README.md): source1.35.1; native x64/ARM64 GNOME28 positive contracts and KWallet19 explicit-refusal contracts. Ten inspected native after PNGs and sanitized counts/versions; usable KWallet storage stays pending in issue55.
+
 - [Context-aware Linux account policy and five-target program comparison](linux-account-policy/README.md): source1.35.0, ordinary account API guard/encrypted import checks, native provider/account28 and client/context120 per architecture, plus ten inspected own-window after PNGs. Authenticated GUI/peer/handoff/packages remain separate.
 
 - [Native Linux client inspection and five-target program comparison](linux-client/README.md): source1.34.0, actual x64/ARM64 client94 including native trust14, configuration/managed policy and explicit standalone CLI, plus ten own-window after PNGs. Account/context/IPC/handoff and package acceptance remain separate.

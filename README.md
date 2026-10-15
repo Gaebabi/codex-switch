@@ -21,6 +21,8 @@ Switch Codex accounts, automatically resume eligible unfinished local chats, and
 
 Source1.35.1 contributors can build the [Linux storage/UI preview](docs/development/LINUX.md). Account/client/handoff actions are disabled while their native acceptance remains in progress; it is not a supported Linux release.
 
+KWallet account storage is currently unavailable because encrypted-session compatibility is unresolved. [Verified refusal/data preservation and pending support](docs/evidence/linux-kwallet/README.md) are separate from supported account switching.
+
 1. Use a complete Windows or Mac package. Windows: run `CodexSwitch.exe`. Mac: run `Install.command`, then open **Codex Switch.app**. [Build and install](docs/INSTALL.md)
 2. Select **+** in the title bar to add accounts. On Windows, right-click **↻** to import the current Codex login.
 3. Compare the cards and select **Switch**. Reads refresh every 60 seconds; **↻** or **F5** refreshes immediately.

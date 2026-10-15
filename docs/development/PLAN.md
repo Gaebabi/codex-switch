@@ -55,6 +55,8 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 
 ### P8.4 Independent KDE provider — issue55
 
+Compatibility checkpoint PR58/source1.35.1: native x64/ARM64 code996b4f9 passes GNOME28 positive contracts and KWallet19 explicit-incompatibility/refusal contracts, all six CI jobs and actual source-app screenshots. [Program proof and scope](../evidence/linux-kwallet/README.md). Full positive KWallet acceptance below remains unchecked because repeated binary-key sessions expose upstream encrypted-protocol failures; the guard cannot be removed on a single successful run. Final proof-head CI/review/promotion belongs to PR58.
+
 - [ ] Run the same production32-byte Secret Service/CADL1/private-file contracts against actual KWallet5 on native Ubuntu24.04 x64/ARM64, separately from GNOME. Keep owned private file-socket D-Bus, no activation, isolated HOME/XDG and no personal credentials.
 - [ ] Test missing/locked/in-place native KDE unlock/original PID, orderly provider restart persistence, concurrency/ambiguity/malformed/tamper, bounded timeout/offline and existing ciphertext preservation. Test-only KDE PAM controls never enter production APIs or expose keys.
 - [ ] Retain native account-policy, client/context120, GNOME28, SQLite26/protocol10/source-app12 and Windows/Mac regressions. Attach actual application confirmation/precise scope and source/runtime/architecture/hash/privacy receipts.

@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "revision": "996b4f99e64b61d1b34ba07d6bf4cb8690a21d8d",
+  "results": [
+    {
+      "provider": "gnome",
+      "providerVersion": "46.1-2ubuntu0.2",
+      "providerCompatibility": "verified-storage",
+      "architecture": "X64",
+      "passed": 28,
+      "failed": 0,
+      "phaseCount": 13
+    },
+    {
+      "provider": "kwallet5",
+      "providerVersion": "5.115.0-0ubuntu3",
+      "providerCompatibility": "unavailable",
+      "architecture": "X64",
+      "passed": 19,
+      "failed": 0,
+      "phaseCount": 11
+    },
+    {
+      "provider": "gnome",
+      "providerVersion": "46.1-2ubuntu0.2",
+      "providerCompatibility": "verified-storage",
+      "architecture": "Arm64",
+      "passed": 28,
+      "failed": 0,
+      "phaseCount": 13
+    },
+    {
+      "provider": "kwallet5",
+      "providerVersion": "5.115.0-0ubuntu3",
+      "providerCompatibility": "unavailable",
+      "architecture": "Arm64",
+      "passed": 19,
+      "failed": 0,
+      "phaseCount": 11
+    }
+  ],
+  "scope": "Native Ubuntu24.04 x64/ARM64, private file-socket D-Bus/HOME/XDG. GNOME positive storage/account contracts; KDE incompatibility/refusal only. Qt offscreen and X11/Xvfb app windows do not prove full KDE/Wayland or authenticated account handoff."
+}
