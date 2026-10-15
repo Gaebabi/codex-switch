@@ -18,7 +18,7 @@ The screenshots include only the original application and its own native WM fram
 
 ## Offline installed-app and native setup confirmation
 
-Code960d3d9/candidate1.40.1 and test d4c46ad7 pass [45 offline orchestration checks with36 overlapping native assertions](session.json), including the ordinary **+ → pending login → Cancel** flow at500×360, restored ready controls, three sizes, real light-theme input, normal close/reopen, actual approved client launch/normal Quit, original-key/ciphertext preservation, US/French layouts and eight production handoff/recovery contracts with fictional local credentials. No real account or inference is used in this session. A subsequent final-head CI assertion additionally requires byte-identical encrypted vault contents across login cancellation; that specific strengthened assertion remains pending final CI here.
+Code960d3d9/candidate1.40.1 and test d4c46ad7 pass [45 offline orchestration checks with36 overlapping native assertions](session.json), including the ordinary **+ → pending login → Cancel** flow at500×360, restored ready controls, three sizes, real light-theme input, normal close/reopen, actual approved client launch/normal Quit, original-key/ciphertext preservation, US/French layouts and eight production handoff/recovery contracts with fictional local credentials. No real account or inference is used in this session. [The final local run at test0099cabe](final-local.json) also passes45/36 with byte-identical encrypted vault contents across login cancellation. PR77 records final exact-head CI/artifact validation, author review and merge separately from these capture-time local receipts.
 
 |500×360|600×420|800×600|
 |---|---|---|
