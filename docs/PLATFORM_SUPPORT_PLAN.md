@@ -2,7 +2,7 @@
 
 Tracking [#1](https://github.com/Gaebabi/codex-switch/issues/1). Updated 2026-10-15. Resumed checkpoints and reviewed native evidence are tracked in [PR27](https://github.com/Gaebabi/codex-switch/pull/27). Account switching and safe automatic continuation are the core product; a window that launches is not evidence of either capability.
 
-The owner resumed work toward the complete remaining roadmap. [P6–P10 delivery gates](development/PLAN.md#multiplatform-delivery-goal--resumed2026-10-15) include completed [security37/PR38](https://github.com/Gaebabi/codex-switch/pull/38) and [client39/PR40](https://github.com/Gaebabi/codex-switch/pull/40), current [protocol/SQLite41/PR42](https://github.com/Gaebabi/codex-switch/pull/42), then remaining resources3, Linux trust5, handoff6 and packages7. Every part receives a scoped issue/PR, checkpoint push and actual application evidence. Finishing provider extraction does not complete Linux support. Current source1.31.2 and published downloads1.27.6 remain distinct.
+The owner resumed work toward the complete remaining roadmap. [P6–P10 delivery gates](development/PLAN.md#multiplatform-delivery-goal--resumed2026-10-15) include completed [security37/PR38](https://github.com/Gaebabi/codex-switch/pull/38), [client39/PR40](https://github.com/Gaebabi/codex-switch/pull/40) and [protocol/SQLite41/PR42](https://github.com/Gaebabi/codex-switch/pull/42), current [resource43](https://github.com/Gaebabi/codex-switch/issues/43), then shared desktop composition, Linux trust5, handoff6 and packages7. Every part receives a scoped issue/PR, checkpoint push and actual application evidence. Finishing provider extraction does not complete Linux support. Current source1.31.3 and published downloads1.27.6 remain distinct.
 
 Runtime issue4 is completed by merged PR27: source1.30.0/.NET10.0.13, native Windows x64 and macOS15 arm64/Intel app-window evidence, complete runtime/package inspection and four-job reviewed-head CI. Core issue3 starts with a shared UI-neutral project in source1.30.1; native integration-provider boundaries and Linux5/6/7 remain open. Public binaries remain1.27.6 until separately released.
 
@@ -45,6 +45,7 @@ src/core/            single UI-neutral domain/presentation/catalogue project
 src/platforms/security/ native key/protection/private-file assembly
 src/platforms/client/ native desktop discovery/lifecycle/peer trust assembly
 src/platforms/protocol/ Codex RPC/IPC/session/queue services
+src/platforms/resources/ Windows/Mac resource, drive and temperature services
 src/platforms/sqlite/ independent native read-only database assembly
 src/shared/          linked integration services and existing platform adapters
 assets/              canonical brand and Mac icons

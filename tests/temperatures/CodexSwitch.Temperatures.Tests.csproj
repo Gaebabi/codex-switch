@@ -5,6 +5,7 @@
     <ProjectReference Include="../../src/platforms/security/CodexSwitch.PlatformSecurity.csproj" />
     <ProjectReference Include="../../src/platforms/client/CodexSwitch.DesktopClient.csproj" />
     <ProjectReference Include="../../src/platforms/protocol/CodexSwitch.Protocol.csproj" />
-    <Compile Include="../../src/shared/*.cs;../../src/windows/WindowsDiskTemperature.cs" Link="Product/%(Filename)%(Extension)" />
+    <ProjectReference Include="../../src/platforms/resources/CodexSwitch.Hardware.csproj" />
+    <Compile Include="../../src/shared/*.cs" Link="Product/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

@@ -45,6 +45,7 @@ internal static class WindowsDiskTemperature
     public static TemperatureReading Read(string root)
     {
         if (root.Length != 3 || !char.IsAsciiLetter(root[0]) || root[1..] != ":\\") return TemperatureReading.Missing(TemperatureState.InvalidData);
+        if (!OperatingSystem.IsWindows()) return TemperatureReading.Missing(TemperatureState.PlatformUnsupported, "Windows storage");
         var at = DateTimeOffset.UtcNow;
         var extents = Query(@"\\.\" + root[..2], VolumeDiskExtents, Array.Empty<byte>(), out var error);
         if (extents == null) return Failure(error, "Windows storage", at);

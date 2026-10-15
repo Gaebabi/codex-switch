@@ -54,6 +54,8 @@ Client/provider changes also run `dotnet run --project tests/desktop-client/Code
 
 Protocol/database changes additionally run `dotnet run --project tests/protocol/CodexSwitch.Protocol.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false` and the supported-OS queue/WAL fixtures. Do not point them at a personal home or database.
 
+Resource-provider changes also run `dotnet run --project tests/hardware/CodexSwitch.Hardware.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false`. Native sampling is read-only and non-elevated; do not export device identities/measurements or install drivers to force sensor availability.
+
 ## Privacy and review
 
 Use disposable storage/databases/test accounts. Never stop another person's Codex or switch their real account to test a PR. Report source/build/isolated/native results separately. Screenshots must contain no credentials, private chats, account identities or home paths: irreversibly replace those pixels, then blur the replacement if desired. Strip private metadata and inspect the final export; blur alone is insufficient.

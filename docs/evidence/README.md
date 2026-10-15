@@ -2,7 +2,7 @@
 
 ## Current source evidence
 
-Source 1.31.2 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
+Source 1.31.3 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
 
 - [Codex protocol/read-only SQLite extraction](protocol-sqlite/README.md): native Windows/Mac before/after and protocol/unknown/read-only refusal contracts.
 

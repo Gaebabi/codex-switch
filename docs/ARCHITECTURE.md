@@ -10,7 +10,9 @@ Source1.31.0 adds `src/platforms/security/CodexSwitch.PlatformSecurity.csproj`, 
 
 Source1.31.1 adds `src/platforms/client/CodexSwitch.DesktopClient.csproj` for existing RuntimeLocator/CodexInstallation, normal desktop shutdown, owned-child lifetime and Mac app discovery/lifecycle/peer verification. It references native security helpers, without a UI or core dependency. RuntimeHome stays in integration code. Supported native algorithms/identities remain unchanged; unsupported discovery/running/launch/thread-open/shutdown rejects before any Windows fallback. Both apps/tests/rendering use the same assembly; no sources remain linked from the former `src/platforms/macos` folder. IPC observation, SQLite and resource-provider extraction are still follow-ups.
 
-Source1.31.2 adds `src/platforms/protocol` for CodexRpc, desktop IPC/requests, session ledger and saved/server queue projection. It references core/client/SQLite and owns no UI/account storage. RPC client version reads this assembly's shared managed version; client name/title/protocol arguments stay unchanged. `src/platforms/sqlite` owns the native loader/read-only wrapper with no domain/UI dependency; read-only open/query checks and WAL behavior are preserved. Unsupported IPC start/SQLite construction refuse before unverified Unix or Windows-library fallback. Current supported peer/pipe policies are unchanged; Linux trust is still a separate gate. Resource providers remain to extract.
+Source1.31.2 adds `src/platforms/protocol` for CodexRpc, desktop IPC/requests, session ledger and saved/server queue projection. It references core/client/SQLite and owns no UI/account storage. RPC client version reads this assembly's shared managed version; client name/title/protocol arguments stay unchanged. `src/platforms/sqlite` owns the native loader/read-only wrapper with no domain/UI dependency; read-only open/query checks and WAL behavior are preserved. Unsupported IPC start/SQLite construction refuse before unverified Unix or Windows-library fallback. Current supported peer/pipe policies are unchanged; Linux trust is still a separate gate.
+
+Source1.31.3 adds `src/platforms/resources/CodexSwitch.Hardware.csproj` for existing Windows/Mac resource sampling, Windows temperature providers, drive monitoring and sensor selection. It references core/security helpers, without a UI/client/protocol dependency. Only the unchanged DrivePreference JSON model moves into core; vault defaults and serialization remain integration code. Supported sampling algorithms/intervals/unknown states remain unchanged. Wrong-OS Windows/Mac monitor starts, samplers and WMI refresh reject before native operations; a valid Windows disk root on another OS reports PlatformUnsupported without Celsius. No Linux sensors, drivers or privilege requests are added. System.Management remains pinned10.0.13 in its new owning project.
 
 | Part | Responsibility |
 | --- | --- |
@@ -20,10 +22,11 @@ Source1.31.2 adds `src/platforms/protocol` for CodexRpc, desktop IPC/requests, s
 | `src/platforms/security` | UI/domain-independent native key/protection/private-file assembly; no credential migration |
 | `src/platforms/client` | Native client discovery/lifecycle, normal shutdown and Mac peer-identity helper assembly |
 | `src/platforms/protocol`, `src/platforms/sqlite` | Codex RPC/desktop IPC/session/queue services and independent native read-only database wrapper |
+| `src/platforms/resources` | UI-independent Windows/Mac sampling, drives and native temperature providers |
 | `DesktopSessionMonitor`, queue stores | Read-only local desktop activity and saved/SQLite queue observations |
 | `HardwareSampler`, `DriveMonitor` | Independent machine-resource and volume collection |
 | `MainWindow`, account/resource panels | Windows WPF UI and shared Burn0 theme |
-| `src/macos/`, native service projects | Avalonia UI plus shared security/client services and remaining Mac resource/menu integrations |
+| `src/macos/`, native service projects | Avalonia UI plus shared native services and remaining Mac menu/composition integration |
 
 ## Important contracts
 
@@ -38,7 +41,7 @@ Source1.31.2 adds `src/platforms/protocol` for CodexRpc, desktop IPC/requests, s
 
 ## Verification
 
-Core assembly/resource identity and platform write-failure preservation are checked by the production language API tests. Windows/Mac native screenshot CI still runs the published app after extraction; a successful portable core build does not establish Linux account support. Key provider, lifecycle/discovery, peer-authenticated IPC, SQLite and resource-provider project boundaries remain follow-ups.
+Core assembly/resource identity and platform write-failure preservation are checked by the production language API tests. Windows/Mac native screenshot CI still runs the published app after extraction; a successful portable core build does not establish Linux account support. Security/client/protocol/SQLite/resource projects now own the extracted native services. Shared desktop composition and Linux-specific vault, lifecycle/peer trust, database/resource capabilities and native handoff acceptance remain follow-ups.
 
 [Native program before/after and core contracts](evidence/shared-core/README.md) record the first extraction checkpoint. Complete package inspection also requires all declared project runtime DLLs, including the core; a folder containing only the app/runtime is rejected.
 

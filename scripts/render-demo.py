@@ -23,7 +23,7 @@ PROJECT = r'''<Project Sdk="Microsoft.NET.Sdk">
     <ApplicationManifest>../../src/windows/app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="System.Management" Version="10.0.13" />
+    <ProjectReference Include="../../src/platforms/resources/CodexSwitch.Hardware.csproj" />
     <ProjectReference Include="../../src/core/CodexSwitch.Core.csproj" />
     <ProjectReference Include="../../src/platforms/security/CodexSwitch.PlatformSecurity.csproj" />
     <ProjectReference Include="../../src/platforms/client/CodexSwitch.DesktopClient.csproj" />

@@ -16,7 +16,7 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
   - package-ecosystem: nuget
-    directory: /src/windows
+    directory: /src/platforms/resources
     schedule:
       interval: weekly
     open-pull-requests-limit: 5

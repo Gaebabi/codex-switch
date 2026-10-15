@@ -16,7 +16,11 @@ internal sealed class MacResourceMonitor : IAsyncDisposable
     private HardwareUsage _current = HardwareUsage.Pending;
     public HardwareUsage Current => Volatile.Read(ref _current);
     public event Action? Changed;
-    public void Start() { _run ??= Task.Run(RunAsync); }
+    public void Start()
+    {
+        if (!OperatingSystem.IsMacOS()) throw new PlatformNotSupportedException("Mac resource monitoring requires macOS.");
+        _run ??= Task.Run(RunAsync);
+    }
     private async Task RunAsync()
     {
         using var sampler = new MacResourceSampler(); var history = new HardwareHistory();
@@ -37,11 +41,16 @@ internal sealed class MacResourceSampler : IDisposable
 {
     private const string System = "/usr/lib/libSystem.B.dylib";
     private const string Iokit = "/System/Library/Frameworks/IOKit.framework/IOKit";
-    private readonly uint _host = mach_host_self();
+    private readonly uint _host;
     private uint[]? _lastCpu;
     private GpuResource[] _gpu = Array.Empty<GpuResource>();
     private DateTimeOffset _lastCapacity;
     private readonly Dictionary<string, ulong> _capacities = new();
+    public MacResourceSampler()
+    {
+        if (!OperatingSystem.IsMacOS()) throw new PlatformNotSupportedException("Mac resource sampling requires macOS.");
+        _host = mach_host_self();
+    }
     public HardwareUsage Sample()
     {
         var clock = Stopwatch.StartNew(); var now = DateTimeOffset.UtcNow;

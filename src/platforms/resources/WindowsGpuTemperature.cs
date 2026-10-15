@@ -18,6 +18,7 @@ internal sealed class WindowsGpuTemperature : IDisposable
     private readonly Dictionary<string, TemperatureLimits?> _limits = new();
     public WindowsGpuTemperature()
     {
+        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Windows GPU temperature requires Windows.");
         var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "nvml.dll");
         if (!File.Exists(path)) return;
         _nvml = LoadLibraryExW(path, IntPtr.Zero, 0x900);

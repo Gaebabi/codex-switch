@@ -16,7 +16,11 @@ internal sealed class HardwareResourceMonitor : IAsyncDisposable
     private HardwareUsage _current = HardwareUsage.Pending;
     public HardwareUsage Current => Volatile.Read(ref _current);
     public event Action<HardwareUsage>? Changed;
-    public void Start() { _run ??= Task.Run(RunAsync); }
+    public void Start()
+    {
+        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Windows resource monitoring requires Windows.");
+        _run ??= Task.Run(RunAsync);
+    }
     private async Task RunAsync()
     {
         using var sampler = new HardwareSampler();
@@ -45,6 +49,7 @@ internal sealed class HardwareSampler : IDisposable
     private readonly WindowsWmiTemperature _wmiTemperature = new();
     public HardwareSampler()
     {
+        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Windows resource sampling requires Windows.");
         _openStatus = PdhOpenQueryW(null, IntPtr.Zero, out _query);
         if (_openStatus == 0)
         {

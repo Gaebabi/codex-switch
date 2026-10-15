@@ -15,5 +15,6 @@
     <InternalsVisibleTo Include="CodexSwitch.WindowsHandoff.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.PlatformSecurity.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.DesktopClient" />
+    <InternalsVisibleTo Include="CodexSwitch.Hardware" />
   </ItemGroup>
 </Project>

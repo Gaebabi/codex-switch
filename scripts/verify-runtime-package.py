@@ -20,7 +20,7 @@ deps=json.loads((root/'CodexSwitch.deps.json').read_text(encoding='utf-8'))
 if not deps['runtimeTarget']['name'].endswith('/'+args.rid):raise SystemExit('Runtime identifier mismatch')
 target=deps['targets'][deps['runtimeTarget']['name']]
 project_assets=sorted(asset for key,value in deps['libraries'].items() if value['type']=='project' for asset in target[key].get('runtime',{}))
-if not {'CodexSwitch.Core.dll','CodexSwitch.PlatformSecurity.dll','CodexSwitch.DesktopClient.dll','CodexSwitch.Protocol.dll','CodexSwitch.Sqlite.dll'}.issubset(project_assets) or any(not(root/asset).is_file() for asset in project_assets):
+if not {'CodexSwitch.Core.dll','CodexSwitch.PlatformSecurity.dll','CodexSwitch.DesktopClient.dll','CodexSwitch.Protocol.dll','CodexSwitch.Sqlite.dll','CodexSwitch.Hardware.dll'}.issubset(project_assets) or any(not(root/asset).is_file() for asset in project_assets):
     raise SystemExit('Published project dependencies are incomplete')
 value={'schema':1,'rid':args.rid,'tfm':data['tfm'],'frameworks':frameworks,'files':sum(path.is_file() for path in root.rglob('*')),
     'projectRuntimeAssets':project_assets,

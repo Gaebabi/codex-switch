@@ -34,7 +34,14 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 - [x] Extract RPC/desktop IPC/session/queue projection into `CodexSwitch.Protocol` and native read-only SQLite into `CodexSwitch.Sqlite`. Both apps/tests/rendering consume one implementation. Shared version preserves RPC client version; no UI/circular dependency.
 - [x] Preserve supported algorithms/protocol versions/IDs/filtering/read-only flags/cancellation, and reject unsupported IPC start/SQLite construction before unauthenticated Unix/Windows-library fallback. Local boundary/refusal/corrupt-byte5, Windows93/SQLite23 and both app builds pass. Source1.31.2.
 - [x] Verify native supported-OS and Ubuntu contracts and [actual native Windows/Mac before/after](../evidence/protocol-sqlite/README.md). Source5520523/run38658393998 passes all four jobs; protocol5 eachOS, Windows93/SQLite23/handoff5 and native Mac SQLite/UI pass. Six selected after PNGs are inspected and metadata/hash checked; Windows dark comparison is byte-identical.
-- [ ] Finish latest-head CI/author review and PR42 promotion before resource separation. Linux5/6/7 remain open.
+- [x] Complete latest-head4fe70d5 CI/run38658971849, author self-review and PR42 merge to main0d0419a3. Linux5/6/7 remain open.
+
+### P7.3 resource boundary — issue43
+
+- [x] Move Windows/Mac sampling, temperatures and drive monitoring into one `CodexSwitch.Hardware` project, consumed by both apps/rendering/tests. Move only the unchanged serializable DrivePreference model into core; vault defaults/format stay in integration. Source1.31.3.
+- [x] Preserve supported sampling, sensor selection/unknown states and non-elevated APIs; refuse wrong-OS native entry points before library/port acquisition or background tasks. Local native Windows hardware8 pass.
+- [ ] Complete existing temperature29/native app regressions and native Mac hardware checks. Package validation requires the hardware DLL; Dependabot follows the relocated System.Management dependency.
+- [ ] Inspect exact-source actual Windows/Mac before/after with privacy/metadata/hash receipts, then final-head CI, author review and focused PR promotion. Shared desktop composition and Linux5/6/7 remain open.
 
 ## Tooltip style lifetime — issue35
 

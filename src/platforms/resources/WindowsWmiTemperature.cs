@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Management;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace CodexAccountDesk;
 
@@ -18,6 +19,7 @@ internal sealed class WindowsWmiTemperature
     public string Source => _namespace ?? "WMI sensors";
     public void Refresh(DateTimeOffset now)
     {
+        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Windows WMI temperature requires Windows.");
         if (now < _next) return;
         CheckedAt = now; _next = now.AddSeconds(5); Sensors = Array.Empty<TemperatureSensor>();
         var candidates = _namespace == null ? new[] { @"root\LibreHardwareMonitor", @"root\OpenHardwareMonitor" } : new[] { _namespace };
@@ -55,6 +57,7 @@ internal sealed class WindowsWmiTemperature
         _namespace = null; _next = now.AddSeconds(60);
     }
     private static string Text(object? value) => value is string text && text.Length is > 0 and <= 256 ? text : throw new InvalidDataException("Invalid WMI sensor metadata.");
+    [SupportedOSPlatform("windows")]
     private static object?[][] Query(ManagementScope scope, string query)
     {
         using var search = new ManagementObjectSearcher(scope, new ObjectQuery(query), new System.Management.EnumerationOptions { ReturnImmediately = true, Rewindable = false, Timeout = TimeSpan.FromMilliseconds(500) });
