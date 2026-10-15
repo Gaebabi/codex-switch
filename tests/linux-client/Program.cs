@@ -87,6 +87,21 @@ Check("Cancelled verification cannot publish an executable lease", () =>
     try { LinuxClientDiscovery.Open(new(selected, digest), cancellation.Token).Dispose(); }
     catch (OperationCanceledException) { return; } throw new InvalidOperationException("Cancelled verification was accepted.");
 });
+Check("Root/inside-home destinations refuse before inspection and existing reports cannot be replaced", () =>
+{
+    void ArgumentRefused(Action action)
+    { try { action(); } catch (ArgumentException) { return; } throw new InvalidOperationException("Unsafe report/home destination was accepted."); }
+    var home = Path.Combine(root, "diagnostic-home"); Directory.CreateDirectory(home); File.SetUnixFileMode(home, (UnixFileMode)0x1c0);
+    var auth = Path.Combine(home, "auth.json"); File.WriteAllText(auth, "Synthetic input bytes");
+    var selection = new LinuxClientSelection(selected, new string('0', 64));
+    var report = Path.Combine(root, "protected-report.json");
+    ArgumentRefused(() => LinuxClientDiagnostics.VerifyAsync("/", report, selection).GetAwaiter().GetResult());
+    ArgumentRefused(() => LinuxClientDiagnostics.VerifyAsync(home + "/", auth, selection).GetAwaiter().GetResult());
+    Assert(File.ReadAllText(auth) == "Synthetic input bytes" && !File.Exists(report));
+    File.WriteAllText(report, "Existing report bytes"); File.SetUnixFileMode(report, (UnixFileMode)0x180);
+    Refused(() => LinuxClientDiagnostics.VerifyAsync(home, report, selection).GetAwaiter().GetResult());
+    Assert(File.ReadAllText(report) == "Existing report bytes");
+});
 Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, failed = 0, architecture = RuntimeInformation.ProcessArchitecture.ToString(), checks,
     scope = "Actual pinned official system package plus owned native trust-negative fixtures only. No personal home, real credentials, installed app lifecycle, authentication or handoff." }));
 

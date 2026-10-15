@@ -14,6 +14,7 @@ internal static class LinuxClientInspector
     {
         if (!OperatingSystem.IsLinux()) throw new PlatformNotSupportedException("Linux client inspection requires Linux.");
         home = Path.TrimEndingDirectorySeparator(Path.GetFullPath(home));
+        if (home == Path.GetPathRoot(home)) throw new ArgumentException("The filesystem root cannot be a client inspection home.");
         if (!Directory.Exists(home)) throw new DirectoryNotFoundException("Client inspection requires an existing explicitly selected home.");
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(25));
         using var installation = await Task.Run(() => LinuxClientDiscovery.Open(selection, deadline.Token), deadline.Token).ConfigureAwait(false);
@@ -41,7 +42,7 @@ internal static class LinuxClientDiagnostics
     public static async Task<int> VerifyAsync(string home, string reportPath, LinuxClientSelection? selection)
     {
         home = Path.TrimEndingDirectorySeparator(Path.GetFullPath(home)); reportPath = Path.GetFullPath(reportPath);
-        if (reportPath == home || reportPath.StartsWith(home + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+        if (home == Path.GetPathRoot(home) || reportPath == home || reportPath.StartsWith(home + Path.DirectorySeparatorChar, StringComparison.Ordinal))
             throw new ArgumentException("Client inspection reports must be outside the selected Codex home.");
         object report; var result = 0;
         try

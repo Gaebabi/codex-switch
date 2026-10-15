@@ -76,7 +76,7 @@ try:
     capability=root/'capability-client';capability.write_bytes(native);capability.chmod(0o500);run(['sudo','setcap','cap_net_raw=ep',str(capability)])
     env=dict(os.environ,CODEX_SWITCH_LINUX_CLIENT_TEST_ROOT=str(root))
     result=run(['dotnet',str(tests)],env=env);native_result=json.loads(result.stdout)
-    check('Native binary trust suite passes on the actual architecture',native_result['failed']==0 and native_result['passed']==14 and native_result['architecture']==a.architecture)
+    check('Native binary trust suite passes on the actual architecture',native_result['failed']==0 and native_result['passed']==15 and native_result['architecture']==a.architecture)
     for store in ('file','keyring','auto','ephemeral'):inspect(store,'cli_auth_credentials_store = "'+store+'"\n',store,store=='file')
     inspect('system-layer','cli_auth_credentials_store = "file"\n','file',system={'config.toml':'cli_auth_credentials_store = "keyring"\n'})
     inspect('managed-backend','cli_auth_credentials_store = "file"\n','keyring',False,system={'requirements.toml':'cli_auth_credentials_store = "keyring"\n'})
