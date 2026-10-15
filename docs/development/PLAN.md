@@ -71,11 +71,11 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 
 ### P8.3 trusted Linux client and effective credential policy — issue54
 
-- [ ] Inspect the actual official Linux desktop package and embedded CLI, record architecture/version/origin/checksum and native RPC/config requirements behavior. Keep private raw package inspection outside the source tree.
-- [ ] Add native executable/path/owner/mode/architecture verification and OS package provenance. Pin explicitly selected custom clients to a user-supplied SHA256; never execute shell text or trust a basename/PATH wrapper. Retain a verified executable descriptor across launch.
+- [x] Inspect the actual official Linux desktop package and embedded CLI, record architecture/version/origin/checksum and native RPC/config requirements behavior. Actual x64/ARM64 approved package/standalone CLI checks pass in sourceb01be7c/Linux38676489811. Private raw package inspection stays outside the source tree.
+- [x] Add native executable/path/owner/mode/architecture verification and approved OS package provenance. Explicit checksum CLI-only discovery, retained-descriptor native process launch and14 trust checks pass on each native architecture; no shell/PATH trust or execution fallback.
 - [ ] Read effective configuration and managed requirements through the trusted native app-server without forcing a credential backend/provider. Verify file/keyring/auto/ephemeral, profiles/layers and forced login/workspace policy; refuse unknown/incompatible states before account operations. Preserve all input/config/auth bytes in disposable tests.
-- [ ] Keep CLI-only capability reporting distinct from full desktop/IPC/resumption. Normal Linux account/client/handoff actions remain gated until their later complete acceptance.
-- [ ] Pass actual native x64/ARM64 official-client checks and meaningful trust-negative fixtures, current GNOME/SQLite/supported-OS regressions, complete packages and actual own-window program evidence with no personal data.
+- [x] Keep CLI-only capability reporting distinct from full desktop/IPC/resumption. Native client94 includes actual managed-policy/backend cases with unchanged config/empty-auth inputs; normal Linux account/client/handoff actions remain gated. Runtime profiles are not provided by this app-server contract and deprecated profile config refuses.
+- [x] Pass sourceb01be7c client94/GNOME18/SQLite26/protocol10/app12 per native Linux architecture plus all four Verify38676489809 jobs. Inspect ten source-bound own-window after PNGs, hashes/metadata/privacy and complete packages; same-host Windows dark is byte-identical. These certify the read-only selected-home inspection, not authenticated/context-aware account integration.
 - [ ] Complete checkpoint pushes, six exact-head CI jobs, author self-review and expected-SHA PR merge. Independent KWallet55, full handoff6 and clean packages7 remain open.
 
 ## Tooltip style lifetime — issue35
