@@ -8,11 +8,12 @@ namespace CodexAccountDesk;
 [SupportedOSPlatform("linux")]
 internal static class LinuxNativeText
 {
+    private const int RtldNow = 2, RtldDeepBind = 8;
     private static readonly Lazy<IntPtr> Library = new(() =>
     {
         var path = Path.Combine(AppContext.BaseDirectory, "libHarfBuzzSharp.so");
         if (!File.Exists(path)) throw new DllNotFoundException("The complete Linux package must include its native text library.");
-        var handle = dlopen(path, 2 | 8);
+        var handle = dlopen(path, RtldNow | RtldDeepBind);
         if (handle == IntPtr.Zero) throw new DllNotFoundException("The packaged native text library could not be bound in its own symbol scope.");
         return handle;
     });
