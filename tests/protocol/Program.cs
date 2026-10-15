@@ -29,7 +29,7 @@ var monitor = new DesktopSessionMonitor(absent);
 try
 {
     Check("Unstarted observation stays unavailable without inspecting a home", () => Assert(!monitor.Current.Available));
-    if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())
+    if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS() && !OperatingSystem.IsLinux())
     {
         Check("Unsupported desktop IPC refuses before unauthenticated Unix connection", () => Rejected<PlatformNotSupportedException>(() => monitor.Start()));
     }

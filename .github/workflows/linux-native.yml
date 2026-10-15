@@ -75,6 +75,8 @@ jobs:
         run: python scripts/verify-linux-keyring.py --provider kwallet5 --assembly artifacts/linux-native/${{ matrix.rid }}/tests/CodexSwitch.LinuxVault.Tests.dll --architecture ${{ matrix.architecture }} --report artifacts/linux-native/${{ matrix.rid }}/kwallet-summary.json
       - name: Build the native executable trust contracts
         run: dotnet build tests/linux-client/CodexSwitch.LinuxClient.Tests.csproj -c Release --nologo -p:UseSharedCompilation=false -o artifacts/linux-native/${{ matrix.rid }}/client-tests
+      - name: Build native desktop IPC trust contracts
+        run: dotnet build tests/linux-desktop/CodexSwitch.LinuxDesktop.Tests.csproj -c Release --nologo -p:UseSharedCompilation=false -o artifacts/linux-native/${{ matrix.rid }}/desktop-tests
       - name: Publish the source Linux preview for the actual runner
         run: dotnet publish src/linux/CodexSwitch.Linux.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:UseSharedCompilation=false -o artifacts/linux-native/${{ matrix.rid }}/app
       - name: Inspect the complete Linux runtime package
@@ -89,13 +91,19 @@ jobs:
       - name: Verify attested legacy KWallet6 and normalized KSecrets with actual native app captures
         env:
           EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: python scripts/verify-kde6-containers.py --architecture ${{ matrix.architecture }} --tests artifacts/linux-native/${{ matrix.rid }}/tests --app artifacts/linux-native/${{ matrix.rid }}/app --client-package artifacts/linux-native/${{ matrix.rid }}/upstream-client.deb --output artifacts/linux-native/${{ matrix.rid }}/kde6 --revision "$EVIDENCE_REVISION"
+        run: python scripts/verify-kde6-containers.py --architecture ${{ matrix.architecture }} --tests artifacts/linux-native/${{ matrix.rid }}/tests --desktop-tests artifacts/linux-native/${{ matrix.rid }}/desktop-tests --app artifacts/linux-native/${{ matrix.rid }}/app --client-package artifacts/linux-native/${{ matrix.rid }}/upstream-client.deb --output artifacts/linux-native/${{ matrix.rid }}/kde6 --revision "$EVIDENCE_REVISION"
       - name: Capture only the published preview's native X11 window
         run: xvfb-run -a -s "-screen 0 1920x1080x24" artifacts/linux-native/${{ matrix.rid }}/app/CodexSwitch --verify-ui artifacts/linux-native/${{ matrix.rid }}/raw
       - name: Validate synthetic native Linux own-window exports
         env:
           EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: python scripts/verify-ui-evidence.py artifacts/linux-native/${{ matrix.rid }}/raw artifacts/linux-native/${{ matrix.rid }}/public --os Linux --revision "$EVIDENCE_REVISION"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: desktop-peer-${{ matrix.rid }}
+          path: artifacts/linux-native/${{ matrix.rid }}/kde6/kwallet6/results/desktop
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-ui-${{ matrix.rid }}

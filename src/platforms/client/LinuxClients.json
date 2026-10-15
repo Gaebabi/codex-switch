@@ -10,14 +10,16 @@
       "packageUrl": "https://persistent.oaistatic.com/codex-app-prod/linux/deb/latest/chatgpt_amd64.deb",
       "packageSha256": "0e006b4931712f5a90d4cd04972c6e0b533cedcdfdb2b51946d5b9367471f556",
       "cliSha256": "73b73b048546993298234a295de01ef2424e7a8b29def9d0ecb1ca7cb77500d4",
-      "desktopSha256": "c81da8d4de29a2eb4a8ad9d8c32cf090b1a3ac96158eec288c6412eeba86072d"
+      "desktopSha256": "c81da8d4de29a2eb4a8ad9d8c32cf090b1a3ac96158eec288c6412eeba86072d",
+      "asarSha256": "676527450e8e1c8a700a88b625d2c741a89f8c623d54b3e652a472149a9c727a"
     },
     "Arm64": {
       "debianArchitecture": "arm64",
       "packageUrl": "https://persistent.oaistatic.com/codex-app-prod/linux/deb/latest/chatgpt_arm64.deb",
       "packageSha256": "d9fbd854a1522edb2b53c755a3ea5ecfa67b3f8c035313405b50967242efba0a",
       "cliSha256": "fc01c470d900af0dc1cdcba7b8074bfe1c3a04ec53fbdf403704c94b94d59267",
-      "desktopSha256": "cfa7b84d1225f6a1af097987eefda62f8e8d4bf1dc459a04c0c631a2c0f0a88e"
+      "desktopSha256": "cfa7b84d1225f6a1af097987eefda62f8e8d4bf1dc459a04c0c631a2c0f0a88e",
+      "asarSha256": "d8f61c6b473c43d4e5822ff3ea968aee02f62fab4e92bbe05c90503278a71276"
     }
   }
 }

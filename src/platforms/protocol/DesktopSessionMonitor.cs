@@ -30,7 +30,7 @@ internal sealed class DesktopSessionMonitor : IAsyncDisposable
     public DesktopSessionMonitor(string home) { _home = home; }
     public void Start()
     {
-        if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())
+        if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS() && !OperatingSystem.IsLinux())
             throw new PlatformNotSupportedException("Desktop IPC requires a supported peer-verification provider.");
         _run ??= Task.Run(RunAsync);
     }
@@ -167,6 +167,7 @@ internal sealed class DesktopSessionMonitor : IAsyncDisposable
     }
     private async Task<Stream> ConnectAsync(CancellationToken cancellation)
     {
+        if (OperatingSystem.IsLinux()) return await LinuxDesktopConnection.ConnectAsync(_home, cancellation);
         if (OperatingSystem.IsWindows())
         {
             var pipe = new NamedPipeClientStream(".", "codex-ipc", PipeDirection.InOut, PipeOptions.Asynchronous);

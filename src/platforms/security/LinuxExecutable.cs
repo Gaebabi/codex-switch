@@ -118,18 +118,30 @@ internal sealed class LinuxExecutable : IDisposable
             var programOffset = BinaryPrimitives.ReadUInt64LittleEndian(header[32..]); var programCount = BinaryPrimitives.ReadUInt16LittleEndian(header[56..]);
             if (BinaryPrimitives.ReadUInt16LittleEndian(header[52..]) != 64 || BinaryPrimitives.ReadUInt16LittleEndian(header[54..]) != 56 ||
                 programCount is 0 or > 4096 || programOffset < 64 || programOffset > before.Size || (ulong)programCount * 56 > before.Size - programOffset) throw Refused();
-            using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256); var bytes = new byte[128 * 1024]; long offset = 0;
-            while (true)
-            {
-                cancellation.ThrowIfCancellationRequested();
-                var count = RandomAccess.Read(handle, bytes, offset); if (count == 0) break;
-                hash.AppendData(bytes, 0, count); offset = checked(offset + count);
-            }
-            var digest = hash.GetHashAndReset();
-            if ((ulong)offset != before.Size || !CryptographicOperations.FixedTimeEquals(digest, Convert.FromHexString(expectedSha256)) || !Same(before, Inspect(handle))) throw Refused();
+            var digest = VerifyHash(handle, before, expectedSha256, cancellation);
             return new LinuxExecutable(handle, path, Convert.ToHexString(digest).ToLowerInvariant(), before);
         }
         catch { handle.Dispose(); throw; }
+    }
+    public static void VerifySystemData(string path, string expectedSha256, CancellationToken cancellation)
+    {
+        using var handle = Open(path, true); var before = Inspect(handle);
+        if (before.Size > 1024UL * 1024 * 1024 || expectedSha256.Length != 64) throw Refused();
+        foreach (var value in expectedSha256) if (!char.IsAsciiHexDigit(value)) throw Refused();
+        VerifyHash(handle, before, expectedSha256, cancellation);
+    }
+    private static byte[] VerifyHash(SafeFileHandle handle, Stat before, string expectedSha256, CancellationToken cancellation)
+    {
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256); var bytes = new byte[128 * 1024]; long offset = 0;
+        while (true)
+        {
+            cancellation.ThrowIfCancellationRequested();
+            var count = RandomAccess.Read(handle, bytes, offset); if (count == 0) break;
+            hash.AppendData(bytes, 0, count); offset = checked(offset + count);
+        }
+        var digest = hash.GetHashAndReset();
+        if ((ulong)offset != before.Size || !CryptographicOperations.FixedTimeEquals(digest, Convert.FromHexString(expectedSha256)) || !Same(before, Inspect(handle))) throw Refused();
+        return digest;
     }
     public void Dispose() => _handle.Dispose();
     public bool IsProcessImage(uint processId)

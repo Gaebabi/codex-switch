@@ -20,6 +20,7 @@
     <InternalsVisibleTo Include="CodexSwitch.Application" />
     <InternalsVisibleTo Include="CodexSwitch.LinuxVault.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.LinuxClient.Tests" />
+    <InternalsVisibleTo Include="CodexSwitch.LinuxDesktop.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.DesktopClient.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.Protocol" />
   </ItemGroup>

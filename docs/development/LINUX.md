@@ -1,5 +1,7 @@
 # Linux implementation and verification
 
+Source1.38.0 adds [native desktop IPC identity and controlled launch](LINUX_IPC.md), checkpoint62. Actual peer-bound pidfd/image/resource and private socket checks precede IPC; erased startup metadata needs original managed-launch provenance. This is independent of normal desktop shutdown, authenticated handoff and installation acceptance, which remain required in5/6/7. Account/handoff UI remains gated.
+
 Linux support is in progress in [issue5](https://github.com/Gaebabi/codex-switch/issues/5), starting with [native storage50](https://github.com/Gaebabi/codex-switch/issues/50). Source1.33.0 introduces Secret Service protection; native provider verification, Linux host evidence, client trust, actual manual handoff and packages are required before advertising supported account switching. Published downloads remain1.27.6, without a Linux package. KDE/KWallet, broader environments and actual account/handoff acceptance remain separate gates.
 
 P8.1 is merged in PR51/main3b67458b after all six final-head jobs and author self-review. Native GNOME Keyring18 checks across12 phases and source-app12 captures pass per x64/ARM64 architecture; [actual program evidence and limitations](../evidence/linux-vault/README.md). Source1.33.1 adds the separate [read-only SQLite52](https://github.com/Gaebabi/codex-switch/issues/52) checkpoint, completed in PR53 as recorded below.
