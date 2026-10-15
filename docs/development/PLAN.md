@@ -55,6 +55,8 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 
 ### P8.4 Independent KDE provider — issue55
 
+Positive KWallet5 checkpoint PR59/codeb2f5b25: actual Ubuntu24.04 x64/ARM64 passes KWallet31/15 phases and GNOME29/13 phases,1024 encrypted sessions and existing CADL1/original-key preservation, exact-source native C vectors and all six CI jobs. [Program evidence and native receipts](../evidence/linux-kwallet-storage/README.md). Final proof-head CI, author review and merge remain before closing the declared KWallet5 acceptance. KWallet6/KSecrets and full KDE/Wayland/handoff/packages remain separate.
+
 Source1.36.0 root repair replaces the KWallet5 refusal with an app-private, checksum-pinned LGPL libsecret compatibility build: unsigned positive public keys and QCA shared-secret encoding, encrypted-only transport. Native1024-session/legacy-format/normal-account acceptance, native C vectors, full app screenshots and exact-head CI/review/merge are required before closing issue55. KWallet6/KSecrets/full KDE/Wayland and authenticated desktop handoff remain separate.
 
 Compatibility checkpoint PR58/source1.35.1: native x64/ARM64 code996b4f9 passes GNOME28 positive contracts and KWallet19 explicit-incompatibility/refusal contracts, all six CI jobs and actual source-app screenshots. [Program proof and scope](../evidence/linux-kwallet/README.md). Full positive KWallet acceptance below remains unchecked because repeated binary-key sessions expose upstream encrypted-protocol failures; the guard cannot be removed on a single successful run. Final proof-head CI/review/promotion belongs to PR58.

@@ -21,7 +21,7 @@ Switch Codex accounts, automatically resume eligible unfinished local chats, and
 
 Source1.36.0 contributors can build the [Linux storage/UI preview](docs/development/LINUX.md). Account/client/handoff actions are disabled while their native acceptance remains in progress; it is not a supported Linux release.
 
-Source1.36.0 adds an app-private encrypted-session compatibility repair for KWallet5; native acceptance is tracked in [issue55](https://github.com/Gaebabi/codex-switch/issues/55). Linux desktop switching and packages remain separate support gates.
+Source1.36.0 verifies encrypted KWallet5 storage on native Ubuntu24.04 x64/ARM64 while preserving existing keys and vault data. [Native storage verification and actual app screenshots](docs/evidence/linux-kwallet-storage/README.md). Linux desktop switching and packages remain separate support gates.
 
 1. Use a complete Windows or Mac package. Windows: run `CodexSwitch.exe`. Mac: run `Install.command`, then open **Codex Switch.app**. [Build and install](docs/INSTALL.md)
 2. Select **+** in the title bar to add accounts. On Windows, right-click **↻** to import the current Codex login.

@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "revision": "b2f5b25499ca7f92f99f7342700c4a65066fef0f",
+  "results": [
+    {
+      "architecture": "x64",
+      "providers": [
+        {
+          "provider": "gnome",
+          "providerVersion": "46.1-2ubuntu0.2",
+          "providerCompatibility": "verified-storage",
+          "architecture": "X64",
+          "passed": 29,
+          "failed": 0,
+          "phaseCount": 13
+        },
+        {
+          "provider": "kwallet5",
+          "providerVersion": "5.115.0-0ubuntu3",
+          "providerCompatibility": "verified-storage",
+          "architecture": "X64",
+          "passed": 31,
+          "failed": 0,
+          "phaseCount": 15
+        }
+      ],
+      "nativeLibrary": {
+        "schema": 1,
+        "upstreamVersion": "0.21.8.2",
+        "upstreamSha256": "142948339c5b971d8f6a8c7099521f6fd319b6fe73d2694b4e6d3310ed28b6e6",
+        "patchSha256": "7823cb987dc6d1df214b1d2ce940faf98d3531bded83fd181dd5d28bdd543c9c",
+        "library": "libcodex-switch-secret-1.so.0",
+        "abi": 1,
+        "architecture": "x86_64",
+        "sha256": "8686d44bb3776da48cb2cee5e148189980632ef88113c127409c0ef57dca6acd",
+        "scope": "App-private LGPL library, encrypted transport only; no system library/keyring replacement or account data."
+      }
+    },
+    {
+      "architecture": "arm64",
+      "providers": [
+        {
+          "provider": "gnome",
+          "providerVersion": "46.1-2ubuntu0.2",
+          "providerCompatibility": "verified-storage",
+          "architecture": "Arm64",
+          "passed": 29,
+          "failed": 0,
+          "phaseCount": 13
+        },
+        {
+          "provider": "kwallet5",
+          "providerVersion": "5.115.0-0ubuntu3",
+          "providerCompatibility": "verified-storage",
+          "architecture": "Arm64",
+          "passed": 31,
+          "failed": 0,
+          "phaseCount": 15
+        }
+      ],
+      "nativeLibrary": {
+        "schema": 1,
+        "upstreamVersion": "0.21.8.2",
+        "upstreamSha256": "142948339c5b971d8f6a8c7099521f6fd319b6fe73d2694b4e6d3310ed28b6e6",
+        "patchSha256": "7823cb987dc6d1df214b1d2ce940faf98d3531bded83fd181dd5d28bdd543c9c",
+        "library": "libcodex-switch-secret-1.so.0",
+        "abi": 1,
+        "architecture": "aarch64",
+        "sha256": "ccdff5a509125211a78f4ded5f301194347956b30f34ad265177cac4acc3cf16",
+        "scope": "App-private LGPL library, encrypted transport only; no system library/keyring replacement or account data."
+      }
+    }
+  ],
+  "scope": "Actual native Ubuntu24.04 x64/ARM64, private D-Bus/HOME/XDG. GNOME and KWallet5 positive encrypted storage/account policy; existing CADL1 format and original native key preserved. No personal accounts, full KDE/Wayland or authenticated Codex handoff."
+}
