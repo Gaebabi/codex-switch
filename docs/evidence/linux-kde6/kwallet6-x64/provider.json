@@ -1,0 +1,238 @@
+{
+  "schema": 1,
+  "provider": "kwallet6",
+  "providerVersion": "6.13.0-1",
+  "providerCompatibility": "verified-storage",
+  "architecture": "X64",
+  "passed": 34,
+  "failed": 0,
+  "phases": [
+    {
+      "phase": "no-service",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Missing service refuses encryption without writing a vault"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "kwallet-unlock",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Native KDE Secret Service collection unlock completes on the original provider"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "roundtrip",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 8,
+      "failed": 0,
+      "checks": [
+        "Existing CADL1 ciphertext and its original native key reopen without migration",
+        "Linux envelope usesCADL1, random nonce and authenticated payload",
+        "Tamper/truncation/foreign envelopes refuse without changing ciphertext",
+        "Binary keys preserve exact bytes independently of provider MIME tagging",
+        "Actual application vault save/reopen preserves JSON and private modes",
+        "No-follow links and non-regular files refuse without blocking or replacement",
+        "Insecure modes reject before replacement and preserve existing bytes",
+        "Ambiguous and malformed keys never get replaced"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "concurrent",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Independent processes share exactly one OS key and decrypt every ciphertext"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "account-policy",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 10,
+      "failed": 0,
+      "checks": [
+        "Actual account initialization refuses non-file stores before vault/runtime mutation",
+        "Import/login/refresh/apply/current-account APIs refuse before reading incompatible input or opening a browser",
+        "Synchronous account entry points cannot bypass native asynchronous policy checks",
+        "Explicit-file empty initialization uses the actual native encrypted vault without authentication",
+        "Ordinary async local import preserves synthetic auth bytes and encrypts the imported identity",
+        "Workspace and forced API restrictions prevent local identity import before vault mutation",
+        "A reused actual client session rereads changed policy rather than caching permission",
+        "Actual trusted project policy blocks account initialization despite a file-compatible home",
+        "Isolated account query children use a retained verified client and their actual file policy",
+        "Desktop metadata cannot bypass the still-unverified Linux lifecycle and peer boundary"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "provider-identity",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "A declared KDE version and service cannot substitute for the original provider executable/PID"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "provider-refused",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "An unverified KDE version refuses before reading keys or replacing existing ciphertext"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "read-after-provider-check",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "The original provider and original key reopen existing ciphertext after refused version evidence"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "foreign-owner",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Foreign-owned private files refuse read and replacement"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "locked",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Locked existing key refuses read/save without creating a replacement"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "kwallet-unlock",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Native KDE Secret Service collection unlock completes on the original provider"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "read-after-unlock",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Existing OS key decrypts unchanged vault/application data: read-after-unlock"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "kwallet-unlock",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Native KDE Secret Service collection unlock completes on the original provider"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "read-after-restart",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Existing OS key decrypts unchanged vault/application data: read-after-restart"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "timeout",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Paused owned provider cancels at the bounded native deadline"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "read-after-timeout",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Existing OS key decrypts unchanged vault/application data: read-after-timeout"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "missing",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Missing key with existing ciphertext never creates or rotates a key"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "offline",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Offline provider refuses existing ciphertext without altering it"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    }
+  ],
+  "nativePackages": {
+    "libgcrypt20:amd64": "1.11.0-7+deb13u1",
+    "libglib2.0-0t64:amd64": "2.84.4-3~deb13u5",
+    "libqca-qt6-2:amd64": "2.3.10-1",
+    "libqt6core6t64:amd64": "6.8.2+dfsg-9+deb13u2"
+  },
+  "accountPolicyIncluded": true,
+  "display": "Qt offscreen",
+  "scope": "Actual declared Secret Service/Linux private-file contracts on a disposable file-socket D-Bus/HOME/XDG session; no full KDE/Wayland or authenticated Codex handoff acceptance. No personal bus, accounts, Codex, key material or private paths exported.",
+  "providerExecutableSha256": "ead15d114d6ab4b9e8c1609eb3106b32e2282db94680cb28bda490ce77f67ec8",
+  "containerImage": "debian@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5",
+  "encodingContract": "legacy-minimal",
+  "sourceRevision": "b46b382ed07d9eeef219edd8dd8b892faac23324"
+}

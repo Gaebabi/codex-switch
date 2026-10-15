@@ -1,6 +1,6 @@
 # KDE Secret Service contracts
 
-Issue [60](https://github.com/Gaebabi/codex-switch/issues/60) extends encrypted account storage to independently declared KWallet6 and KSecrets builds. Source1.37.0 does not change CADL1, stored32-byte keys, item attributes, system providers or user keyring configuration. Native validation and actual app confirmation are required before promotion.
+Issue [#60](https://github.com/Gaebabi/codex-switch/issues/60) extends encrypted account storage to independently declared KWallet6 and KSecrets builds. Source 1.37.0 preserves CADL1, stored 32-byte keys, item attributes, system providers and user keyring configuration. [Actual native acceptance, 22 inspected program images and source/runtime/hash receipts](../evidence/linux-kde6/README.md) bind code `b46b382`; all six code-head CI jobs pass. [PR #61](https://github.com/Gaebabi/codex-switch/pull/61) records final-head review and promotion.
 
 | Provider | Declared upstream/package | Encoding | Native targets |
 | --- | --- | --- | --- |
@@ -18,17 +18,18 @@ Legacy KWallet5 retains its verified encoding. GNOME and normalized KSecrets use
 
 - [x] Inspect upstream legacy/normalized source and pin actual x64/ARM64 provider packages and native executables.
 - [x] Select the attested contract before opening an encrypted session; preserve existing provider/key/vault identities.
-- [ ] Run both actual providers on both native architectures:1024 sessions, existing CADL1/original key, opaque bytes, normal AccountService policy, locked/in-place unlock/original PID, restart, concurrency, malformed/ambiguous/missing keys, tamper, timeout and offline refusal.
-- [ ] Reject forged version evidence and a declared version with the wrong process image before key access; restore original-provider reads without data changes.
-- [ ] Retain GNOME/KWallet5/client/SQLite and Windows/Mac checks. Inspect actual own-window app confirmations and publish stripped, synthetic-only source/runtime/architecture/hash receipts.
-- [ ] Complete exact-head Verify/Linux native CI, author self-review and expected-SHA merge. Author review is not independent approval.
+- [x] Run all three declared providers on both native architectures: 34 contracts/18 phases each, 1,024 sessions, existing CADL1/original key, opaque bytes, normal AccountService policy, locked/in-place unlock/original PID, restart, concurrency, malformed/ambiguous/missing keys, tamper, timeout and offline refusal.
+- [x] Reject forged version evidence and a declared version with the wrong process image before key access; restore original-provider reads without data changes.
+- [x] Retain GNOME/KWallet5/client/SQLite and Windows/Mac checks. Inspect 22 actual own-window app confirmations and publish stripped, synthetic-only source/runtime/architecture/hash receipts. KSecrets 6.30 uses its actual owned Qt password dialog on both architectures.
+
+Promotion requires final exact-head Verify/Linux native CI, author self-review and expected-SHA merge. PR #61 is the live promotion record; author review is not independent approval.
 
 Provider tests use separate owned private file-socket D-Bus/HOME/XDG sessions. KWallet6/early KSecrets use test-only PAM controls and Qt offscreen. KSecrets6.30 removed the old public PAM control: its test starts through the actual PAM pipe/socket interface with an ephemeral synthetic password/hash, then proves in-place unlock through its real own-PID Qt password dialog on a newly owned Xvfb display. The password is passed only through stdin; hashes travel only through inherited pipes, never argv/environment/logs. Test-only salt/PAM/dialog helpers cannot unlock a production wallet. Original provider PID and original stored key/ciphertext are rechecked after unlock and restart.
 
 Actual source-app captures use own XIDs on X11/Xvfb with a separate non-activating private session D-Bus and private HOME/XDG. The identical published app hangs during initialization in a container without a desktop session bus; providing a proper private session fixes the capture environment. No production UI or timeout was relaxed. Container runs have exact named/labelled ownership and clean up on failures as well as success. These tests do not prove a complete KDE/Wayland desktop, authenticated Codex switching/resumption (#6), clean-machine packages (#7) or a new binary Release.
 
-## Actual application baseline; confirmation pending
+## Actual application baseline and verified confirmations
 
 ![Actual Linux preview with fictional profiles](https://raw.githubusercontent.com/Gaebabi/codex-switch/495ec6157747ac12e1cb026604a5f09134e5f5eb/docs/evidence/linux-kwallet-storage/linux-x64/en-dark-800x600-native.png)
 
-Source1.36.0, actual native Ubuntu24.04 x64 own-XID X11/Xvfb capture, authored synthetic profiles only, metadata stripped. [Baseline receipts and five-target comparisons](../evidence/linux-kwallet-storage/README.md). This image establishes the preceding application; provider protocol behavior needs the separate native receipts above. No personal desktop, pointer, identity, home, chat, credentials or live Codex is used.
+Source 1.36.0, actual native Ubuntu24.04 x64 own-XID X11/Xvfb capture, authored synthetic profiles only, metadata stripped. [Baseline receipts](../evidence/linux-kwallet-storage/README.md) and [source 1.37.0 before/after plus six new KDE target confirmations](../evidence/linux-kde6/README.md). Provider protocol behavior is established by the separate native receipts. No personal desktop, pointer, identity, home, chat, credentials or live Codex is used.

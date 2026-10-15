@@ -44,7 +44,7 @@ After the usual native build/publish and reviewed official-client package downlo
 python scripts/verify-kde6-containers.py --architecture X64 --tests artifacts/linux-native/linux-x64/tests --app artifacts/linux-native/linux-x64/app --client-package artifacts/linux-native/linux-x64/upstream-client.deb --output artifacts/linux-native/linux-x64/kde6 --revision <exact40-character-source-SHA>
 ```
 
-Use the actual architecture and fresh dedicated output. The disposable Docker images require their checksum-pinned Debian bases and public .NET SDK image; no user HOME, Git credentials, personal bus or live Codex is mounted. No provider is installed on the host by this helper. Actual native results and inspected after app images remain required before issue60 promotion.
+Use the actual architecture and fresh dedicated output. The disposable Docker images require their checksum-pinned Debian bases and public .NET SDK image; no user HOME, Git credentials, personal bus or live Codex is mounted. No provider is installed on the host by this helper. [Code b46b382 native results, 22 inspected app images and exact source/hash receipts](../evidence/linux-kde6/README.md) pass all six CI jobs; PR61 records final-head promotion.
 
 The historical guard investigation below records source1.35.1. It does not describe the new KWallet5 transport path.
 
