@@ -2,8 +2,9 @@
 
 ## Current source evidence
 
-Source 1.32.0 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
+Source 1.33.0 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
 
+- [Linux native storage/source preview](linux-vault/README.md): genuine GNOME Keyring x64/ARM64 contracts, actual native X11 source-window confirmation and supported-host comparisons; account/client/handoff remains pending.
 - [Shared application/desktop composition](desktop-composition/README.md): native Windows/Mac before/after, common assembly boundaries and actual trayless close/disposal.
 - [Hardware provider extraction](hardware-services/README.md): native Windows/Mac before/after, real read-only sampler and wrong-OS refusal contracts.
 - [Codex protocol/read-only SQLite extraction](protocol-sqlite/README.md): native Windows/Mac before/after and protocol/unknown/read-only refusal contracts.
