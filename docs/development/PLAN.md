@@ -82,9 +82,9 @@ P8.3a is merged in PR56/main3ada2b20 after exact4f780f9 passed Verify38677956182
 
 ### P8.3b context-aware account preflight — issue54
 
-- [ ] Reuse a verified native client session for actual `config/read` cwd/managed policy. Verify real trusted/untrusted project precedence, workspace/login/store restrictions and unchanged input files; unsupported runtime profiles refuse without rewriting configuration.
-- [ ] Require native policy before Linux account initialization/import/read/login/refresh/apply and before credential writeback. Keep explicit verified descriptors for query children and validate the actual isolated child's policy without forcing storage/provider settings. Preserve Windows/Mac behavior and identities.
-- [ ] Exercise normal application APIs on owned disposable native homes/private GNOME bus: incompatible policy stops before vault/auth/runtime changes or login; explicit-file empty initialization and synthetic local import use the actual encrypted vault. These do not substitute for authenticated account/running-client/handoff acceptance.
+- [x] Reuse a verified native client session for actual `config/read` cwd/managed policy. Verify real trusted/untrusted project precedence, workspace/login/store restrictions and unchanged input files; unsupported runtime profiles refuse without rewriting configuration.
+- [x] Require native policy before Linux account initialization/import/read/login/refresh/apply and before credential writeback. Keep explicit verified descriptors for query children and validate the actual isolated child's policy without forcing storage/provider settings. Preserve Windows/Mac behavior and identities.
+- [x] Exercise normal application APIs on owned disposable native homes/private GNOME bus: incompatible policy stops before vault/auth/runtime changes or login; explicit-file empty initialization and synthetic local import use the actual encrypted vault. These do not substitute for authenticated account/running-client/handoff acceptance.
 - [ ] Retain existing native security/client/SQLite/UI and supported-host regressions, complete packages, exact-source private-data-free program images and six final-head workflows. Checkpoint pushes, author review and expected-SHA PR promotion remain required; actual Linux account GUI/IPC/handoff, KWallet55 and clean packages7 remain separate gates.
 
 ## Tooltip style lifetime — issue35
