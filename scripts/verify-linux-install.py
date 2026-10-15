@@ -1,5 +1,6 @@
 """Exercise ordinary per-user package entry points with isolated owned data and no account/keyring."""
 import argparse
+import ctypes
 import fcntl
 import hashlib
 import json
@@ -19,6 +20,7 @@ p.add_argument('--report',type=Path,required=True)
 p.add_argument('--raw-ui',type=Path)
 a=p.parse_args()
 if sys.platform!='linux' or os.geteuid()==0 or os.environ.get('CODEX_SWITCH_DISPOSABLE_RUNNER')!='true':raise SystemExit('Use an explicitly disposable normal-user Linux test environment')
+if not shutil.which('desktop-file-validate'):raise SystemExit('Native desktop-file-utils verification is required')
 root=Path(tempfile.mkdtemp(prefix='codex-linux-install-test-')).resolve();checks=[]
 def check(name,value):
  if not value:raise RuntimeError('Package lifecycle contract failed: '+name)
@@ -62,7 +64,14 @@ try:
  check('Installed self-contained app starts with global .NET unavailable',info['version']==manifest['Version'] and info['runtime']=='.NET 10.0.13')
  desktop=data/'applications/codex-switch.desktop';icon=data/'icons/hicolor/1024x1024/apps/codex-switch.png'
  check('Menu and canonical high-resolution icon integrate per user',desktop.is_file() and icon.read_bytes()==(payload/'icons/codex-switch.png').read_bytes())
- if shutil.which('desktop-file-validate'):subprocess.run(['desktop-file-validate',str(desktop)],check=True,capture_output=True,text=True,timeout=10)
+ subprocess.run(['desktop-file-validate',str(desktop)],check=True,capture_output=True,text=True,timeout=10)
+ gio=ctypes.CDLL('libgio-2.0.so.0');objects=ctypes.CDLL('libgobject-2.0.so.0')
+ gio.g_desktop_app_info_new_from_filename.argtypes=[ctypes.c_char_p];gio.g_desktop_app_info_new_from_filename.restype=ctypes.c_void_p
+ gio.g_app_info_get_executable.argtypes=[ctypes.c_void_p];gio.g_app_info_get_executable.restype=ctypes.c_char_p
+ objects.g_object_unref.argtypes=[ctypes.c_void_p]
+ native=gio.g_desktop_app_info_new_from_filename(os.fsencode(desktop));check('The native desktop parser accepts Unicode/special-character installation paths',bool(native))
+ try:check('The native desktop parser resolves the intended executable',gio.g_app_info_get_executable(native).decode().replace('%%','%')==str(installed))
+ finally:objects.g_object_unref(native)
  if a.previous_archive:check('Update retains the previous complete version',old.is_dir())
  run(binary,'--install-package',env);check('Repeated installation verifies and preserves the same package',json.loads(run(installed,'--package-info',env).stdout)['version']==manifest['Version'])
  with (prefix/'.installation.lock').open('r+b') as lock:
