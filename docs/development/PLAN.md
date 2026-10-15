@@ -49,8 +49,9 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 - [x] Move all eight linked integration files into `CodexSwitch.Application`, consumed by both apps/tests/rendering. Preserve account algorithms, vault/data/key/IPC identities and unsupported-platform refusal.
 - [x] Move Avalonia views/themes/resources into `CodexSwitch.Desktop`. Inject paths/resources, optional menu factory, command modifier, root label, font/reduced-motion and diagnostics through the host. Mac entry/menu/appearance/capture/diagnostics remain host-owned; shared UI has no native imports or concrete Mac host types. Source1.32.0.
 - [x] Local application/UI boundary4 and actual Windows shared-UI trayless close7 pass. The native probe uses synthetic profiles, pending resources and absent data/home paths; normal close disposes resources and exits. Existing language41/temperature29 and both app builds pass.
-- [ ] Preserve full Windows93/SQLite23/handoff5 and native Mac menu/layout/scroll/culture/key/file/resource regressions, plus native trayless close7 on both Mac architectures.
-- [ ] Inspect exact-source native Windows/Mac before/after, complete package dependencies, privacy/link checks and final-head CI/review before promotion. Linux5/6/7 remain separate completion gates.
+- [x] Preserve Windows93/SQLite23/handoff5 and native Mac menu/layout/scroll/culture/key/file/resource regressions, plus native trayless close7 on Windows and both Mac architectures. Source385fa40/run38662200903 passes all four jobs; portable Ubuntu composition4 and existing native key/client/protocol/hardware checks pass.
+- [x] Inspect six exact-source [native Windows/Mac before/after](../evidence/desktop-composition/README.md), complete package dependencies and omission rejection, privacy/metadata/hash receipts and local links. Windows same-host dark comparison is byte-identical.
+- [ ] Complete PR47 final-head CI/author review/promotion and close the completed provider/composition criteria in #3. Linux5/6/7 remain separate completion gates.
 
 ## Tooltip style lifetime — issue35
 
