@@ -1,0 +1,268 @@
+{
+  "schema": 1,
+  "sourceRevision": "fc3247610d8eea881f3502ddc26a8ca63c40f218",
+  "appVersion": "1.38.0",
+  "runtime": ".NET 10.0.13",
+  "ci": {
+    "Verify": {
+      "id": 38700266620,
+      "url": "https://github.com/Gaebabi/codex-switch/actions/runs/38700266620",
+      "jobs": [
+        {
+          "id": 116306570857,
+          "name": "Mac compilation (osx-x64)",
+          "conclusion": "success"
+        },
+        {
+          "id": 116306571094,
+          "name": "Mac compilation (osx-arm64)",
+          "conclusion": "success"
+        },
+        {
+          "id": 116306571142,
+          "name": "Windows isolated checks",
+          "conclusion": "success"
+        },
+        {
+          "id": 116306571194,
+          "name": "Repository checks",
+          "conclusion": "success"
+        }
+      ]
+    },
+    "Linux native": {
+      "id": 38700266624,
+      "url": "https://github.com/Gaebabi/codex-switch/actions/runs/38700266624",
+      "jobs": [
+        {
+          "id": 116306587094,
+          "name": "Linux native keyring (linux-arm64)",
+          "conclusion": "success"
+        },
+        {
+          "id": 116306587306,
+          "name": "Linux native keyring (linux-x64)",
+          "conclusion": "success"
+        }
+      ]
+    }
+  },
+  "peers": [
+    {
+      "schema": 1,
+      "architecture": "X64",
+      "passed": 16,
+      "failed": 0,
+      "contracts": {
+        "schema": 1,
+        "passed": 11,
+        "failed": 0,
+        "architecture": "X64",
+        "checks": [
+          "Absent sockets refuse without creating home credentials or a socket",
+          "Regular-file and symlink collisions refuse with original bytes intact",
+          "Unsafe socket permissions and IPC/home directories refuse without rewriting permissions",
+          "Directory symlinks refuse without following an alternate socket",
+          "A same-UID forged listener is rejected before receiving an application byte",
+          "The ordinary production connector rejects the same forged listener before initialization",
+          "Only the verified packaged entry and explicitly supported arguments are admitted",
+          "Loader/Node/Electron injection and another selected home refuse without inspecting credentials",
+          "Wrong application-resource checksums refuse without changing the root-managed file",
+          "Cancelled connections cannot publish a peer stream",
+          "A real stale native socket reports unavailable and remains unchanged for its owning client"
+        ],
+        "scope": "Owned native sockets and the actual approved sandboxed desktop, without accounts, credentials, inference, client shutdown, chat mutation or authenticated handoff acceptance."
+      },
+      "actualPeer": {
+        "schema": 1,
+        "passed": 5,
+        "failed": 0,
+        "architecture": "X64",
+        "checks": [
+          "Actual sandboxed official desktop authenticates with a peer-bound pidfd and exact root-managed image/resources",
+          "Actual desktop answers the existing framed initialize protocol successfully",
+          "No authentication file is created by peer verification",
+          "The actual managed native launch excludes a parent Node preload without executing its marker",
+          "A retained connection refuses sends after the original native peer exits"
+        ],
+        "scope": "Owned native sockets and the actual approved sandboxed desktop, without accounts, credentials, inference, client shutdown, chat mutation or authenticated handoff acceptance."
+      },
+      "kernel": "6.17.0-1022-azure",
+      "display": "Owned X11/Xvfb; official Chromium sandbox enabled",
+      "officialPackage": "26.1007.71326",
+      "accountsUsed": false,
+      "scope": "Actual official desktop read-only IPC and native socket/process trust. Original owned daemon termination is diagnostic cleanup, not normal application shutdown or authenticated switch/resume evidence.",
+      "sourceRevision": "fc3247610d8eea881f3502ddc26a8ca63c40f218",
+      "ciRun": 38700266624,
+      "artifactId": 11956442074,
+      "artifactDigest": "sha256:bc2bf4020a798928b1aeed0fe201f29511fa03c6d7d81ec38d2e0ff21d8c32ec",
+      "image": {
+        "file": "official-client-native.png",
+        "width": 1280,
+        "height": 800,
+        "sha256": "4155c3b4050f2ef18c7dbae17c080bbfe6e34c4cc8a33f730e74efd17e6b1f6a"
+      },
+      "provenance": "Exact reviewed-source native CI/artifact digest verified before export; no accounts used."
+    },
+    {
+      "schema": 1,
+      "architecture": "Arm64",
+      "passed": 16,
+      "failed": 0,
+      "contracts": {
+        "schema": 1,
+        "passed": 11,
+        "failed": 0,
+        "architecture": "Arm64",
+        "checks": [
+          "Absent sockets refuse without creating home credentials or a socket",
+          "Regular-file and symlink collisions refuse with original bytes intact",
+          "Unsafe socket permissions and IPC/home directories refuse without rewriting permissions",
+          "Directory symlinks refuse without following an alternate socket",
+          "A same-UID forged listener is rejected before receiving an application byte",
+          "The ordinary production connector rejects the same forged listener before initialization",
+          "Only the verified packaged entry and explicitly supported arguments are admitted",
+          "Loader/Node/Electron injection and another selected home refuse without inspecting credentials",
+          "Wrong application-resource checksums refuse without changing the root-managed file",
+          "Cancelled connections cannot publish a peer stream",
+          "A real stale native socket reports unavailable and remains unchanged for its owning client"
+        ],
+        "scope": "Owned native sockets and the actual approved sandboxed desktop, without accounts, credentials, inference, client shutdown, chat mutation or authenticated handoff acceptance."
+      },
+      "actualPeer": {
+        "schema": 1,
+        "passed": 5,
+        "failed": 0,
+        "architecture": "Arm64",
+        "checks": [
+          "Actual sandboxed official desktop authenticates with a peer-bound pidfd and exact root-managed image/resources",
+          "Actual desktop answers the existing framed initialize protocol successfully",
+          "No authentication file is created by peer verification",
+          "The actual managed native launch excludes a parent Node preload without executing its marker",
+          "A retained connection refuses sends after the original native peer exits"
+        ],
+        "scope": "Owned native sockets and the actual approved sandboxed desktop, without accounts, credentials, inference, client shutdown, chat mutation or authenticated handoff acceptance."
+      },
+      "kernel": "6.17.0-1022-azure",
+      "display": "Owned X11/Xvfb; official Chromium sandbox enabled",
+      "officialPackage": "26.1007.71326",
+      "accountsUsed": false,
+      "scope": "Actual official desktop read-only IPC and native socket/process trust. Original owned daemon termination is diagnostic cleanup, not normal application shutdown or authenticated switch/resume evidence.",
+      "sourceRevision": "fc3247610d8eea881f3502ddc26a8ca63c40f218",
+      "ciRun": 38700266624,
+      "artifactId": 11955813942,
+      "artifactDigest": "sha256:1c0aca8aeca50ba2762112c4c258b35db8f44548e7fbdadecbbaa20eed1c47f4",
+      "image": {
+        "file": "official-client-native.png",
+        "width": 1280,
+        "height": 800,
+        "sha256": "5530cb1d66c5a46e7b25033f1530218aa40dc0132212b85b7755d5c4b8a9c0c6"
+      },
+      "provenance": "Exact reviewed-source native CI/artifact digest verified before export; no accounts used."
+    }
+  ],
+  "selectedImages": [
+    {
+      "folder": "windows",
+      "label": "Windows x64",
+      "images": [
+        {
+          "file": "en-dark-800x560.png",
+          "width": 1600,
+          "height": 1120,
+          "sha256": "77f960e3218c42a7e7c9ad9feaf70b08ebafec2bf6591a8186b6619125c2376e",
+          "capture": "Native own window or popup"
+        },
+        {
+          "file": "en-light-500x360.png",
+          "width": 1000,
+          "height": 720,
+          "sha256": "59a49b328e9e7f325cf477f62d883a7d089daca58488a739e2fff70b39a11e83",
+          "capture": "Native own window or popup"
+        }
+      ]
+    },
+    {
+      "folder": "mac-arm64",
+      "label": "macOS15 ARM64",
+      "images": [
+        {
+          "file": "en-dark-800x600-native.png",
+          "width": 800,
+          "height": 600,
+          "sha256": "cbbb82e42e78e3d609f53b8eba5d5f4bb48c7b2676216a1826ece89f1db00711",
+          "capture": "Native own window or popup"
+        },
+        {
+          "file": "en-light-500x360-native.png",
+          "width": 500,
+          "height": 360,
+          "sha256": "dbb9ca515346f54694fa01854c2e81f521734c3fd3c8eedbb4a0e38ab55d28b9",
+          "capture": "Native own window or popup"
+        }
+      ]
+    },
+    {
+      "folder": "mac-intel",
+      "label": "macOS15 Intel",
+      "images": [
+        {
+          "file": "en-light-800x600-native.png",
+          "width": 800,
+          "height": 600,
+          "sha256": "f18141a1c0d59a15b8fb2e5382a4e9665c9f1dd88208289e4632a71a07c8f784",
+          "capture": "Native own window or popup"
+        },
+        {
+          "file": "en-dark-500x360-native.png",
+          "width": 500,
+          "height": 360,
+          "sha256": "9a955146d272cbbae728a4922eb167f7fb13773956ecf621e54bdd31befa843d",
+          "capture": "Native own window or popup"
+        }
+      ]
+    },
+    {
+      "folder": "linux-x64",
+      "label": "Ubuntu24.04 x64",
+      "images": [
+        {
+          "file": "en-dark-800x600-native.png",
+          "width": 800,
+          "height": 600,
+          "sha256": "1cea998a1905f1e9c33fde9617efe4ffe855ce18efbe9763d754fc311377163a",
+          "capture": "Native own window or popup"
+        },
+        {
+          "file": "en-light-500x360-native.png",
+          "width": 500,
+          "height": 360,
+          "sha256": "504b173c20967e9a58279442596d0375761ef117df40e6a6af8e5aaa42113209",
+          "capture": "Native own window or popup"
+        }
+      ]
+    },
+    {
+      "folder": "linux-arm64",
+      "label": "Ubuntu24.04 ARM64",
+      "images": [
+        {
+          "file": "en-light-800x600-native.png",
+          "width": 800,
+          "height": 600,
+          "sha256": "aa40e50dbd50b1e4548c25722203bcd0851de0ef2cab295bb1b429c45346f82f",
+          "capture": "Native own window or popup"
+        },
+        {
+          "file": "en-dark-500x360-native.png",
+          "width": 500,
+          "height": 360,
+          "sha256": "64fb4d7a7fa1dd844370955aefe5e7d94dcd70f83057a8638e8e313d1523c10a",
+          "capture": "Native own window or popup"
+        }
+      ]
+    }
+  ],
+  "windowsSameHostDarkIdentical": true,
+  "scope": "Actual native Linux peer/kernel/process/resource read-only verification and controlled launch; actual utility own-window UI regressions with fictional profiles, and original official-client own-window offline splash confirmations. No accounts, credentials, normal shutdown, chat changes, switch/Continue, full desktops or install acceptance."
+}

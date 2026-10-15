@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "architecture": "X64",
+  "passed": 16,
+  "failed": 0,
+  "contracts": {
+    "schema": 1,
+    "passed": 11,
+    "failed": 0,
+    "architecture": "X64",
+    "checks": [
+      "Absent sockets refuse without creating home credentials or a socket",
+      "Regular-file and symlink collisions refuse with original bytes intact",
+      "Unsafe socket permissions and IPC/home directories refuse without rewriting permissions",
+      "Directory symlinks refuse without following an alternate socket",
+      "A same-UID forged listener is rejected before receiving an application byte",
+      "The ordinary production connector rejects the same forged listener before initialization",
+      "Only the verified packaged entry and explicitly supported arguments are admitted",
+      "Loader/Node/Electron injection and another selected home refuse without inspecting credentials",
+      "Wrong application-resource checksums refuse without changing the root-managed file",
+      "Cancelled connections cannot publish a peer stream",
+      "A real stale native socket reports unavailable and remains unchanged for its owning client"
+    ],
+    "scope": "Owned native sockets and the actual approved sandboxed desktop, without accounts, credentials, inference, client shutdown, chat mutation or authenticated handoff acceptance."
+  },
+  "actualPeer": {
+    "schema": 1,
+    "passed": 5,
+    "failed": 0,
+    "architecture": "X64",
+    "checks": [
+      "Actual sandboxed official desktop authenticates with a peer-bound pidfd and exact root-managed image/resources",
+      "Actual desktop answers the existing framed initialize protocol successfully",
+      "No authentication file is created by peer verification",
+      "The actual managed native launch excludes a parent Node preload without executing its marker",
+      "A retained connection refuses sends after the original native peer exits"
+    ],
+    "scope": "Owned native sockets and the actual approved sandboxed desktop, without accounts, credentials, inference, client shutdown, chat mutation or authenticated handoff acceptance."
+  },
+  "kernel": "6.17.0-1022-azure",
+  "display": "Owned X11/Xvfb; official Chromium sandbox enabled",
+  "officialPackage": "26.1007.71326",
+  "accountsUsed": false,
+  "scope": "Actual official desktop read-only IPC and native socket/process trust. Original owned daemon termination is diagnostic cleanup, not normal application shutdown or authenticated switch/resume evidence.",
+  "sourceRevision": "fc3247610d8eea881f3502ddc26a8ca63c40f218",
+  "ciRun": 38700266624,
+  "artifactId": 11956442074,
+  "artifactDigest": "sha256:bc2bf4020a798928b1aeed0fe201f29511fa03c6d7d81ec38d2e0ff21d8c32ec",
+  "image": {
+    "file": "official-client-native.png",
+    "width": 1280,
+    "height": 800,
+    "sha256": "4155c3b4050f2ef18c7dbae17c080bbfe6e34c4cc8a33f730e74efd17e6b1f6a"
+  },
+  "provenance": "Exact reviewed-source native CI/artifact digest verified before export; no accounts used."
+}

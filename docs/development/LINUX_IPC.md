@@ -2,6 +2,8 @@
 
 Issue [62](https://github.com/Gaebabi/codex-switch/issues/62) is the read-only peer checkpoint within [5](https://github.com/Gaebabi/codex-switch/issues/5) and [6](https://github.com/Gaebabi/codex-switch/issues/6). Source1.38.0 adds the connection provider and a controlled native launch. Ordinary Linux account/handoff UI remains gated until normal lifecycle and authenticated acceptance pass. No supported Linux download is established by this checkpoint.
 
+[Actual program before/after, original official-client confirmations and native16-check receipts](../evidence/linux-desktop-peer/README.md) bind codefc324761 to successful six-job CI on actual x64/ARM64 plus Windows/Mac. Final reviewed-head promotion is owned by PR63.
+
 ## Connection identity
 
 The configured home and its `ipc` directory must be same-user0700 without symbolic links; the existing `ipc.sock` must be a same-user0600 native socket. Descriptor-relative traversal validates ancestors and anchors the connection to the opened directory. Socket identity is checked across connection. No directory, permission or stale socket is repaired or deleted during connection.
