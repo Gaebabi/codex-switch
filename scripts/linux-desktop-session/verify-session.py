@@ -39,7 +39,7 @@ if len(sys.argv) == 1:
     config = root / 'bus.conf'
     config.write_text('<busconfig><type>session</type><listen>unix:tmpdir=' + escape(str(root / 'bus')) + '</listen><auth>EXTERNAL</auth><servicedir>/usr/share/dbus-1/services</servicedir><policy context="default"><allow user="1000"/><allow send_destination="*"/><allow receive_sender="*"/><allow own="*"/></policy></busconfig>')
     config.chmod(0o600)
-    env = {'PATH': '/usr/bin:/bin', 'LANG': 'en_US.UTF-8', 'HOME': str(root / 'home'), 'XDG_DATA_HOME': str(root / 'share'), 'XDG_CONFIG_HOME': str(root / 'config'), 'XDG_CACHE_HOME': str(root / 'cache'), 'XDG_RUNTIME_DIR': str(root / 'runtime'), 'GNOME_KEYRING_CONTROL': str(root / 'control'), 'CODEX_HOME': str(root / 'absent-codex'), 'CODEX_SWITCH_LINUX_TEST_ROOT': str(root), 'CODEX_SWITCH_DISPOSABLE_RUNNER': 'true', 'XDG_SESSION_TYPE': 'x11', 'XDG_CURRENT_DESKTOP': 'XFCE', 'XDG_SESSION_DESKTOP': 'xfce', 'GDK_BACKEND': 'x11'}
+    env = {'PATH': '/usr/bin:/bin', 'LANG': 'C.UTF-8', 'HOME': str(root / 'home'), 'XDG_DATA_HOME': str(root / 'share'), 'XDG_CONFIG_HOME': str(root / 'config'), 'XDG_CACHE_HOME': str(root / 'cache'), 'XDG_RUNTIME_DIR': str(root / 'runtime'), 'GNOME_KEYRING_CONTROL': str(root / 'control'), 'CODEX_HOME': str(root / 'absent-codex'), 'CODEX_SWITCH_LINUX_TEST_ROOT': str(root), 'CODEX_SWITCH_DISPOSABLE_RUNNER': 'true', 'XDG_SESSION_TYPE': 'x11', 'XDG_CURRENT_DESKTOP': 'XFCE', 'XDG_SESSION_DESKTOP': 'xfce', 'GDK_BACKEND': 'x11'}
     run(['dbus-run-session', '--config-file', str(config), '--', 'xvfb-run', '-a', '-s', '-screen 0 1600x1000x24 -nolisten tcp', sys.executable, __file__, '--inside'], env=env, timeout=450)
     raise SystemExit(0)
 
@@ -110,7 +110,8 @@ try:
     wm_id = wm.rsplit(' ', 1)[-1].strip()
     wm_name = run(['xprop', '-id', wm_id, '_NET_WM_NAME'], capture_output=True, text=True).stdout
     check('Real Xfce session and xfwm4 window manager are running', desktop.poll() is None and 'Xfwm4' in wm_name)
-    check('Real desktop panel is running', run(['pgrep', '-u', str(os.getuid()), '-x', 'xfce4-panel'], capture_output=True).stdout.strip() != b'')
+    panel = wait_for(lambda: subprocess.run(['pgrep', '-u', str(os.getuid()), '-x', 'xfce4-panel'], capture_output=True, timeout=5).stdout.strip())
+    check('Real desktop panel is running', bool(panel))
     check('No global .NET host/SDK/runtime is installed', shutil.which('dotnet') is None and not Path('/usr/share/dotnet').exists())
     markers = {root / 'absent-codex/auth.json': b'Owned synthetic invalid authentication marker\x00\xff', root / 'data/preserved/accounts.vault': b'Owned synthetic preserved opaque vault marker\x00\xff'}
     for path, value in markers.items():
@@ -159,12 +160,13 @@ try:
         time.sleep(0.6)
         capture(window, pid, f'ordinary-dark-{width}x{height}')
     run(['xdotool', 'key', '--window', window, 'F5'])
-    check('Ordinary refresh remains alive without reading opaque credentials', Path('/proc/' + str(pid)).exists())
+    check('Ordinary refresh keeps the installed program alive', Path('/proc/' + str(pid)).exists())
     run(['xdotool', 'key', '--window', window, 'ctrl+w'])
     wait_for(lambda: not Path('/proc/' + str(pid)).exists())
     check('Ordinary trayless close exits the installed process', not Path('/proc/' + str(pid)).exists())
     run(['gtk-launch', 'codex-switch'], stdout=private_log, stderr=private_log)
     pid, window = wait_for(find_app, 30)
+    time.sleep(0.6)
     capture(window, pid, 'ordinary-reopened')
     run(['xdotool', 'windowactivate', '--sync', window])
     run(['xdotool', 'key', '--window', window, 'ctrl+w'])
