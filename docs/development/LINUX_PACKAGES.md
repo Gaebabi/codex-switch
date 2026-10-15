@@ -1,5 +1,7 @@
 # Linux preview package candidates
 
+Source1.39.1/PR69 fixes installed self-uninstall reporting found during [ordinary local desktop-session verification](LINUX_DESKTOP_SESSION.md): package commands prepare explicit UTF-8 stdout/stderr file-descriptor writers before removal instead of lazily initializing Console's terminal subsystem after its managed dependency has been deleted. Installed-executable redirected/PTY regressions are separate from the original1.39.0 checkpoint below. Final source-bound acceptance is recorded by PR69.
+
 Issue [66](https://github.com/Gaebabi/codex-switch/issues/66) / [PR67](https://github.com/Gaebabi/codex-switch/pull/67), within parent5/6/7. Source1.39.0 builds complete native **x64 and ARM64** `tar.gz`, `.deb` and `.rpm` candidates. These are unsigned source previews; ordinary account/handoff UI remains gated until authorized actual-account and desktop acceptance. They are not promoted Linux Release downloads.
 
 [Actual installed-program confirmations, supported-OS comparisons and native source/runtime/hash/package receipts](../evidence/linux-installation/README.md) bind codefc548875 to all six passing CI jobs. Each architecture passes native controlled lifecycle18 and per-user544; all six fresh system targets pass9. Candidate artifacts are linked there; final reviewed-head promotion is recorded by PR67.

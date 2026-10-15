@@ -1,6 +1,8 @@
 # Current status
 
-Updated 2026-10-15. Source version **1.39.0**; published binaries **1.27.6**.
+Updated 2026-10-15. Source version **1.39.1**; published binaries **1.27.6**.
+
+Issue68/PR69 runs a real local containerized Debian13/Xfce userspace session with ordinary installed UI, real GNOME Keyring and the official sandboxed client. Actual testing found issue70: a fresh installed executable's self-uninstall removed its runtime before Console's lazy terminal subsystem loaded Microsoft.Win32.Primitives. Source1.39.1 gives package commands explicit UTF-8 standard-descriptor writers before mutation, so result/error reporting uses core file I/O rather than initializing a deleted terminal dependency. The removal algorithm, trust checks and data/key identities are preserved. Installed-executable pipe/file/PTY regressions and complete exact-head native/CI/image acceptance are pending; ordinary account/handoff integration and authenticated switching/Continue remain separate.
 
 PR67/issue66 is complete: final exact3d2a7aeb passed all four Verify38713249139 and both actual-architecture Linux38713249257 jobs; author self-review and expected-SHA squash produced main619bdea6 with the identical reviewed tree. Local main was synchronized/clean and the completed task checkout/branch removed. The source1.39 capture paragraph below retains its original code-run details. Issue68 now tracks the owner's requested local Docker desktop-session verification, using ordinary installed UI rather than synthetic capture mode; confirmation is pending. [Reproducible recipe and scope](LINUX_DESKTOP_SESSION.md). Parent5/6/7 remain open.
 

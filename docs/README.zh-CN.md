@@ -35,7 +35,7 @@
 
 Linux 的[未签名安装/UI 预览候选包](development/LINUX_PACKAGES.md)与正式账户切换支持分开验证。[支持计划](PLATFORM_SUPPORT_PLAN.md) / [Issue #1](https://github.com/Gaebabi/codex-switch/issues/1)。真实认证、聊天恢复与完整桌面环境验证仍在进行，欢迎不同语言、环境和无障碍相关的贡献。
 
-源码1.39.0的 [Linux 存储/UI 预览版](development/LINUX.md)提供 x64/ARM64 完整 tar.gz、deb、rpm 候选包及用户级安装、更新、卸载。普通账户与聊天恢复操作在真实认证验证完成前保持禁用；这不是正式的账户切换发布版。
+源码1.39.1的 [Linux 存储/UI 预览版](development/LINUX.md)提供 x64/ARM64 完整 tar.gz、deb、rpm 候选包及用户级安装、更新、卸载。[本地桌面验证](development/LINUX_DESKTOP_SESSION.md)也包含已安装程序自行卸载后的结果输出。普通账户与聊天恢复操作在真实认证验证完成前保持禁用；这不是正式的账户切换发布版。
 
 [Mac](MACOS.md) / [预测](FORECAST.md) / [安全](../SECURITY.md) / [开发](../CONTRIBUTING.md)
 

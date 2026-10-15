@@ -39,7 +39,7 @@ Codex アカウントを切り替え、次に使うアカウントの残り利�
 
 Linux は[未署名のインストール・UIプレビュー候補](development/LINUX_PACKAGES.md)を、正式なアカウント切り替え対応とは分けて検証しています。[対応計画](PLATFORM_SUPPORT_PLAN.md) / [Issue #1](https://github.com/Gaebabi/codex-switch/issues/1)。実際の認証・チャット再開と完全なデスクトップ検証は継続中です。
 
-ソース1.39.0の[Linuxストレージ/UIプレビュー](development/LINUX.md)は、x64・ARM64の完全なtar.gz・deb・rpm候補とユーザー単位のインストール・更新・削除を提供します。通常のアカウント・チャット再開操作は実際の認証検証まで無効で、正式なアカウント切り替えリリースではありません。
+ソース1.39.1の[Linuxストレージ/UIプレビュー](development/LINUX.md)は、x64・ARM64の完全なtar.gz・deb・rpm候補とユーザー単位のインストール・更新・削除を提供します。[ローカルデスクトップ検証](development/LINUX_DESKTOP_SESSION.md)には、インストール済み実行ファイルによる自己削除の結果出力も含まれます。通常のアカウント・チャット再開操作は実際の認証検証まで無効で、正式なアカウント切り替えリリースではありません。
 
 [Mac](MACOS.md) / [予測](FORECAST.md) / [セキュリティ](../SECURITY.md) / [開発](../CONTRIBUTING.md)
 

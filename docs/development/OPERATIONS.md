@@ -1,10 +1,10 @@
 # Operations
 
-Public `Gaebabi/codex-switch`, baseline `main`, is the canonical source. Clone into any directory. Source/app version is **1.39.0**; published binary version remains **1.27.6**. Binary delivery is manual GitHub Release ZIPs plus SHA256SUMS; no automatic updater or CI release publisher exists. [Linux candidate packaging](LINUX_PACKAGES.md) is separate unsigned PR/CI preview delivery, not a supported account-switching Release.
+Public `Gaebabi/codex-switch`, baseline `main`, is the canonical source. Clone into any directory. Source/app version is **1.39.1**; published binary version remains **1.27.6**. Binary delivery is manual GitHub Release ZIPs plus SHA256SUMS; no automatic updater or CI release publisher exists. [Linux candidate packaging](LINUX_PACKAGES.md) is separate unsigned PR/CI preview delivery, not a supported account-switching Release.
 
 ## Build and verify
 
-Run from the repository root with .NET10.0.4xx, currently SDK10.0.402/runtime10.0.13. `global.json` allows current patch updates. Use clean output folders for package candidates. .NET10's reviewed current Mac support baseline is macOS15+; the bundle minimum and app version match source1.39.0. [KDE6 provider contracts and native gates](KDE_SECRET_SERVICE.md) describe explicit package/checksum support; runtime providers are not installed or altered by the app. [Linux IPC](LINUX_IPC.md) records controlled launch, native peer trust, kernel/display/container requirements and the remaining lifecycle/account gates.
+Run from the repository root with .NET10.0.4xx, currently SDK10.0.402/runtime10.0.13. `global.json` allows current patch updates. Use clean output folders for package candidates. .NET10's reviewed current Mac support baseline is macOS15+; the bundle minimum and app version match source1.39.1. [KDE6 provider contracts and native gates](KDE_SECRET_SERVICE.md) describe explicit package/checksum support; runtime providers are not installed or altered by the app. [Linux IPC](LINUX_IPC.md) records controlled launch, native peer trust, kernel/display/container requirements and the remaining lifecycle/account gates. [Local desktop-session verification](LINUX_DESKTOP_SESSION.md) exercises ordinary installed UI and actual provider/client lifecycles without host homes or credentials.
 
 ```powershell
 .\scripts\build.ps1 -Verify

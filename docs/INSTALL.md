@@ -32,7 +32,7 @@ The installer validates the new app and preserves the previous installation. Loc
 
 ## First use
 
-Linux source1.39.0 provides complete unsigned native x64/ARM64 tar.gz/deb/rpm installation/UI preview candidates, with their runtime, menu/icon integration and data-preserving per-user lifecycle. [Candidate download/use/build/native verification](development/LINUX_PACKAGES.md). Contributors can also run `bash scripts/build-linux.sh` after installing the declared native dependencies. Ordinary account/handoff actions remain gated; these are not supported Linux account-switching releases. [Native environment and pending gates](development/LINUX.md).
+Linux source1.39.1 provides complete unsigned native x64/ARM64 tar.gz/deb/rpm installation/UI preview candidates, with their runtime, menu/icon integration and data-preserving per-user lifecycle. [Candidate download/use/build/native verification](development/LINUX_PACKAGES.md). [Local desktop-session verification](development/LINUX_DESKTOP_SESSION.md) includes installed self-uninstall reporting. Contributors can also run `bash scripts/build-linux.sh` after installing the declared native dependencies. Ordinary account/handoff actions remain gated; these are not supported Linux account-switching releases. [Native environment and pending gates](development/LINUX.md).
 
 Select **+**, complete browser sign-in, compare the cards and choose **Switch**. In Windows, right-click **↻** to import the current Codex login.
 
