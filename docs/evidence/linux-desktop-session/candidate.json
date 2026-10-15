@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "sourceRevision": "dc320a86053629cd316a30105e16db5054af06d3",
+  "version": "1.39.1",
+  "sourceVersion": "1.39.1",
+  "verificationOnlyVersionOverride": false,
+  "rid": "linux-x64",
+  "runtime": ".NET 10.0.13",
+  "nativeArchitecture": "X64",
+  "unsignedPreview": true,
+  "supportedAccountHandoff": false,
+  "payloadFiles": 259,
+  "artifacts": [
+    {
+      "file": "CodexSwitch-v1.39.1-preview-linux-x64.tar.gz",
+      "sha256": "5fd527d03c383bacb823cbe1f1cff84227b500c85012c98d0f8d58e387dccbdb",
+      "bytes": 44233064
+    },
+    {
+      "file": "CodexSwitch-v1.39.1-preview-linux-x64.deb",
+      "sha256": "2074932bcd679ac5ea91454ca6ced9f4fff2d5d818076541f7ea0e6df1dd692d",
+      "bytes": 35368388
+    },
+    {
+      "file": "CodexSwitch-v1.39.1-preview-linux-x64.rpm",
+      "sha256": "919a9d9aa82f9e4e8bfc5b3ece4018c37363879f593a7dfb9d404558d9246552",
+      "bytes": 44314936
+    }
+  ],
+  "scope": "Native source-built unsigned candidate packages only. Checksums/inventory do not establish publisher authentication, actual account handoff or clean-desktop support."
+}

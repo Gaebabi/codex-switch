@@ -2,7 +2,13 @@
 
 ## Current source evidence
 
-Source 1.36.0 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
+Source1.39.1 is the current app; published downloads remain1.27.6. Each entry retains its capture-time scope; earlier pending states are historical. Declared KWallet5/6/KSecrets, SQLite/client-policy and controlled peer capabilities have later acceptance; ordinary authenticated Linux handoff remains in5/6/7. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
+
+- [Actual local Linux desktop session, ordinary installed UI and same-home relaunch](linux-desktop-session/README.md): source1.39.1; Debian13/Xfce/real GNOME Keyring,35 orchestration checks/28 overlapping native assertions, installed self-uninstall with redirected output/PTY, pinned original-client normal Quit and same-home relaunch with US/French mappings. Seven individually inspected actual program PNGs; no accounts or full desktop/VM/Wayland/ARM64 claim.
+
+- [Complete unsigned Linux installation candidates](linux-installation/README.md): original source1.39.0 checkpoint; native x64/ARM64 three-format candidates, per-user544 and six fresh minimal system cases9 each, with25 inspected actual program images. Later source1.39.1 adds installed self-uninstall regression and local desktop acceptance above; supported account-switching Release remains separate.
+
+- [Linux original-peer IPC and managed startup](linux-desktop-peer/README.md) and [KWallet6/KSecrets](linux-kde6/README.md) retain their exact-source native fixtures and actual program confirmation.
 
 - [Positive KWallet5 storage and five-target program confirmation](linux-kwallet-storage/README.md): source1.36.0; actual native x64/ARM64 KWallet31/GNOME29,1024 independent encrypted key sessions, legacy ciphertext/original-key preservation and exact-source C vectors. Ten inspected own-window after PNGs; full KDE/Wayland/authenticated handoff/packages stay separate.
 

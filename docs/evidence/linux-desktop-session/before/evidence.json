@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "expected": {
+    "schema": 1,
+    "testRevision": "8736058c4fd09c6495e4e73100c30c62edb2a987",
+    "candidateRevision": "3d2a7aeb364362b225e86992ce0e955a2a5544a2",
+    "candidateVersion": "1.39.0",
+    "candidateSha256": "1e3fb30a4af8565e6666bb8a68ff1f7ea2558618fa89e3003d2ebaba34329a0a",
+    "upstreamSha256": "0e006b4931712f5a90d4cd04972c6e0b533cedcdfdb2b51946d5b9367471f556",
+    "architecture": "X64"
+  },
+  "file": "ordinary-dark-800x600.png",
+  "sha256": "5799f2b906de6b77a26acd7c0248da7c3d15e62cf0703b472555c70695dea481",
+  "width": 800,
+  "height": 600,
+  "capture": "Actual ordinary installed application own XID before the source1.39.0 self-uninstall failure; no synthetic account injection",
+  "failure": {
+    "signal": "SIGABRT",
+    "exception": "FileNotFoundException loading Microsoft.Win32.Primitives after recorded runtime removal",
+    "site": "System.ConsolePal.EnsureInitializedCore"
+  },
+  "scope": "Before-window and sanitized observed failure only; the earlier full session did not complete and is not counted as a passing run."
+}

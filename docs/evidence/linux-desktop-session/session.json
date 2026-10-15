@@ -1,0 +1,257 @@
+{
+  "schema": 1,
+  "expected": {
+    "schema": 1,
+    "testRevision": "dc320a86053629cd316a30105e16db5054af06d3",
+    "candidateRevision": "dc320a86053629cd316a30105e16db5054af06d3",
+    "candidateVersion": "1.39.1",
+    "candidateSha256": "2074932bcd679ac5ea91454ca6ced9f4fff2d5d818076541f7ea0e6df1dd692d",
+    "upstreamSha256": "0e006b4931712f5a90d4cd04972c6e0b533cedcdfdb2b51946d5b9367471f556",
+    "architecture": "X64"
+  },
+  "passed": 35,
+  "failed": 0,
+  "checks": [
+    "Real Xfce session and xfwm4 window manager are running",
+    "Real desktop panel is running",
+    "No global .NET host/SDK/runtime is installed",
+    "Actual GNOME Keyring phase: roundtrip",
+    "Actual GNOME Keyring phase: concurrent",
+    "Actual GNOME Keyring phase: locked",
+    "Actual GNOME Keyring phase: unlock",
+    "Actual GNOME Keyring phase: read-after-unlock",
+    "Actual GNOME Keyring phase: read-after-restart",
+    "Provider restart preserves original ciphertext bytes",
+    "Installed candidate version/architecture/runtime match",
+    "Ordinary desktop entry launches the actual per-user installed program",
+    "Capture is bound to original application PID: ordinary-dark-500x360",
+    "Capture is bound to original application PID: ordinary-dark-600x420",
+    "Capture is bound to original application PID: ordinary-dark-800x600",
+    "Capture is bound to original application PID: ordinary-light-800x600",
+    "Ordinary theme button changes the rendered application theme",
+    "Ordinary refresh keeps the installed program alive",
+    "Ordinary trayless close exits the installed process",
+    "Capture is bound to original application PID: ordinary-reopened",
+    "Fresh installed self-uninstall returns successful JSON through redirected output",
+    "Per-user uninstall removes only owned menu/current integration",
+    "Fresh installed self-uninstall also succeeds on a real PTY",
+    "Actual native keyboard layout is us",
+    "Capture is bound to original application PID: official-client-start-1",
+    "Actual sandboxed official-client start/IPC/normal close cycle 1",
+    "Native Quit preserves the independent neutral window with us key mapping",
+    "Actual native keyboard layout is fr",
+    "Capture is bound to original application PID: official-client-start-2",
+    "Actual sandboxed official-client start/IPC/normal close cycle 2",
+    "Native Quit preserves the independent neutral window with fr key mapping",
+    "Original opaque synthetic marker bytes/modes preserved",
+    "Original opaque synthetic marker bytes/modes preserved",
+    "Actual GNOME Keyring phase: read-after-restart",
+    "Original native-key ciphertext survives desktop/UI/client lifecycle"
+  ],
+  "nativePhases": [
+    {
+      "phase": "roundtrip",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 8,
+      "failed": 0,
+      "checks": [
+        "Existing CADL1 ciphertext and its original native key reopen without migration",
+        "Linux envelope usesCADL1, random nonce and authenticated payload",
+        "Tamper/truncation/foreign envelopes refuse without changing ciphertext",
+        "Binary keys preserve exact bytes independently of provider MIME tagging",
+        "Actual application vault save/reopen preserves JSON and private modes",
+        "No-follow links and non-regular files refuse without blocking or replacement",
+        "Insecure modes reject before replacement and preserve existing bytes",
+        "Ambiguous and malformed keys never get replaced"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "concurrent",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Independent processes share exactly one OS key and decrypt every ciphertext"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "locked",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Locked existing key refuses read/save without creating a replacement"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "unlock",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Actual owned collection unlock restores the original encrypted data"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "read-after-unlock",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Existing OS key decrypts unchanged vault/application data: read-after-unlock"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "phase": "read-after-restart",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Existing OS key decrypts unchanged vault/application data: read-after-restart"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    },
+    {
+      "schema": 1,
+      "passed": 7,
+      "failed": 0,
+      "architecture": "X64",
+      "checks": [
+        "Actual sandboxed official desktop authenticates with a peer-bound pidfd and exact root-managed image/resources",
+        "Actual desktop answers the existing framed initialize protocol successfully",
+        "No authentication file is created by peer verification",
+        "The actual managed native launch excludes a parent Node preload without executing its marker",
+        "The original verified native client exits normally through its native Quit command and its captured children exit without force",
+        "An independently running real pinned Codex CLI is preserved by intended-client shutdown",
+        "A retained connection refuses sends after the original native peer exits"
+      ],
+      "scope": "Actual sandboxed official desktop with controlled normal X11 application Quit, captured child exits and a preserved independent real Codex CLI. No accounts, credentials, inference, chat mutation or authenticated handoff acceptance.",
+      "keyboardLayout": "us"
+    },
+    {
+      "schema": 1,
+      "passed": 7,
+      "failed": 0,
+      "architecture": "X64",
+      "checks": [
+        "Actual sandboxed official desktop authenticates with a peer-bound pidfd and exact root-managed image/resources",
+        "Actual desktop answers the existing framed initialize protocol successfully",
+        "No authentication file is created by peer verification",
+        "The actual managed native launch excludes a parent Node preload without executing its marker",
+        "The original verified native client exits normally through its native Quit command and its captured children exit without force",
+        "An independently running real pinned Codex CLI is preserved by intended-client shutdown",
+        "A retained connection refuses sends after the original native peer exits"
+      ],
+      "scope": "Actual sandboxed official desktop with controlled normal X11 application Quit, captured child exits and a preserved independent real Codex CLI. No accounts, credentials, inference, chat mutation or authenticated handoff acceptance.",
+      "keyboardLayout": "fr"
+    },
+    {
+      "phase": "read-after-restart",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "passed": 1,
+      "failed": 0,
+      "checks": [
+        "Existing OS key decrypts unchanged vault/application data: read-after-restart"
+      ],
+      "scope": "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access."
+    }
+  ],
+  "images": [
+    {
+      "file": "ordinary-dark-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "d138f5083ad22b7e8dd2074b79e4f48056c9a9523bf8bca72e124a642e1e3b8e",
+      "capture": "Actual ordinary installed application own XID; no --verify-ui or synthetic account injection",
+      "publication": "Selected and individually visually inspected; no personal pixels or metadata"
+    },
+    {
+      "file": "ordinary-dark-600x420.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "f21e71d17b729b8ab65ecffa4062eb728c052d0d1c5505705805eec92763d9b0",
+      "capture": "Actual ordinary installed application own XID; no --verify-ui or synthetic account injection",
+      "publication": "Selected and individually visually inspected; no personal pixels or metadata"
+    },
+    {
+      "file": "ordinary-dark-800x600.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "5799f2b906de6b77a26acd7c0248da7c3d15e62cf0703b472555c70695dea481",
+      "capture": "Actual ordinary installed application own XID; no --verify-ui or synthetic account injection",
+      "publication": "Selected and individually visually inspected; no personal pixels or metadata"
+    },
+    {
+      "file": "ordinary-light-800x600.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "2235ec140486811a949be1db038caf3a062eaa3acf1d0f3d2375ecfa7d460d28",
+      "capture": "Actual ordinary installed application own XID; no --verify-ui or synthetic account injection",
+      "publication": "Selected and individually visually inspected; no personal pixels or metadata"
+    },
+    {
+      "file": "ordinary-reopened.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "f21e71d17b729b8ab65ecffa4062eb728c052d0d1c5505705805eec92763d9b0",
+      "capture": "Actual ordinary installed application own XID; no --verify-ui or synthetic account injection",
+      "publication": "Selected and individually visually inspected; no personal pixels or metadata"
+    },
+    {
+      "file": "official-client-start-2.png",
+      "width": 1090,
+      "height": 760,
+      "sha256": "646e92338ccb68e0ebe0c83ee1dd5aae53f8cb88edb4df4e679601117559e6ce",
+      "capture": "Actual ordinary installed application own XID; no --verify-ui or synthetic account injection",
+      "publication": "Selected and individually visually inspected; no personal pixels or metadata"
+    }
+  ],
+  "packages": [
+    "chatgpt 26.1007.71326",
+    "codex-switch 1.39.1~preview.1",
+    "gnome-keyring 48.0-1",
+    "xfce4-panel 4.20.4-1",
+    "xfce4-session 4.20.2-2",
+    "xfwm4 4.20.0-1"
+  ],
+  "kernel": "6.18.40.1-microsoft-standard-WSL2",
+  "ordinaryUi": true,
+  "accountsUsed": false,
+  "display": "X11/Xvfb with actual Xfce session/xfwm4/panel",
+  "scope": "Actual normal-user containerized desktop userspace, ordinary installed app/menu/resize/refresh/close/reopen, actual GNOME encrypted storage and sandboxed official-client IPC/normal close/relaunch. No authenticated account switch/Continue, login manager/PAM, booted VM, native GPU, GNOME/KDE/Wayland, ARM64 or supported Release acceptance.",
+  "isolation": {
+    "user": "1000:1000",
+    "hostMounts": false,
+    "publishedPorts": false,
+    "runtimeNetwork": "none",
+    "privileged": false,
+    "capabilities": "all dropped",
+    "seccomp": "unconfined for actual Chromium user-namespace sandbox; client sandbox remains enabled",
+    "memoryBytes": 2147483648,
+    "cpus": 2,
+    "pidsLimit": 512
+  },
+  "withheldCaptures": [
+    {
+      "file": "official-client-start-1.png",
+      "width": 1280,
+      "height": 820,
+      "sha256": "9648cea948d2b053a6494b1975383ee47c435316321dd368d46436b35b8d4169",
+      "capture": "Actual ordinary installed application own XID; no --verify-ui or synthetic account injection",
+      "publication": "Withheld: inspected chrome-only initial upstream frame; no meaningful client content"
+    }
+  ],
+  "originalNativeReceiptSha256": "3fdbd6c6927530c4bc3f9387b573059a97708f1f766c168da05ad74cb392a618"
+}
