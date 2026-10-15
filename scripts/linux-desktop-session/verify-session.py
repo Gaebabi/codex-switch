@@ -213,7 +213,11 @@ try:
     finally:
         os.close(master)
     check('Fresh installed self-uninstall also succeeds on a real PTY', terminal.returncode == 0 and json.loads(terminal_output)['uninstalled'] is True and not entry.exists() and not executable.exists())
+    neutral = subprocess.Popen(['xmessage', '-title', 'Owned unrelated desktop verification', 'Owned neutral fixture; no personal screen'], stdout=private_log, stderr=private_log)
+    neutral_window = wait_for(lambda: subprocess.run(['xdotool', 'search', '--onlyvisible', '--name', '^Owned unrelated desktop verification$'], capture_output=True, text=True, timeout=5).stdout.splitlines())[0]
     for attempt in (1, 2):
+        layout = 'us' if attempt == 1 else 'fr'
+        run(['setxkbmap', '-layout', layout, '-option', ''])
         home = root / 'codex-linux-desktop-test-session-peer'
         if not home.exists():
             home.mkdir(mode=0o700)
@@ -230,10 +234,17 @@ try:
         native_pid = started['ownedProcess']
         native_window = wait_for(lambda: windows(native_pid), 15)[0]
         capture(native_window, native_pid, 'official-client-start-' + str(attempt))
+        run(['xdotool', 'windowactivate', '--sync', neutral_window])
         rest, _ = peer.communicate('request-normal-close\n', timeout=45)
+        if peer.returncode != 0:
+            raise RuntimeError('The original native client did not complete normal application Quit; inspect the private native diagnostics')
         value = json.loads(rest)
         check('Actual sandboxed official-client start/IPC/normal close cycle ' + str(attempt), peer.returncode == 0 and value['failed'] == 0 and value['passed'] == 7)
+        check('Native Quit preserves the independent neutral window with ' + layout + ' key mapping', neutral.poll() is None)
         phases.append(value)
+    run(['setxkbmap', '-layout', 'us', '-option', ''])
+    neutral.terminate()
+    neutral.wait(timeout=5)
     for path, value in markers.items():
         check('Original opaque synthetic marker bytes/modes preserved', path.read_bytes() == value and path.stat().st_mode & 0o777 == 0o600)
     phase('read-after-restart')

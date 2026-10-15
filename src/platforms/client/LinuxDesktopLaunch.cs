@@ -80,7 +80,7 @@ internal sealed class LinuxDesktopLaunch : IDisposable
             using var children = LinuxProcessChildren.Capture(Id, deadline.Token);
             await Task.Run(() =>
             {
-                using var windows = new LinuxX11Close(_display, deadline.Token);
+                using var windows = new LinuxX11Quit(_display, deadline.Token);
                 windows.Request(Id, stream.Flush);
             }, deadline.Token).ConfigureAwait(false);
             await _process.WaitForExitAsync(deadline.Token).ConfigureAwait(false);
