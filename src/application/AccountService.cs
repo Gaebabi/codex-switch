@@ -57,6 +57,7 @@ internal sealed class AccountService
         await using var client = await OpenLinuxAsync(cancellation).ConfigureAwait(false);
         var policy = client == null ? null : await client.RequireFileAsync(cancellation).ConfigureAwait(false);
         var installation = client?.Installation ?? await RuntimeLocator.FindAsync(cancellation).ConfigureAwait(false);
+        if (policy != null && CanonicalAuthExists()) LinuxClientSession.RequireFile(policy, AuthDocument.Parse(ReadCanonicalAuth()).AccountId);
         await Task.Run(() => RuntimeHome.CleanupStale(Vault.DirectoryPath), cancellation).ConfigureAwait(false);
         lock (Vault.SyncRoot) { Installation = installation; SynchronizeCurrentCore(policy); Vault.Save(); }
         Changed?.Invoke();

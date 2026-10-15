@@ -88,8 +88,10 @@ internal static class AccountPolicyContracts
                 var rule = kind == "workspace" ? "forced_chatgpt_workspace_id = \"different-workspace\"\n" : "forced_login_method = \"api\"\n";
                 var home = Home("restricted-" + kind, "cli_auth_credentials_store = \"file\"\n" + rule + LocalEndpoint); SecureFiles.AtomicWriteText(Path.Combine(home, "auth.json"), auth);
                 var vault = Vault("restricted-" + kind); var service = new AccountService(vault, home);
+                var stale = Path.Combine(vault.DirectoryPath, "runtime", Guid.NewGuid().ToString("N")); SecureFiles.CreatePrivateDirectory(stale);
+                SecureFiles.AtomicWriteText(Path.Combine(stale, "owner.json"), "{\"pid\":2147483647,\"startedAt\":0}");
                 await Denied(() => service.InitializeAsync(CancellationToken.None), kind == "workspace" ? LinuxAccountPolicyFailure.WorkspaceMismatch : LinuxAccountPolicyFailure.CredentialsUnavailable);
-                Assert(vault.Data.Accounts.Count == 0 && !File.Exists(vault.FilePath) && File.ReadAllText(Path.Combine(home, "auth.json")) == auth);
+                Assert(vault.Data.Accounts.Count == 0 && !File.Exists(vault.FilePath) && File.ReadAllText(Path.Combine(home, "auth.json")) == auth && File.Exists(Path.Combine(stale, "owner.json")));
                 await service.StopAsync();
             }
         });
