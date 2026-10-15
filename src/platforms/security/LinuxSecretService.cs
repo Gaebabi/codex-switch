@@ -125,7 +125,7 @@ internal static class LinuxSecretService
             try
             {
                 var bytes = secret_value_get(value, out var count);
-                if (count != 32 || bytes == IntPtr.Zero || Marshal.PtrToStringUTF8(secret_value_get_content_type(value)) != "application/octet-stream")
+                if (count != 32 || bytes == IntPtr.Zero)
                     throw new LinuxVaultException(LinuxKeyFailure.Invalid);
                 var result = new byte[32]; Marshal.Copy(bytes, result, 0, result.Length); return result;
             }
@@ -177,7 +177,6 @@ internal static class LinuxSecretService
     [DllImport(Secret)] private static extern int secret_item_load_secret_sync(IntPtr item, IntPtr cancel, out IntPtr error);
     [DllImport(Secret)] private static extern IntPtr secret_item_get_secret(IntPtr item);
     [DllImport(Secret)] private static extern IntPtr secret_value_get(IntPtr value, out nuint length);
-    [DllImport(Secret)] private static extern IntPtr secret_value_get_content_type(IntPtr value);
     [DllImport(Secret)] private static extern IntPtr secret_value_new([In] byte[] bytes, nint length, [MarshalAs(UnmanagedType.LPUTF8Str)] string contentType);
     [DllImport(Secret)] private static extern void secret_value_unref(IntPtr value);
     [DllImport(Secret)] private static extern IntPtr secret_collection_for_alias_sync(IntPtr service, [MarshalAs(UnmanagedType.LPUTF8Str)] string alias, uint flags, IntPtr cancel, out IntPtr error);

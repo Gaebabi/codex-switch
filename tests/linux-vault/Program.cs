@@ -55,6 +55,19 @@ try
                 CryptoFailure(() => VaultProtection.Unprotect(encrypted[..32], directory)); changed = (byte[])encrypted.Clone(); changed[3] = (byte)'M';
                 CryptoFailure(() => VaultProtection.Unprotect(changed, directory)); Assert(File.ReadAllBytes(file).SequenceEqual(encrypted));
             });
+            Check("Binary keys preserve exact bytes independently of provider MIME tagging", () =>
+            {
+                var path = Path.Combine(root, "data", "linux-self-test-binary"); SecureFiles.CreatePrivateDirectory(path);
+                var key = RandomNumberGenerator.GetBytes(32); key[0] = 0; key[1] = 255;
+                try
+                {
+                    LinuxSecretService.AddDiagnosticKey(path, key);
+                    var actual = LinuxSecretService.ReadOrCreateKey(SecureFiles.Hash(path), false);
+                    try { Assert(CryptographicOperations.FixedTimeEquals(key, actual)); }
+                    finally { CryptographicOperations.ZeroMemory(actual); }
+                }
+                finally { CryptographicOperations.ZeroMemory(key); LinuxSecretService.DeleteDiagnosticKey(path); }
+            });
             Check("Actual application vault save/reopen preserves JSON and private modes", () =>
             {
                 var vault = new AccountVault(appDirectory); vault.Data.Theme = "light"; vault.Save(); VaultProtection.ReleaseKeys();

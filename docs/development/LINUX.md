@@ -12,6 +12,8 @@ Linux private writes walk directories with descriptor-relative no-follow opens, 
 
 Native open flags follow the declared process ABI: ARM64's directory/no-follow constants differ from x64. Both require native execution; unknown ABIs refuse instead of guessing. The `statx` layout follows the stable256-byte Linux UAPI. [ARM64 flags](https://github.com/torvalds/linux/blob/v6.8/arch/arm64/include/uapi/asm/fcntl.h), [generic flags](https://github.com/torvalds/linux/blob/v6.8/include/uapi/asm-generic/fcntl.h), [statx UAPI](https://github.com/torvalds/linux/blob/v6.8/include/uapi/linux/stat.h).
 
+Secret values are opaque binary bytes. The key contract requires exactly32 bytes and checks newly stored/read values with constant-time comparison; MIME metadata does not define the cryptographic format. GNOME Keyring46.1 labels returned secrets `text/plain` regardless of the original binary type in [its native implementation](https://github.com/GNOME/gnome-keyring/blob/46.1/daemon/dbus/gkd-secret-secret.c). Native regression explicitly includes NUL/non-UTF-8 key bytes; no text decoding, trimming or base64 repair is used.
+
 ## Native provider suite
 
 Run on the declared Ubuntu24.04 x64/arm64 runner with .NET10.0.4xx, libsecret, actual GNOME Keyring, D-Bus/gdbus tools and Python3.12:
