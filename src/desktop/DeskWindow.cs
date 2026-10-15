@@ -119,7 +119,7 @@ internal sealed class DeskWindow : Window
         var mark = new BrandMark { Width = 18, Height = 18, Ink = _theme.Brush("text") };
         var captionContent = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
         captionContent.Children.Add(mark); captionContent.Children.Add(caption);
-        var dragRegion = new Border { Background = Brushes.Transparent, Margin = new Thickness(84, 0, 0, 0), Child = captionContent };
+        var dragRegion = new Border { Background = Brushes.Transparent, Margin = new Thickness(_host.Appearance.TitleInset, 0, 0, 0), Child = captionContent };
         dragRegion.PointerPressed += (_, args) =>
         {
             if (!args.GetCurrentPoint(dragRegion).Properties.IsLeftButtonPressed) return;

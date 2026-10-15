@@ -3,7 +3,7 @@ using Avalonia.Input;
 
 namespace CodexAccountDesk;
 
-internal sealed record DesktopAppearance(string FontFamily, Func<bool> ReducedMotion);
+internal sealed record DesktopAppearance(string FontFamily, Func<bool> ReducedMotion, double TitleInset = 84);
 
 internal sealed record DesktopHost(string DataDirectory, string CodexHome, string WindowTitle,
     IResourceMonitor Resources, Func<IDesktopMenuBar>? CreateMenuBar, KeyModifiers CommandModifier,

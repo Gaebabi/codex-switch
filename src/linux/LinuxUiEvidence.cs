@@ -47,7 +47,9 @@ internal static class LinuxUiEvidence
                 await Task.Delay(120);
                 if (!window.IsVisible || window.Cards.Count != 4 || window.MenuBarProbe != null || Math.Abs(window.Bounds.Width - size.Item1) > 1 || Math.Abs(window.Bounds.Height - size.Item2) > 1 ||
                     window.Cards.Any(card => card.Bounds.Width <= 0 || card.Bounds.Height < 126))
-                    throw new InvalidOperationException("Shared Linux window account geometry/tray capability did not match.");
+                    throw new InvalidOperationException("Shared Linux window geometry mismatch: requested=" + size.Item1 + "x" + size.Item2 + "; bounds=" + window.Bounds +
+                        "; client=" + window.ClientSize + "; visible=" + window.IsVisible + "; tray=" + (window.MenuBarProbe != null) + "; cards=" +
+                        string.Join(";", window.Cards.Select(card => card.Bounds.ToString())));
                 var name = language + "-" + (dark ? "dark" : "light") + "-" + size.Item1 + "x" + size.Item2 + "-native.png";
                 await Capture(window, Path.Combine(directory, name)); checks.Add(name);
             }

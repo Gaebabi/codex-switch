@@ -33,7 +33,7 @@ internal static class Program
         try
         {
             var host = new DesktopHost(data, home, "Codex Switch", new UnavailableLinuxResources(), null, KeyModifiers.Control, "/",
-                new DesktopAppearance("DejaVu Sans", () => true), () => DiagnosticExitCode, PreviewMessage);
+                new DesktopAppearance("DejaVu Sans", () => true, 8), () => DiagnosticExitCode, PreviewMessage);
             var builder = AppBuilder.Configure(() => new DeskApp(host, evidence == null ? null : SyntheticDashboard.Accounts(),
                 evidence == null ? null : window => LinuxUiEvidence.RenderAsync(window, evidence))).UsePlatformDetect().LogToTrace();
             if (evidence != null) builder.With(new X11PlatformOptions { RenderingMode = new[] { X11RenderingMode.Software } });
