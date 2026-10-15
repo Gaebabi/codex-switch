@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "targets": [
+    { "id": "ubuntu24", "family": "deb", "image": "ubuntu@sha256:534baea6a22c03a63003dbc8dbe78fe34bc0d7e595d9a9dc9834884ff530eb55", "distribution": "Ubuntu 24.04" },
+    { "id": "debian13", "family": "deb", "image": "debian@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5", "distribution": "Debian 13" },
+    { "id": "fedora44", "family": "rpm", "image": "registry.fedoraproject.org/fedora@sha256:e1af42f90ba464667c4efa9de8d6b32ac106260f91175340b4ddbba6efb15da9", "distribution": "Fedora 44" }
+  ]
+}

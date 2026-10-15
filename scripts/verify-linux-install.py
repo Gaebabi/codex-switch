@@ -44,7 +44,7 @@ def run(binary,argument,env,success=True):
  if (result.returncode==0)!=success:raise RuntimeError('Unexpected package entry point result: '+argument+' '+result.stderr[-2000:])
  return result
 try:
- payload,manifest=unpack(a.archive,'current');home=root/'home-데모 space%$`"\\';home.mkdir(mode=0o700)
+ payload,manifest=unpack(a.archive,'current');home=root/'home-데모 space%$`"\\=';home.mkdir(mode=0o700)
  data=home/'share';data.mkdir(mode=0o700);codex=home/'.codex';codex.mkdir(mode=0o700);vault=data/'CodexAccountDesk';vault.mkdir(mode=0o700)
  markers={codex/'auth.json':b'Owned synthetic existing authentication bytes\x00\xff',vault/'accounts.vault':b'Owned synthetic existing encrypted-vault bytes\x00\xff'}
  for file,value in markers.items():file.write_bytes(value);file.chmod(0o600)
@@ -70,8 +70,17 @@ try:
  gio.g_app_info_get_executable.argtypes=[ctypes.c_void_p];gio.g_app_info_get_executable.restype=ctypes.c_char_p
  objects.g_object_unref.argtypes=[ctypes.c_void_p]
  native=gio.g_desktop_app_info_new_from_filename(os.fsencode(desktop));check('The native desktop parser accepts Unicode/special-character installation paths',bool(native))
- try:check('The native desktop parser resolves the intended executable',gio.g_app_info_get_executable(native).decode().replace('%%','%')==str(installed))
+ try:check('The native desktop parser resolves the root-managed shell-free launcher',gio.g_app_info_get_executable(native).decode()=='/usr/bin/env')
  finally:objects.g_object_unref(native)
+ diagnostic=root/'native-launch.desktop';text=desktop.read_text(encoding='utf-8').replace(' ./CodexSwitch\n',' ./CodexSwitch --package-info\n').replace('StartupNotify=true','StartupNotify=false');diagnostic.write_text(text,encoding='utf-8')
+ launch_env=dict(env,DBUS_SESSION_BUS_ADDRESS='unix:path='+str(root/'absent-launch-bus'))
+ launched=subprocess.run(['gio','launch',str(diagnostic)],env=launch_env,capture_output=True,text=True,check=True,timeout=20)
+ responses=[]
+ for line in launched.stdout.splitlines():
+  try:value=json.loads(line)
+  except json.JSONDecodeError:continue
+  if isinstance(value,dict):responses.append(value)
+ check('Native desktop launch executes the actual installed app through special-character paths',any(value.get('version')==manifest['Version'] and value.get('runtime')=='.NET 10.0.13' for value in responses))
  if a.previous_archive:check('Update retains the previous complete version',old.is_dir())
  run(binary,'--install-package',env);check('Repeated installation verifies and preserves the same package',json.loads(run(installed,'--package-info',env).stdout)['version']==manifest['Version'])
  with (prefix/'.installation.lock').open('r+b') as lock:

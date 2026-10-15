@@ -65,7 +65,7 @@ for provider in (v for v in providers if v['architecture']==a.architecture):
     subprocess.run(['docker','rm','--force',owned[0]['Id']],check=True,capture_output=True,timeout=15)
    elif 'No such object' not in inspected.stderr:raise RuntimeError('Owned container cleanup inspection failed')
  container(['python3','/work/verify-linux-keyring.py','--provider',provider['id'],'--assembly','/tests/CodexSwitch.LinuxVault.Tests.dll','--architecture',a.architecture,'--report','/results/provider.json'],300)
- if provider['id']=='kwallet6':container(['python3','/work/verify-linux-desktop.py','--assembly','/desktop-tests/CodexSwitch.LinuxDesktop.Tests.dll','--architecture',a.architecture,'--report','/results/desktop'],180,desktop=True)
+ if provider['id']=='kwallet6':container(['python3','/work/verify-linux-desktop.py','--lifecycle','--assembly','/desktop-tests/CodexSwitch.LinuxDesktop.Tests.dll','--architecture',a.architecture,'--report','/results/desktop'],180,desktop=True)
  container(['python3','/work/capture-linux-app.py','--app','/app/CodexSwitch','--output','/results/raw'],120)
  subprocess.run([sys.executable,str(scripts/'verify-ui-evidence.py'),str(result/'raw'),str(result/'public'),'--os','Linux','--revision',a.revision],check=True,timeout=45)
  summary=json.loads((result/'provider.json').read_text(encoding='utf-8'))

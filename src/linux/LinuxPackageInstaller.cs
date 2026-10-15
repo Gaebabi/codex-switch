@@ -56,8 +56,9 @@ internal static class LinuxPackageInstaller
     {
         var path = Path.Combine(source, "package-manifest.json"); VerifyPath(path, false);
         var value = JsonSerializer.Deserialize<Package>(File.ReadAllText(path)) ?? throw Refused();
-        if (value.Schema != 1 || !Version(value.Version) || value.Rid != (RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "linux-arm64" : "linux-x64") ||
-            !System.Text.RegularExpressions.Regex.IsMatch(value.Revision, "^[0-9a-f]{40}$") || value.Files.Length == 0 || value.Files.Length > 4096 || value.Files.Select(entry => entry.Path).Distinct().Count() != value.Files.Length) throw Refused();
+        if (value.Schema != 1 || string.IsNullOrEmpty(value.Version) || !Version(value.Version) || value.Rid != (RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "linux-arm64" : "linux-x64") ||
+            string.IsNullOrEmpty(value.Revision) || !System.Text.RegularExpressions.Regex.IsMatch(value.Revision, "^[0-9a-f]{40}$") || value.Files == null || value.Files.Length == 0 || value.Files.Length > 4096 ||
+            value.Files.Any(entry => entry == null || string.IsNullOrEmpty(entry.Path) || string.IsNullOrEmpty(entry.Sha256)) || value.Files.Select(entry => entry.Path).Distinct().Count() != value.Files.Length) throw Refused();
         foreach (var entry in value.Files)
             if (entry.Mode is not (0x1a4 or 0x1ed) || entry.Sha256.Length != 64 || Sha(Member(source, entry.Path)) != entry.Sha256) throw Refused();
         if (!value.Files.Any(entry => entry.Path == "CodexSwitch" && entry.Mode == 0x1ed) || !value.Files.Any(entry => entry.Path == "icons/codex-switch.png")) throw Refused();
@@ -72,7 +73,7 @@ internal static class LinuxPackageInstaller
     }
     private static string Exec(string path)
     {
-        if (path.IndexOfAny(new[] { '\n', '\r', '\0', '=' }) >= 0) throw Refused();
+        if (path.IndexOfAny(new[] { '\n', '\r', '\0' }) >= 0) throw Refused();
         var quoted = path.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("`", "\\`").Replace("$", "\\$").Replace("%", "%%");
         return "\"" + quoted.Replace("\\", "\\\\") + "\"";
     }
@@ -96,7 +97,8 @@ internal static class LinuxPackageInstaller
         if (Exists(statePath))
         {
             VerifyPath(statePath, false); state = JsonSerializer.Deserialize<State>(File.ReadAllText(statePath)) ?? throw Refused();
-            if (state.Schema != 1 || state.Versions.Length > 128 || state.Versions.Any(version => !Version(version)) || state.Versions.Distinct().Count() != state.Versions.Length) throw Refused();
+            if (state.Schema != 1 || state.Versions == null || state.Versions.Length > 128 || state.Versions.Any(version => string.IsNullOrEmpty(version) || !Version(version)) || state.Versions.Distinct().Count() != state.Versions.Length ||
+                state.DesktopSha256?.Length != 64 || state.IconSha256?.Length != 64) throw Refused();
         }
         var link = new FileInfo(current).LinkTarget;
         if (Exists(current) && (state == null || link == null || !state.Versions.Any(version => link == "versions/" + version))) throw Refused();
@@ -140,7 +142,7 @@ internal static class LinuxPackageInstaller
         }
         var source = Full(AppContext.BaseDirectory); var package = Manifest(source);
         if (package.Version != typeof(LinuxPackageInstaller).Assembly.GetName().Version!.ToString(3)) throw Refused();
-        var desktopBytes = Encoding.UTF8.GetBytes("[Desktop Entry]\nType=Application\nName=Codex Switch\nComment=Linux source preview; account handoff is under native acceptance\nExec=" + Exec(Path.Combine(current, "CodexSwitch")) + "\nIcon=codex-switch\nTerminal=false\nCategories=Utility;Development;\nStartupNotify=true\n");
+        var desktopBytes = Encoding.UTF8.GetBytes("[Desktop Entry]\nType=Application\nName=Codex Switch\nComment=Linux source preview; account handoff is under native acceptance\nExec=/usr/bin/env -C " + Exec(current) + " ./CodexSwitch\nIcon=codex-switch\nTerminal=false\nCategories=Utility;Development;\nStartupNotify=true\n");
         var iconBytes = File.ReadAllBytes(Member(source, "icons/codex-switch.png"));
         foreach (var (path, expected) in new[] { (desktop, state?.DesktopSha256), (icon, state?.IconSha256) })
             if (Exists(path) && (expected == null || Sha(path) != expected)) throw Refused();
