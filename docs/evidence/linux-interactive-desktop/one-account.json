@@ -39,19 +39,22 @@
     "file": "after.png",
     "width": 610,
     "height": 454,
-    "sha256": "1763d746dc75a6820d69933c0a1bc9790a866641526c7d7934f230d5eeb995c6"
+    "sha256": "44e2cd9c56b20646f89807fa776594d94b28b8029db37fe7d96de5d81d71638e"
   },
-  "afterCandidateRevision": "3a1f8132eb928a67a235191618605a834596dc86",
+  "afterCandidateRevision": "960d3d9ed880619d89d8f7beb9b630a47028b76c",
   "afterVersion": "1.40.1",
   "existingAccountPreservedOnCandidateReopen": true,
   "oneAccountProbeRepeatedAfterCandidateReopen": true,
   "managedClientStability": {
     "actualOriginalManagedClientAlive": true,
     "sameOriginalProcessStart": true,
-    "secondsSinceStart": 62,
+    "secondsSinceStart": 202,
     "newOomKills": 0,
     "candidateVersion": "1.40.1",
     "accountCount": 1,
-    "crossAccountSwitchVerified": false
-  }
+    "crossAccountSwitchVerified": false,
+    "candidateRevision": "3a1f8132eb928a67a235191618605a834596dc86"
+  },
+  "managedClientNormallyQuitAfterStability": true,
+  "finalCandidateNativeOneAccountChecks": 8
 }

@@ -1,0 +1,35 @@
+{
+  "images": [
+    {
+      "file": "ordinary-dark-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "01ccb5dbff04d6142e437ee5fc0c210725d6a8eb4a81d3e813c2ac17ddb6a10d"
+    },
+    {
+      "file": "ordinary-dark-600x420.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "33c30a2336b3c110cea36220f4d41a23ea0afeaa9655ee4368140aa564b38027"
+    },
+    {
+      "file": "ordinary-dark-800x600.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "48e7c8f59b7ee161ccc3add7e1b0c2bec206d894e32ddc1a89dcfb729abda7a3"
+    },
+    {
+      "file": "ordinary-light-800x600.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "38685e722bfa10167d5d3ceceeb6881638d5f3bf5ef178262602e66d7e5f68da"
+    },
+    {
+      "file": "ordinary-pending-login-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "f49d1741eea07f6908eeeb3d51da1df7dc34eede9c919d60aa72e8ab7d6e34ca"
+    }
+  ],
+  "privacy": "Actual empty ordinary account home; no authentication captured or owner pixels."
+}

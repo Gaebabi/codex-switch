@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "passed": 6,
+  "failed": 0,
+  "checks": [
+    "Native provider password prompt belongs to the actual system gcr-prompter",
+    "Actual keyboard input completes a newly generated disposable test keyring password",
+    "Retained same-connection GLib prompt completes and starts the ordinary installed app",
+    "Actual default native collection exists",
+    "Ordinary app creates a CADL1 encrypted empty vault",
+    "Application own-XID confirmation contains no owner account/authentication"
+  ],
+  "accountsUsed": false,
+  "ownerCredentialsEntered": false,
+  "authenticationCaptured": false,
+  "candidateVersion": "1.40.1",
+  "testKeyringOnly": true,
+  "testRevision": "9c8ea071b345d1fb8d371860548607c6718da3aa",
+  "candidateRevision": "3a1f8132eb928a67a235191618605a834596dc86",
+  "imageSha256": "809436c42c90e57fc02820cf9f876d744ca909e0c7c97118981d8f50da3f4357"
+}
