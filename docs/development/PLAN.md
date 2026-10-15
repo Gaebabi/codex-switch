@@ -53,6 +53,13 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 - [x] Inspect six exact-source [native Windows/Mac before/after](../evidence/desktop-composition/README.md), complete package dependencies and omission rejection, privacy/metadata/hash receipts and local links. Windows same-host dark comparison is byte-identical.
 - [x] Complete PR47 final-head33c76b7 CI/run38662720762, author self-review and merge to mainaee22785. Issues45/3 are closed after extraction acceptance audit; Linux5/6/7 remain separate completion gates.
 
+### P8.4 Independent KDE provider — issue55
+
+- [ ] Run the same production32-byte Secret Service/CADL1/private-file contracts against actual KWallet5 on native Ubuntu24.04 x64/ARM64, separately from GNOME. Keep owned private file-socket D-Bus, no activation, isolated HOME/XDG and no personal credentials.
+- [ ] Test missing/locked/in-place native KDE unlock/original PID, orderly provider restart persistence, concurrency/ambiguity/malformed/tamper, bounded timeout/offline and existing ciphertext preservation. Test-only KDE PAM controls never enter production APIs or expose keys.
+- [ ] Retain native account-policy, client/context120, GNOME28, SQLite26/protocol10/source-app12 and Windows/Mac regressions. Attach actual application confirmation/precise scope and source/runtime/architecture/hash/privacy receipts.
+- [ ] Complete checkpoint pushes, all six exact-head jobs, author review and expected-SHA merge. Full KDE/Wayland desktop, authenticated Linux GUI/peer/handoff6 and clean packages7 remain independent.
+
 ### P8.1 Linux private storage — issue50
 
 - [x] Implement a distinct Linux AES-GCM envelope and configured Secret Service key lookup/creation, explicit key failure states, same-UID owner pinning and bounded native operations. Existing Windows/Mac formats and algorithms remain unchanged. Source1.33.0.

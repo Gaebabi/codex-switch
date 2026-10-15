@@ -75,6 +75,7 @@ internal static class LinuxSecretService
                 _registration = _deadline.Token.Register(() => g_cancellable_cancel(_cancel));
                 _service = secret_service_get_sync(0, _cancel, out var error); Checked(error); if (_service == IntPtr.Zero) throw Unavailable();
                 var owner = VerifyOwner();
+                VerifyProvider(owner);
                 var original = _service; _service = IntPtr.Zero;
                 try { _service = secret_service_open_sync(secret_service_get_type(), owner, 2, _cancel, out error); Checked(error); if (_service == IntPtr.Zero) throw Unavailable(); }
                 finally { g_object_unref(original); }
@@ -111,6 +112,46 @@ internal static class LinuxSecretService
                 return text;
             }
             finally { g_free(owner); }
+        }
+        private void VerifyProvider(string owner)
+        {
+            var names = g_dbus_connection_call_sync(g_dbus_proxy_get_connection(_service), "org.freedesktop.DBus", "/org/freedesktop/DBus",
+                "org.freedesktop.DBus", "ListNames", IntPtr.Zero, IntPtr.Zero, 0, 10000, _cancel, out var error);
+            try
+            {
+                Checked(error);
+                if (names == IntPtr.Zero || Marshal.PtrToStringUTF8(g_variant_get_type_string(names)) != "(as)") throw Unavailable();
+                var array = g_variant_get_child_value(names, 0);
+                try
+                {
+                    for (nuint index = 0; index < g_variant_n_children(array); index++)
+                    {
+                        var child = g_variant_get_child_value(array, index);
+                        string? name;
+                        try { name = Marshal.PtrToStringUTF8(g_variant_get_string(child, out _)); }
+                        finally { g_variant_unref(child); }
+                        if (name is not ("org.kde.kwalletd" or "org.kde.kwalletd5" or "org.kde.kwalletd6" or "org.kde.ksecretd")) continue;
+                        var parameters = g_variant_ref_sink(g_variant_new_tuple(new[] { g_variant_new_string(name) }, 1));
+                        try
+                        {
+                            var reply = g_dbus_connection_call_sync(g_dbus_proxy_get_connection(_service), "org.freedesktop.DBus", "/org/freedesktop/DBus",
+                                "org.freedesktop.DBus", "GetNameOwner", parameters, IntPtr.Zero, 0, 10000, _cancel, out error);
+                            try
+                            {
+                                Checked(error);
+                                if (reply == IntPtr.Zero || Marshal.PtrToStringUTF8(g_variant_get_type_string(reply)) != "(s)") throw Unavailable();
+                                var value = g_variant_get_child_value(reply, 0);
+                                try { if (Marshal.PtrToStringUTF8(g_variant_get_string(value, out _)) == owner) throw new LinuxVaultException(LinuxKeyFailure.ProviderIncompatible); }
+                                finally { g_variant_unref(value); }
+                            }
+                            finally { if (reply != IntPtr.Zero) g_variant_unref(reply); }
+                        }
+                        finally { g_variant_unref(parameters); }
+                    }
+                }
+                finally { g_variant_unref(array); }
+            }
+            finally { if (names != IntPtr.Zero) g_variant_unref(names); }
         }
         public ItemList Search()
         {
@@ -205,5 +246,7 @@ internal static class LinuxSecretService
     [DllImport(Glib)] private static extern IntPtr g_variant_get_type_string(IntPtr value);
     [DllImport(Glib)] private static extern IntPtr g_variant_get_child_value(IntPtr value, nuint index);
     [DllImport(Glib)] private static extern uint g_variant_get_uint32(IntPtr value);
+    [DllImport(Glib)] private static extern nuint g_variant_n_children(IntPtr value);
+    [DllImport(Glib)] private static extern IntPtr g_variant_get_string(IntPtr value, out nuint length);
     [DllImport(Glib)] private static extern void g_variant_unref(IntPtr value);
 }

@@ -369,6 +369,7 @@
     "msg.linux_keyring_timeout": "키링 응답 시간이 초과되었습니다. 상태를 확인한 뒤 다시 시도하세요.",
     "msg.linux_keyring_cancelled": "키링 작업이 취소되었습니다. 기존 데이터는 보존되었습니다.",
     "msg.linux_keyring_unavailable": "Secret Service를 사용할 수 없습니다. 호환되는 키링을 설치하고 잠금을 해제하세요.",
+    "msg.linux_keyring_incompatible": "이 릴리스는 KWallet 암호화 세션과 호환되지 않습니다. 계정 저장소를 사용할 수 없으며 기존 데이터는 교체되지 않았습니다.",
     "msg.linux_private_directory": "저장소 디렉터리는 현재 사용자 소유이며 권한이 0700이어야 하고 심볼릭 링크가 없어야 합니다.",
     "msg.linux_private_file": "저장소 파일은 현재 사용자 소유이며 권한이 0600이어야 하고 심볼릭 링크가 아니어야 합니다.",
     "msg.linux_foreign_vault": "다른 플랫폼에서 생성한 저장소입니다. 계정을 별도로 추가하세요.",

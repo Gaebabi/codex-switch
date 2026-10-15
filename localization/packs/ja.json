@@ -369,6 +369,7 @@
     "msg.linux_keyring_timeout": "キーリングがタイムアウトしました。状態を確認して再試行してください。",
     "msg.linux_keyring_cancelled": "キーリング操作がキャンセルされました。既存のデータは保持されています。",
     "msg.linux_keyring_unavailable": "Secret Serviceを利用できません。対応するキーリングをインストールしてロックを解除してください。",
+    "msg.linux_keyring_incompatible": "このリリースは KWallet の暗号化セッションに対応していません。アカウント保存は利用できず、既存のデータは置き換えられていません。",
     "msg.linux_private_directory": "保存先は現在のユーザー所有、権限0700で、シンボリックリンクを含まないディレクトリが必要です。",
     "msg.linux_private_file": "保存先は現在のユーザー所有、権限0600で、シンボリックリンクではないファイルが必要です。",
     "msg.linux_foreign_vault": "別のプラットフォームで作成された保管庫です。アカウントを個別に追加してください。",

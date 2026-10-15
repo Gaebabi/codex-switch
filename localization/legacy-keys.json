@@ -344,6 +344,7 @@
   "The Linux keyring operation timed out. Check the keyring and try again.": "msg.linux_keyring_timeout",
   "The Linux keyring operation was cancelled. The vault has not been replaced.": "msg.linux_keyring_cancelled",
   "Linux Secret Service is unavailable. Install and unlock a compatible keyring before using account storage.": "msg.linux_keyring_unavailable",
+  "KWallet encrypted sessions are not compatible with this release. Account storage is unavailable; existing data has not been replaced.": "msg.linux_keyring_incompatible",
   "Linux private directory must be owned by this user with mode0700 and contain no symbolic links.": "msg.linux_private_directory",
   "Linux private file must be owned by this user with mode0600 and contain no symbolic links.": "msg.linux_private_file",
   "This is not a Linux vault. Register accounts separately; foreign vaults are not migrated automatically.": "msg.linux_foreign_vault",

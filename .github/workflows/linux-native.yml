@@ -62,13 +62,15 @@ jobs:
       - name: Install the native test provider and D-Bus tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install --no-install-recommends -y libsecret-1-0 libsqlite3-0 gnome-keyring dbus-x11 libglib2.0-bin xvfb xauth x11-apps imagemagick libfontconfig1 fonts-dejavu-core fonts-noto-cjk
+          sudo apt-get install --no-install-recommends -y libsecret-1-0 libsqlite3-0 gnome-keyring libkf5wallet-bin libqca-qt5-2-plugins dbus-x11 libglib2.0-bin xvfb xauth x11-apps imagemagick libfontconfig1 fonts-dejavu-core fonts-noto-cjk
       - name: Install only the checksum-pinned official native client on this disposable runner
         run: python scripts/prepare-linux-client.py --architecture ${{ matrix.architecture }} --package-file artifacts/linux-native/${{ matrix.rid }}/upstream-client.deb
       - name: Build the native storage contract executable
         run: dotnet build tests/linux-vault/CodexSwitch.LinuxVault.Tests.csproj -c Release --nologo -p:UseSharedCompilation=false -o artifacts/linux-native/${{ matrix.rid }}/tests
       - name: Verify actual keyring lifecycle on an owned disposable bus
         run: python scripts/verify-linux-keyring.py --assembly artifacts/linux-native/${{ matrix.rid }}/tests/CodexSwitch.LinuxVault.Tests.dll --architecture ${{ matrix.architecture }} --report artifacts/linux-native/${{ matrix.rid }}/keyring-summary.json
+      - name: Verify independent KDE KWallet lifecycle on another owned disposable bus
+        run: python scripts/verify-linux-keyring.py --provider kwallet5 --assembly artifacts/linux-native/${{ matrix.rid }}/tests/CodexSwitch.LinuxVault.Tests.dll --architecture ${{ matrix.architecture }} --report artifacts/linux-native/${{ matrix.rid }}/kwallet-summary.json
       - name: Build the native executable trust contracts
         run: dotnet build tests/linux-client/CodexSwitch.LinuxClient.Tests.csproj -c Release --nologo -p:UseSharedCompilation=false -o artifacts/linux-native/${{ matrix.rid }}/client-tests
       - name: Publish the source Linux preview for the actual runner

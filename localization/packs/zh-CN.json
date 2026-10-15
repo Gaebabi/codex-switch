@@ -369,6 +369,7 @@
     "msg.linux_keyring_timeout": "密钥环操作超时。请检查后重试。",
     "msg.linux_keyring_cancelled": "密钥环操作已取消。现有数据已保留。",
     "msg.linux_keyring_unavailable": "Secret Service 不可用。请安装兼容的密钥环并将其解锁。",
+    "msg.linux_keyring_incompatible": "此版本与 KWallet 加密会话不兼容。账户存储不可用，现有数据未被替换。",
     "msg.linux_private_directory": "存储目录必须属于当前用户、权限为 0700，且不含符号链接。",
     "msg.linux_private_file": "存储文件必须属于当前用户、权限为 0600，且不能是符号链接。",
     "msg.linux_foreign_vault": "此保险库来自其他平台。请单独添加账户。",

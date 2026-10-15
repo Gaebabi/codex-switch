@@ -369,6 +369,7 @@
     "msg.linux_keyring_timeout": "El llavero agotó el tiempo de espera. Compruébalo y vuelve a intentarlo.",
     "msg.linux_keyring_cancelled": "Se canceló la operación del llavero. Se conservaron los datos existentes.",
     "msg.linux_keyring_unavailable": "Secret Service no está disponible. Instala y desbloquea un llavero compatible.",
+    "msg.linux_keyring_incompatible": "Las sesiones cifradas de KWallet no son compatibles con esta versión. El almacenamiento de cuentas no está disponible; los datos existentes no se han sustituido.",
     "msg.linux_private_directory": "El almacenamiento requiere un directorio del usuario con permisos 0700 y sin enlaces simbólicos.",
     "msg.linux_private_file": "El almacenamiento requiere un archivo del usuario con permisos 0600 y sin enlaces simbólicos.",
     "msg.linux_foreign_vault": "Esta bóveda pertenece a otra plataforma. Añade las cuentas por separado.",

@@ -22,6 +22,8 @@ if (args.Length < 1) throw new ArgumentException("A native test phase is require
 var checks = new List<string>(); var phase = args[0];
 var directory = Path.Combine(root, "data", "linux-self-test-protector");
 var appDirectory = Path.Combine(root, "data", "linux-self-test-app");
+if (phase.StartsWith("incompatible-provider", StringComparison.Ordinal))
+{ directory = Path.Combine(root, "data", "linux-self-test-" + phase); appDirectory = directory + "-app"; }
 var file = Path.Combine(directory, "accounts.vault");
 var plain = Encoding.UTF8.GetBytes("Synthetic native Linux vault; no account credential");
 void Assert(bool condition) { if (!condition) throw new InvalidOperationException("Native Linux vault contract failed."); }
@@ -40,6 +42,25 @@ try
         case "no-service":
             Check("Missing service refuses encryption without writing a vault", () =>
             { KeyFailure(LinuxKeyFailure.Unavailable, () => VaultProtection.Protect(plain, directory)); Assert(!File.Exists(file)); });
+            break;
+        case "incompatible-provider":
+        case "incompatible-provider-locked":
+        case "incompatible-provider-unlocked":
+        case "incompatible-provider-restarted":
+            Check("KDE provider refuses new vault creation before storing an OS key", () =>
+            { KeyFailure(LinuxKeyFailure.ProviderIncompatible, () => VaultProtection.Protect(plain, directory)); Assert(!File.Exists(file)); });
+            Check("KDE provider preserves existing ciphertext and refuses read or replacement", () =>
+            {
+                var bytes = new byte[65]; RandomNumberGenerator.Fill(bytes); Encoding.ASCII.GetBytes("CADL1").CopyTo(bytes, 0); SecureFiles.AtomicWrite(file, bytes);
+                KeyFailure(LinuxKeyFailure.ProviderIncompatible, () => VaultProtection.Unprotect(bytes, directory));
+                KeyFailure(LinuxKeyFailure.ProviderIncompatible, () => VaultProtection.Protect(plain, directory)); Assert(File.ReadAllBytes(file).SequenceEqual(bytes));
+            });
+            Check("Normal application vault save cannot bypass the incompatible-provider guard", () =>
+            { var vault = new AccountVault(appDirectory); KeyFailure(LinuxKeyFailure.ProviderIncompatible, vault.Save); Assert(!File.Exists(vault.FilePath)); });
+            break;
+        case "provider-timeout":
+            Check("Unavailable provider negotiation respects the native deadline", () =>
+            { var clock = Stopwatch.StartNew(); KeyFailure(LinuxKeyFailure.TimedOut, () => VaultProtection.Protect(plain, directory)); Assert(clock.Elapsed >= TimeSpan.FromSeconds(8) && clock.Elapsed < TimeSpan.FromSeconds(15) && !File.Exists(file)); });
             break;
         case "roundtrip":
             var encrypted = VaultProtection.Protect(plain, directory); SecureFiles.AtomicWrite(file, encrypted);
@@ -62,9 +83,12 @@ try
                 try
                 {
                     LinuxSecretService.AddDiagnosticKey(path, key);
-                    var actual = LinuxSecretService.ReadOrCreateKey(SecureFiles.Hash(path), false);
-                    try { Assert(CryptographicOperations.FixedTimeEquals(key, actual)); }
-                    finally { CryptographicOperations.ZeroMemory(actual); }
+                    for (var session = 0; session < 64; session++)
+                    {
+                        var actual = LinuxSecretService.ReadOrCreateKey(SecureFiles.Hash(path), false);
+                        try { Assert(CryptographicOperations.FixedTimeEquals(key, actual)); }
+                        finally { CryptographicOperations.ZeroMemory(actual); }
+                    }
                 }
                 finally { CryptographicOperations.ZeroMemory(key); LinuxSecretService.DeleteDiagnosticKey(path); }
             });
@@ -114,6 +138,7 @@ try
                 }
             });
             break;
+        case "provider-unlocked":
         case "read-after-unlock":
         case "read-after-restart":
         case "read-after-timeout":
@@ -135,6 +160,9 @@ try
             GnomeKeyringControl.UnlockFromInput();
             Check("Actual owned collection unlock restores the original encrypted data", () =>
                 Assert(VaultProtection.Unprotect(SecureFiles.ReadPrivateBytes(file), directory).SequenceEqual(plain)));
+            break;
+        case "kwallet-unlock":
+            Check("Native KDE Secret Service connects to the already PAM-opened wallet", KWalletControl.ConnectUnlockedCollection);
             break;
         case "missing":
             var original = File.ReadAllBytes(file); LinuxSecretService.DeleteDiagnosticKey(directory); VaultProtection.ReleaseKeys();
@@ -184,7 +212,7 @@ try
 }
 finally { VaultProtection.ReleaseKeys(); CryptographicOperations.ZeroMemory(plain); }
 Console.WriteLine(JsonSerializer.Serialize(new { phase, architecture = RuntimeInformation.ProcessArchitecture.ToString(), runtime = RuntimeInformation.FrameworkDescription,
-    passed = checks.Count, failed = 0, checks, scope = "Actual configured Secret Service/GNOME Keyring and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access." }));
+    passed = checks.Count, failed = 0, checks, scope = "Actual configured Secret Service and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access." }));
 
 internal static class NativeFileFixture
 {

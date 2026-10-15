@@ -2,7 +2,7 @@
 
 ## Current source evidence
 
-Source 1.35.0 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
+Source 1.35.1 is the current app; published downloads remain 1.27.6. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
 
 - [Context-aware Linux account policy and five-target program comparison](linux-account-policy/README.md): source1.35.0, ordinary account API guard/encrypted import checks, native provider/account28 and client/context120 per architecture, plus ten inspected own-window after PNGs. Authenticated GUI/peer/handoff/packages remain separate.
 

@@ -369,6 +369,7 @@
     "msg.linux_keyring_timeout": "Zeitüberschreitung beim Schlüsselbund. Prüfen Sie ihn und versuchen Sie es erneut.",
     "msg.linux_keyring_cancelled": "Schlüsselbundvorgang abgebrochen. Vorhandene Daten wurden beibehalten.",
     "msg.linux_keyring_unavailable": "Secret Service ist nicht verfügbar. Installieren und entsperren Sie einen kompatiblen Schlüsselbund.",
+    "msg.linux_keyring_incompatible": "KWallet-Verschlüsselungssitzungen sind mit dieser Version nicht kompatibel. Der Kontenspeicher ist nicht verfügbar; vorhandene Daten wurden nicht ersetzt.",
     "msg.linux_private_directory": "Der Speicherordner muss dem Benutzer gehören, Modus 0700 haben und frei von symbolischen Links sein.",
     "msg.linux_private_file": "Die Speicherdatei muss dem Benutzer gehören, Modus 0600 haben und darf kein symbolischer Link sein.",
     "msg.linux_foreign_vault": "Dieser Tresor stammt von einer anderen Plattform. Fügen Sie die Konten separat hinzu.",

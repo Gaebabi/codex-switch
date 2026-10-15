@@ -34,6 +34,7 @@ jobs:
       - run: python scripts/verify-repository.py
       - run: python scripts/test-document-links.py
       - run: python scripts/test-audit-public.py
+      - run: python scripts/test-linux-keyring-harness.py
       - run: python scripts/verify-localization.py
       - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         with:

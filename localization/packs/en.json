@@ -369,6 +369,7 @@
     "msg.linux_keyring_timeout": "Keyring timed out. Check it and try again.",
     "msg.linux_keyring_cancelled": "Keyring operation cancelled. Existing data was preserved.",
     "msg.linux_keyring_unavailable": "Secret Service unavailable. Install and unlock a compatible keyring.",
+    "msg.linux_keyring_incompatible": "KWallet encrypted sessions are not compatible with this release. Account storage is unavailable; existing data has not been replaced.",
     "msg.linux_private_directory": "Storage requires a user-owned directory with mode 0700 and no symbolic links.",
     "msg.linux_private_file": "Storage requires a user-owned file with mode 0600 and no symbolic links.",
     "msg.linux_foreign_vault": "This vault belongs to another platform. Add accounts separately.",

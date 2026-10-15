@@ -369,6 +369,7 @@
     "msg.linux_keyring_timeout": "Le délai du trousseau est dépassé. Vérifiez-le et réessayez.",
     "msg.linux_keyring_cancelled": "Opération du trousseau annulée. Les données existantes ont été conservées.",
     "msg.linux_keyring_unavailable": "Secret Service est indisponible. Installez et déverrouillez un trousseau compatible.",
+    "msg.linux_keyring_incompatible": "Les sessions chiffrées de KWallet ne sont pas compatibles avec cette version. Le stockage des comptes est indisponible ; les données existantes n’ont pas été remplacées.",
     "msg.linux_private_directory": "Le stockage nécessite un dossier appartenant à l’utilisateur, de mode 0700 et sans liens symboliques.",
     "msg.linux_private_file": "Le stockage nécessite un fichier appartenant à l’utilisateur, de mode 0600 et sans lien symbolique.",
     "msg.linux_foreign_vault": "Ce coffre provient d’une autre plateforme. Ajoutez les comptes séparément.",

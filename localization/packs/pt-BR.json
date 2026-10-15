@@ -369,6 +369,7 @@
     "msg.linux_keyring_timeout": "O chaveiro excedeu o tempo limite. Verifique-o e tente novamente.",
     "msg.linux_keyring_cancelled": "A operação do chaveiro foi cancelada. Os dados existentes foram preservados.",
     "msg.linux_keyring_unavailable": "O Secret Service está indisponível. Instale e desbloqueie um chaveiro compatível.",
+    "msg.linux_keyring_incompatible": "As sessões criptografadas do KWallet não são compatíveis com esta versão. O armazenamento de contas está indisponível; os dados existentes não foram substituídos.",
     "msg.linux_private_directory": "O armazenamento exige um diretório do usuário com permissões 0700 e sem links simbólicos.",
     "msg.linux_private_file": "O armazenamento exige um arquivo do usuário com permissões 0600 e sem links simbólicos.",
     "msg.linux_foreign_vault": "Este cofre pertence a outra plataforma. Adicione as contas separadamente.",

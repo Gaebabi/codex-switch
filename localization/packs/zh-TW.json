@@ -369,6 +369,7 @@
     "msg.linux_keyring_timeout": "鑰匙圈操作逾時。請檢查後重試。",
     "msg.linux_keyring_cancelled": "鑰匙圈操作已取消。現有資料已保留。",
     "msg.linux_keyring_unavailable": "Secret Service 無法使用。請安裝相容的鑰匙圈並解鎖。",
+    "msg.linux_keyring_incompatible": "此版本與 KWallet 加密工作階段不相容。帳戶儲存功能無法使用，現有資料未被取代。",
     "msg.linux_private_directory": "儲存目錄必須由目前使用者擁有、權限為 0700，且不含符號連結。",
     "msg.linux_private_file": "儲存檔案必須由目前使用者擁有、權限為 0600，且不能是符號連結。",
     "msg.linux_foreign_vault": "此保管庫來自其他平台。請另外新增帳戶。",

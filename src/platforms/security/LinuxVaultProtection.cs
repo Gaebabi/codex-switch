@@ -6,12 +6,13 @@ using System.Text;
 
 namespace CodexAccountDesk;
 
-internal enum LinuxKeyFailure { Unavailable, Locked, Missing, Ambiguous, Invalid, Busy, TimedOut, Cancelled }
+internal enum LinuxKeyFailure { Unavailable, Locked, Missing, Ambiguous, Invalid, Busy, TimedOut, Cancelled, ProviderIncompatible }
 internal sealed class LinuxVaultException : CryptographicException
 {
     public LinuxKeyFailure Failure { get; }
     public LinuxVaultException(LinuxKeyFailure failure) : base(failure switch
     {
+        LinuxKeyFailure.ProviderIncompatible => "KWallet encrypted sessions are not compatible with this release. Account storage is unavailable; existing data has not been replaced.",
         LinuxKeyFailure.Locked => "Linux keyring is locked. Unlock it and try again.",
         LinuxKeyFailure.Missing => "The Linux vault key is missing. Restore the original keyring; the vault has not been replaced.",
         LinuxKeyFailure.Ambiguous => "More than one Linux vault key matches. Resolve the duplicate keyring items before continuing.",
