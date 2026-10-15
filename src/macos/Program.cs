@@ -1,10 +1,11 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Themes.Fluent;
+using Avalonia.Input;
 using Avalonia.Platform;
 
 namespace CodexAccountDesk;
@@ -41,27 +42,16 @@ internal static class Program
         if (!first) return 0;
         try
         {
-            var builder = AppBuilder.Configure<DeskApp>().UsePlatformDetect().LogToTrace();
+            var host = new DesktopHost(DataDirectory, CodexHome, WindowProbePath == null ? "Codex Switch" : "Codex Switch — Window probe",
+                new MacResourceMonitor(), () => new MacMenuBar(), KeyModifiers.Meta, "Macintosh HD",
+                new DesktopAppearance("Helvetica Neue", MacAppearance.ReducedMotion), () => DiagnosticExitCode);
+            Func<DeskWindow, Task>? diagnostic = WindowProbePath != null ? window => { MacDiagnostics.StartWindowProbe(window, WindowProbePath); return Task.CompletedTask; } :
+                PreviewDirectory != null ? window => MacDiagnostics.RenderAsync(window, PreviewDirectory) : null;
+            var preview = PreviewDirectory == null && WindowProbePath == null ? null : MacDiagnostics.Profiles(4);
+            var builder = AppBuilder.Configure(() => new DeskApp(host, preview, diagnostic)).UsePlatformDetect().LogToTrace();
             if (NativeUiEvidence) builder.With(new AvaloniaNativePlatformOptions { RenderingMode = new[] { AvaloniaNativeRenderingMode.Software } });
             return builder.StartWithClassicDesktopLifetime(args, ShutdownMode.OnExplicitShutdown);
         }
         finally { VaultProtection.ReleaseKeys(); }
-    }
-}
-
-internal sealed class DeskApp : Application
-{
-    public override void Initialize() { Name = "Codex Switch"; Loc.SetLanguage("en"); Styles.Add(new FluentTheme()); }
-    public override void OnFrameworkInitializationCompleted()
-    {
-        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-        {
-            var window = new DeskWindow(Program.PreviewDirectory == null && Program.WindowProbePath == null ? null : MacDiagnostics.Profiles(4)); desktop.MainWindow = window;
-            if (Program.WindowProbePath != null) window.Title = "Codex Switch — Window probe";
-            var activation = this.TryGetFeature<IActivatableLifetime>();
-            if (activation != null) activation.Activated += (_, args) => { if (args.Kind == ActivationKind.Reopen) { window.Show(); window.Activate(); } };
-            desktop.ShutdownRequested += (_, args) => { if (!window.Exiting) { args.Cancel = true; _ = window.ExitAsync(); } };
-        }
-        base.OnFrameworkInitializationCompleted();
     }
 }

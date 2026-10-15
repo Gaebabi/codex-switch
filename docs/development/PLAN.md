@@ -42,7 +42,15 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 - [x] Preserve supported sampling, sensor selection/unknown states and non-elevated APIs; refuse wrong-OS native entry points before library/port acquisition or background tasks. Local native Windows hardware8 pass.
 - [x] Complete existing temperature29/native app regressions and native Mac hardware checks. Source2e7f8f0/run38660081487 passes all four jobs, including hardware8Windows/9eachMac/10Ubuntu and Windows93/SQLite23/handoff5, both native Mac SQLite/UI and existing language/security/client/protocol checks. Full-package omission of Hardware.dll is rejected and the owned folder restored.
 - [x] Inspect six exact-source [actual Windows/Mac before/after](../evidence/hardware-services/README.md) with privacy/metadata/hash receipts. Same-host Windows dark PNGs are byte-identical.
-- [ ] Finish final-head CI, author review and PR44 promotion. Shared desktop composition and Linux5/6/7 remain open.
+- [x] Complete final-headbaa8077 CI/run38660607532, author self-review and PR44 merge to main86b37631. Shared desktop composition and Linux5/6/7 remain open.
+
+### P7.4 shared desktop composition — issue45
+
+- [x] Move all eight linked integration files into `CodexSwitch.Application`, consumed by both apps/tests/rendering. Preserve account algorithms, vault/data/key/IPC identities and unsupported-platform refusal.
+- [x] Move Avalonia views/themes/resources into `CodexSwitch.Desktop`. Inject paths/resources, optional menu factory, command modifier, root label, font/reduced-motion and diagnostics through the host. Mac entry/menu/appearance/capture/diagnostics remain host-owned; shared UI has no native imports or concrete Mac host types. Source1.32.0.
+- [x] Local application/UI boundary4 and actual Windows shared-UI trayless close7 pass. The native probe uses synthetic profiles, pending resources and absent data/home paths; normal close disposes resources and exits. Existing language41/temperature29 and both app builds pass.
+- [ ] Preserve full Windows93/SQLite23/handoff5 and native Mac menu/layout/scroll/culture/key/file/resource regressions, plus native trayless close7 on both Mac architectures.
+- [ ] Inspect exact-source native Windows/Mac before/after, complete package dependencies, privacy/link checks and final-head CI/review before promotion. Linux5/6/7 remain separate completion gates.
 
 ## Tooltip style lifetime — issue35
 

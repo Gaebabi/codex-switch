@@ -21,8 +21,9 @@ internal sealed class DeskWindow : Window
 {
     private const double AccountRowMinimumHeight = 126;
     private readonly CancellationTokenSource _stop = new();
-    private readonly DesktopSessionMonitor _sessions = new(Program.CodexHome);
-    private readonly MacResourceMonitor _resources = new();
+    private readonly DesktopHost _host;
+    private readonly DesktopSessionMonitor _sessions;
+    private readonly IResourceMonitor _resources;
     private readonly DriveMonitor _drives = new();
     private readonly DispatcherTimer _clock = new() { Interval = TimeSpan.FromSeconds(1) };
     private readonly Dictionary<string, string> _quotas = new();
@@ -32,13 +33,13 @@ internal sealed class DeskWindow : Window
     private readonly Dictionary<string, ResourcePressure> _volumeTemperaturePressure = new();
     private readonly List<Task> _operations = new();
     private AccountService? _service;
-    private DeskTheme _theme = new(true);
+    private DeskTheme _theme;
     private Grid _accounts = new(), _hardware = new();
     private ScrollViewer _accountScroll = new();
     private StackPanel _sessionValues = new(), _volumes = new();
     private TextBlock _status = new();
     private Button _add = new(), _cancel = new(), _refresh = new(), _settingsButton = new();
-    private MacMenuBar? _tray;
+    private IDesktopMenuBar? _tray;
     private readonly Dictionary<string, NativeMenuItem> _nativeItems = new();
     private CancellationTokenSource? _login, _switch;
     private string? _switchTarget;
@@ -49,25 +50,26 @@ internal sealed class DeskWindow : Window
     private AccountProfile[]? _preview;
     private int _ticks;
     public bool Exiting { get; private set; }
-    public DeskWindow(AccountProfile[]? preview = null)
+    internal DesktopAppearance Appearance => _host.Appearance;
+    public DeskWindow(DesktopHost host, AccountProfile[]? preview = null, Func<DeskWindow, Task>? diagnostic = null)
     {
+        _host = host; _sessions = new(host.CodexHome); _resources = host.Resources; _theme = new(true, host.Appearance);
         _preview = preview;
-        Title = "Codex Switch"; Icon = new WindowIcon(Avalonia.Platform.AssetLoader.Open(new Uri("avares://CodexSwitch/Assets/app-icon.png"))); Width = 600; Height = 420; MinWidth = 500; MinHeight = 360;
+        Title = host.WindowTitle; Icon = new WindowIcon(Avalonia.Platform.AssetLoader.Open(new Uri("avares://CodexSwitch.Desktop/Assets/app-icon.png"))); Width = 600; Height = 420; MinWidth = 500; MinHeight = 360;
         ExtendClientAreaToDecorationsHint = true; ExtendClientAreaChromeHints = ExtendClientAreaChromeHints.PreferSystemChrome;
         ExtendClientAreaTitleBarHeightHint = 34; WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Build(); UpdateTray();
         Opened += async (_, _) =>
         {
-            if (Program.WindowProbePath != null) MacDiagnostics.StartWindowProbe(this, Program.WindowProbePath);
+            if (diagnostic != null) await diagnostic(this);
             else if (_preview == null) await RunAsync(InitializeAsync);
-            else await MacDiagnostics.RenderAsync(this, Program.PreviewDirectory!);
         };
-        Closing += (_, args) => { if (!Exiting) { args.Cancel = true; Hide(); } };
+        Closing += (_, args) => { if (!Exiting) { args.Cancel = true; CloseOrHide(); } };
         KeyDown += async (_, args) =>
         {
-            if (args.Key == Key.F5 || args.Key == Key.R && args.KeyModifiers == KeyModifiers.Meta)
+            if (args.Key == Key.F5 || args.Key == Key.R && args.KeyModifiers == _host.CommandModifier)
             { args.Handled = true; await RefreshAsync(); }
-            else if (args.Key == Key.W && args.KeyModifiers == KeyModifiers.Meta) { args.Handled = true; Hide(); }
+            else if (args.Key == Key.W && args.KeyModifiers == _host.CommandModifier) { args.Handled = true; CloseOrHide(); }
         };
         SizeChanged += (_, _) => { ResizeAccounts(); RenderVolumes(); };
         _sessions.Changed += _ => OnUi(RenderSessions);
@@ -89,12 +91,12 @@ internal sealed class DeskWindow : Window
         {
             if (_service == null)
             {
-                var vault = await Task.Run(() => { var result = new AccountVault(Program.DataDirectory); result.Save(); return result; }, token);
-                _service = new(vault, Program.CodexHome); _service.Changed += () => OnUi(RenderAccounts);
+                var vault = await Task.Run(() => { var result = new AccountVault(_host.DataDirectory); result.Save(); return result; }, token);
+                _service = new(vault, _host.CodexHome); _service.Changed += () => OnUi(RenderAccounts);
                 var languageProblems = Loc.LoadInstalled(Path.Combine(vault.DirectoryPath, "languages"));
                 if (!Loc.RestoreLanguage(vault.Data.Language)) _statusMessage = Loc.T("Saved language pack unavailable. Showing English.");
                 else if (languageProblems.Count > 0) _statusMessage = Loc.F("pack.invalid_local_packs", languageProblems.Count);
-                _theme = new(vault.Data.Theme == "dark"); Build();
+                _theme = new(vault.Data.Theme == "dark", _host.Appearance); Build();
             }
             await _service.InitializeAsync(token); _ready = true;
             _sessions.Start(); _resources.Start(); _drives.Configure(_service.Vault.Data.Drives.ToArray()); _drives.Start(); _clock.Start();
@@ -124,7 +126,7 @@ internal sealed class DeskWindow : Window
         _add = _theme.IconButton(DeskButtonIconKind.Plus, Loc.T("계정 추가"), () => _ = AddAccountAsync());
         _add.Classes.Add("title-action"); Grid.SetColumn(_add, 1); titlebar.Children.Add(_add);
         _refresh = _theme.IconButton(DeskButtonIconKind.Refresh, Loc.T("새로 고침"), () => _ = RefreshAsync());
-        _refresh.Classes.Add("title-action"); ToolTip.SetTip(_refresh, Loc.T("새로 고침") + " (⌘R / F5)");
+        _refresh.Classes.Add("title-action"); ToolTip.SetTip(_refresh, Loc.T("새로 고침") + (_host.CommandModifier == KeyModifiers.Meta ? " (⌘R / F5)" : " (Ctrl+R / F5)"));
         Grid.SetColumn(_refresh, 2); titlebar.Children.Add(_refresh);
         var language = _theme.Button(Loc.LanguageCode + " ▾", () => { });
         language.Name = "LanguageButton";
@@ -136,7 +138,7 @@ internal sealed class DeskWindow : Window
         {
             _ = RunAsync(_ =>
             {
-                var next = new DeskTheme(!_theme.Dark);
+                var next = new DeskTheme(!_theme.Dark, _host.Appearance);
                 if (_service != null) { lock (_service.Vault.SyncRoot) { _service.Vault.Data.Theme = next.Dark ? "dark" : "light"; _service.Vault.Save(); } }
                 _theme = next; Build(); return Task.CompletedTask;
             });
@@ -180,7 +182,7 @@ internal sealed class DeskWindow : Window
         if (Loc.Current.IsCustom)
         {
             var restore = new MenuItem { Header = Loc.T("Restore built-in language pack") };
-            restore.Click += async (_, _) => { try { ChangeLanguage(Loc.RestoreBuiltIn(Path.Combine(Program.DataDirectory, "languages"))); _statusMessage = Loc.T("Local translations replaced with the built-in pack."); Build(); } catch (Exception error) { await DeskDialogs.Message(this, _theme, Loc.T("Language packs"), error.Message); } };
+            restore.Click += async (_, _) => { try { ChangeLanguage(Loc.RestoreBuiltIn(Path.Combine(_host.DataDirectory, "languages"))); _statusMessage = Loc.T("Local translations replaced with the built-in pack."); Build(); } catch (Exception error) { await DeskDialogs.Message(this, _theme, Loc.T("Language packs"), error.Message); } };
             menu.Items.Add(restore);
         }
         menu.Open(owner);
@@ -196,7 +198,7 @@ internal sealed class DeskWindow : Window
             using var file = selected[0];
             var path = file.TryGetLocalPath();
             if (path == null) throw new InvalidDataException("Language packs must be local JSON files.");
-            var pack = await Task.Run(() => Loc.Install(path, Path.Combine(Program.DataDirectory, "languages"), PlatformLanguagePackWriter.Instance));
+            var pack = await Task.Run(() => Loc.Install(path, Path.Combine(_host.DataDirectory, "languages"), PlatformLanguagePackWriter.Instance));
             ChangeLanguage(pack.Code); _statusMessage = Loc.T("Language pack installed. Language changed without restarting."); Build();
         }
         catch (Exception error) { await DeskDialogs.Message(this, _theme, Loc.T("Language packs"), error.Message); }
@@ -239,7 +241,7 @@ internal sealed class DeskWindow : Window
         Math.Max(0, _accountScroll.Bounds.Height - _accounts.Margin.Top - _accounts.Margin.Bottom),
         _accounts.RowDefinitions.Count * AccountRowMinimumHeight);
     internal void Preview(string language, bool dark, AccountProfile[] profiles)
-    { Loc.SetLanguage(language); _theme = new(dark); _preview = profiles; Build(); UpdateTray(); }
+    { Loc.SetLanguage(language); _theme = new(dark, _host.Appearance); _preview = profiles; Build(); UpdateTray(); }
     internal IReadOnlyList<MacAccountCard> Cards => _cards;
     internal ScrollViewer AccountScroll => _accountScroll;
     private async Task RunAsync(Func<CancellationToken, Task> action)
@@ -330,7 +332,7 @@ internal sealed class DeskWindow : Window
             Grid cell;
             if (_hardware.Children.Count <= i)
             {
-                _hardware.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star)); cell = new Grid { ClipToBounds = true, Margin = new Thickness(1) }; cell.Children.Add(new PercentChart());
+                _hardware.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star)); cell = new Grid { ClipToBounds = true, Margin = new Thickness(1) }; cell.Children.Add(new PercentChart { Palette = _theme });
                 var content = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(5, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center };
                 var text = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
                 var label = _theme.Text(labels[i], 10, "muted"); label.VerticalAlignment = VerticalAlignment.Center; text.Children.Add(label);
@@ -394,7 +396,7 @@ internal sealed class DeskWindow : Window
         var menu = _theme.Menu(_settingsButton);
         var drives = new MenuItem { Header = Loc.T("드라이브 설정") }; drives.Click += async (_, _) =>
         {
-            var selection = await DeskDialogs.Volumes(this, _theme, _service.Vault.Data.Drives.ToArray());
+            var selection = await DeskDialogs.Volumes(this, _theme, _service.Vault.Data.Drives.ToArray(), _host.RootVolumeLabel);
             if (selection != null) await RunAsync(_ => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.Drives = selection.ToList(); _service.Vault.Save(); } _drives.Configure(selection); return Task.CompletedTask; });
         };
         var current = new MenuItem { Header = Loc.T("현재 계정 가져오기") }; current.Click += async (_, _) => await RefreshAsync();
@@ -403,9 +405,10 @@ internal sealed class DeskWindow : Window
     }
     private void UpdateTray()
     {
+        if (_host.CreateMenuBar == null) return;
         if (_tray == null)
         {
-            _tray = new MacMenuBar();
+            _tray = _host.CreateMenuBar();
             NativeMenuItem Item(string key, string text, Action action, KeyGesture? gesture = null)
             {
                 var item = new NativeMenuItem(Loc.T(text)) { Gesture = gesture };
@@ -418,10 +421,10 @@ internal sealed class DeskWindow : Window
             _tray.Add("cancel", Loc.T("취소"), () => { _login?.Cancel(); _switch?.Cancel(); });
             _tray.Separator(); _tray.Add("quit", Loc.T("종료"), () => _ = ExitAsync());
             var actions = new NativeMenu();
-            actions.Add(Item("open", "열기", OpenWindow, new KeyGesture(Key.O, KeyModifiers.Meta)));
-            actions.Add(Item("accounts", "계정 추가", Add, new KeyGesture(Key.N, KeyModifiers.Meta)));
-            actions.Add(Item("update", "새로 고침", () => _ = RefreshAsync(), new KeyGesture(Key.R, KeyModifiers.Meta)));
-            actions.Add(new NativeMenuItemSeparator()); actions.Add(Item("close", "닫기", Hide, new KeyGesture(Key.W, KeyModifiers.Meta)));
+            actions.Add(Item("open", "열기", OpenWindow, new KeyGesture(Key.O, _host.CommandModifier)));
+            actions.Add(Item("accounts", "계정 추가", Add, new KeyGesture(Key.N, _host.CommandModifier)));
+            actions.Add(Item("update", "새로 고침", () => _ = RefreshAsync(), new KeyGesture(Key.R, _host.CommandModifier)));
+            actions.Add(new NativeMenuItemSeparator()); actions.Add(Item("close", "닫기", CloseOrHide, new KeyGesture(Key.W, _host.CommandModifier)));
             var appMenu = new NativeMenu(); var root = new NativeMenuItem(Loc.T("Codex 계정")) { Menu = actions };
             _nativeItems.Add("root", root); appMenu.Add(root); NativeMenu.SetMenu(Application.Current!, appMenu);
         }
@@ -440,12 +443,13 @@ internal sealed class DeskWindow : Window
         _tray.Update(value, tooltip);
     }
     internal MenuBarState? MenuBarProbe => _tray?.Probe();
+    private void CloseOrHide() { if (_host.CreateMenuBar != null) Hide(); else _ = ExitAsync(); }
     public async Task ExitAsync()
     {
         if (Exiting) return; Exiting = true; _clock.Stop(); _stop.Cancel(); _login?.Cancel(); _switch?.Cancel();
         if (_service != null) await _service.StopAsync();
         await Task.WhenAll(_operations.ToArray());
         await _sessions.DisposeAsync(); await _resources.DisposeAsync(); await _drives.DisposeAsync(); _tray?.Dispose();
-        Close(); (Application.Current!.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Shutdown(Program.DiagnosticExitCode);
+        Close(); (Application.Current!.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Shutdown(_host.ExitCode());
     }
 }

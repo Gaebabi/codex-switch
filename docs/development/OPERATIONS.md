@@ -1,10 +1,10 @@
 # Operations
 
-Public `Gaebabi/codex-switch`, baseline `main`, is the canonical source. Clone into any directory. Source/app version is **1.31.3**; published binary version remains **1.27.6**. Binary delivery is manual GitHub Release ZIPs plus SHA256SUMS; no automatic updater or CI release publisher exists.
+Public `Gaebabi/codex-switch`, baseline `main`, is the canonical source. Clone into any directory. Source/app version is **1.32.0**; published binary version remains **1.27.6**. Binary delivery is manual GitHub Release ZIPs plus SHA256SUMS; no automatic updater or CI release publisher exists.
 
 ## Build and verify
 
-Run from the repository root with .NET10.0.4xx, currently SDK10.0.402/runtime10.0.13. `global.json` allows current patch updates. Use clean output folders for package candidates. .NET10's reviewed current Mac support baseline is macOS15+; the bundle minimum and app version match source1.31.3.
+Run from the repository root with .NET10.0.4xx, currently SDK10.0.402/runtime10.0.13. `global.json` allows current patch updates. Use clean output folders for package candidates. .NET10's reviewed current Mac support baseline is macOS15+; the bundle minimum and app version match source1.32.0.
 
 ```powershell
 .\scripts\build.ps1 -Verify
@@ -16,6 +16,7 @@ dotnet run --project tests/platform-security/CodexSwitch.PlatformSecurity.Tests.
 dotnet run --project tests/desktop-client/CodexSwitch.DesktopClient.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
 dotnet run --project tests/protocol/CodexSwitch.Protocol.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
 dotnet run --project tests/hardware/CodexSwitch.Hardware.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
+dotnet run --project tests/composition/CodexSwitch.Composition.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
 ```
 
 Equivalent direct commands:
@@ -51,6 +52,8 @@ Documentation capture accepts `--language`, `--output`, `--width`, `--height` an
 Capture `--deadline-preview` for clearly fictional near/far/missing expiry/reset dates and recorded public countdown updates; `--theme dark|light` selects the existing palette. The actual WPF brushes and known off-screen visibility limitation are described in [date evidence](../evidence/date-warnings/README.md). Keep the JSON receipts private. Warning colors use future expiry72h/reset48h, independent of the existing KST calendar-date label.
 
 Resource/disk temperatures use supported Windows read-only WDDM/storage APIs and an existing optional compatible WMI provider. Missing sensors remain unavailable; no driver/service/elevation is installed. Mac temperature collection remains unsupported. [Sources and limits](../TEMPERATURES.md). Capture `--temperature-preview` for fictional sensor-capable layout or `--live-resources` for actual device readings with fictional account/session inputs; keep receipts private and identify each scope accurately.
+
+Application integration now builds once in `src/application`; Avalonia UI builds once in `src/desktop`. No consumer compiles the former `src/shared` sources. Desktop native probes add `--native-ui` to the composition test command on a declared Windows/Mac runner; this displays the actual shared UI with synthetic profiles/pending resources, verifies ordinary trayless close/disposal and never creates a data/home directory. Initialize Avalonia before creating themed controls/brushes in a native probe; an earlier unbound dispatcher cannot run its native event loop. Production Mac still supplies its native tray, appearance and diagnostic/capture adapters. Linux needs its own verified host/providers before support is advertised.
 
 ## Git and publication
 

@@ -18,12 +18,7 @@
     <ProjectReference Include="../platforms/client/CodexSwitch.DesktopClient.csproj" />
     <ProjectReference Include="../platforms/protocol/CodexSwitch.Protocol.csproj" />
     <ProjectReference Include="../platforms/resources/CodexSwitch.Hardware.csproj" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
-    <Compile Include="../shared/**/*.cs" Link="Shared/%(Filename)%(Extension)" />
-    <EmbeddedResource Include="../../resources/Burn0Tokens.css" LogicalName="CodexAccountDesk.Burn0Tokens.css" />
-    <EmbeddedResource Include="../../resources/Burn0Icons.json" LogicalName="CodexAccountDesk.Burn0Icons.json" />
-    <AvaloniaResource Include="../../assets/macos/**" Link="Assets/%(Filename)%(Extension)" />
-    <EmbeddedResource Include="../../assets/brand/mark.path" LogicalName="CodexAccountDesk.Mark.path" />
+    <ProjectReference Include="../application/CodexSwitch.Application.csproj" />
+    <ProjectReference Include="../desktop/CodexSwitch.Desktop.csproj" />
   </ItemGroup>
 </Project>

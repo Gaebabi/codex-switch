@@ -44,13 +44,13 @@ internal static class DeskDialogs
         actions.Children.Add(cancel); actions.Children.Add(theme.Button(Loc.T("삭제"), () => window.Close(true)));
         body.Children.Add(actions); window.Content = body; return await window.ShowDialog<bool>(owner);
     }
-    public static Task<DrivePreference[]?> Volumes(Window owner, DeskTheme theme, DrivePreference[] saved)
+    public static Task<DrivePreference[]?> Volumes(Window owner, DeskTheme theme, DrivePreference[] saved, string rootVolumeLabel)
     {
         var window = Dialog(theme, Loc.T("드라이브 설정"), 420);
         var root = new Grid { RowDefinitions = new RowDefinitions("*,Auto"), Margin = new Thickness(16) }; var rows = new StackPanel { Spacing = 8 };
-        var known = new Dictionary<string, string>(StringComparer.Ordinal) { ["/"] = "Macintosh HD" };
+        var known = new Dictionary<string, string>(StringComparer.Ordinal) { ["/"] = rootVolumeLabel };
         foreach (var drive in DriveInfo.GetDrives().Where(d => d.DriveType is DriveType.Fixed or DriveType.Removable))
-            known[drive.RootDirectory.FullName] = drive.RootDirectory.FullName == "/" ? "Macintosh HD" : Path.GetFileName(drive.RootDirectory.FullName.TrimEnd('/'));
+            known[drive.RootDirectory.FullName] = drive.RootDirectory.FullName == "/" ? rootVolumeLabel : Path.GetFileName(drive.RootDirectory.FullName.TrimEnd('/'));
         foreach (var preference in saved) known[preference.Root] = preference.Label;
         var ordered = saved.Select(p => p.Root).Concat(known.Keys).Distinct(StringComparer.Ordinal).ToArray();
         var fields = new List<(string Root, CheckBox Enabled, TextBox Name, Grid Row)>();

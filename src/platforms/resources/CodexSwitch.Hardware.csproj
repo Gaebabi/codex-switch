@@ -10,5 +10,6 @@
     <InternalsVisibleTo Include="CodexSwitch" /><InternalsVisibleTo Include="CodexSwitch.Demo" />
     <InternalsVisibleTo Include="CodexSwitch.Localization.Tests" /><InternalsVisibleTo Include="CodexSwitch.Temperatures.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.WindowsHandoff.Tests" /><InternalsVisibleTo Include="CodexSwitch.Hardware.Tests" />
+    <InternalsVisibleTo Include="CodexSwitch.Desktop" /><InternalsVisibleTo Include="CodexSwitch.Composition.Tests" />
   </ItemGroup>
 </Project>

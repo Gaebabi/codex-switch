@@ -22,7 +22,7 @@
     <ProjectReference Include="../platforms/client/CodexSwitch.DesktopClient.csproj" />
     <ProjectReference Include="../platforms/protocol/CodexSwitch.Protocol.csproj" />
     <ProjectReference Include="../platforms/resources/CodexSwitch.Hardware.csproj" />
-    <Compile Include="../shared/**/*.cs" Link="Shared/%(Filename)%(Extension)" />
+    <ProjectReference Include="../application/CodexSwitch.Application.csproj" />
     <EmbeddedResource Include="../../assets/brand/mark.path" LogicalName="CodexAccountDesk.Mark.path" />
     <EmbeddedResource Include="../../assets/brand/mark-body.path" LogicalName="CodexAccountDesk.MarkBody.path" />
     <EmbeddedResource Include="../../assets/brand/app-icon.ico" LogicalName="CodexAccountDesk.AppIcon.ico" />

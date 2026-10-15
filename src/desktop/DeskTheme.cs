@@ -20,9 +20,10 @@ internal sealed class DeskTheme
 {
     private readonly Dictionary<string, string> _tokens = new();
     public bool Dark { get; }
-    public DeskTheme(bool dark)
+    public DesktopAppearance Appearance { get; }
+    public DeskTheme(bool dark, DesktopAppearance appearance)
     {
-        Dark = dark;
+        Dark = dark; Appearance = appearance;
         using var stream = typeof(DeskTheme).Assembly.GetManifestResourceStream("CodexAccountDesk.Burn0Tokens.css")!;
         using var reader = new StreamReader(stream); var css = reader.ReadToEnd();
         Load(Regex.Match(css, @":root\s*\{([\s\S]*?)\}").Groups[1].Value);
@@ -42,7 +43,7 @@ internal sealed class DeskTheme
     }
     public void Apply(Window window)
     {
-        window.Background = Brush("canvas"); window.Foreground = Brush("text"); window.FontFamily = new FontFamily("Helvetica Neue");
+        window.Background = Brush("canvas"); window.Foreground = Brush("text"); window.FontFamily = new FontFamily(Appearance.FontFamily);
         window.RequestedThemeVariant = Dark ? ThemeVariant.Dark : ThemeVariant.Light;
         window.Styles.Clear();
         MacScrollTheme.Install(window.Resources, this);

@@ -43,6 +43,7 @@ jobs:
       - run: dotnet run --project tests/desktop-client/CodexSwitch.DesktopClient.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - run: dotnet run --project tests/protocol/CodexSwitch.Protocol.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - run: dotnet run --project tests/hardware/CodexSwitch.Hardware.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
+      - run: dotnet run --project tests/composition/CodexSwitch.Composition.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - run: python scripts/audit-public.py --tree-only
       - run: git diff --check
 
@@ -97,6 +98,8 @@ jobs:
         run: dotnet run --project tests/protocol/CodexSwitch.Protocol.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - name: Verify native resource collection and unsupported-OS boundaries
         run: dotnet run --project tests/hardware/CodexSwitch.Hardware.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
+      - name: Verify shared composition and actual native trayless close
+        run: dotnet run --project tests/composition/CodexSwitch.Composition.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- --native-ui
       - run: python -m pip install -r requirements-dev.txt
       - name: Run the published Windows app in isolated native UI mode
         shell: pwsh
@@ -152,6 +155,8 @@ jobs:
         run: dotnet run --project tests/protocol/CodexSwitch.Protocol.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - name: Verify native resource collection and unsupported-OS boundaries
         run: dotnet run --project tests/hardware/CodexSwitch.Hardware.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
+      - name: Verify shared composition and actual native trayless close
+        run: dotnet run --project tests/composition/CodexSwitch.Composition.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- --native-ui
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.12'

@@ -2,7 +2,7 @@
 
 Tracking [#1](https://github.com/Gaebabi/codex-switch/issues/1). Updated 2026-10-15. Resumed checkpoints and reviewed native evidence are tracked in [PR27](https://github.com/Gaebabi/codex-switch/pull/27). Account switching and safe automatic continuation are the core product; a window that launches is not evidence of either capability.
 
-The owner resumed work toward the complete remaining roadmap. [P6–P10 delivery gates](development/PLAN.md#multiplatform-delivery-goal--resumed2026-10-15) include completed [security37/PR38](https://github.com/Gaebabi/codex-switch/pull/38), [client39/PR40](https://github.com/Gaebabi/codex-switch/pull/40) and [protocol/SQLite41/PR42](https://github.com/Gaebabi/codex-switch/pull/42), current [resource43](https://github.com/Gaebabi/codex-switch/issues/43), then shared desktop composition, Linux trust5, handoff6 and packages7. Every part receives a scoped issue/PR, checkpoint push and actual application evidence. Finishing provider extraction does not complete Linux support. Current source1.31.3 and published downloads1.27.6 remain distinct.
+The owner resumed work toward the complete remaining roadmap. [P6–P10 delivery gates](development/PLAN.md#multiplatform-delivery-goal--resumed2026-10-15) include completed [security37/PR38](https://github.com/Gaebabi/codex-switch/pull/38), [client39/PR40](https://github.com/Gaebabi/codex-switch/pull/40), [protocol/SQLite41/PR42](https://github.com/Gaebabi/codex-switch/pull/42) and [resources43/PR44](https://github.com/Gaebabi/codex-switch/pull/44), current [shared composition45](https://github.com/Gaebabi/codex-switch/issues/45), then Linux trust5, handoff6 and packages7. Every part receives a scoped issue/PR, checkpoint push and actual application evidence. Finishing provider extraction does not complete Linux support. Current source1.32.0 and published downloads1.27.6 remain distinct.
 
 Runtime issue4 is completed by merged PR27: source1.30.0/.NET10.0.13, native Windows x64 and macOS15 arm64/Intel app-window evidence, complete runtime/package inspection and four-job reviewed-head CI. Core issue3 starts with a shared UI-neutral project in source1.30.1; native integration-provider boundaries and Linux5/6/7 remain open. Public binaries remain1.27.6 until separately released.
 
@@ -47,7 +47,8 @@ src/platforms/client/ native desktop discovery/lifecycle/peer trust assembly
 src/platforms/protocol/ Codex RPC/IPC/session/queue services
 src/platforms/resources/ Windows/Mac resource, drive and temperature services
 src/platforms/sqlite/ independent native read-only database assembly
-src/shared/          linked integration services and existing platform adapters
+src/application/     single account/storage/switch integration assembly
+src/desktop/         reusable Avalonia views/themes/resources and host contracts
 assets/              canonical brand and Mac icons
 resources/           shared visual tokens/icons
 localization/        nine UI catalogues, schema and translator guide
@@ -67,7 +68,7 @@ docs/evidence/       sanitized issue/PR screenshots
 | `src/platforms/security/VaultProtection.cs` | Linux is rejected today; add an OS-held key provider with reviewed encrypted format/migration |
 | `src/platforms/sqlite/ReadOnlySqlite.cs` | Add a reviewed Linux SQLite provider after current explicit rejection; preserve read-only WAL visibility and database bytes |
 | `src/platforms/protocol/DesktopSessionMonitor.cs` | Add Linux same-UID peer/socket ownership/client identity verification before allowing the currently rejected IPC start |
-| `src/macos/Program.cs`, `DeskWindow.cs`, native resources/menu | Share UI by composition; Linux must not load AppKit/Mach or require a tray |
+| `src/desktop`, future Linux host | Compose the shared UI with verified Linux providers; no AppKit/Mach or required tray. Mac-only adapters remain in its host |
 | Hardware/drive collectors and defaults | Implement Linux capabilities/mount selection; unsupported readings remain unknown |
 
 The upstream Linux ChatGPT desktop preview includes Codex and uses a `chatgpt` launcher. Its availability does not prove this switcher's auth/IPC/chat compatibility. Inspect the installed client before enabling actions. [Official Linux documentation](https://learn.chatgpt.com/docs/linux/linux-app)

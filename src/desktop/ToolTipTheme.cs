@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Animation.Easings;
@@ -24,7 +23,7 @@ internal static class MacToolTipTheme
     public static ControlTheme For(DeskTheme theme) => Themes.GetValue(theme, palette =>
     {
         var result = new ControlTheme(typeof(ToolTip));
-        result.Setters.Add(new Setter(TemplatedControl.FontFamilyProperty, new FontFamily("Helvetica Neue")));
+        result.Setters.Add(new Setter(TemplatedControl.FontFamilyProperty, new FontFamily(palette.Appearance.FontFamily)));
         result.Setters.Add(new Setter(TemplatedControl.ForegroundProperty, palette.Brush("text")));
         result.Setters.Add(new Setter(TemplatedControl.FontSizeProperty, 12.0));
         result.Setters.Add(new Setter(Layoutable.MaxWidthProperty, 340.0));
@@ -37,8 +36,8 @@ internal static class MacToolTipTheme
                 Background = palette.Brush("elevated"), BoxShadow = new BoxShadows(new BoxShadow { Blur = 12, OffsetY = 2, Color = Color.FromArgb(palette.Dark ? (byte)82 : (byte)31, 0, 0, 0) }), Child = content };
             ((IPopupHostProvider)tip).PopupHostChanged += host =>
             {
-                if (host == null) { surface.Transitions = null; surface.Opacity = ReducedMotion() ? 1 : 0; return; }
-                surface.Transitions = null; surface.Opacity = ReducedMotion() ? 1 : 0;
+                if (host == null) { surface.Transitions = null; surface.Opacity = palette.Appearance.ReducedMotion() ? 1 : 0; return; }
+                surface.Transitions = null; surface.Opacity = palette.Appearance.ReducedMotion() ? 1 : 0;
                 if (surface.Opacity == 1) return;
                 surface.Transitions = new Transitions { new DoubleTransition { Property = Visual.OpacityProperty, Duration = TimeSpan.FromMilliseconds(120), Easing = new QuadraticEaseOut() } };
                 Dispatcher.UIThread.Post(() => surface.Opacity = 1, DispatcherPriority.Render);
@@ -57,11 +56,6 @@ internal static class MacToolTipTheme
         }
         tip.Refresh(title, value, details, theme, valueColor);
     }
-    private static bool ReducedMotion() => OperatingSystem.IsMacOS() && GetBool(Send(GetClass("NSWorkspace"), Selector("sharedWorkspace")), Selector("accessibilityDisplayShouldReduceMotion"));
-    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_getClass")] private static extern IntPtr GetClass(string name);
-    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "sel_registerName")] private static extern IntPtr Selector(string name);
-    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")] private static extern IntPtr Send(IntPtr receiver, IntPtr selector);
-    [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")] [return: MarshalAs(UnmanagedType.I1)] private static extern bool GetBool(IntPtr receiver, IntPtr selector);
 }
 
 internal sealed class MacResourceToolTip : ToolTip

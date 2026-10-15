@@ -11,7 +11,7 @@ using Avalonia.Threading;
 
 namespace CodexAccountDesk;
 
-internal sealed class MacMenuBar : IDisposable
+internal sealed class MacMenuBar : IDesktopMenuBar
 {
     private const string ObjC = "/usr/lib/libobjc.A.dylib";
     private static readonly IntPtr AppKit = NativeLibrary.Load("/System/Library/Frameworks/AppKit.framework/AppKit");
@@ -66,7 +66,7 @@ internal sealed class MacMenuBar : IDisposable
             SendArg(_button, Selector("setAccessibilityLabel:"), Text("Codex Switch · " + title)); _tooltip = tooltip;
         }
     }
-    internal MenuBarState Probe()
+    public MenuBarState Probe()
     {
         var frame = Rect(Send(_button, "window")); var screen = Rect(Send(GetClass("NSScreen"), "mainScreen"));
         return new(ReadText(Send(_button, "title")) ?? "", GetBool(_status, Selector("isVisible")) != 0,
@@ -138,7 +138,5 @@ internal sealed class MacMenuBar : IDisposable
     [DllImport(ObjC, EntryPoint = "objc_msgSend")] private static extern NativeRect GetRect(IntPtr target, IntPtr selector);
     [DllImport(ObjC, EntryPoint = "objc_msgSend_stret")] private static extern void GetRectX64(out NativeRect rectangle, IntPtr target, IntPtr selector);
 }
-
-internal sealed record MenuBarState(string Title, bool Visible, bool Template, int MenuItems, double X, double Y, double Width, double Height);
 
 internal sealed class MenuBarSymbol : BrandMark { }

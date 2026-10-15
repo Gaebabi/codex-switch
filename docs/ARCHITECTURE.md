@@ -2,7 +2,7 @@
 
 ## Main parts
 
-`src/core/CodexSwitch.Core.csproj` builds one UI-neutral .NET10 assembly consumed by both desktop apps and contract tests. It owns account/quota/authentication models, usage/resource presentation, refresh scheduling, checkpointed switch policy and language catalogues. It references no WPF, Avalonia, native P/Invoke or platform-service project. The remaining `src/shared` integration sources stay linked by the apps while provider boundaries are completed in focused parts of [issue3](https://github.com/Gaebabi/codex-switch/issues/3).
+`src/core/CodexSwitch.Core.csproj` builds one UI-neutral .NET10 assembly consumed by both desktop apps and contract tests. It owns account/quota/authentication models, usage/resource presentation, refresh scheduling, checkpointed switch policy and language catalogues. It references no WPF, Avalonia, native P/Invoke or platform-service project. `src/application` owns account/storage/switch integration once; consumers no longer link the former `src/shared` files. Provider/composition work is tracked in [issue3](https://github.com/Gaebabi/codex-switch/issues/3).
 
 The coordinator accepts its platform error formatter explicitly; its `IAccountSwitchBackend` still owns actual client/storage/IPC actions. Language installation accepts an `ILanguagePackWriter`; the existing private-directory/atomic-write adapter preserves file protection before publishing the new in-memory catalogue. Vault configuration/default drives remain in the integration layer. Unsupported vault defaults/discovery now fail before taking a Windows path. `Directory.Build.props` owns the managed version; Mac bundle metadata must match it.
 
@@ -14,11 +14,15 @@ Source1.31.2 adds `src/platforms/protocol` for CodexRpc, desktop IPC/requests, s
 
 Source1.31.3 adds `src/platforms/resources/CodexSwitch.Hardware.csproj` for existing Windows/Mac resource sampling, Windows temperature providers, drive monitoring and sensor selection. It references core/security helpers, without a UI/client/protocol dependency. Only the unchanged DrivePreference JSON model moves into core; vault defaults and serialization remain integration code. Supported sampling algorithms/intervals/unknown states remain unchanged. Wrong-OS Windows/Mac monitor starts, samplers and WMI refresh reject before native operations; a valid Windows disk root on another OS reports PlatformUnsupported without Celsius. No Linux sensors, drivers or privilege requests are added. System.Management remains pinned10.0.13 in its new owning project.
 
+Source1.32.0 adds `src/application/CodexSwitch.Application.csproj` and `src/desktop/CodexSwitch.Desktop.csproj`. Application references core/security/client/protocol and has no UI/native imports; its eight former shared files preserve their algorithms and serialization. Desktop owns Avalonia views/themes/visual resources. Its host supplies data/home paths, window title, resources, optional menu factory, command modifier, root-volume label, font/reduced-motion and diagnostics. No concrete Mac menu/appearance/capture or entry-point type is referenced by shared UI. Mac's native adapters and capture/diagnostics stay in `src/macos`; its existing provider values and behavior are preserved. Without a tray, ordinary close exits/disposes instead of hiding an unreachable window. Linux support still requires verified providers and its own host.
+
 | Part | Responsibility |
 | --- | --- |
 | `AccountService`, `AccountVault` | Account identity, encrypted storage and asynchronous query/login coordination |
 | `AccountSwitchCoordinator`, desktop automation | Checkpointed chat naming, normal shutdown, login application and chat resumption |
 | `src/core` | UI-neutral models, quota/forecast, refresh/coordinator policy, language/resource presentation |
+| `src/application` | Single account/vault/runtime-home/switch/language-write integration assembly |
+| `src/desktop` | Shared Avalonia views/themes/resources with explicit host composition and optional tray |
 | `src/platforms/security` | UI/domain-independent native key/protection/private-file assembly; no credential migration |
 | `src/platforms/client` | Native client discovery/lifecycle, normal shutdown and Mac peer-identity helper assembly |
 | `src/platforms/protocol`, `src/platforms/sqlite` | Codex RPC/desktop IPC/session/queue services and independent native read-only database wrapper |
@@ -26,7 +30,7 @@ Source1.31.3 adds `src/platforms/resources/CodexSwitch.Hardware.csproj` for exis
 | `DesktopSessionMonitor`, queue stores | Read-only local desktop activity and saved/SQLite queue observations |
 | `HardwareSampler`, `DriveMonitor` | Independent machine-resource and volume collection |
 | `MainWindow`, account/resource panels | Windows WPF UI and shared Burn0 theme |
-| `src/macos/`, native service projects | Avalonia UI plus shared native services and remaining Mac menu/composition integration |
+| `src/macos/`, native service projects | Mac entry/menu/appearance/capture/diagnostics host plus shared application/UI/native services |
 
 ## Important contracts
 
@@ -41,7 +45,7 @@ Source1.31.3 adds `src/platforms/resources/CodexSwitch.Hardware.csproj` for exis
 
 ## Verification
 
-Core assembly/resource identity and platform write-failure preservation are checked by the production language API tests. Windows/Mac native screenshot CI still runs the published app after extraction; a successful portable core build does not establish Linux account support. Security/client/protocol/SQLite/resource projects now own the extracted native services. Shared desktop composition and Linux-specific vault, lifecycle/peer trust, database/resource capabilities and native handoff acceptance remain follow-ups.
+Core assembly/resource identity and platform write-failure preservation are checked by the production language API tests. Windows/Mac native screenshot CI still runs the published app after extraction; a successful portable core build does not establish Linux account support. Security/client/protocol/SQLite/resource projects own the native services, while application and desktop projects own integration and reusable views. Linux-specific vault, lifecycle/peer trust, database/resource capabilities, host composition and native handoff acceptance remain follow-ups.
 
 [Native program before/after and core contracts](evidence/shared-core/README.md) record the first extraction checkpoint. Complete package inspection also requires all declared project runtime DLLs, including the core; a folder containing only the app/runtime is rejected.
 

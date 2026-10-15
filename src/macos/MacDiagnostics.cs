@@ -182,7 +182,7 @@ internal static class MacDiagnostics
             foreach (var dark in new[] { true, false })
             {
                 var name = "en-" + (dark ? "dark" : "light");
-                var palette = new DeskTheme(dark); var profiles = Profiles(4);
+                var palette = new DeskTheme(dark, window.Appearance); var profiles = Profiles(4);
                 window.Width = 600; window.Height = 420; window.Preview("en", dark, profiles); await Task.Delay(120);
                 var owner = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "LanguageButton");
                 var menu = window.OpenLanguageMenu(owner);

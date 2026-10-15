@@ -11,7 +11,7 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
   - package-ecosystem: nuget
-    directory: /src/macos
+    directory: /src/desktop
     schedule:
       interval: weekly
     open-pull-requests-limit: 5

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CodexAccountDesk;
 
-internal sealed class MacResourceMonitor : IAsyncDisposable
+internal sealed class MacResourceMonitor : IResourceMonitor
 {
     private readonly CancellationTokenSource _stop = new();
     private Task? _run;

@@ -50,7 +50,7 @@ internal sealed class TankSurface : Control
 internal sealed class PercentChart : Control
 {
     public ResourceTrendPoint[] Points { get; set; } = Array.Empty<ResourceTrendPoint>();
-    public DeskTheme Palette { get; set; } = new(true);
+    public required DeskTheme Palette { get; set; }
     public string ColorName { get; set; } = "accent";
     public override void Render(DrawingContext context)
     {
@@ -78,7 +78,7 @@ internal sealed class PercentChart : Control
 internal sealed class HistoryChart : Control
 {
     public UsageObservation[] Points { get; set; } = Array.Empty<UsageObservation>();
-    public DeskTheme Palette { get; set; } = new(true);
+    public required DeskTheme Palette { get; set; }
     public int Hours { get; set; } = 24;
     public override void Render(DrawingContext context)
     {

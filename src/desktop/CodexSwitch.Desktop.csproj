@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework><AssemblyName>CodexSwitch.Desktop</AssemblyName><RootNamespace>CodexAccountDesk</RootNamespace>
+    <Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings><DebugType>none</DebugType>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../application/CodexSwitch.Application.csproj" />
+    <ProjectReference Include="../platforms/resources/CodexSwitch.Hardware.csproj" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+    <InternalsVisibleTo Include="CodexSwitch" /><InternalsVisibleTo Include="CodexSwitch.Composition.Tests" />
+    <EmbeddedResource Include="../../resources/Burn0Tokens.css" LogicalName="CodexAccountDesk.Burn0Tokens.css" />
+    <EmbeddedResource Include="../../resources/Burn0Icons.json" LogicalName="CodexAccountDesk.Burn0Icons.json" />
+    <EmbeddedResource Include="../../assets/brand/mark.path" LogicalName="CodexAccountDesk.Mark.path" />
+    <AvaloniaResource Include="../../assets/macos/**" Link="Assets/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>
