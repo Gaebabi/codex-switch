@@ -120,6 +120,11 @@ internal static class LinuxPackageInstaller
                 var directory = Path.Combine(versions, version); if (!Directory.Exists(directory)) continue;
                 VerifyPath(directory, true); packages.Add((directory, Manifest(directory)));
             }
+            using var resultBytes = new MemoryStream();
+            using var result = new Utf8JsonWriter(resultBytes);
+            result.WriteStartObject(); result.WriteBoolean("uninstalled", true);
+            result.WriteString("scope", "Only recorded package files; account/vault/home/keyring data is never opened or removed.");
+            result.WritePropertyName("retainedUnmanagedItems");
             foreach (var (path, expected) in new[] { (desktop, state.DesktopSha256), (icon, state.IconSha256) })
                 if (Exists(path)) { if (Sha(path) == expected) File.Delete(path); else retained++; }
             if (link != null) File.Delete(current);
@@ -138,7 +143,8 @@ internal static class LinuxPackageInstaller
                 if (!Directory.EnumerateFileSystemEntries(directory).Any()) Directory.Delete(directory); else retained++;
             }
             File.Delete(statePath);
-            reportWriter.WriteLine(JsonSerializer.Serialize(new { uninstalled = true, retainedUnmanagedItems = retained, scope = "Only recorded package files; account/vault/home/keyring data is never opened or removed." })); return 0;
+            result.WriteNumberValue(retained); result.WriteEndObject(); result.Flush();
+            reportWriter.WriteLine(Encoding.UTF8.GetString(resultBytes.GetBuffer(), 0, checked((int)resultBytes.Length))); return 0;
         }
         var source = Full(AppContext.BaseDirectory); var package = Manifest(source);
         if (package.Version != typeof(LinuxPackageInstaller).Assembly.GetName().Version!.ToString(3)) throw Refused();

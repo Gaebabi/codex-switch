@@ -22,7 +22,13 @@ expected = json.loads(Path('/work/expected.json').read_text())
 results = Path('/results')
 
 def run(command, **kwargs):
-    return subprocess.run(command, check=True, timeout=kwargs.pop('timeout', 20), **kwargs)
+    try:
+        return subprocess.run(command, check=True, timeout=kwargs.pop('timeout', 20), **kwargs)
+    except subprocess.CalledProcessError as error:
+        if error.stderr:
+            with (results / 'failed-command-private.log').open('ab') as diagnostic:
+                diagnostic.write(error.stderr if isinstance(error.stderr, bytes) else error.stderr.encode('utf-8'))
+        raise
 
 def wait_for(probe, timeout=20):
     deadline = time.monotonic() + timeout
