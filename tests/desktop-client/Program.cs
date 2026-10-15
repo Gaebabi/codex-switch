@@ -30,10 +30,19 @@ if (OperatingSystem.IsWindows() || OperatingSystem.IsMacOS())
 }
 else
 {
-    Check("Unsupported discovery rejects before native calls", () =>
-        Rejected<PlatformNotSupportedException>(() => RuntimeLocator.FindAsync(CancellationToken.None).GetAwaiter().GetResult()));
-    Check("Unsupported running probe cannot enter Windows enumeration", () =>
-        Rejected<PlatformNotSupportedException>(() => RuntimeLocator.IsDesktopRunning("")));
+    if (OperatingSystem.IsLinux())
+    {
+        Check("Unknown Linux package metadata cannot admit discovery", () =>
+            Rejected<IOException>(() => LinuxClientDiscovery.VerifyPackageStatus("", "unverified", "unknown")));
+        Check("Empty Linux executable cannot report a running client", () => Assert(!RuntimeLocator.IsDesktopRunning("")));
+    }
+    else
+    {
+        Check("Unsupported discovery rejects before native calls", () =>
+            Rejected<PlatformNotSupportedException>(() => RuntimeLocator.FindAsync(CancellationToken.None).GetAwaiter().GetResult()));
+        Check("Unsupported running probe cannot enter Windows enumeration", () =>
+            Rejected<PlatformNotSupportedException>(() => RuntimeLocator.IsDesktopRunning("")));
+    }
     Check("Unsupported launch cannot start an arbitrary executable", () =>
         Rejected<PlatformNotSupportedException>(() => RuntimeLocator.LaunchDesktop("/bin/false")));
     Check("Unsupported thread-open cannot start an arbitrary executable", () =>

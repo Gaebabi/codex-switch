@@ -144,7 +144,7 @@ try:
     phase('read-after-restart')
     check('Provider restart preserves original ciphertext bytes', hashlib.sha256(original_vault.read_bytes()).hexdigest() == original_hash)
     handoff = json.loads(run(['/contracts/handoff/CodexSwitch.LinuxHandoff.Tests', str(root / 'codex-linux-handoff-test-integration')], capture_output=True, timeout=200).stdout)
-    check('Production Linux account/coordinator/metadata/managed desktop integration passes offline', handoff['failed'] == 0 and handoff['passed'] == 7)
+    check('Production Linux account/coordinator/metadata/managed desktop integration passes offline', handoff['failed'] == 0 and handoff['passed'] == 8)
     phases.append(handoff)
     ordinary_home = root / 'ordinary-codex'
     ordinary_home.mkdir(mode=0o700)

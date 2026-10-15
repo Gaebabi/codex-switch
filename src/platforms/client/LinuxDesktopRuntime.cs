@@ -20,7 +20,7 @@ internal sealed class LinuxDesktopRuntime : IDisposable
     public LinuxDesktopRuntime(string home) { _home = Path.TrimEndingDirectorySeparator(Path.GetFullPath(home)); }
     internal static int[] Running(CancellationToken cancellation = default)
     {
-        var found = new List<int>();
+        var images = new HashSet<int>(); var parents = new Dictionary<int, int>();
         foreach (var directory in Directory.EnumerateDirectories("/proc"))
         {
             cancellation.ThrowIfCancellationRequested();
@@ -31,14 +31,28 @@ internal sealed class LinuxDesktopRuntime : IDisposable
                 var uid = status.SingleOrDefault(line => line.StartsWith("Uid:", StringComparison.Ordinal));
                 if (uid == null || uid[4..].Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries) is not { Length: 4 } ids ||
                     ids.Any(value => !uint.TryParse(value, out var actual) || actual != LinuxPrivateFiles.UserId)) continue;
+                var parent = status.SingleOrDefault(line => line.StartsWith("PPid:", StringComparison.Ordinal));
+                if (parent == null || !int.TryParse(parent[5..].Trim(), out var parentId) || parentId < 0)
+                    throw new IOException("Linux desktop process ancestry is unavailable.");
+                parents.Add(id, parentId);
                 if (new FileInfo(directory + "/exe").LinkTarget != LinuxClientDiscovery.DesktopPath) continue;
-                var arguments = LinuxPeerProcess.Read(id, "cmdline", 32768).Split('\0', StringSplitOptions.RemoveEmptyEntries);
-                if (!arguments.Skip(1).Any(value => value.StartsWith("--type=", StringComparison.Ordinal))) found.Add(id);
+                images.Add(id);
             }
             catch (FileNotFoundException) { }
             catch (DirectoryNotFoundException) { }
         }
-        return found.ToArray();
+        var roots = new List<int>();
+        foreach (var id in images)
+        {
+            var parent = id; var visited = new HashSet<int> { id }; var descendant = false;
+            while (parents.TryGetValue(parent, out parent) && parent != 0)
+            {
+                if (!visited.Add(parent) || visited.Count > 1024) throw new IOException("Linux desktop process ancestry is invalid.");
+                if (images.Contains(parent)) { descendant = true; break; }
+            }
+            if (!descendant) roots.Add(id);
+        }
+        return roots.ToArray();
     }
     public bool RequireOwnedOrStopped(CancellationToken cancellation)
     {

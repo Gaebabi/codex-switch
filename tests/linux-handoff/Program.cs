@@ -45,6 +45,22 @@ await Check("CLI-only production coordinator applies fictional local credentials
     Assert(plan.Chats.Count == 0 && !service.HasLinuxDesktop && await coordinator.RunAsync(plan, token));
     Assert(await service.CurrentAccountKeyAsync(token) == first.Key && vault.Data.PendingSwitch == null && File.ReadAllText(service.AuthPath) == first.AuthJson);
 });
+await Check("Actual trusted-project workspace policy refuses the selected account before credential mutation", async () =>
+{
+    var project = Path.Combine(root, "project"); LinuxPrivateFiles.CreateDirectory(project);
+    LinuxPrivateFiles.CreateDirectory(Path.Combine(project, ".git")); LinuxPrivateFiles.CreateDirectory(Path.Combine(project, ".codex"));
+    SecureFiles.AtomicWriteText(Path.Combine(project, ".codex/config.toml"), "forced_chatgpt_workspace_id = \"another-synthetic-workspace\"\n");
+    var configuration = Path.Combine(cliHome, "config.toml"); var original = File.ReadAllText(configuration);
+    SecureFiles.AtomicWriteText(configuration, original + "[projects." + JsonSerializer.Serialize(project) + "]\ntrust_level = \"trusted\"\n");
+    using var thread = JsonDocument.Parse(JsonSerializer.Serialize(new { cwd = project }));
+    try
+    {
+        try { await service.CheckThreadContextAsync(thread.RootElement, second.Key, token); throw new InvalidOperationException("Project workspace policy was bypassed."); }
+        catch (LinuxAccountPolicyException error) when (error.Failure == LinuxAccountPolicyFailure.WorkspaceMismatch) { }
+        Assert(File.ReadAllText(service.AuthPath) == first.AuthJson);
+    }
+    finally { SecureFiles.AtomicWriteText(configuration, original); }
+});
 await Check("Cancelled production handoff preserves the original auth bytes and encrypted checkpoint", async () =>
 {
     await using var backend = new DesktopSwitchBackend(service, new DesktopSessionMonitor(cliHome));

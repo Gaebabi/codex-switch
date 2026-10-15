@@ -13,7 +13,9 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
     private readonly DesktopSessionMonitor _sessions;
     private CodexRpc? _metadata;
     private LinuxClientSession? _linuxMetadata;
-    public DesktopSwitchBackend(AccountService service, DesktopSessionMonitor sessions) { _service = service; _sessions = sessions; }
+    private readonly string? _targetAccountKey;
+    public DesktopSwitchBackend(AccountService service, DesktopSessionMonitor sessions, string? targetAccountKey = null)
+    { _service = service; _sessions = sessions; _targetAccountKey = targetAccountKey; }
     public Task<string?> CurrentAccountAsync(CancellationToken cancellation) => OperatingSystem.IsLinux() ? _service.CurrentAccountKeyAsync(cancellation) : Task.Run(() =>
         File.Exists(_service.AuthPath) ? AuthDocument.Parse(File.ReadAllText(_service.AuthPath)).Key : null, cancellation);
     public async Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation)
@@ -39,6 +41,7 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
         {
             var result = await RequestMetadataAsync("thread/read", new { threadId = chat.Id, includeTurns = false }, cancellation);
             await _service.CheckThreadContextAsync(result.GetProperty("thread"), _service.CurrentKey, cancellation);
+            if (_targetAccountKey != null) await _service.CheckThreadContextAsync(result.GetProperty("thread"), _targetAccountKey, cancellation);
             chat.OriginalTitle = JsonValue.String(result.GetProperty("thread"), "name") ?? "";
         }
         return chats;
@@ -66,6 +69,7 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
             throw new LinuxDesktopOwnershipException();
         var before = await RequestMetadataAsync("thread/read", new { threadId = chat.Id, includeTurns = false }, cancellation);
         await _service.CheckThreadContextAsync(before.GetProperty("thread"), _service.CurrentKey, cancellation);
+        if (_targetAccountKey != null) await _service.CheckThreadContextAsync(before.GetProperty("thread"), _targetAccountKey, cancellation);
         chat.OriginalTitle = JsonValue.String(before.GetProperty("thread"), "name") ?? chat.OriginalTitle;
         chat.BackupTitle = SwitchTitle.Stamp(chat.OriginalTitle, at);
         await RequestMetadataAsync("thread/name/set", new { threadId = chat.Id, name = chat.BackupTitle }, cancellation);
@@ -80,7 +84,25 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
         else await DesktopShutdown.CloseAsync(_service.Installation.DesktopPath, cancellation);
         _sessions.RestartDiscovery();
     }
-    public Task ApplyAccountAsync(string key, string? source, CancellationToken cancellation) => _service.ApplySwitchAsync(key, null, false, cancellation, source, true);
+    public async Task ApplyAccountAsync(string key, string? source, CancellationToken cancellation)
+    {
+        if (OperatingSystem.IsLinux())
+        {
+            string[] ids;
+            lock (_service.Vault.SyncRoot)
+            {
+                var pending = _service.Vault.Data.PendingSwitch;
+                ids = pending?.TargetAccountKey == key ? pending.Chats.Select(chat => chat.Id).ToArray() : Array.Empty<string>();
+            }
+            foreach (var id in ids)
+            {
+                var metadata = await RequestMetadataAsync("thread/read", new { threadId = id, includeTurns = false }, cancellation);
+                await _service.CheckThreadContextAsync(metadata.GetProperty("thread"), key, cancellation);
+            }
+            await DisposeAsync();
+        }
+        await _service.ApplySwitchAsync(key, null, false, cancellation, source, true);
+    }
     public async Task LaunchDesktopAsync(CancellationToken cancellation)
     {
         if (OperatingSystem.IsLinux())
@@ -93,10 +115,11 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
     }
     public async Task<ChatResumeState> ResumeAsync(SwitchChat chat, Action sending, CancellationToken cancellation)
     {
+        var expectedAccount = _targetAccountKey ?? _service.CurrentKey;
         if (OperatingSystem.IsLinux())
         {
             var metadata = await RequestMetadataAsync("thread/read", new { threadId = chat.Id, includeTurns = false }, cancellation);
-            await _service.CheckThreadContextAsync(metadata.GetProperty("thread"), _service.CurrentKey, cancellation);
+            await _service.CheckThreadContextAsync(metadata.GetProperty("thread"), expectedAccount, cancellation);
             await _service.LinuxDesktop!.OpenThreadAsync(chat.Id, cancellation);
         }
         else RuntimeLocator.OpenDesktopThread(_service.Installation.DesktopPath, chat.Id);
@@ -114,6 +137,14 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
         }
         thread = await _sessions.WaitForThreadAsync(chat.Id, cancellation);
         if (SwitchContinuation.Decide(chat, thread) is ChatResumeState settled) return settled;
+        if (OperatingSystem.IsLinux())
+        {
+            var metadata = await RequestMetadataAsync("thread/read", new { threadId = chat.Id, includeTurns = false }, cancellation);
+            await _service.CheckThreadContextAsync(metadata.GetProperty("thread"), expectedAccount, cancellation);
+            if (await CurrentAccountAsync(cancellation) != expectedAccount) throw new InvalidOperationException("로그인 계정이 변경돼 채팅 재개를 중단했습니다.");
+            thread = await _sessions.WaitForThreadAsync(chat.Id, cancellation);
+            if (SwitchContinuation.Decide(chat, thread) is ChatResumeState changed) return changed;
+        }
         sending();
         var result = await _sessions.SendToOwnerAsync(thread, "thread-follower-start-turn", SwitchContinuation.StartParameters(chat), 2, cancellation);
         var turn = result.GetProperty("result").GetProperty("turn");
