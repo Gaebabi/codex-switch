@@ -16,6 +16,7 @@ concurrency:
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: '1'
   DOTNET_NOLOGO: '1'
+  CODEX_SWITCH_DISPOSABLE_RUNNER: 'true'
 
 jobs:
   keyring:
@@ -43,6 +44,21 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: '3.12'
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+      - name: Install the locked official standalone CLI without lifecycle scripts
+        working-directory: tools/ci-codex
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          case '${{ matrix.rid }}' in
+            linux-x64) task_triple=x86_64-unknown-linux-musl; task_module=codex-linux-x64 ;;
+            linux-arm64) task_triple=aarch64-unknown-linux-musl; task_module=codex-linux-arm64 ;;
+          esac
+          task_cli="$PWD/node_modules/@openai/$task_module/vendor/$task_triple/bin/codex"
+          test -x "$task_cli"
+          "$task_cli" --version
+          printf 'CODEX_SWITCH_STANDALONE_CLI=%s\n' "$task_cli" >> "$GITHUB_ENV"
       - name: Install the native test provider and D-Bus tools
         run: |
           sudo apt-get update -qq
@@ -51,6 +67,10 @@ jobs:
         run: dotnet build tests/linux-vault/CodexSwitch.LinuxVault.Tests.csproj -c Release --nologo -p:UseSharedCompilation=false -o artifacts/linux-native/${{ matrix.rid }}/tests
       - name: Verify actual keyring lifecycle on an owned disposable bus
         run: python scripts/verify-linux-keyring.py --assembly artifacts/linux-native/${{ matrix.rid }}/tests/CodexSwitch.LinuxVault.Tests.dll --architecture ${{ matrix.architecture }} --report artifacts/linux-native/${{ matrix.rid }}/keyring-summary.json
+      - name: Install only the checksum-pinned official native client on this disposable runner
+        run: python scripts/prepare-linux-client.py --architecture ${{ matrix.architecture }} --package-file artifacts/linux-native/${{ matrix.rid }}/upstream-client.deb
+      - name: Build the native executable trust contracts
+        run: dotnet build tests/linux-client/CodexSwitch.LinuxClient.Tests.csproj -c Release --nologo -p:UseSharedCompilation=false -o artifacts/linux-native/${{ matrix.rid }}/client-tests
       - name: Publish the source Linux preview for the actual runner
         run: dotnet publish src/linux/CodexSwitch.Linux.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:UseSharedCompilation=false -o artifacts/linux-native/${{ matrix.rid }}/app
       - name: Inspect the complete Linux runtime package
@@ -59,6 +79,8 @@ jobs:
         run: python scripts/verify-queues.py --executable artifacts/linux-native/${{ matrix.rid }}/app/CodexSwitch
       - name: Verify native protocol and read-only SQLite boundaries
         run: dotnet run --project tests/protocol/CodexSwitch.Protocol.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
+      - name: Verify genuine client identity, effective backend and managed policy with unchanged inputs
+        run: python scripts/verify-linux-client.py --architecture ${{ matrix.architecture }} --executable artifacts/linux-native/${{ matrix.rid }}/app/CodexSwitch --tests artifacts/linux-native/${{ matrix.rid }}/client-tests/CodexSwitch.LinuxClient.Tests.dll --report artifacts/linux-native/${{ matrix.rid }}/client-summary.json
       - run: python -m pip install -r requirements-dev.txt
       - name: Capture only the published preview's native X11 window
         run: xvfb-run -a -s "-screen 0 1920x1080x24" artifacts/linux-native/${{ matrix.rid }}/app/CodexSwitch --verify-ui artifacts/linux-native/${{ matrix.rid }}/raw

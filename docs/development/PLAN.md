@@ -67,7 +67,16 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 - [x] Expose the existing headless queue diagnostic through the Linux source host, requiring an explicit home and reporting missing native libraries as unavailable. Never initialize a vault/keyring/client or GUI for this diagnostic.
 - [x] Pass actual x64/ARM64 SQLite/WAL fixtures: committed visibility, uncommitted isolation, dedup/filtering/removal/unknown, absent/corrupt/write refusal, read-only permission acceptance and unchanged database/WAL presence/bytes. SHM coordination is a separate SQLite behavior; no immutable shortcut.
 - [x] Inspect source-bound actual native Linux/Windows/Mac app comparison, privacy/metadata/hash receipts and complete packages. Program images establish UI regression separately from native database tests.
-- [ ] Pass all six exact-head CI jobs, author review and focused PR promotion. Client/backend/KWallet, full handoff and clean packages remain required parent gates.
+- [x] Pass exact proof2e0bed03 Verify38672205215 (four jobs) and Linux native38672205233 (two jobs), author self-review and PR53 merge to mainf4080bf with identical source trees. Issue52 is closed. Client/backend/KWallet, full handoff and clean packages remain required parent gates.
+
+### P8.3 trusted Linux client and effective credential policy — issue54
+
+- [ ] Inspect the actual official Linux desktop package and embedded CLI, record architecture/version/origin/checksum and native RPC/config requirements behavior. Keep private raw package inspection outside the source tree.
+- [ ] Add native executable/path/owner/mode/architecture verification and OS package provenance. Pin explicitly selected custom clients to a user-supplied SHA256; never execute shell text or trust a basename/PATH wrapper. Retain a verified executable descriptor across launch.
+- [ ] Read effective configuration and managed requirements through the trusted native app-server without forcing a credential backend/provider. Verify file/keyring/auto/ephemeral, profiles/layers and forced login/workspace policy; refuse unknown/incompatible states before account operations. Preserve all input/config/auth bytes in disposable tests.
+- [ ] Keep CLI-only capability reporting distinct from full desktop/IPC/resumption. Normal Linux account/client/handoff actions remain gated until their later complete acceptance.
+- [ ] Pass actual native x64/ARM64 official-client checks and meaningful trust-negative fixtures, current GNOME/SQLite/supported-OS regressions, complete packages and actual own-window program evidence with no personal data.
+- [ ] Complete checkpoint pushes, six exact-head CI jobs, author self-review and expected-SHA PR merge. Independent KWallet55, full handoff6 and clean packages7 remain open.
 
 ## Tooltip style lifetime — issue35
 

@@ -87,6 +87,15 @@ internal static class LinuxPrivateFiles
         }
         finally { if (!moved && unlinkat(Fd(directory), staging, 0) != 0 && Marshal.GetLastPInvokeError() != 2) throw Failure(); }
     }
+    public static void WriteNew(string path, byte[] bytes)
+    {
+        var full = Path.GetFullPath(path);
+        using var directory = OpenDirectory(Path.GetDirectoryName(full)!, true);
+        using var handle = Handle(openat(Fd(directory), Leaf(Path.GetFileName(full)), 1 | Create | Exclusive | NoFollow | CloseOnExec, FileMode));
+        Verify(handle, false);
+        using (var stream = new FileStream(handle, FileAccess.Write)) { stream.Write(bytes); stream.Flush(true); }
+        if (fsync(Fd(directory)) != 0) throw Failure();
+    }
     public static SafeFileHandle Lock(string path)
     {
         using var directory = OpenDirectory(path, false);

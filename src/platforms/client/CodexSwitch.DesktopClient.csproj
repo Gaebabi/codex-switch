@@ -4,11 +4,13 @@
     <RootNamespace>CodexAccountDesk</RootNamespace><Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings><DebugType>none</DebugType>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="LinuxClients.json" LogicalName="CodexAccountDesk.LinuxClients.json" />
     <ProjectReference Include="../security/CodexSwitch.PlatformSecurity.csproj" />
     <InternalsVisibleTo Include="CodexSwitch" /><InternalsVisibleTo Include="CodexSwitch.Demo" />
     <InternalsVisibleTo Include="CodexSwitch.Localization.Tests" /><InternalsVisibleTo Include="CodexSwitch.Temperatures.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.WindowsHandoff.Tests" /><InternalsVisibleTo Include="CodexSwitch.DesktopClient.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.Protocol" />
     <InternalsVisibleTo Include="CodexSwitch.Application" />
+    <InternalsVisibleTo Include="CodexSwitch.LinuxClient.Tests" />
   </ItemGroup>
 </Project>

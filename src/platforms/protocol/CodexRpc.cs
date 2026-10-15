@@ -21,13 +21,23 @@ internal sealed class CodexRpc : IAsyncDisposable
     private readonly Task _errorDrain;
     private int _nextId;
     public event Action<string, JsonElement>? Notification;
+    public JsonElement? Initialization { get; private set; }
     public CodexRpc(string executable, string home, bool preserveProvider = false)
+        : this(CreateStart(executable, home, preserveProvider, true)) { }
+    public static CodexRpc InspectLinuxConfiguration(LinuxExecutable executable, string home)
+    {
+        var start = CreateStart(executable.ExecutionPath, home, true, false);
+        foreach (var name in new[] { "LD_PRELOAD", "LD_LIBRARY_PATH", "LD_AUDIT", "LD_DEBUG", "GLIBC_TUNABLES", "GCONV_PATH" }) start.Environment.Remove(name);
+        return new CodexRpc(start);
+    }
+    private static ProcessStartInfo CreateStart(string executable, string home, bool preserveProvider, bool isolatedFileCredentials)
     {
         var start = new ProcessStartInfo(executable) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true,
             RedirectStandardOutput = true, RedirectStandardError = true, StandardInputEncoding = new UTF8Encoding(false),
             StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8, WorkingDirectory = home };
-        foreach (var argument in new[] { "app-server", "--listen", "stdio://", "-c", "cli_auth_credentials_store=\"file\"", "-c", "analytics.enabled=false" })
-            start.ArgumentList.Add(argument);
+        foreach (var argument in new[] { "app-server", "--listen", "stdio://" }) start.ArgumentList.Add(argument);
+        if (isolatedFileCredentials) { start.ArgumentList.Add("-c"); start.ArgumentList.Add("cli_auth_credentials_store=\"file\""); }
+        start.ArgumentList.Add("-c"); start.ArgumentList.Add("analytics.enabled=false");
         if (!preserveProvider) { start.ArgumentList.Add("-c"); start.ArgumentList.Add("model_provider=\"openai\""); }
         start.Environment["CODEX_HOME"] = home;
         start.Environment["RUST_LOG"] = "error";
@@ -35,6 +45,10 @@ internal sealed class CodexRpc : IAsyncDisposable
         start.Environment.Remove("OPENAI_API_KEY");
         start.Environment.Remove("OPENAI_IDENTITY_TOKEN_FILE");
         start.Environment.Remove("OPENAI_IDENTITY_TOKEN_AUDIENCE");
+        return start;
+    }
+    private CodexRpc(ProcessStartInfo start)
+    {
         _process = Process.Start(start) ?? throw new IOException("Codex 조회 프로세스를 실행할 수 없습니다.");
         try { _job = new OwnedProcessJob(_process); }
         catch { if (!_process.HasExited) _process.Kill(true); _process.Dispose(); throw; }
@@ -43,7 +57,7 @@ internal sealed class CodexRpc : IAsyncDisposable
     }
     public async Task InitializeAsync(CancellationToken cancellation)
     {
-        await RequestAsync("initialize", new { clientInfo = new { name = "codex_account_desk", title = "Codex Switch", version = typeof(CodexRpc).Assembly.GetName().Version!.ToString(3) } }, cancellation);
+        Initialization = await RequestAsync("initialize", new { clientInfo = new { name = "codex_account_desk", title = "Codex Switch", version = typeof(CodexRpc).Assembly.GetName().Version!.ToString(3) } }, cancellation);
         await SendAsync(new { method = "initialized" }, cancellation);
     }
     public async Task<JsonElement> RequestAsync(string method, object? parameters, CancellationToken cancellation, TimeSpan? timeout = null)
