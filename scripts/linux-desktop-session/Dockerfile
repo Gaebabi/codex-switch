@@ -11,7 +11,7 @@ COPY candidate.deb upstream.deb /input/
 RUN apt-get update -qq && apt-get install --no-install-recommends -y /input/candidate.deb /input/upstream.deb xfce4-session xfwm4 xfce4-panel xfdesktop4 xfce4-settings thunar dbus-x11 libglib2.0-bin gnome-keyring xvfb xauth x11-apps x11-utils xdotool imagemagick python3 python3-pil fonts-dejavu-core fonts-noto-cjk desktop-file-utils procps && rm -rf /var/lib/apt/lists/*
 COPY --from=contracts /contracts /contracts
 COPY verify-session.py expected.json /work/
-RUN useradd --uid 1000 --create-home verifier && install -d -m 0700 -o 1000 -g 1000 /results
+RUN useradd --uid 1000 --create-home verifier && chmod 0700 /home/verifier && install -d -m 0700 -o 1000 -g 1000 /results
 USER 1000:1000
 WORKDIR /work
 ENV HOME=/home/verifier CODEX_SWITCH_DISPOSABLE_RUNNER=true DOTNET_CLI_TELEMETRY_OPTOUT=1

@@ -75,7 +75,8 @@ identifier = run(['docker', 'create', '--init', '--name', name, '--label', 'code
 (output / 'owned-container.json').write_text(json.dumps({'id': identifier, 'name': name, 'testRevision': head, 'image': image}), encoding='utf-8')
 try:
     item = json.loads(run(['docker', 'inspect', identifier], capture_output=True, text=True).stdout)[0]
-    if item['Name'] != '/' + name or item['Config']['Labels'].get('codex-switch-desktop-session') != head or item['Mounts'] or item['HostConfig']['PortBindings'] or item['HostConfig']['Privileged'] or item['HostConfig']['NetworkMode'] != 'none' or item['Config']['User'] != '1000:1000':
+    host = item['HostConfig']
+    if item['Name'] != '/' + name or item['Config']['Labels'].get('codex-switch-desktop-session') != head or item['Mounts'] or host['PortBindings'] or host['Privileged'] or host['NetworkMode'] != 'none' or item['Config']['User'] != '1000:1000' or host['CapDrop'] != ['ALL'] or host['CapAdd'] or host['Devices'] or host['Memory'] != 2 * 1024 ** 3 or host['NanoCpus'] != 2 * 10 ** 9 or host['PidsLimit'] != 512 or host['PidMode'] or host['IpcMode'] != 'private':
         raise RuntimeError('Owned desktop container isolation contract mismatch')
     with (output / 'session-private.log').open('wb') as log:
         session = subprocess.run(['docker', 'start', '--attach', identifier], stdout=log, stderr=subprocess.STDOUT, timeout=600)

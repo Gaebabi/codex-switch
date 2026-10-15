@@ -33,7 +33,7 @@ def wait_for(probe, timeout=20):
 if os.geteuid() != 1000 or platform.machine() != 'x86_64' or os.environ.get('CODEX_SWITCH_DISPOSABLE_RUNNER') != 'true':
     raise SystemExit('Only the declared normal-user disposable native x64 container is allowed')
 if len(sys.argv) == 1:
-    root = Path(tempfile.mkdtemp(prefix='codex-linux-keyring-test-'))
+    root = Path(tempfile.mkdtemp(prefix='codex-linux-keyring-test-', dir=Path.home()))
     for folder in ('home', 'share', 'config', 'cache', 'runtime', 'bus', 'control'):
         (root / folder).mkdir(mode=0o700)
     config = root / 'bus.conf'
