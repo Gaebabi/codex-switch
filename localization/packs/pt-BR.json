@@ -373,7 +373,10 @@
     "msg.linux_private_file": "O armazenamento exige um arquivo do usuário com permissões 0600 e sem links simbólicos.",
     "msg.linux_foreign_vault": "Este cofre pertence a outra plataforma. Adicione as contas separadamente.",
     "msg.linux_storage_access_denied": "Verifique o proprietário e as permissões do armazenamento do Linux.",
-    "msg.linux_process_start_failed": "Não foi possível iniciar o programa do Linux. Verifique o executável e suas permissões."
+    "msg.linux_process_start_failed": "Não foi possível iniciar o programa do Linux. Verifique o executável e suas permissões.",
+    "msg.linux_account_file_policy": "Este contexto do Codex não permite credenciais do ChatGPT em arquivos. A configuração não foi alterada.",
+    "msg.linux_account_workspace_policy": "A conta selecionada não corresponde ao espaço de trabalho exigido por este contexto do Codex.",
+    "msg.linux_account_async_policy": "As operações de conta no Linux exigem uma nova verificação assíncrona da política do cliente."
   },
   "plurals": {
     "msg.accounts": {

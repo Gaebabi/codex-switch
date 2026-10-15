@@ -94,7 +94,7 @@ def stop():
         daemon=None
         ready(False)
 try:
-    phase('no-service');start();phase('roundtrip');phase('concurrent')
+    phase('no-service');start();phase('roundtrip');phase('concurrent');phase('account-policy')
     foreign=root/'data/linux-self-test-protector/foreign.txt';foreign.write_bytes(b'Synthetic ownership fixture');foreign.chmod(0o600)
     change=['chown',str(65534 if os.geteuid()!=65534 else 0),str(foreign)]
     subprocess.run(change if os.geteuid()==0 else ['sudo','-n',*change],check=True,capture_output=True)

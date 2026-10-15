@@ -10,36 +10,18 @@ internal sealed record LinuxClientInspection(string CliVersion, string Provenanc
 
 internal static class LinuxClientInspector
 {
-    public static async Task<LinuxClientInspection> ReadAsync(string home, LinuxClientSelection? selection, CancellationToken cancellation)
+    public static async Task<LinuxClientInspection> ReadAsync(string home, LinuxClientSelection? selection, CancellationToken cancellation, string? context = null)
     {
-        if (!OperatingSystem.IsLinux()) throw new PlatformNotSupportedException("Linux client inspection requires Linux.");
-        home = Path.TrimEndingDirectorySeparator(Path.GetFullPath(home));
-        if (home == Path.GetPathRoot(home)) throw new ArgumentException("The filesystem root cannot be a client inspection home.");
-        if (!Directory.Exists(home)) throw new DirectoryNotFoundException("Client inspection requires an existing explicitly selected home.");
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(25));
-        using var installation = await Task.Run(() => LinuxClientDiscovery.Open(selection, deadline.Token), deadline.Token).ConfigureAwait(false);
-        await using var rpc = CodexRpc.InspectLinuxConfiguration(installation.Cli, home);
-        await rpc.InitializeAsync(deadline.Token).ConfigureAwait(false);
-        var hello = rpc.Initialization ?? throw Unsupported();
-        if (hello.ValueKind != JsonValueKind.Object || Text(hello, "platformOs") != "linux" || Text(hello, "platformFamily") != "unix" || Text(hello, "codexHome") != home)
-            throw Unsupported();
-        const string prefix = "codex_account_desk/"; var userAgent = Text(hello, "userAgent");
-        if (!userAgent.StartsWith(prefix, StringComparison.Ordinal)) throw Unsupported();
-        var end = userAgent.IndexOf(' ', prefix.Length); if (end < 0) throw Unsupported();
-        var version = userAgent[prefix.Length..end];
-        if (version is not ("0.162.0-alpha.17.2" or "0.162.1")) throw Unsupported();
-        var configuration = await rpc.RequestAsync("config/read", new { includeLayers = true, cwd = home }, deadline.Token).ConfigureAwait(false);
-        var requirements = await rpc.RequestAsync("configRequirements/read", null, deadline.Token).ConfigureAwait(false);
-        var policy = ClientCredentialPolicy.Parse(configuration, requirements);
-        return new(version, installation.Provenance, installation.PackageVersion, installation.Desktop != null, policy);
+        await using var session = await LinuxClientSession.OpenAsync(home, context, selection, deadline.Token).ConfigureAwait(false);
+        var policy = await session.ReadPolicyAsync(deadline.Token).ConfigureAwait(false);
+        return new(session.CliVersion, session.Provenance, session.PackageVersion, session.DesktopBinaryApproved, policy);
     }
-    private static string Text(JsonElement source, string name) => source.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()! : throw Unsupported();
-    private static InvalidDataException Unsupported() => new("The Linux client version or configuration protocol is not verified.");
 }
 
 internal static class LinuxClientDiagnostics
 {
-    public static async Task<int> VerifyAsync(string home, string reportPath, LinuxClientSelection? selection)
+    public static async Task<int> VerifyAsync(string home, string reportPath, LinuxClientSelection? selection, string? context = null)
     {
         home = Path.TrimEndingDirectorySeparator(Path.GetFullPath(home)); reportPath = Path.GetFullPath(reportPath);
         if (home == Path.GetPathRoot(home) || reportPath == home || reportPath.StartsWith(home + Path.DirectorySeparatorChar, StringComparison.Ordinal))
@@ -47,11 +29,11 @@ internal static class LinuxClientDiagnostics
         object report; var result = 0;
         try
         {
-            var inspection = await LinuxClientInspector.ReadAsync(home, selection, CancellationToken.None).ConfigureAwait(false);
+            var inspection = await LinuxClientInspector.ReadAsync(home, selection, CancellationToken.None, context).ConfigureAwait(false);
             report = new { schema = 1, inspectionAvailable = true, inspection.CliVersion, inspection.Provenance, inspection.PackageVersion,
                 inspection.DesktopBinaryApproved, credentialStore = inspection.Policy.Store, fileCredentialsAllowed = inspection.Policy.FileCredentialsAllowed,
                 workspaceRestricted = inspection.Policy.ForcedWorkspaceId != null, requiresApiLogin = inspection.Policy.ForcedLoginMethod == "api",
-                configurationScope = "SelectedHomeContext",
+                configurationScope = context == null ? "SelectedHomeContext" : "SelectedDirectoryContext",
                 desktopHandoffAvailable = false,
                 scope = "Native executable identity and effective config/requirements inspection only; no login, inference, switching or desktop/IPC/resumption acceptance. Paths, workspace IDs and full config are not exported." };
         }

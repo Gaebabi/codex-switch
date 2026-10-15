@@ -373,7 +373,10 @@
     "msg.linux_private_file": "儲存檔案必須由目前使用者擁有、權限為 0600，且不能是符號連結。",
     "msg.linux_foreign_vault": "此保管庫來自其他平台。請另外新增帳戶。",
     "msg.linux_storage_access_denied": "請檢查 Linux 儲存目錄的擁有者與權限。",
-    "msg.linux_process_start_failed": "無法啟動 Linux 程式。請檢查執行檔及其權限。"
+    "msg.linux_process_start_failed": "無法啟動 Linux 程式。請檢查執行檔及其權限。",
+    "msg.linux_account_file_policy": "目前的 Codex 情境不允許使用 ChatGPT 檔案憑證。其設定未變更。",
+    "msg.linux_account_workspace_policy": "所選帳戶與目前 Codex 情境要求的工作區不符。",
+    "msg.linux_account_async_policy": "Linux 帳戶操作需要非同步重新檢查用戶端原則。"
   },
   "plurals": {
     "msg.accounts": {

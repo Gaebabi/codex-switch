@@ -373,7 +373,10 @@
     "msg.linux_private_file": "存储文件必须属于当前用户、权限为 0600，且不能是符号链接。",
     "msg.linux_foreign_vault": "此保险库来自其他平台。请单独添加账户。",
     "msg.linux_storage_access_denied": "请检查 Linux 存储目录的所有者和权限。",
-    "msg.linux_process_start_failed": "无法启动 Linux 程序。请检查可执行文件及其权限。"
+    "msg.linux_process_start_failed": "无法启动 Linux 程序。请检查可执行文件及其权限。",
+    "msg.linux_account_file_policy": "当前 Codex 上下文不允许使用 ChatGPT 文件凭据。未更改其配置。",
+    "msg.linux_account_workspace_policy": "所选账户与当前 Codex 上下文要求的工作区不匹配。",
+    "msg.linux_account_async_policy": "Linux 账户操作需要异步重新检查客户端策略。"
   },
   "plurals": {
     "msg.accounts": {

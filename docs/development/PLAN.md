@@ -71,12 +71,21 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 
 ### P8.3 trusted Linux client and effective credential policy — issue54
 
+P8.3a is merged in PR56/main3ada2b20 after exact4f780f9 passed Verify38677956182 (four jobs), Linux native38677956198 (two jobs) and author self-review. Each Linux architecture passes client95/trust15; normal account/IPC/handoff stays gated. The remaining P8.3b work below connects these decisions to account operations rather than treating an inspection report as an action authorization.
+
 - [x] Inspect the actual official Linux desktop package and embedded CLI, record architecture/version/origin/checksum and native RPC/config requirements behavior. Actual x64/ARM64 approved package/standalone CLI checks pass in sourceb01be7c/Linux38676489811. Private raw package inspection stays outside the source tree.
 - [x] Add native executable/path/owner/mode/architecture verification and approved OS package provenance. Explicit checksum CLI-only discovery, retained-descriptor native process launch and14 trust checks pass on each native architecture; no shell/PATH trust or execution fallback.
 - [ ] Read effective configuration and managed requirements through the trusted native app-server without forcing a credential backend/provider. Verify file/keyring/auto/ephemeral, profiles/layers and forced login/workspace policy; refuse unknown/incompatible states before account operations. Preserve all input/config/auth bytes in disposable tests.
 - [x] Keep CLI-only capability reporting distinct from full desktop/IPC/resumption. Native client94 includes actual managed-policy/backend cases with unchanged config/empty-auth inputs; normal Linux account/client/handoff actions remain gated. Runtime profiles are not provided by this app-server contract and deprecated profile config refuses.
 - [x] Pass sourceb01be7c client94/GNOME18/SQLite26/protocol10/app12 per native Linux architecture plus all four Verify38676489809 jobs. Inspect ten source-bound own-window after PNGs, hashes/metadata/privacy and complete packages; same-host Windows dark is byte-identical. These certify the read-only selected-home inspection, not authenticated/context-aware account integration.
 - [ ] Complete checkpoint pushes, six exact-head CI jobs, author self-review and expected-SHA PR merge. Independent KWallet55, full handoff6 and clean packages7 remain open.
+
+### P8.3b context-aware account preflight — issue54
+
+- [ ] Reuse a verified native client session for actual `config/read` cwd/managed policy. Verify real trusted/untrusted project precedence, workspace/login/store restrictions and unchanged input files; unsupported runtime profiles refuse without rewriting configuration.
+- [ ] Require native policy before Linux account initialization/import/read/login/refresh/apply and before credential writeback. Keep explicit verified descriptors for query children and validate the actual isolated child's policy without forcing storage/provider settings. Preserve Windows/Mac behavior and identities.
+- [ ] Exercise normal application APIs on owned disposable native homes/private GNOME bus: incompatible policy stops before vault/auth/runtime changes or login; explicit-file empty initialization and synthetic local import use the actual encrypted vault. These do not substitute for authenticated account/running-client/handoff acceptance.
+- [ ] Retain existing native security/client/SQLite/UI and supported-host regressions, complete packages, exact-source private-data-free program images and six final-head workflows. Checkpoint pushes, author review and expected-SHA PR promotion remain required; actual Linux account GUI/IPC/handoff, KWallet55 and clean packages7 remain separate gates.
 
 ## Tooltip style lifetime — issue35
 

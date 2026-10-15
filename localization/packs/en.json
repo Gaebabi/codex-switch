@@ -373,7 +373,10 @@
     "msg.linux_private_file": "Storage requires a user-owned file with mode 0600 and no symbolic links.",
     "msg.linux_foreign_vault": "This vault belongs to another platform. Add accounts separately.",
     "msg.linux_storage_access_denied": "Check Linux storage ownership and permissions.",
-    "msg.linux_process_start_failed": "Could not start the Linux program. Check its executable and permissions."
+    "msg.linux_process_start_failed": "Could not start the Linux program. Check its executable and permissions.",
+    "msg.linux_account_file_policy": "This Codex context does not allow ChatGPT file credentials. Its configuration has not been changed.",
+    "msg.linux_account_workspace_policy": "The selected account does not match this Codex context's required workspace.",
+    "msg.linux_account_async_policy": "Linux account operations require a fresh asynchronous client policy check."
   },
   "plurals": {
     "msg.accounts": {

@@ -46,25 +46,28 @@ def clear_policies():
         value=path.lstat()
         if not stat.S_ISREG(value.st_mode) or value.st_uid!=0 or hashlib.sha256(path.read_bytes()).digest()!=digest:raise RuntimeError('Owned test policy changed; refusing removal')
         run(['sudo','rm','--',str(path)]);del owned_policies[path]
-def snapshot(home):
+def snapshot(home,context=None):
     paths=list(home.rglob('*.toml'))+[home/'auth.json']+list(owned_policies)
+    if context:paths+=list(context.rglob('*.toml'))
     return {str(path):hashlib.sha256(path.read_bytes()).digest() for path in paths if path.is_file()}
-def inspect(name,config,expected_store,allowed=True,system=None,selection=None,expected_success=True,workspace=False,api=False):
+def inspect(name,config,expected_store,allowed=True,system=None,selection=None,expected_success=True,workspace=False,api=False,context=None):
     home=root/('home-'+name);home.mkdir(mode=0o700);write(home/'config.toml',config);write(home/'auth.json','{}\n')
     output=root/'reports';output.mkdir(mode=0o700,exist_ok=True);destination=output/(name+'.json')
     if system:policies(system)
-    before=snapshot(home);env=dict(os.environ,XDG_CONFIG_HOME=str(root/'xdg-config'),XDG_DATA_HOME=str(root/'xdg-data'),XDG_CACHE_HOME=str(root/'xdg-cache'),XDG_RUNTIME_DIR=str(root/'xdg-runtime'))
+    before=snapshot(home,context);env=dict(os.environ,XDG_CONFIG_HOME=str(root/'xdg-config'),XDG_DATA_HOME=str(root/'xdg-data'),XDG_CACHE_HOME=str(root/'xdg-cache'),XDG_RUNTIME_DIR=str(root/'xdg-runtime'))
     env.pop('DBUS_SESSION_BUS_ADDRESS',None)
     command=[str(executable),'--codex-home',str(home),'--verify-client',str(destination)]
     if selection:command+=['--codex-cli',selection[0],'--codex-cli-sha256',selection[1]]
+    if context:command+=['--client-context',str(context)]
     try:
         result=subprocess.run(command,env=env,capture_output=True,text=True,timeout=45)
         if not destination.is_file():raise RuntimeError('Native client probe did not produce its sanitized report: '+name)
         value=json.loads(destination.read_text(encoding='utf-8'))
-        check(name+' preserves configuration/auth/system-policy input bytes',snapshot(home)==before)
+        check(name+' preserves configuration/auth/system-policy input bytes',snapshot(home,context)==before)
         check(name+' reports its actual policy capability',value['inspectionAvailable']==expected_success and result.returncode==(0 if expected_success else 1))
         check(name+' keeps desktop handoff unavailable',value['desktopHandoffAvailable'] is False)
         if expected_success:
+            check(name+' names the selected configuration scope',value['configurationScope']==('SelectedDirectoryContext' if context else 'SelectedHomeContext'))
             check(name+' observes effective backend/login/workspace',value['credentialStore']==expected_store and value['fileCredentialsAllowed']==allowed and value['workspaceRestricted']==workspace and value['requiresApiLogin']==api)
             check(name+' preserves explicit-versus-system provenance',value['Provenance']==('ExplicitChecksum' if selection else 'ApprovedSystemPackage') and value['DesktopBinaryApproved']==(selection is None))
         check(name+' report is private and excludes source paths/config/workspace IDs',stat.S_IMODE(destination.stat().st_mode)==0o600 and str(root) not in destination.read_text(encoding='utf-8') and 'synthetic-workspace' not in destination.read_text(encoding='utf-8'))
@@ -83,6 +86,12 @@ try:
     inspect('forced-api','cli_auth_credentials_store = "file"\nforced_login_method = "api"\n','file',False,api=True)
     inspect('managed-login','cli_auth_credentials_store = "file"\n','file',False,system={'requirements.toml':'allowed_login_methods = ["api"]\n'})
     inspect('workspace','cli_auth_credentials_store = "file"\nforced_chatgpt_workspace_id = "synthetic-workspace"\n','file',workspace=True)
+    for trusted in (True,False):
+        context=root/('project-trusted' if trusted else 'project-untrusted');context.mkdir(mode=0o700);(context/'.git').mkdir(mode=0o700);(context/'.codex').mkdir(mode=0o700)
+        write(context/'.codex/config.toml','cli_auth_credentials_store = "keyring"\nforced_login_method = "api"\n')
+        config='cli_auth_credentials_store = "file"\n'
+        if trusted:config+='[projects.'+json.dumps(str(context))+']\ntrust_level = "trusted"\n'
+        inspect('trusted-project' if trusted else 'untrusted-project',config,'keyring' if trusted else 'file',not trusted,api=trusted,context=context)
     manifest=json.loads(Path('src/platforms/client/LinuxClients.json').read_text(encoding='utf-8'))['architectures'][a.architecture]
     inspect('explicit-checksum','cli_auth_credentials_store = "file"\n','file',selection=('/usr/lib/chatgpt/resources/codex',manifest['cliSha256']))
     standalone=Path(os.environ['CODEX_SWITCH_STANDALONE_CLI']).resolve(strict=True)

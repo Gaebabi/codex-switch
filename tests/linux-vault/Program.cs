@@ -120,6 +120,9 @@ try
             Check("Existing OS key decrypts unchanged vault/application data: " + phase, () =>
             { Assert(VaultProtection.Unprotect(SecureFiles.ReadPrivateBytes(file), directory).SequenceEqual(plain)); Assert(new AccountVault(appDirectory).Data.Theme == "light"); });
             break;
+        case "account-policy":
+            checks.AddRange(await AccountPolicyContracts.RunAsync(root));
+            break;
         case "locked":
             var before = File.ReadAllBytes(file);
             Check("Locked existing key refuses read/save without creating a replacement", () =>

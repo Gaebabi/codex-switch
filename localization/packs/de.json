@@ -373,7 +373,10 @@
     "msg.linux_private_file": "Die Speicherdatei muss dem Benutzer gehören, Modus 0600 haben und darf kein symbolischer Link sein.",
     "msg.linux_foreign_vault": "Dieser Tresor stammt von einer anderen Plattform. Fügen Sie die Konten separat hinzu.",
     "msg.linux_storage_access_denied": "Prüfen Sie Eigentümer und Berechtigungen des Linux-Speichers.",
-    "msg.linux_process_start_failed": "Das Linux-Programm konnte nicht gestartet werden. Prüfen Sie die Programmdatei und ihre Berechtigungen."
+    "msg.linux_process_start_failed": "Das Linux-Programm konnte nicht gestartet werden. Prüfen Sie die Programmdatei und ihre Berechtigungen.",
+    "msg.linux_account_file_policy": "Dieser Codex-Kontext erlaubt keine ChatGPT-Anmeldedaten in Dateien. Die Konfiguration wurde nicht geändert.",
+    "msg.linux_account_workspace_policy": "Das ausgewählte Konto entspricht nicht dem für diesen Codex-Kontext erforderlichen Arbeitsbereich.",
+    "msg.linux_account_async_policy": "Kontovorgänge unter Linux erfordern eine erneute asynchrone Prüfung der Client-Richtlinie."
   },
   "plurals": {
     "msg.accounts": {

@@ -373,7 +373,10 @@
     "msg.linux_private_file": "Le stockage nécessite un fichier appartenant à l’utilisateur, de mode 0600 et sans lien symbolique.",
     "msg.linux_foreign_vault": "Ce coffre provient d’une autre plateforme. Ajoutez les comptes séparément.",
     "msg.linux_storage_access_denied": "Vérifiez le propriétaire et les permissions du stockage Linux.",
-    "msg.linux_process_start_failed": "Impossible de démarrer le programme Linux. Vérifiez son exécutable et ses permissions."
+    "msg.linux_process_start_failed": "Impossible de démarrer le programme Linux. Vérifiez son exécutable et ses permissions.",
+    "msg.linux_account_file_policy": "Ce contexte Codex ne permet pas les identifiants ChatGPT stockés dans un fichier. Sa configuration reste inchangée.",
+    "msg.linux_account_workspace_policy": "Le compte sélectionné ne correspond pas à l’espace de travail requis par ce contexte Codex.",
+    "msg.linux_account_async_policy": "Les opérations de compte sous Linux nécessitent une nouvelle vérification asynchrone de la politique du client."
   },
   "plurals": {
     "msg.accounts": {

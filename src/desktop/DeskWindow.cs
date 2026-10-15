@@ -283,7 +283,7 @@ internal sealed class DeskWindow : Window
         {
             await RunAsync(async _ =>
             {
-                _service!.CheckCredentialBackend(profile);
+                await _service!.CheckCredentialBackendAsync(profile, _switch.Token);
                 await using var backend = new DesktopSwitchBackend(_service, _sessions);
                 var coordinator = new AccountSwitchCoordinator(backend,
                     plan => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.PendingSwitch = plan; _service.Vault.Save(); } },

@@ -373,7 +373,10 @@
     "msg.linux_private_file": "저장소 파일은 현재 사용자 소유이며 권한이 0600이어야 하고 심볼릭 링크가 아니어야 합니다.",
     "msg.linux_foreign_vault": "다른 플랫폼에서 생성한 저장소입니다. 계정을 별도로 추가하세요.",
     "msg.linux_storage_access_denied": "Linux 저장소의 소유자와 권한을 확인하세요.",
-    "msg.linux_process_start_failed": "Linux 프로그램을 시작하지 못했습니다. 실행 파일과 권한을 확인하세요."
+    "msg.linux_process_start_failed": "Linux 프로그램을 시작하지 못했습니다. 실행 파일과 권한을 확인하세요.",
+    "msg.linux_account_file_policy": "현재 Codex 문맥에서는 ChatGPT 파일 인증 정보를 사용할 수 없습니다. 설정은 변경하지 않았습니다.",
+    "msg.linux_account_workspace_policy": "선택한 계정이 현재 Codex 문맥에서 요구하는 워크스페이스와 일치하지 않습니다.",
+    "msg.linux_account_async_policy": "Linux 계정 작업에는 최신 클라이언트 정책의 비동기 확인이 필요합니다."
   },
   "plurals": {
     "msg.accounts": {

@@ -346,5 +346,8 @@
   "Linux Secret Service is unavailable. Install and unlock a compatible keyring before using account storage.": "msg.linux_keyring_unavailable",
   "Linux private directory must be owned by this user with mode0700 and contain no symbolic links.": "msg.linux_private_directory",
   "Linux private file must be owned by this user with mode0600 and contain no symbolic links.": "msg.linux_private_file",
-  "This is not a Linux vault. Register accounts separately; foreign vaults are not migrated automatically.": "msg.linux_foreign_vault"
+  "This is not a Linux vault. Register accounts separately; foreign vaults are not migrated automatically.": "msg.linux_foreign_vault",
+  "This Codex context does not allow ChatGPT file credentials. Its configuration has not been changed.": "msg.linux_account_file_policy",
+  "The selected account does not match this Codex context's required workspace.": "msg.linux_account_workspace_policy",
+  "Linux account operations require a fresh asynchronous client policy check.": "msg.linux_account_async_policy"
 }

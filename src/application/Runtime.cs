@@ -20,7 +20,11 @@ internal sealed class RuntimeHome : IAsyncDisposable
         using var owner = Process.GetCurrentProcess();
         File.WriteAllText(System.IO.Path.Combine(Path, "owner.json"), JsonSerializer.Serialize(new { pid = owner.Id, startedAt = owner.StartTime.ToUniversalTime().Ticks }));
     }
-    public string ReadAuth() => File.ReadAllText(System.IO.Path.Combine(Path, "auth.json"));
+    public string ReadAuth()
+    {
+        var file = System.IO.Path.Combine(Path, "auth.json");
+        return OperatingSystem.IsLinux() ? new System.Text.UTF8Encoding(false, true).GetString(SecureFiles.ReadPrivateBytes(file)) : File.ReadAllText(file);
+    }
     public ValueTask DisposeAsync() { SecureFiles.DeleteOwnedRuntime(_root, Path); return ValueTask.CompletedTask; }
     public static void CleanupStale(string dataDirectory)
     {

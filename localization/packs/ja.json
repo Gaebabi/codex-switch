@@ -373,7 +373,10 @@
     "msg.linux_private_file": "保存先は現在のユーザー所有、権限0600で、シンボリックリンクではないファイルが必要です。",
     "msg.linux_foreign_vault": "別のプラットフォームで作成された保管庫です。アカウントを個別に追加してください。",
     "msg.linux_storage_access_denied": "Linux保存先の所有者と権限を確認してください。",
-    "msg.linux_process_start_failed": "Linuxプログラムを起動できませんでした。実行ファイルと権限を確認してください。"
+    "msg.linux_process_start_failed": "Linuxプログラムを起動できませんでした。実行ファイルと権限を確認してください。",
+    "msg.linux_account_file_policy": "この Codex コンテキストでは ChatGPT のファイル認証情報を使用できません。設定は変更されていません。",
+    "msg.linux_account_workspace_policy": "選択したアカウントは、この Codex コンテキストで必要なワークスペースと一致しません。",
+    "msg.linux_account_async_policy": "Linux のアカウント操作には、最新のクライアントポリシーの非同期確認が必要です。"
   },
   "plurals": {
     "msg.accounts": {
