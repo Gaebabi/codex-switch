@@ -6,8 +6,10 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 
 namespace CodexAccountDesk;
 
@@ -46,10 +48,20 @@ internal static class LinuxUiEvidence
                 await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
                 await Task.Delay(120);
                 if (!window.IsVisible || window.Cards.Count != 4 || window.MenuBarProbe != null || Math.Abs(window.Bounds.Width - size.Item1) > 1 || Math.Abs(window.Bounds.Height - size.Item2) > 1 ||
-                    window.Cards.Any(card => card.Bounds.Width <= 0 || card.Bounds.Height < 126))
+                    window.Cards.Any(card => card.Bounds.Width <= 0 || card.Bounds.Height + card.Margin.Top + card.Margin.Bottom < 126))
                     throw new InvalidOperationException("Shared Linux window geometry mismatch: requested=" + size.Item1 + "x" + size.Item2 + "; bounds=" + window.Bounds +
                         "; client=" + window.ClientSize + "; visible=" + window.IsVisible + "; tray=" + (window.MenuBarProbe != null) + "; cards=" +
                         string.Join(";", window.Cards.Select(card => card.Bounds.ToString())));
+                foreach (var card in window.Cards)
+                foreach (var text in card.GetVisualDescendants().OfType<TextBlock>())
+                {
+                    if (!text.IsVisible) continue;
+                    var point = text.TranslatePoint(new Point(), card);
+                    if (!point.HasValue || point.Value.Y < -1 || point.Value.Y + text.Bounds.Height > card.Bounds.Height + 1)
+                        throw new InvalidOperationException("Linux synthetic card text is clipped: " + text.Text);
+                }
+                if (window.AccountScroll.Extent.Height > window.AccountScroll.Viewport.Height + 1)
+                    throw new InvalidOperationException("Four Linux preview cards unexpectedly require scrolling.");
                 var name = language + "-" + (dark ? "dark" : "light") + "-" + size.Item1 + "x" + size.Item2 + "-native.png";
                 await Capture(window, Path.Combine(directory, name)); checks.Add(name);
             }
