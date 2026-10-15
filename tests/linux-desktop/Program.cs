@@ -102,7 +102,7 @@ else
     try { Environment.SetEnvironmentVariable("NODE_OPTIONS", "--require=" + injected); owned = LinuxDesktopLaunch.Start(root, deadline.Token); }
     finally { Environment.SetEnvironmentVariable("NODE_OPTIONS", originalOptions); }
     using var launch = owned;
-    while (!File.Exists(Path.Combine(root, "ipc/ipc.sock"))) await Task.Delay(100, deadline.Token);
+    await launch.WaitForReadyAsync(deadline.Token);
     await using var stream = await LinuxDesktopConnection.ConnectAsync(root, deadline.Token);
     var id = Guid.NewGuid().ToString();
     var body = JsonSerializer.SerializeToUtf8Bytes(new { type = "request", requestId = id, method = "initialize", version = 0, timeoutMs = 5000, @params = new { clientType = "codex-account-desk" } });

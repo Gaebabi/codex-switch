@@ -232,6 +232,7 @@ try:
             raise RuntimeError('Official native peer exited before IPC; see private diagnostics')
         started = json.loads(first)
         native_pid = started['ownedProcess']
+        check('Actual native keyboard layout is ' + layout, re.search(r'^layout:\s+' + layout + r'\s*$', run(['setxkbmap', '-query'], capture_output=True, text=True).stdout, re.MULTILINE) is not None)
         native_window = wait_for(lambda: windows(native_pid), 15)[0]
         capture(native_window, native_pid, 'official-client-start-' + str(attempt))
         run(['xdotool', 'windowactivate', '--sync', neutral_window])
@@ -241,6 +242,7 @@ try:
         value = json.loads(rest)
         check('Actual sandboxed official-client start/IPC/normal close cycle ' + str(attempt), peer.returncode == 0 and value['failed'] == 0 and value['passed'] == 7)
         check('Native Quit preserves the independent neutral window with ' + layout + ' key mapping', neutral.poll() is None)
+        value['keyboardLayout'] = layout
         phases.append(value)
     run(['setxkbmap', '-layout', 'us', '-option', ''])
     neutral.terminate()

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -69,11 +71,43 @@ internal sealed class LinuxDesktopLaunch : IDisposable
         }
     }
     public void WaitForExit(CancellationToken cancellation) => _process.WaitForExitAsync(cancellation).GetAwaiter().GetResult();
+    private bool OriginalListenerReady(CancellationToken cancellation)
+    {
+        lock (_sync)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            if (_process.HasExited || LinuxPeerProcess.StartTime(Id) != Started || !_installation.Desktop!.IsProcessImage((uint)Id)) throw LinuxPeerProcess.Refused();
+            var expected = Path.Combine(Home, "ipc/ipc.sock"); var listening = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var line in File.ReadLines("/proc/" + Id + "/net/unix"))
+            {
+                cancellation.ThrowIfCancellationRequested(); var fields = line.Split((char[]?)null, 8, StringSplitOptions.RemoveEmptyEntries);
+                if (fields.Length == 8 && fields[7] == expected && fields[4] == "0001" &&
+                    uint.TryParse(fields[3], NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out var flags) && (flags & 0x10000) != 0 &&
+                    ulong.TryParse(fields[6], NumberStyles.None, CultureInfo.InvariantCulture, out var inode) && inode != 0)
+                    listening.Add("socket:[" + inode.ToString(CultureInfo.InvariantCulture) + "]");
+            }
+            if (listening.Count == 0) return false;
+            foreach (var descriptor in Directory.EnumerateFiles("/proc/" + Id + "/fd"))
+            {
+                cancellation.ThrowIfCancellationRequested();
+                if (new FileInfo(descriptor).LinkTarget is string target && listening.Contains(target)) return true;
+            }
+            return false;
+        }
+    }
+    public async Task WaitForReadyAsync(CancellationToken cancellation)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(30));
+        try { while (!OriginalListenerReady(deadline.Token)) await Task.Delay(50, deadline.Token).ConfigureAwait(false); }
+        catch (OperationCanceledException) when (!cancellation.IsCancellationRequested)
+        { throw new TimeoutException("The original Linux desktop has not opened its native IPC listener; existing socket paths and account data are unchanged."); }
+    }
     public async Task CloseAsync(CancellationToken cancellation)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(30));
         try
         {
+            await WaitForReadyAsync(deadline.Token).ConfigureAwait(false);
             await using var stream = await LinuxDesktopConnection.ConnectAsync(Home, deadline.Token).ConfigureAwait(false);
             if (LinuxDesktopConnection.PeerId(stream) != Id || _display == null || _display != Environment.GetEnvironmentVariable("DISPLAY") ||
                 _authority != Environment.GetEnvironmentVariable("XAUTHORITY") || _userHome != Environment.GetEnvironmentVariable("HOME")) throw LinuxPeerProcess.Refused();
