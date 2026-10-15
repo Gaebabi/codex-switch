@@ -29,6 +29,8 @@ The test executable unlocks only its disposable GNOME collection through the pro
 
 ## Source preview and actual window evidence
 
+Private-file opens are nonblocking before their descriptor type/UID/mode checks. A named pipe at a vault/file destination therefore fails as a non-regular file without waiting for a writer; native regression verifies read/replacement refusal, bounded completion and preservation of the pipe type.
+
 `bash scripts/build-linux.sh` publishes a complete self-contained source preview for the native x64/ARM64 host and checks its runtime/project DLLs. Run `artifacts/<rid>/CodexSwitch`; the shared UI has an explicit localized account-capability gate while client/handoff verification is incomplete. Account reads, switching and real credential access are disabled in this preview. Resource collection is explicitly unavailable; it never becomes a fabricated zero. Trayless close exits. Linux tooltips reduce motion by default until native accessibility integration is verified.
 
 `--verify-ui <private-directory>` shows the same published app with synthetic profiles, exercises EN/KO, dark/light and500×360/600×420/800×600, checks actual geometry and captures its own visible XID using `xwd`. Image conversion preserves pixels; the common exporter strips metadata and binds exact source/runtime/architecture/hash. CI uses a private Xvfb display and software rendering, with Noto CJK/fontconfig dependencies. This is X11/Xvfb evidence, not a native Wayland or full GNOME/KDE desktop-session acceptance result. Screenshots contain no personal desktop, pointer, home, keyring, account or Codex data. Do not publish raw captures or the keyring sandbox.

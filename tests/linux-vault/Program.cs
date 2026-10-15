@@ -74,7 +74,7 @@ try
                 var reopened = new AccountVault(appDirectory); Assert(reopened.Data.Theme == "light" && reopened.Data.Version == 1 && reopened.Data.Accounts.Count == 0 && reopened.Data.Drives.Single().Root == "/");
                 Assert(File.GetUnixFileMode(appDirectory) == (UnixFileMode)0x1c0 && File.GetUnixFileMode(vault.FilePath) == (UnixFileMode)0x180);
             });
-            Check("No-follow file and intermediate-directory links cannot alter targets", () =>
+            Check("No-follow links and non-regular files refuse without blocking or replacement", () =>
             {
                 var target = Path.Combine(directory, "target.txt"); SecureFiles.AtomicWriteText(target, "unchanged");
                 var link = Path.Combine(directory, "file-link"); File.CreateSymbolicLink(link, target);
@@ -83,6 +83,14 @@ try
                 var folder = Path.Combine(directory, "directory-link"); Directory.CreateSymbolicLink(folder, appDirectory);
                 try { FileFailure(() => SecureFiles.AtomicWriteText(Path.Combine(folder, "unexpected.txt"), "unexpected")); Assert(!File.Exists(Path.Combine(appDirectory, "unexpected.txt"))); }
                 finally { Directory.Delete(folder); }
+                var pipe = Path.Combine(directory, "collision.fifo"); Assert(NativeFileFixture.mkfifo(pipe, 0x180) == 0);
+                try
+                {
+                    var clock = Stopwatch.StartNew();
+                    FileFailure(() => SecureFiles.ReadPrivateBytes(pipe)); FileFailure(() => SecureFiles.AtomicWriteText(pipe, "unexpected"));
+                    Assert(clock.Elapsed < TimeSpan.FromSeconds(2) && NativeFileFixture.IsPipe(pipe));
+                }
+                finally { File.Delete(pipe); }
             });
             Check("Insecure modes reject before replacement and preserve existing bytes", () =>
             {
@@ -174,3 +182,11 @@ try
 finally { VaultProtection.ReleaseKeys(); CryptographicOperations.ZeroMemory(plain); }
 Console.WriteLine(JsonSerializer.Serialize(new { phase, architecture = RuntimeInformation.ProcessArchitecture.ToString(), runtime = RuntimeInformation.FrameworkDescription,
     passed = checks.Count, failed = 0, checks, scope = "Actual configured Secret Service/GNOME Keyring and Linux private storage in an owned disposable D-Bus/XDG session only. Synthetic bytes/empty account vault; no real account, home, Codex or personal keyring access." }));
+
+internal static class NativeFileFixture
+{
+    [StructLayout(LayoutKind.Explicit, Size = 256)] private struct Stat { [FieldOffset(28)] public ushort Mode; }
+    internal static bool IsPipe(string path) => statx(-100, path, 0x100, 1, out var value) == 0 && (value.Mode & 0xf000) == 0x1000;
+    [DllImport("libc", SetLastError = true)] internal static extern int mkfifo([MarshalAs(UnmanagedType.LPUTF8Str)] string path, uint mode);
+    [DllImport("libc", SetLastError = true)] private static extern int statx(int directory, [MarshalAs(UnmanagedType.LPUTF8Str)] string path, int flags, uint mask, out Stat value);
+}

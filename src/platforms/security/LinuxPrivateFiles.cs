@@ -9,7 +9,7 @@ namespace CodexAccountDesk;
 
 internal static class LinuxPrivateFiles
 {
-    private const int CloseOnExec = 0x80000, Create = 0x40, Exclusive = 0x80;
+    private const int CloseOnExec = 0x80000, Create = 0x40, Exclusive = 0x80, NonBlocking = 0x800;
     private static int DirectoryFlag => RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? 0x4000 : 0x10000;
     private static int NoFollow => RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? 0x8000 : 0x20000;
     private const uint RequiredStat = 0x0b, DirectoryMode = 0x1c0, FileMode = 0x180;
@@ -56,7 +56,7 @@ internal static class LinuxPrivateFiles
     public static void CreateDirectory(string path) { using var directory = OpenDirectory(path, true); }
     private static SafeFileHandle? OpenFile(SafeFileHandle directory, string name, bool absentAllowed)
     {
-        var descriptor = openat(Fd(directory), name, NoFollow | CloseOnExec, 0);
+        var descriptor = openat(Fd(directory), name, NoFollow | CloseOnExec | NonBlocking, 0);
         if (descriptor < 0 && Marshal.GetLastPInvokeError() == 2 && absentAllowed) return null;
         var handle = Handle(descriptor);
         try { Verify(handle, false); return handle; } catch { handle.Dispose(); throw; }
