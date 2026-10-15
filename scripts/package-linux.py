@@ -33,9 +33,11 @@ info=json.loads(subprocess.run([str(app/'CodexSwitch'),'--package-info'],capture
 version=info['version'];expected='Arm64' if a.rid=='linux-arm64' else 'X64'
 if not re.fullmatch(r'\d+\.\d+\.\d+',version) or info['architecture']!=expected or info['runtime']!='.NET 10.0.13':raise SystemExit('Actual application version/architecture/runtime mismatch')
 output.mkdir(parents=True);payload=output/'payload';payload.mkdir()
+subprocess.run(['python3',str(repository/'scripts/verify-runtime-package.py'),str(app),'--rid',a.rid,'--output',str(output/'RUNTIME.json')],check=True,timeout=30)
 for file in sorted(app.rglob('*')):
  if file.is_symlink() or not (file.is_dir() or file.is_file()):raise SystemExit('Published application may contain only regular package files/directories')
  if file.is_file():
+  if file.name.lower() in ('auth.json','accounts.vault','owner.json','.env') or file.suffix.lower() in ('.pfx','.p12','.key','.vault'):raise SystemExit('Private data is not a package input')
   target=payload/file.relative_to(app);target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(file,target)
   target.chmod(0o755 if file.stat().st_mode & 0o111 else 0o644)
 license_root=payload/'licenses';license_root.mkdir(exist_ok=True)
