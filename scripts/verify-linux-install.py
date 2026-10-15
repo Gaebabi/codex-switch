@@ -7,11 +7,13 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import socket
 import subprocess
 import sys
 import tarfile
 import tempfile
+import time
 
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--archive',type=Path,required=True)
@@ -52,6 +54,14 @@ try:
  env=dict(os.environ,HOME=str(home),CODEX_HOME=str(codex),XDG_DATA_HOME=str(data),XDG_CONFIG_HOME=str(home/'config'),XDG_CACHE_HOME=str(home/'cache'),XDG_RUNTIME_DIR=str(home/'runtime'),DBUS_SESSION_BUS_ADDRESS='unix:path='+str(root/'unused-bus.sock'),DOTNET_ROOT=str(root/'no-dotnet'),DOTNET_MULTILEVEL_LOOKUP='0')
  for key in ('XDG_CONFIG_HOME','XDG_CACHE_HOME','XDG_RUNTIME_DIR'):Path(env[key]).mkdir(mode=0o700)
  prefix=data/'codex-switch';installed=prefix/'current/CodexSwitch';binary=payload/'CodexSwitch'
+ data.chmod(0o777)
+ run(binary,'--install-package',env,False);check('A writable share ancestor refuses without repairing its mode',data.stat().st_mode&0o777==0o777);data.chmod(0o700)
+ prefix.symlink_to(codex,target_is_directory=True);run(binary,'--install-package',env,False)
+ check('A program-root symlink cannot redirect installation into the selected credential home',prefix.is_symlink() and all(file.read_bytes()==value for file,value in markers.items()));prefix.unlink()
+ run(binary,'--install-package',dict(env,CODEX_HOME=str(prefix)),False);check('An overlapping program/Codex home refuses before activation',not installed.exists())
+ run(binary,'--install-package',dict(env,XDG_DATA_HOME='relative-share'),False);check('Relative XDG configuration refuses instead of selecting the current directory',not installed.exists())
+ menu=data/'applications';menu.mkdir(mode=0o700);custom=menu/'codex-switch.desktop';custom.write_text('Owned unrelated desktop file',encoding='utf-8');custom.chmod(0o600)
+ run(binary,'--install-package',env,False);check('An unmanaged existing desktop file is not overwritten',custom.read_text(encoding='utf-8')=='Owned unrelated desktop file');custom.unlink()
  if a.previous_archive:
   previous,old_manifest=unpack(a.previous_archive,'previous')
   check('Upgrade fixture is an actual distinct compiled package version',old_manifest['Version']!=manifest['Version'])
@@ -90,9 +100,28 @@ try:
   raw=a.raw_ui.resolve()
   if raw.exists():raise RuntimeError('Use fresh own-window output')
   # A separate owned non-activating bus is required for actual Avalonia UI startup.
-  subprocess.run([sys.executable,str(Path(__file__).with_name('capture-linux-app.py')),'--app',str(installed.resolve()),'--output',str(raw)],env=env,check=True,timeout=120)
+  capture=subprocess.Popen([sys.executable,str(Path(__file__).with_name('capture-linux-app.py')),'--app',str(installed.resolve()),'--output',str(raw)],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,start_new_session=True)
+  try:
+   deadline=time.monotonic()+20;active=False;actual=str(installed.resolve())
+   while time.monotonic()<deadline and capture.poll() is None:
+    for process in Path('/proc').glob('[0-9]*/exe'):
+     try:target=os.readlink(process)
+     except (FileNotFoundError,ProcessLookupError,PermissionError):continue
+     if target==actual:active=True;break
+    if active:break
+    time.sleep(.025)
+   check('The actual installed utility is alive before removal is requested',active)
+   run(binary,'--uninstall-package',env,False);check('Uninstall refuses while another installed utility process is running',installed.is_file())
+   output,error=capture.communicate(timeout=120)
+   if capture.returncode:raise RuntimeError('Installed native capture failed: '+error[-2000:])
+  finally:
+   if capture.poll() is None:
+    os.killpg(capture.pid,signal.SIGKILL);capture.wait(timeout=10)
   check('The installed payload renders its actual own-window UI',len(list(raw.glob('*.png')))==12)
  target=(prefix/'current').resolve();unmanaged=target/'keep-user-file.txt';unmanaged.write_text('Owned unrecorded user bytes',encoding='utf-8');unmanaged.chmod(0o600)
+ recorded=target/'RUNNING.txt';original_recorded=recorded.read_bytes();recorded.write_bytes(original_recorded+b'Owned user modification\n')
+ before_menu=desktop.read_bytes();before_icon=icon.read_bytes();run(binary,'--uninstall-package',env,False)
+ check('Modified recorded payload refuses removal before active/menu/icon mutation',installed.exists() and desktop.read_bytes()==before_menu and icon.read_bytes()==before_icon and recorded.read_bytes()==original_recorded+b'Owned user modification\n');recorded.write_bytes(original_recorded)
  original_desktop=desktop.read_bytes();desktop.write_bytes(original_desktop+b'# Owned user modification\n')
  run(binary,'--install-package',env,False);check('User-modified desktop integration is not overwritten',desktop.read_bytes()==original_desktop+b'# Owned user modification\n')
  result=json.loads(run(binary,'--uninstall-package',env).stdout)
