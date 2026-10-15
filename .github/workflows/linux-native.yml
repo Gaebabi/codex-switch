@@ -62,7 +62,7 @@ jobs:
       - name: Install the native test provider and D-Bus tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install --no-install-recommends -y libsecret-1-0 libsqlite3-0 gnome-keyring libkf5wallet-bin libqca-qt5-2-plugins dbus-x11 libglib2.0-bin xvfb xauth x11-apps imagemagick libfontconfig1 fonts-dejavu-core fonts-noto-cjk meson ninja-build build-essential pkg-config libglib2.0-dev libgcrypt20-dev gettext xsltproc patch
+          sudo apt-get install --no-install-recommends -y libsecret-1-0 libsqlite3-0 gnome-keyring libkf5wallet-bin libqca-qt5-2-plugins dbus-x11 libglib2.0-bin xvfb xauth x11-apps imagemagick libfontconfig1 fonts-dejavu-core fonts-noto-cjk meson ninja-build build-essential pkg-config libglib2.0-dev libgcrypt20-dev gettext xsltproc patch rpm
       - name: Build the checksum-pinned private encrypted Secret Service library
         run: python scripts/build-linux-secret.py --output artifacts/linux-secret
       - name: Install only the checksum-pinned official native client on this disposable runner
@@ -98,6 +98,31 @@ jobs:
         env:
           EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: python scripts/verify-ui-evidence.py artifacts/linux-native/${{ matrix.rid }}/raw artifacts/linux-native/${{ matrix.rid }}/public --os Linux --revision "$EVIDENCE_REVISION"
+      - name: Build complete three-format native preview candidates and source inventory
+        run: python scripts/package-linux.py --app artifacts/linux-native/${{ matrix.rid }}/app --rid ${{ matrix.rid }} --output artifacts/linux-native/${{ matrix.rid }}/packages
+      - name: Build a distinct compiled version solely for ordinary upgrade verification
+        run: |
+          dotnet publish src/linux/CodexSwitch.Linux.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:UseSharedCompilation=false -p:Version=1.38.99 -o artifacts/linux-native/${{ matrix.rid }}/previous-app
+          python scripts/package-linux.py --app artifacts/linux-native/${{ matrix.rid }}/previous-app --rid ${{ matrix.rid }} --output artifacts/linux-native/${{ matrix.rid }}/previous-package --tar-only
+      - name: Verify installed native app and data-preserving lifecycle on fresh Ubuntu/Debian/Fedora images
+        run: python scripts/verify-linux-packages.py --packages artifacts/linux-native/${{ matrix.rid }}/packages --previous artifacts/linux-native/${{ matrix.rid }}/previous-package --rid ${{ matrix.rid }} --output artifacts/linux-native/${{ matrix.rid }}/fresh-packages
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: linux-preview-candidates-${{ matrix.rid }}
+          path: |
+            artifacts/linux-native/${{ matrix.rid }}/packages/*.tar.gz
+            artifacts/linux-native/${{ matrix.rid }}/packages/*.deb
+            artifacts/linux-native/${{ matrix.rid }}/packages/*.rpm
+            artifacts/linux-native/${{ matrix.rid }}/packages/*.json
+            artifacts/linux-native/${{ matrix.rid }}/packages/SHA256SUMS
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: installed-app-ui-${{ matrix.rid }}
+          path: artifacts/linux-native/${{ matrix.rid }}/fresh-packages/public
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: desktop-peer-${{ matrix.rid }}
