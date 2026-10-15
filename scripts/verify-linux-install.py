@@ -42,7 +42,7 @@ def run(binary,argument,env,success=True):
  if (result.returncode==0)!=success:raise RuntimeError('Unexpected package entry point result: '+argument+' '+result.stderr[-2000:])
  return result
 try:
- payload,manifest=unpack(a.archive,'current');home=root/'home-데모 space%$';home.mkdir(mode=0o700)
+ payload,manifest=unpack(a.archive,'current');home=root/'home-데모 space%$`"\\';home.mkdir(mode=0o700)
  data=home/'share';data.mkdir(mode=0o700);codex=home/'.codex';codex.mkdir(mode=0o700);vault=data/'CodexAccountDesk';vault.mkdir(mode=0o700)
  markers={codex/'auth.json':b'Owned synthetic existing authentication bytes\x00\xff',vault/'accounts.vault':b'Owned synthetic existing encrypted-vault bytes\x00\xff'}
  for file,value in markers.items():file.write_bytes(value);file.chmod(0o600)

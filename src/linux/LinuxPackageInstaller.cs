@@ -72,8 +72,9 @@ internal static class LinuxPackageInstaller
     }
     private static string Exec(string path)
     {
-        if (path.IndexOfAny(new[] { '\n', '\r', '\0' }) >= 0) throw Refused();
-        return "\"" + path.Replace("\\", "\\\\\\\\").Replace("\"", "\\\"").Replace("`", "\\`").Replace("$", "\\$").Replace("%", "%%") + "\"";
+        if (path.IndexOfAny(new[] { '\n', '\r', '\0', '=' }) >= 0) throw Refused();
+        var quoted = path.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("`", "\\`").Replace("$", "\\$").Replace("%", "%%");
+        return "\"" + quoted.Replace("\\", "\\\\") + "\"";
     }
     public static int Execute(bool uninstall)
     {
