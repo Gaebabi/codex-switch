@@ -165,7 +165,11 @@ internal sealed class DeskWindow : Window
         toolbar.Children.Add(_cancel);
         _sessionValues = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 24, HorizontalAlignment = HorizontalAlignment.Center };
         toolbar.Children.Add(_sessionValues);
-        if (nativeTitle) titlebar.Children.Add(toolbar);
+        if (nativeTitle)
+        {
+            toolbar.ColumnDefinitions = new ColumnDefinitions("Auto,*"); Grid.SetColumn(_sessionValues, 1);
+            titlebar.Children.Add(toolbar);
+        }
         else { Grid.SetRow(toolbar, 1); shell.Children.Add(toolbar); }
         _accounts = new Grid { Margin = new Thickness(4, 1) };
         _accountScroll = new ScrollViewer { Content = _accounts, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
