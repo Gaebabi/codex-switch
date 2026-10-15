@@ -52,7 +52,7 @@ for provider in (v for v in providers if v['architecture']==a.architecture):
  result=own/'results';result.mkdir(mode=0o700)
  def container(arguments,timeout):
   name='codex-switch-test-'+uuid.uuid4().hex
-  command=['docker','run','--rm','--name',name,'--label','codex-switch-verification='+a.revision,'--network','none','--pids-limit','256','--mount','type=bind,source='+str(tests)+',target=/tests,readonly','--mount','type=bind,source='+str(app)+',target=/app,readonly','--mount','type=bind,source='+str(scripts)+',target=/work,readonly','--mount','type=bind,source='+str(result)+',target=/results',image]
+  command=['docker','run','--init','--name',name,'--label','codex-switch-verification='+a.revision,'--network','none','--pids-limit','256','--mount','type=bind,source='+str(tests)+',target=/tests,readonly','--mount','type=bind,source='+str(app)+',target=/app,readonly','--mount','type=bind,source='+str(scripts)+',target=/work,readonly','--mount','type=bind,source='+str(result)+',target=/results',image]
   try:subprocess.run([*command,*arguments],check=True,timeout=timeout)
   finally:
    inspected=subprocess.run(['docker','inspect',name],capture_output=True,text=True,timeout=10)
