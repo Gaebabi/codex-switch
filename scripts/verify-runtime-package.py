@@ -17,6 +17,12 @@ if data['tfm']!='net10.0' or frameworks!=expected:raise SystemExit('Package does
 names=['CodexSwitch.dll','CodexSwitch.deps.json','System.Private.CoreLib.dll']+(['CodexSwitch.exe','coreclr.dll','hostfxr.dll'] if args.rid.startswith('win') else
     ['CodexSwitch','libcoreclr.so','libhostfxr.so'] if args.rid.startswith('linux') else ['CodexSwitch','libcoreclr.dylib','libhostfxr.dylib'])
 if any(not(root/name).is_file() for name in names):raise SystemExit('Incomplete self-contained package')
+if args.rid.startswith('linux'):
+    native=root/'libcodex-switch-secret-1.so.0'
+    if not native.is_file() or not (root/'licenses/libsecret.LGPL-2.1.txt').is_file():raise SystemExit('Linux encrypted Secret Service library/license is missing')
+    header=native.read_bytes()[:20]
+    machine=62 if args.rid=='linux-x64' else 183
+    if len(header)!=20 or header[:6]!=b'\x7fELF\x02\x01' or int.from_bytes(header[18:20],'little')!=machine:raise SystemExit('Linux native Secret Service library architecture is invalid')
 deps=json.loads((root/'CodexSwitch.deps.json').read_text(encoding='utf-8'))
 if not deps['runtimeTarget']['name'].endswith('/'+args.rid):raise SystemExit('Runtime identifier mismatch')
 target=deps['targets'][deps['runtimeTarget']['name']]

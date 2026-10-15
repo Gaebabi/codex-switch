@@ -22,8 +22,6 @@ if (args.Length < 1) throw new ArgumentException("A native test phase is require
 var checks = new List<string>(); var phase = args[0];
 var directory = Path.Combine(root, "data", "linux-self-test-protector");
 var appDirectory = Path.Combine(root, "data", "linux-self-test-app");
-if (phase.StartsWith("incompatible-provider", StringComparison.Ordinal))
-{ directory = Path.Combine(root, "data", "linux-self-test-" + phase); appDirectory = directory + "-app"; }
 var file = Path.Combine(directory, "accounts.vault");
 var plain = Encoding.UTF8.GetBytes("Synthetic native Linux vault; no account credential");
 void Assert(bool condition) { if (!condition) throw new InvalidOperationException("Native Linux vault contract failed."); }
@@ -43,26 +41,24 @@ try
             Check("Missing service refuses encryption without writing a vault", () =>
             { KeyFailure(LinuxKeyFailure.Unavailable, () => VaultProtection.Protect(plain, directory)); Assert(!File.Exists(file)); });
             break;
-        case "incompatible-provider":
-        case "incompatible-provider-locked":
-        case "incompatible-provider-unlocked":
-        case "incompatible-provider-restarted":
-            Check("KDE provider refuses new vault creation before storing an OS key", () =>
-            { KeyFailure(LinuxKeyFailure.ProviderIncompatible, () => VaultProtection.Protect(plain, directory)); Assert(!File.Exists(file)); });
-            Check("KDE provider preserves existing ciphertext and refuses read or replacement", () =>
-            {
-                var bytes = new byte[65]; RandomNumberGenerator.Fill(bytes); Encoding.ASCII.GetBytes("CADL1").CopyTo(bytes, 0); SecureFiles.AtomicWrite(file, bytes);
-                KeyFailure(LinuxKeyFailure.ProviderIncompatible, () => VaultProtection.Unprotect(bytes, directory));
-                KeyFailure(LinuxKeyFailure.ProviderIncompatible, () => VaultProtection.Protect(plain, directory)); Assert(File.ReadAllBytes(file).SequenceEqual(bytes));
-            });
-            Check("Normal application vault save cannot bypass the incompatible-provider guard", () =>
-            { var vault = new AccountVault(appDirectory); KeyFailure(LinuxKeyFailure.ProviderIncompatible, vault.Save); Assert(!File.Exists(vault.FilePath)); });
-            break;
-        case "provider-timeout":
-            Check("Unavailable provider negotiation respects the native deadline", () =>
-            { var clock = Stopwatch.StartNew(); KeyFailure(LinuxKeyFailure.TimedOut, () => VaultProtection.Protect(plain, directory)); Assert(clock.Elapsed >= TimeSpan.FromSeconds(8) && clock.Elapsed < TimeSpan.FromSeconds(15) && !File.Exists(file)); });
-            break;
         case "roundtrip":
+            Check("Existing CADL1 ciphertext and its original native key reopen without migration", () =>
+            {
+                var legacy = Path.Combine(root, "data", "linux-self-test-existing"); SecureFiles.CreatePrivateDirectory(legacy);
+                var key = RandomNumberGenerator.GetBytes(32); key[0] = 0; key[1] = 255;
+                var original = new byte[plain.Length + 33]; Encoding.ASCII.GetBytes("CADL1").CopyTo(original, 0);
+                RandomNumberGenerator.Fill(original.AsSpan(5, 12));
+                using (var aes = new AesGcm(key, 16)) aes.Encrypt(original.AsSpan(5, 12), plain, original.AsSpan(33), original.AsSpan(17, 16), original.AsSpan(0, 5));
+                try
+                {
+                    LinuxSecretService.AddDiagnosticKey(legacy, key); SecureFiles.AtomicWrite(Path.Combine(legacy, "accounts.vault"), original);
+                    VaultProtection.ReleaseKeys(); Assert(VaultProtection.Unprotect(original, legacy).SequenceEqual(plain)); VaultProtection.ReleaseKeys();
+                    var restored = LinuxSecretService.ReadOrCreateKey(SecureFiles.Hash(legacy), false);
+                    try { Assert(CryptographicOperations.FixedTimeEquals(key, restored) && LinuxSecretService.CountDiagnosticKeys(legacy) == 1 && SecureFiles.ReadPrivateBytes(Path.Combine(legacy, "accounts.vault")).SequenceEqual(original)); }
+                    finally { CryptographicOperations.ZeroMemory(restored); }
+                }
+                finally { CryptographicOperations.ZeroMemory(key); LinuxSecretService.DeleteDiagnosticKey(legacy); }
+            });
             var encrypted = VaultProtection.Protect(plain, directory); SecureFiles.AtomicWrite(file, encrypted);
             Check("Linux envelope usesCADL1, random nonce and authenticated payload", () =>
             {
@@ -83,7 +79,7 @@ try
                 try
                 {
                     LinuxSecretService.AddDiagnosticKey(path, key);
-                    for (var session = 0; session < 64; session++)
+                    for (var session = 0; session < 1024; session++)
                     {
                         var actual = LinuxSecretService.ReadOrCreateKey(SecureFiles.Hash(path), false);
                         try { Assert(CryptographicOperations.FixedTimeEquals(key, actual)); }
@@ -138,7 +134,6 @@ try
                 }
             });
             break;
-        case "provider-unlocked":
         case "read-after-unlock":
         case "read-after-restart":
         case "read-after-timeout":

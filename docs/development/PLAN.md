@@ -55,6 +55,8 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 
 ### P8.4 Independent KDE provider — issue55
 
+Source1.36.0 root repair replaces the KWallet5 refusal with an app-private, checksum-pinned LGPL libsecret compatibility build: unsigned positive public keys and QCA shared-secret encoding, encrypted-only transport. Native1024-session/legacy-format/normal-account acceptance, native C vectors, full app screenshots and exact-head CI/review/merge are required before closing issue55. KWallet6/KSecrets/full KDE/Wayland and authenticated desktop handoff remain separate.
+
 Compatibility checkpoint PR58/source1.35.1: native x64/ARM64 code996b4f9 passes GNOME28 positive contracts and KWallet19 explicit-incompatibility/refusal contracts, all six CI jobs and actual source-app screenshots. [Program proof and scope](../evidence/linux-kwallet/README.md). Full positive KWallet acceptance below remains unchecked because repeated binary-key sessions expose upstream encrypted-protocol failures; the guard cannot be removed on a single successful run. Final proof-head CI/review/promotion belongs to PR58.
 
 - [ ] Run the same production32-byte Secret Service/CADL1/private-file contracts against actual KWallet5 on native Ubuntu24.04 x64/ARM64, separately from GNOME. Keep owned private file-socket D-Bus, no activation, isolated HOME/XDG and no personal credentials.

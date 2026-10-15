@@ -1,6 +1,6 @@
 # Current status
 
-Updated 2026-10-15. Source version **1.35.1**; published binaries **1.27.6**.
+Updated 2026-10-15. Source version **1.36.0**; published binaries **1.27.6**.
 
 Provider/composition extraction #3 is complete in PR47/mainaee22785. P8.1/issue50 is complete in PR51/main3b67458b after exact-head0b075e0 passed all four Verify38670348861 and both Linux native38670348951 jobs plus author self-review. Actual GNOME Keyring18 checks/12 phases and actual source-app12 X11 images pass per Linux x64/ARM64 architecture; the final root fix also verifies nonblocking FIFO refusal and pipe preservation. [Ten inspected native Linux confirmations and supported-OS comparisons](../evidence/linux-vault/README.md) retain their exact source/hash/runtime/privacy boundaries; Windows same-scale dark is byte-identical. Source preview account/client/handoff stays disabled and resources unknown.
 

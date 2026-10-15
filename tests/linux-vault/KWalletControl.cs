@@ -35,10 +35,10 @@ internal static class KWalletControl
     }
     private static void Check(IntPtr error)
     { if (error != IntPtr.Zero) { g_error_free(error); throw new IOException("Owned KDE collection control failed."); } }
-    [DllImport("libsecret-1.so.0")] private static extern IntPtr secret_service_get_sync(uint flags, IntPtr cancel, out IntPtr error);
-    [DllImport("libsecret-1.so.0")] private static extern IntPtr secret_collection_for_alias_sync(IntPtr service, [MarshalAs(UnmanagedType.LPUTF8Str)] string alias, uint flags, IntPtr cancel, out IntPtr error);
-    [DllImport("libsecret-1.so.0")] private static extern int secret_service_unlock_sync(IntPtr service, IntPtr objects, IntPtr cancel, out IntPtr unlocked, out IntPtr error);
-    [DllImport("libsecret-1.so.0")] private static extern int secret_collection_get_locked(IntPtr collection);
+    [DllImport("libcodex-switch-secret-1.so.0")] private static extern IntPtr secret_service_get_sync(uint flags, IntPtr cancel, out IntPtr error);
+    [DllImport("libcodex-switch-secret-1.so.0")] private static extern IntPtr secret_collection_for_alias_sync(IntPtr service, [MarshalAs(UnmanagedType.LPUTF8Str)] string alias, uint flags, IntPtr cancel, out IntPtr error);
+    [DllImport("libcodex-switch-secret-1.so.0")] private static extern int secret_service_unlock_sync(IntPtr service, IntPtr objects, IntPtr cancel, out IntPtr unlocked, out IntPtr error);
+    [DllImport("libcodex-switch-secret-1.so.0")] private static extern int secret_collection_get_locked(IntPtr collection);
     [DllImport("libgio-2.0.so.0")] private static extern IntPtr g_cancellable_new();
     [DllImport("libgio-2.0.so.0")] private static extern void g_cancellable_cancel(IntPtr cancel);
     [DllImport("libglib-2.0.so.0")] private static extern IntPtr g_list_append(IntPtr list, IntPtr data);

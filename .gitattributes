@@ -17,6 +17,8 @@
 *.ps1 text eol=lf
 *.sh text eol=lf
 *.py text eol=lf
+*.patch text eol=lf whitespace=-blank-at-eol,-space-before-tab
+*.c text eol=lf
 *.plist text eol=lf
 *.svg text eol=lf
 *.png binary

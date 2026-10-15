@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <DebugType>none</DebugType>
+    <CodexSecretDir Condition="'$(CodexSecretDir)' == ''">$(MSBuildThisFileDirectory)../../../artifacts/linux-secret</CodexSecretDir>
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="CodexSwitch" />
@@ -18,5 +19,9 @@
     <InternalsVisibleTo Include="CodexSwitch.Hardware" />
     <InternalsVisibleTo Include="CodexSwitch.Application" />
     <InternalsVisibleTo Include="CodexSwitch.LinuxVault.Tests" />
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Linux')) and Exists('$(CodexSecretDir)/libcodex-switch-secret-1.so.0')">
+    <None Include="$(CodexSecretDir)/libcodex-switch-secret-1.so.0" Link="libcodex-switch-secret-1.so.0" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="$(MSBuildThisFileDirectory)../../../licenses/libsecret.LGPL-2.1.txt" Link="licenses/libsecret.LGPL-2.1.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

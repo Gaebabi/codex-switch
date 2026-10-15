@@ -45,11 +45,11 @@ internal static class GnomeKeyringControl
     }
     private static void Check(IntPtr error)
     { if (error != IntPtr.Zero) { g_error_free(error); throw new IOException("Native GNOME diagnostic control failed."); } }
-    [DllImport("libsecret-1.so.0")] private static extern IntPtr secret_service_get_sync(uint flags, IntPtr cancel, out IntPtr error);
-    [DllImport("libsecret-1.so.0")] private static extern IntPtr secret_collection_for_alias_sync(IntPtr service, [MarshalAs(UnmanagedType.LPUTF8Str)] string alias, uint flags, IntPtr cancel, out IntPtr error);
-    [DllImport("libsecret-1.so.0")] private static extern IntPtr secret_value_new([In] byte[] bytes, nint length, [MarshalAs(UnmanagedType.LPUTF8Str)] string type);
-    [DllImport("libsecret-1.so.0")] private static extern IntPtr secret_service_encode_dbus_secret(IntPtr service, IntPtr value);
-    [DllImport("libsecret-1.so.0")] private static extern void secret_value_unref(IntPtr value);
+    [DllImport("libcodex-switch-secret-1.so.0")] private static extern IntPtr secret_service_get_sync(uint flags, IntPtr cancel, out IntPtr error);
+    [DllImport("libcodex-switch-secret-1.so.0")] private static extern IntPtr secret_collection_for_alias_sync(IntPtr service, [MarshalAs(UnmanagedType.LPUTF8Str)] string alias, uint flags, IntPtr cancel, out IntPtr error);
+    [DllImport("libcodex-switch-secret-1.so.0")] private static extern IntPtr secret_value_new([In] byte[] bytes, nint length, [MarshalAs(UnmanagedType.LPUTF8Str)] string type);
+    [DllImport("libcodex-switch-secret-1.so.0")] private static extern IntPtr secret_service_encode_dbus_secret(IntPtr service, IntPtr value);
+    [DllImport("libcodex-switch-secret-1.so.0")] private static extern void secret_value_unref(IntPtr value);
     [DllImport("libgio-2.0.so.0")] private static extern IntPtr g_cancellable_new();
     [DllImport("libgio-2.0.so.0")] private static extern void g_cancellable_cancel(IntPtr cancel);
     [DllImport("libgio-2.0.so.0")] private static extern IntPtr g_dbus_proxy_get_object_path(IntPtr proxy);

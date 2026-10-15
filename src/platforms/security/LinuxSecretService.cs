@@ -10,8 +10,18 @@ namespace CodexAccountDesk;
 
 internal static class LinuxSecretService
 {
-    private const string Secret = "libsecret-1.so.0", Glib = "libglib-2.0.so.0", Gio = "libgio-2.0.so.0", Gobject = "libgobject-2.0.so.0";
+    private const string Secret = "libcodex-switch-secret-1.so.0", Glib = "libglib-2.0.so.0", Gio = "libgio-2.0.so.0", Gobject = "libgobject-2.0.so.0";
     private static readonly Lazy<IntPtr> GlibLibrary = new(() => NativeLibrary.Load(Glib));
+    private static readonly Lazy<IntPtr> SecretLibrary = new(() =>
+    {
+        var handle = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, Secret));
+        var abi = Marshal.GetDelegateForFunctionPointer<CompatibilityAbi>(NativeLibrary.GetExport(handle, "secret_codex_compat_abi"));
+        if (abi() != 1) { NativeLibrary.Free(handle); throw new DllNotFoundException("Unsupported private Secret Service ABI."); }
+        return handle;
+    });
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] private delegate uint CompatibilityAbi();
+    static LinuxSecretService() => NativeLibrary.SetDllImportResolver(typeof(LinuxSecretService).Assembly,
+        (name, _, _) => name == Secret ? SecretLibrary.Value : IntPtr.Zero);
     [StructLayout(LayoutKind.Sequential)] private struct Error { public uint Domain; public int Code; public IntPtr Message; }
     [StructLayout(LayoutKind.Sequential)] private struct Node { public IntPtr Data, Next, Previous; }
     private static LinuxVaultException Unavailable() => new(LinuxKeyFailure.Unavailable);
@@ -75,9 +85,9 @@ internal static class LinuxSecretService
                 _registration = _deadline.Token.Register(() => g_cancellable_cancel(_cancel));
                 _service = secret_service_get_sync(0, _cancel, out var error); Checked(error); if (_service == IntPtr.Zero) throw Unavailable();
                 var owner = VerifyOwner();
-                VerifyProvider(owner);
+                var kwallet = IsKWallet(owner);
                 var original = _service; _service = IntPtr.Zero;
-                try { _service = secret_service_open_sync(secret_service_get_type(), owner, 2, _cancel, out error); Checked(error); if (_service == IntPtr.Zero) throw Unavailable(); }
+                try { _service = secret_codex_service_open_sync(owner, kwallet ? 1 : 0, _cancel, out error); Checked(error); if (_service == IntPtr.Zero) throw Unavailable(); }
                 finally { g_object_unref(original); }
                 _attributes = g_hash_table_new_full(NativeLibrary.GetExport(GlibLibrary.Value, "g_str_hash"), NativeLibrary.GetExport(GlibLibrary.Value, "g_str_equal"),
                     NativeLibrary.GetExport(GlibLibrary.Value, "g_free"), NativeLibrary.GetExport(GlibLibrary.Value, "g_free"));
@@ -113,8 +123,9 @@ internal static class LinuxSecretService
             }
             finally { g_free(owner); }
         }
-        private void VerifyProvider(string owner)
+        private bool IsKWallet(string owner)
         {
+            var kwallet5 = false;
             var names = g_dbus_connection_call_sync(g_dbus_proxy_get_connection(_service), "org.freedesktop.DBus", "/org/freedesktop/DBus",
                 "org.freedesktop.DBus", "ListNames", IntPtr.Zero, IntPtr.Zero, 0, 10000, _cancel, out var error);
             try
@@ -141,7 +152,14 @@ internal static class LinuxSecretService
                                 Checked(error);
                                 if (reply == IntPtr.Zero || Marshal.PtrToStringUTF8(g_variant_get_type_string(reply)) != "(s)") throw Unavailable();
                                 var value = g_variant_get_child_value(reply, 0);
-                                try { if (Marshal.PtrToStringUTF8(g_variant_get_string(value, out _)) == owner) throw new LinuxVaultException(LinuxKeyFailure.ProviderIncompatible); }
+                                try
+                                {
+                                    if (Marshal.PtrToStringUTF8(g_variant_get_string(value, out _)) == owner)
+                                    {
+                                        if (name is "org.kde.kwalletd6" or "org.kde.ksecretd") throw new LinuxVaultException(LinuxKeyFailure.ProviderIncompatible);
+                                        kwallet5 = true;
+                                    }
+                                }
                                 finally { g_variant_unref(value); }
                             }
                             finally { if (reply != IntPtr.Zero) g_variant_unref(reply); }
@@ -152,6 +170,7 @@ internal static class LinuxSecretService
                 finally { g_variant_unref(array); }
             }
             finally { if (names != IntPtr.Zero) g_variant_unref(names); }
+            return kwallet5;
         }
         public ItemList Search()
         {
@@ -211,8 +230,7 @@ internal static class LinuxSecretService
     internal static int CountDiagnosticKeys(string directory)
     { using var session = new Session(DiagnosticIdentity(directory)); using var items = session.Search(); return items.Items.Count; }
     [DllImport(Secret)] private static extern IntPtr secret_service_get_sync(uint flags, IntPtr cancel, out IntPtr error);
-    [DllImport(Secret)] private static extern nuint secret_service_get_type();
-    [DllImport(Secret)] private static extern IntPtr secret_service_open_sync(nuint serviceType, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, uint flags, IntPtr cancel, out IntPtr error);
+    [DllImport(Secret)] private static extern IntPtr secret_codex_service_open_sync([MarshalAs(UnmanagedType.LPUTF8Str)] string owner, int kwallet, IntPtr cancel, out IntPtr error);
     [DllImport(Secret)] private static extern IntPtr secret_service_search_sync(IntPtr service, IntPtr schema, IntPtr attributes, uint flags, IntPtr cancel, out IntPtr error);
     [DllImport(Secret)] private static extern int secret_item_get_locked(IntPtr item);
     [DllImport(Secret)] private static extern int secret_item_load_secret_sync(IntPtr item, IntPtr cancel, out IntPtr error);

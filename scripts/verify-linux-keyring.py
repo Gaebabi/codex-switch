@@ -146,27 +146,6 @@ def stop(persist=True):
         daemon=None
         ready(False)
 def run_contracts():
-    if a.provider=='kwallet5':
-        phase('no-service');start()
-        owner=verify_owner()
-        probe=dbus(owner,'/org/freedesktop/secrets','org.freedesktop.Secret.Service.OpenSession','dh-ietf1024-sha256-aes128-cbc-pkcs7','<[byte 0x02]>',required=False)
-        if probe.returncode==0 or 'org.freedesktop.DBus.Error.InvalidArgs' not in probe.stderr or 'Client public key size is invalid' not in probe.stderr:
-            raise RuntimeError('The declared KDE protocol incompatibility was not reproduced; re-review provider compatibility')
-        results.append({'phase':'native-protocol-incompatibility','architecture':a.architecture,'passed':1,'failed':0})
-        phase('incompatible-provider')
-        alias=dbus(owner,'/org/freedesktop/secrets','org.freedesktop.Secret.Service.ReadAlias','default').stdout
-        match=re.search(r"objectpath '(/org/freedesktop/secrets/collection/[^']+)'",alias)
-        if not match:raise RuntimeError('The owned KDE collection is unavailable')
-        items=dbus(owner,match[1],'org.freedesktop.DBus.Properties.Get','org.freedesktop.Secret.Collection','Items').stdout
-        if '[]' not in items:raise RuntimeError('Incompatible provider received unexpected secret items')
-        dbus(owner,'/org/freedesktop/secrets','org.freedesktop.Secret.Service.Lock',"['"+match[1]+"']")
-        phase('incompatible-provider-locked');unlock_kwallet();phase('incompatible-provider-unlocked')
-        stop();start();phase('incompatible-provider-restarted')
-        os.kill(daemon.pid,signal.SIGSTOP)
-        try:phase('provider-timeout')
-        finally:os.kill(daemon.pid,signal.SIGCONT)
-        stop();phase('no-service')
-        return
     phase('no-service');start();phase('roundtrip');phase('concurrent')
     if not a.storage_only:phase('account-policy')
     foreign=root/'data/linux-self-test-protector/foreign.txt';foreign.write_bytes(b'Synthetic ownership fixture');foreign.chmod(0o600)
@@ -190,7 +169,7 @@ try:
     run_contracts()
     package='gnome-keyring' if a.provider=='gnome' else 'libkf5wallet-bin'
     provider_version=subprocess.run(['dpkg-query','-W','-f=${Version}',package],capture_output=True,text=True,check=True,timeout=10).stdout.strip()
-    value={'schema':1,'provider':a.provider,'providerVersion':provider_version,'providerCompatibility':'unavailable' if a.provider=='kwallet5' else 'verified-storage','architecture':a.architecture,'passed':sum(v['passed'] for v in results),'failed':0,'phases':results,
+    value={'schema':1,'provider':a.provider,'providerVersion':provider_version,'providerCompatibility':'verified-storage','architecture':a.architecture,'passed':sum(v['passed'] for v in results),'failed':0,'phases':results,
         'scope':'Actual declared Secret Service/Linux private-file contracts on a disposable file-socket D-Bus/XDG session. KDE uses offscreen Qt, not a full KDE/Wayland desktop. No personal bus, accounts, Codex, key material or private paths exported.'}
     report.parent.mkdir(parents=True,exist_ok=True);report.write_text(json.dumps(value,indent=2)+'\n',encoding='utf-8')
     print(json.dumps({key:value[key] for key in ('provider','providerVersion','providerCompatibility','architecture','passed','failed')} | {'phaseCount':len(results)}),flush=True)

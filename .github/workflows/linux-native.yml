@@ -62,7 +62,9 @@ jobs:
       - name: Install the native test provider and D-Bus tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install --no-install-recommends -y libsecret-1-0 libsqlite3-0 gnome-keyring libkf5wallet-bin libqca-qt5-2-plugins dbus-x11 libglib2.0-bin xvfb xauth x11-apps imagemagick libfontconfig1 fonts-dejavu-core fonts-noto-cjk
+          sudo apt-get install --no-install-recommends -y libsecret-1-0 libsqlite3-0 gnome-keyring libkf5wallet-bin libqca-qt5-2-plugins dbus-x11 libglib2.0-bin xvfb xauth x11-apps imagemagick libfontconfig1 fonts-dejavu-core fonts-noto-cjk meson ninja-build build-essential pkg-config libglib2.0-dev libgcrypt20-dev gettext xsltproc patch
+      - name: Build the checksum-pinned private encrypted Secret Service library
+        run: python scripts/build-linux-secret.py --output artifacts/linux-secret
       - name: Install only the checksum-pinned official native client on this disposable runner
         run: python scripts/prepare-linux-client.py --architecture ${{ matrix.architecture }} --package-file artifacts/linux-native/${{ matrix.rid }}/upstream-client.deb
       - name: Build the native storage contract executable

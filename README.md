@@ -19,9 +19,9 @@ Switch Codex accounts, automatically resume eligible unfinished local chats, and
 
 **Linux:** planned; no Linux package yet. Follow the [support roadmap](docs/PLATFORM_SUPPORT_PLAN.md) and [issue #1](https://github.com/Gaebabi/codex-switch/issues/1). Contributions across languages, distributions and accessibility needs are welcome.
 
-Source1.35.1 contributors can build the [Linux storage/UI preview](docs/development/LINUX.md). Account/client/handoff actions are disabled while their native acceptance remains in progress; it is not a supported Linux release.
+Source1.36.0 contributors can build the [Linux storage/UI preview](docs/development/LINUX.md). Account/client/handoff actions are disabled while their native acceptance remains in progress; it is not a supported Linux release.
 
-KWallet account storage is currently unavailable because encrypted-session compatibility is unresolved. [Verified refusal/data preservation and pending support](docs/evidence/linux-kwallet/README.md) are separate from supported account switching.
+Source1.36.0 adds an app-private encrypted-session compatibility repair for KWallet5; native acceptance is tracked in [issue55](https://github.com/Gaebabi/codex-switch/issues/55). Linux desktop switching and packages remain separate support gates.
 
 1. Use a complete Windows or Mac package. Windows: run `CodexSwitch.exe`. Mac: run `Install.command`, then open **Codex Switch.app**. [Build and install](docs/INSTALL.md)
 2. Select **+** in the title bar to add accounts. On Windows, right-click **↻** to import the current Codex login.
@@ -29,7 +29,7 @@ KWallet account storage is currently unavailable because encrypted-session compa
 
 **Source1.29.3:** automatic refresh is always enabled at60seconds. Its Windows footer switch/caption and Mac settings toggle are removed; an older disabled preference no longer stops reads. [Application comparison and scope](docs/evidence/always-refresh/README.md)
 
-Keep the full package together. Packaged apps need no .NET installation; building current source requires .NET10.0.4xx and installed Codex desktop/CLI. Source1.35.1 uses .NET10 LTS/runtime10.0.13; its current supported Mac baseline is macOS15+. Published1.27.6 downloads remain unchanged until separately released.
+Keep the full package together. Packaged apps need no .NET installation; building current source requires .NET10.0.4xx and installed Codex desktop/CLI. Source1.36.0 uses .NET10 LTS/runtime10.0.13; its current supported Mac baseline is macOS15+. Published1.27.6 downloads remain unchanged until separately released.
 
 ## What you can see
 
