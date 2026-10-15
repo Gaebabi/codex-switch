@@ -70,10 +70,17 @@ def ready(expected):
         if ('true' in value)==expected:return
         time.sleep(0.1)
     raise RuntimeError('Owned provider name did not reach the required state')
+def verify_owner():
+    owner=dbus('org.freedesktop.DBus','/org/freedesktop/DBus','org.freedesktop.DBus.GetNameOwner','org.freedesktop.secrets').stdout
+    match=re.search(r"'(:[0-9.]+)'",owner)
+    if not match:raise RuntimeError('Owned provider identity is unavailable')
+    pid=dbus('org.freedesktop.DBus','/org/freedesktop/DBus','org.freedesktop.DBus.GetConnectionUnixProcessID',match[1]).stdout
+    value=re.search(r'uint32 ([0-9]+)',pid)
+    if not value or daemon is None or int(value[1])!=daemon.pid:raise RuntimeError('Secret Service is not the owned foreground process')
 def start():
     global daemon
     daemon=subprocess.Popen(['gnome-keyring-daemon','--foreground','--unlock','--components=secrets','--control-directory',str(root/'control')],stdin=subprocess.PIPE,stdout=private_log,stderr=private_log)
-    daemon.stdin.write(password);daemon.stdin.close();ready(True)
+    daemon.stdin.write(password);daemon.stdin.close();ready(True);verify_owner()
     if daemon.poll() is not None:raise RuntimeError('The owned foreground provider is no longer live')
 def stop():
     global daemon
@@ -95,7 +102,8 @@ try:
     if not match:raise RuntimeError('The owned default collection is unavailable')
     dbus('org.freedesktop.secrets','/org/freedesktop/secrets','org.freedesktop.Secret.Service.Lock',"['"+match[1]+"']")
     phase('locked')
-    subprocess.run(['gnome-keyring-daemon','--unlock','--control-directory',str(root/'control')],input=password,stdout=private_log,stderr=private_log,check=True,timeout=12)
+    subprocess.run(['gnome-keyring-daemon','--start','--unlock','--components=secrets','--control-directory',str(root/'control')],input=password,stdout=private_log,stderr=private_log,check=True,timeout=12)
+    verify_owner()
     phase('read');stop();start();phase('read')
     os.kill(daemon.pid,signal.SIGSTOP)
     try:phase('timeout')
