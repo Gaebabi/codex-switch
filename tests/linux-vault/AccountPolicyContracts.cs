@@ -121,6 +121,16 @@ internal static class AccountPolicyContracts
             await using var rpc = await client.OpenIsolatedRpcAsync(runtime.Path, null, CancellationToken.None);
             Assert((await LinuxClientSession.ReadPolicyAsync(rpc, runtime.Path, CancellationToken.None)).FileCredentialsAllowed && !File.Exists(Path.Combine(home, "auth.json")));
         });
+        await Check("Desktop metadata cannot bypass the still-unverified Linux lifecycle and peer boundary", async () =>
+        {
+            var home = Home("desktop-boundary", "cli_auth_credentials_store = \"file\"\n");
+            var service = new AccountService(Vault("desktop-boundary"), home);
+            await using var sessions = new DesktopSessionMonitor(home);
+            await using var backend = new DesktopSwitchBackend(service, sessions);
+            try { await backend.BackupNameAsync(new SwitchChat { Id = Guid.NewGuid().ToString(), OriginalTitle = "Synthetic" }, DateTimeOffset.UtcNow, CancellationToken.None); }
+            catch (PlatformNotSupportedException) { await service.StopAsync(); return; }
+            throw new InvalidOperationException("Unverified desktop metadata action was allowed.");
+        });
         return checks.ToArray();
     }
 }

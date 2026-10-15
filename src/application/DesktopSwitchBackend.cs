@@ -32,6 +32,8 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
     }
     private async Task<CodexRpc> MetadataAsync(CancellationToken cancellation)
     {
+        if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())
+            throw new PlatformNotSupportedException("Desktop metadata actions require a verified desktop lifecycle and peer provider.");
         if (_metadata == null)
         {
             _metadata = new CodexRpc(_service.Installation.CliPath, _service.CodexHome, true);
