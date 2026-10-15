@@ -1,5 +1,7 @@
 # Local Linux desktop-session evidence
 
+[Host provenance input validation, issue73](provenance-input.json) separately verifies the new local orchestrator's security boundary using only an owned ignored sentinel. Malformed revision text is rejected before host Git/file side effects; these nonvisual receipts complement the unchanged actual application comparison below.
+
 Issues [68](https://github.com/Gaebabi/codex-switch/issues/68)/[70](https://github.com/Gaebabi/codex-switch/issues/70)/[71](https://github.com/Gaebabi/codex-switch/issues/71)/[72](https://github.com/Gaebabi/codex-switch/issues/72), [PR69](https://github.com/Gaebabi/codex-switch/pull/69). This is actual local x64 Docker Desktop verification with Debian13, xfce4-session, xfwm4, panel, private D-Bus and GNOME Keyring. The per-user installed program is launched through the native GIO desktop entry, without `--verify-ui`, fake accounts or injected results. Candidate/test source `dc320a86053629cd316a30105e16db5054af06d3` / `dc320a86053629cd316a30105e16db5054af06d3`, app1.39.1/runtime10.0.13. Final complete-head CI/review/promotion is tracked by PR69.
 
 | Actual ordinary app before1.39.0 | Actual ordinary app after1.39.1 |

@@ -42,7 +42,7 @@ if provenance['rid'] != 'linux-x64' or provenance['verificationOnlyVersionOverri
 if git('cat-file', '-t', revision) != 'commit':
     raise SystemExit('The exact candidate source must be a local commit')
 inputs = ('src', 'tests', 'Directory.Build.props', 'global.json', 'localization', 'resources', 'assets', 'licenses', 'LICENSE')
-git('diff', '--exit-code', '--end-of-options', revision, head, '--', *inputs)
+git('diff', '--quiet', '--no-ext-diff', '--no-textconv', '--end-of-options', revision, head, '--', *inputs)
 if not isinstance(provenance.get('version'), str) or re.fullmatch(r'\d+\.\d+\.\d+', provenance['version']) is None:
     raise SystemExit('Expected semantic candidate version')
 if not isinstance(provenance.get('artifacts'), list) or len(provenance['artifacts']) != 3:

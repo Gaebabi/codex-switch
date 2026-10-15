@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "issue": 73,
+  "beforeSource": "f909e470d954899d40df78d31c87ed9c3832f3c3",
+  "afterSource": "b0bdfcfc51ff3057967b59f15b25f0aee841dd3d",
+  "before": {
+    "schema": 1,
+    "mode": "before",
+    "exitCode": 1,
+    "ownedSentinelPreserved": false,
+    "outputDirectoryAbsent": true,
+    "scope": "Only an owned ignored sentinel below repository artifacts; no personal path, actual credential or native app action."
+  },
+  "after": {
+    "schema": 1,
+    "mode": "after",
+    "exitCode": 1,
+    "ownedSentinelPreserved": true,
+    "outputDirectoryAbsent": true,
+    "scope": "Only an owned ignored sentinel below repository artifacts; no personal path, actual credential or native app action."
+  },
+  "scope": "Actual host CLI negative-input check; owned sentinel only, no personal file/credential/application. Native desktop and account scopes are separate."
+}
