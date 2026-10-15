@@ -118,6 +118,11 @@ try
                 Assert(File.ReadAllBytes(file).SequenceEqual(before) && LinuxSecretService.CountDiagnosticKeys(directory) == 1);
             });
             break;
+        case "unlock":
+            GnomeKeyringControl.UnlockFromInput();
+            Check("Actual owned collection unlock restores the original encrypted data", () =>
+                Assert(VaultProtection.Unprotect(SecureFiles.ReadPrivateBytes(file), directory).SequenceEqual(plain)));
+            break;
         case "missing":
             var original = File.ReadAllBytes(file); LinuxSecretService.DeleteDiagnosticKey(directory); VaultProtection.ReleaseKeys();
             Check("Missing key with existing ciphertext never creates or rotates a key", () =>

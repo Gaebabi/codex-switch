@@ -51,8 +51,8 @@ results=[];daemon=None;password=secrets.token_urlsafe(32).encode()
 private_log=(root/'keyring-private.log').open('wb')
 def redact(value):
     return value.replace(str(root),'<isolated-test-root>').replace(str(Path.cwd()),'<repository>')[-6000:]
-def phase(name):
-    result=subprocess.run([dotnet,str(assembly),name],capture_output=True,text=True,timeout=70)
+def phase(name,secret_input=None):
+    result=subprocess.run([dotnet,str(assembly),name],input=None if secret_input is None else secret_input.decode('ascii'),capture_output=True,text=True,timeout=70)
     if result.returncode:
         print(redact(result.stderr),file=sys.stderr)
         raise RuntimeError('Native keyring phase failed: '+name)
@@ -102,7 +102,7 @@ try:
     if not match:raise RuntimeError('The owned default collection is unavailable')
     dbus('org.freedesktop.secrets','/org/freedesktop/secrets','org.freedesktop.Secret.Service.Lock',"['"+match[1]+"']")
     phase('locked')
-    subprocess.run(['gnome-keyring-daemon','--start','--unlock','--components=secrets','--control-directory',str(root/'control')],input=password,stdout=private_log,stderr=private_log,check=True,timeout=12)
+    phase('unlock',password)
     verify_owner()
     phase('read');stop();start();phase('read')
     os.kill(daemon.pid,signal.SIGSTOP)
