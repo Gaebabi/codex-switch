@@ -16,6 +16,7 @@ internal sealed class VaultData
     private static List<DrivePreference> DefaultDrives()
     {
         if (OperatingSystem.IsMacOS()) return new() { new() { Root = "/", Label = "Macintosh HD" } };
+        if (OperatingSystem.IsLinux()) return new() { new() { Root = "/", Label = "/" } };
         if (OperatingSystem.IsWindows()) return new() { new() { Root = "C:\\", Label = "C:" }, new() { Root = "D:\\", Label = "D:" } };
         throw new PlatformNotSupportedException("Account vault defaults require a supported platform provider.");
     }

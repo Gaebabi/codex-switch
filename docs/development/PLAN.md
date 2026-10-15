@@ -51,7 +51,15 @@ First Linux target remains Ubuntu LTS x64/GNOME X11 or XWayland; wider KDE/distr
 - [x] Local application/UI boundary4 and actual Windows shared-UI trayless close7 pass. The native probe uses synthetic profiles, pending resources and absent data/home paths; normal close disposes resources and exits. Existing language41/temperature29 and both app builds pass.
 - [x] Preserve Windows93/SQLite23/handoff5 and native Mac menu/layout/scroll/culture/key/file/resource regressions, plus native trayless close7 on Windows and both Mac architectures. Source385fa40/run38662200903 passes all four jobs; portable Ubuntu composition4 and existing native key/client/protocol/hardware checks pass.
 - [x] Inspect six exact-source [native Windows/Mac before/after](../evidence/desktop-composition/README.md), complete package dependencies and omission rejection, privacy/metadata/hash receipts and local links. Windows same-host dark comparison is byte-identical.
-- [ ] Complete PR47 final-head CI/author review/promotion and close the completed provider/composition criteria in #3. Linux5/6/7 remain separate completion gates.
+- [x] Complete PR47 final-head33c76b7 CI/run38662720762, author self-review and merge to mainaee22785. Issues45/3 are closed after extraction acceptance audit; Linux5/6/7 remain separate completion gates.
+
+### P8.1 Linux private storage — issue50
+
+- [x] Implement a distinct Linux AES-GCM envelope and configured Secret Service key lookup/creation, explicit key failure states, same-UID owner pinning and bounded native operations. Existing Windows/Mac formats and algorithms remain unchanged. Source1.33.0.
+- [x] Add descriptor-relative no-follow private directories/reads/atomic writes, UID/mode checks and exclusive cross-process key creation. Existing ciphertext refuses missing-key replacement.
+- [ ] Pass actual isolated GNOME Keyring x64/arm64 lifecycle/tamper/permissions/concurrency/offline/deadline tests in the new Linux native workflow. Local compilation is not native provider acceptance.
+- [ ] Add the source Linux host and inspect actual native own-window evidence with synthetic accounts and explicit pending client/handoff capabilities; preserve Windows/Mac regressions and attach confirmation before promotion.
+- [ ] Complete exact-head Verify and Linux native workflows, privacy/evidence checks and author review, then focused PR merge. KDE/KWallet/client/SQLite/actual handoff/packages remain in #5/#6/#7.
 
 ## Tooltip style lifetime — issue35
 

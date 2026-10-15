@@ -107,6 +107,11 @@ try
             });
         }
     }
+    else if (OperatingSystem.IsLinux())
+    {
+        Check("Malformed Linux envelopes refuse before any keyring access", () =>
+            Rejected<CryptographicException>(() => VaultProtection.Unprotect(new byte[1], root)));
+    }
     else
     {
         Check("Unsupported protector never falls through Windows/Mac", () =>
@@ -125,4 +130,4 @@ finally
     Directory.Delete(root, true);
 }
 Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, failed = 0, checks,
-    scope = "Native private file and vault primitives in disposable storage only; synthetic plaintext, no real accounts/home/Codex access. Missing keys reject; no Linux vault support claimed." }));
+    scope = "Native private file and vault primitives in disposable storage only; synthetic plaintext, no real accounts/home/Codex access. Linux provider acceptance requires the separate isolated native keyring suite." }));

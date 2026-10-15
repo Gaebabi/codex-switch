@@ -2,6 +2,8 @@
 
 [Verify](../.github/workflows/verify.yml) runs on PRs, pushes to `main` and manual dispatch. It uses read-only contents permission, SHA-pinned official actions, non-persistent checkout credentials and disposable hosted runners. No account/signing secrets, privileged fork events or release publication.
 
+[Linux native](../.github/workflows/linux-native.yml) separately declares actual Ubuntu24.04 x64/arm64 GNOME Keyring runs with a private D-Bus/XDG environment. Source1.33.0 storage promotion requires both native jobs at the exact reviewed head in addition to all four Verify jobs. [Native commands, isolation and incomplete support gates](development/LINUX.md). A portable Ubuntu pass is not a native keyring or application acceptance result; KDE/KWallet and Linux client/handoff/packages remain separate.
+
 | Check | Host | Evidence |
 | --- | --- | --- |
 | Repository checks | Ubuntu 24.04 | UTF-8/local links/YAML, audit rejection tests, targeted tracked-tree scan and whitespace |

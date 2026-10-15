@@ -15,6 +15,7 @@
     <InternalsVisibleTo Include="CodexSwitch.WindowsHandoff.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.Protocol" />
     <InternalsVisibleTo Include="CodexSwitch.Application" /><InternalsVisibleTo Include="CodexSwitch.Desktop" /><InternalsVisibleTo Include="CodexSwitch.Composition.Tests" />
+    <InternalsVisibleTo Include="CodexSwitch.LinuxVault.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.Hardware" /><InternalsVisibleTo Include="CodexSwitch.Hardware.Tests" />
     <EmbeddedResource Include="../../localization/packs/*.json;../../localization/index.json;../../localization/legacy-keys.json" WithCulture="false" LogicalName="CodexAccountDesk.LanguagePacks.%(Filename)%(Extension)" />
   </ItemGroup>

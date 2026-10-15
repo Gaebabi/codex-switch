@@ -14,6 +14,7 @@ internal static class SecureFiles
 {
     public static void CreatePrivateDirectory(string path)
     {
+        if (OperatingSystem.IsLinux()) { LinuxPrivateFiles.CreateDirectory(path); return; }
         Directory.CreateDirectory(path);
         if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
             throw new IOException("계정 저장소로 연결 경로를 사용할 수 없습니다.");
@@ -34,6 +35,7 @@ internal static class SecureFiles
     }
     public static void AtomicWrite(string target, byte[] bytes)
     {
+        if (OperatingSystem.IsLinux()) { LinuxPrivateFiles.Write(target, bytes); return; }
         var absolute = Path.GetFullPath(target);
         var directory = Path.GetDirectoryName(absolute) ?? throw new IOException("저장 경로가 올바르지 않습니다.");
         Directory.CreateDirectory(directory);
@@ -53,6 +55,7 @@ internal static class SecureFiles
         finally { if (File.Exists(staging)) File.Delete(staging); }
     }
     public static void AtomicWriteText(string target, string text) => AtomicWrite(target, new UTF8Encoding(false).GetBytes(text));
+    public static byte[] ReadPrivateBytes(string path) => OperatingSystem.IsLinux() ? LinuxPrivateFiles.Read(path) : File.ReadAllBytes(path);
     public static string Hash(string text) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text)));
     public static void DeleteOwnedRuntime(string root, string path)
     {

@@ -17,7 +17,7 @@ internal sealed class AccountVault
         DirectoryPath = Path.GetFullPath(directory);
         SecureFiles.CreatePrivateDirectory(DirectoryPath);
         if (!File.Exists(FilePath)) return;
-        var bytes = VaultProtection.Unprotect(File.ReadAllBytes(FilePath), DirectoryPath);
+        var bytes = VaultProtection.Unprotect(SecureFiles.ReadPrivateBytes(FilePath), DirectoryPath);
         try { Data = JsonSerializer.Deserialize<VaultData>(bytes) ?? throw new InvalidDataException("계정 저장소가 비어 있습니다."); }
         finally { CryptographicOperations.ZeroMemory(bytes); }
         if (Data.Version != 1) throw new InvalidDataException("이 버전에서 읽을 수 없는 계정 저장소입니다.");

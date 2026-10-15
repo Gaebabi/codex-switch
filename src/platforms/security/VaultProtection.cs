@@ -13,6 +13,7 @@ internal static class VaultProtection
     public static byte[] Protect(byte[] plaintext, string directory)
     {
         if (OperatingSystem.IsWindows()) return WindowsProtection.Protect(plaintext);
+        if (OperatingSystem.IsLinux()) return LinuxVaultProtection.Protect(plaintext, directory);
         if (!OperatingSystem.IsMacOS()) throw new PlatformNotSupportedException("Account storage supports Windows and macOS.");
         var key = Key(directory, true);
         try
@@ -28,6 +29,7 @@ internal static class VaultProtection
     public static byte[] Unprotect(byte[] encrypted, string directory)
     {
         if (OperatingSystem.IsWindows()) return WindowsProtection.Unprotect(encrypted);
+        if (OperatingSystem.IsLinux()) return LinuxVaultProtection.Unprotect(encrypted, directory);
         if (!OperatingSystem.IsMacOS()) throw new PlatformNotSupportedException("Account storage supports Windows and macOS.");
         if (encrypted.Length < Header.Length + 28 || !encrypted.AsSpan(0, Header.Length).SequenceEqual(Header))
             throw new CryptographicException("This vault was not encrypted on this Mac. Register accounts on macOS separately.");
@@ -41,5 +43,5 @@ internal static class VaultProtection
         }
         finally { CryptographicOperations.ZeroMemory(key); }
     }
-    public static void ReleaseKeys() { foreach (var key in Keys.Values) CryptographicOperations.ZeroMemory(key); Keys.Clear(); }
+    public static void ReleaseKeys() { foreach (var key in Keys.Values) CryptographicOperations.ZeroMemory(key); Keys.Clear(); LinuxVaultProtection.ReleaseKeys(); }
 }
