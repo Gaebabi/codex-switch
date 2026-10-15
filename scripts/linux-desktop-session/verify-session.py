@@ -193,6 +193,23 @@ try:
         run(['xdotool', 'windowsize', '--sync', window, str(width), str(height)])
         time.sleep(0.6)
         capture(window, pid, f'ordinary-dark-{width}x{height}')
+    run(['xdotool', 'windowsize', '--sync', window, '500', '360'])
+    run(['xdotool', 'mousemove', '--window', window, '359', '17', 'click', '1'])
+    def login_controls(pending):
+        raw = root / 'login-controls-private.xwd'
+        png = root / 'login-controls-private.png'
+        run(['xwd', '-silent', '-id', window, '-out', str(raw)])
+        run(['convert', str(raw), str(png)])
+        with Image.open(png) as current, Image.open(results / 'ordinary-dark-500x360.png') as before:
+            changed = current.convert('RGB').crop((8, 4, 55, 30)).tobytes() != before.convert('RGB').crop((8, 4, 55, 30)).tobytes()
+            return changed == pending
+    wait_for(lambda: login_controls(True), 40)
+    check('Ordinary account addition exposes native pending-login cancellation at minimum size', not (ordinary_home / 'auth.json').exists())
+    capture(window, pid, 'ordinary-pending-login-500x360')
+    run(['xdotool', 'mousemove', '--window', window, '32', '17', 'click', '1'])
+    wait_for(lambda: login_controls(False), 20)
+    check('Ordinary Cancel restores the ready toolbar without creating authentication or accounts', not (ordinary_home / 'auth.json').exists())
+    run(['xdotool', 'windowsize', '--sync', window, '800', '600'])
     run(['xdotool', 'mousemove', '--window', window, '631', '17', 'click', '1'])
     def managed_client():
         for process in Path('/proc').glob('[0-9]*'):
