@@ -30,3 +30,11 @@ Operations: `storage-probe` (harmless write/read/delete); `npm-ci`, `npm-build`,
 The client waits up to 30 seconds, then returns a receipt path while the same build continues. Read that receipt and its existing operation lease; do not start a duplicate. Detailed logs stay in D:/Workstation/private/shared-build-logs. Do not kill unrelated build processes. A routing probe is infrastructure evidence, not product compilation or Player acceptance.
 
 The permanent ordinary-user task is CodexWork-RegisteredSharedBuildWorker, starts at CodexWork logon, and accepts structured requests only under D:/Caches/Temp/CodexSharedBuildQueue. Preserve this active queue during temp cleanup. The only extra native sandbox writable root is this local queue, not W: or historical/private data. Normal interactive terminals may use Set-ProjectEnvironment and the project tools directly. In CodexSandbox accounts the environment loader skips user DPAPI Git credentials and uses this registered build path for shared I/O.
+
+<!-- W_ONLY_BINARY_OUTPUTS_20261022 -->
+## 사용자 지시: 빌드 산출물은 W:만 사용 (2026-10-22)
+
+- APK/AAB/Player/배포 ZIP 및 재생성 dist/bin/obj/publish는 `W:/Builds/CODEXWORK/<project>`에만 생성한다. D:/Deliverables 또는 D:/artifacts로 바이너리를 다시 복사하지 않는다. “최종 증거”/durableRoot를 빌드 복사 예외로 해석하지 않는다.
+- `D:/Workstation/BuildOutputPolicy.py --project <project> --output <W: 새 경로>`로 실제 경로와 공유 저장소 쓰기/읽기를 검사한다. W: 실패 시 중단하며 D: 대체는 금지한다. 등록 worker의 npm/.NET 출력 검사도 우회하지 않는다.
+- D: 검수 증거는 로그·manifest·해시·원본 화면/영상·장부다. 소스·DB·인증·AVD·설치된 도구·원본 에셋/복구 입력을 빌드 정리로 지우지 않는다. Unity Library/Temp와 OS TEMP는 도구 호환성상 로컬 D:를 유지한다. D: 40GiB 여유 조건은 이 로컬 중간 작업 공간 조건이며 APK 출력 위치가 아니다.
+- 자세한 정본은 `D:/Workstation/BUILD_CACHE_POLICY.md`와 `build-cache-routing.json`이다. 과거 D: 산출물은 W: 사본 SHA 검증 후 로컬 실데이터만 제거하고 필요한 옛 경로는 링크로 유지한다. 실행 중 쓰기·추적된 원본·검수 증거 혼합 폴더를 일괄 삭제하지 않는다.
