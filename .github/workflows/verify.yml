@@ -82,6 +82,7 @@ jobs:
       - name: Publish and run disposable internal checks
         shell: pwsh
         run: ./scripts/build.ps1 -Verify
+      - run: python -m pip install -r requirements-dev.txt
       - name: Verify runtime replacement in the same window and unchanged main baseline
         env:
           EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -143,7 +144,6 @@ jobs:
           retention-days: 14
       - name: Verify shared composition and actual native trayless close
         run: dotnet run --project tests/composition/CodexSwitch.Composition.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- --native-ui
-      - run: python -m pip install -r requirements-dev.txt
       - name: Run the published Windows app in isolated native UI mode
         shell: pwsh
         run: |
