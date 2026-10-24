@@ -1,9 +1,19 @@
 <p align="center"><img src="../assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" /></p>
 <h1 align="center">Codex Switch</h1>
 
-Codexアカウントを手動または任意の残量基準で切り替え、再開可能な未完了ローカルチャットを続けます。**1.42.2 · Windows、macOS15以降、Linuxプレビュー。**
+**OpenAI Codexのアカウント切替と使用量を一画面で管理するデスクトップアプリです。** 各アカウントの残量を比較して次のアカウントを選択し、中断した切替は保存された記録から復旧できます。任意の残量基準による自動切替は初期状態で**オフ**です。
+
+Windows · macOS15以降 · Linuxプレビュー · MITオープンソース · **1.42.2**
 
 [English](../README.md) / [한국어](README.ko.md) / 日本語 / [简体中文](README.zh-CN.md)
+
+[ダウンロード](#ダウンロード) · [使い始める](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.2)
+
+<p align="center"><img src="media/discovery/en-dark-demo.png" width="500" height="400" alt="アカウント残量、CPU・メモリ・GPU使用率と2台のストレージを表示するCodex Switch英語UIデモ" /></p>
+
+アカウントとシステム情報を模擬入力したWindows英語UIデモです。[デモの出典](media/discovery/README.md) / [ネイティブ検証](evidence/account-automation/README.md)。認証情報はローカルで暗号化保存され、**アカウント切替時にCodexが再起動します。** OpenAIとは提携していない独立プロジェクトです。
+
+**役に立ったら、このリポジトリにStarを付けたり、他のCodexユーザーに紹介してください。**
 
 1.42.2では警告から対象アカウントのブラウザー再ログイン、初期状態オフの自動切替、最適選択/優先順位、再起動の復旧記録、契約日付の見出し、公式Pro 100/200/500表記を追加しました。[動作と検証範囲](development/ACCOUNT_AUTOMATION.md) / [リリース手順](development/RELEASE_1_42_2.md)。
 

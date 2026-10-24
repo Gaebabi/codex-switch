@@ -1,9 +1,19 @@
 <p align="center"><img src="assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" /></p>
 <h1 align="center">Codex Switch</h1>
 
-Switch Codex accounts manually or with optional quota-based selection, resume eligible unfinished local chats, and compare the remaining quota. **1.42.2 — Windows, macOS15+ and Linux preview.**
+**A desktop account switcher and quota dashboard for OpenAI Codex.** See your accounts together, choose the next one, and recover an interrupted handoff. Optional quota-based switching starts **Off**.
+
+Windows · macOS15+ · Linux preview · MIT open source · **1.42.2**
 
 [English](README.md) / [한국어](docs/README.ko.md) / [日本語](docs/README.ja.md) / [简体中文](docs/README.zh-CN.md)
+
+[Download](#download) · [Get started](#get-started) · [What's new](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.2)
+
+<p align="center"><img src="docs/media/discovery/en-dark-demo.png" width="500" height="400" alt="Codex Switch UI demo with account quota cards, CPU and memory and GPU usage percentages, and two storage devices" /></p>
+
+Windows UI demo with simulated account and system data. [Demo sources](docs/media/discovery/README.md) / [native verification](docs/evidence/account-automation/README.md). Credentials stay in a local encrypted vault; **switching restarts Codex**. Independent project, not affiliated with OpenAI.
+
+**Find it useful?** Star this repository or share it with another Codex user.
 
 Release1.42.2 adds account-specific browser sign-in from warnings, default-Off quota-based account switching, optimal/custom priority, durable reopening/recovery, labeled subscription dates and official Pro 100/200/500 tiers. [Behavior and verification scope](docs/development/ACCOUNT_AUTOMATION.md) / [release gates](docs/development/RELEASE_1_42_2.md).
 
