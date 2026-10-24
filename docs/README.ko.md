@@ -38,17 +38,17 @@ Linux는 통합 미리보기입니다. 키 모음·설치 UI·패키지 검증�
 
 ## 실제 앱 화면
 
-[Windows·Linux 최신 화면과 검증 범위](media/release-1.41.1/README.md). 실제 제목 표시줄을 보존하고 단색 배경을 사용합니다. 가상 UI 입력과 실제 계정 검증은 별도로 명시합니다.
+[Windows·Linux 최신 화면과 검증 범위](media/release-1.42.2/README.md). 실제 제목 표시줄을 보존하고 단색 배경을 사용합니다. 가상 UI 입력과 실제 계정 검증은 별도로 명시합니다.
 
-![Windows 실행 화면](media/release-1.41.1/windows.png)
+![Windows 실행 화면](media/release-1.42.2/windows.png)
 
-**Windows x64:** 실제 WPF 앱에 데모 계정과 CPU 설정 버튼을 표시한 화면입니다. 개인 계정·바탕화면은 사용하지 않았습니다.
-![실제 Xfce OS 타이틀바와 데모 계정 4개를 함께 촬영한 Linux 앱](media/release-1.41.1/linux-x64-dark.png)
+**Windows x64:** 실제 WPF 앱의 가상 계정, 공식 Pro 등급과 계정 자동 전환 문구입니다. 데모에서만 켜짐을 선택했으며 기본은 꺼짐입니다. 개인 계정·바탕화면은 사용하지 않았습니다.
+![실제 Xfce OS 타이틀바와 데모 계정 4개를 함께 촬영한 Linux 앱](media/release-1.42.2/linux-x64-dark.png)
 
-**Linux x64 · X11/Xfwm4:** 실제 OS 타이틀바와 가상 데모 계정 4개를 같은 창에서 함께 촬영했습니다. 타이틀바 합성·개인 로그인 정보는 없습니다. [라이트 테마·출처·해시·검증 범위](media/release-1.41.1/README.md).
+**Linux x64 · X11/Xfwm4:** 실제 OS 타이틀바와 가상 데모 계정 4개를 같은 창에서 함께 촬영했습니다. 타이틀바 합성·개인 로그인 정보는 없습니다. [라이트 테마·출처·해시·검증 범위](media/release-1.42.2/README.md).
 
 **MacBook 실기기 스크린샷 추가 예정.**
-<!-- MacBook screenshot slot: media/release-1.41.1/macbook.png; privacy/provenance review required. -->
+<!-- MacBook screenshot slot: media/release-1.42.2/macbook.png; privacy/provenance review required. -->
 
 [개발·기여](../CONTRIBUTING.md) / [보안](../SECURITY.md) / [검증 자료](evidence/README.md) / [예측 방식](FORECAST.md)
 

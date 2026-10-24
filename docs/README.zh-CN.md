@@ -37,17 +37,17 @@ Linux仍为集成预览版。原生密钥环、已安装UI和程序包验证，�
 
 ## 实际应用截图
 
-[Windows/Linux最新截图及验证范围](media/release-1.41.1/README.md)。保留实际标题栏并放置在纯色背景上，明确区分虚构UI输入与真实账号验证。
+[Windows/Linux最新截图及验证范围](media/release-1.42.2/README.md)。保留实际标题栏并放置在纯色背景上，明确区分虚构UI输入与真实账号验证。
 
-![Windows运行截图](media/release-1.41.1/windows.png)
+![Windows运行截图](media/release-1.42.2/windows.png)
 
-**Windows x64：**实际WPF应用中的虚构演示账号和CPU设置按钮，未使用个人账号或桌面。
-![同一窗口中实际Xfce系统标题栏和4个演示账号的Linux截图](media/release-1.41.1/linux-x64-dark.png)
+**Windows x64：**实际WPF应用中的虚构账号、带编号的Pro方案及明确的账号自动切换文案。仅演示选择开启，默认关闭。未使用个人账号或桌面。
+![同一窗口中实际Xfce系统标题栏和4个演示账号的Linux截图](media/release-1.42.2/linux-x64-dark.png)
 
-**Linux x64 · X11/Xfwm4：**实际系统标题栏与4个虚构演示账号在同一窗口内一起拍摄。未合成标题栏，也没有个人登录信息。[浅色主题、来源、哈希及验证范围](media/release-1.41.1/README.md)。
+**Linux x64 · X11/Xfwm4：**实际系统标题栏与4个虚构演示账号在同一窗口内一起拍摄。未合成标题栏，也没有个人登录信息。[浅色主题、来源、哈希及验证范围](media/release-1.42.2/README.md)。
 
 **预留MacBook实机截图位置，稍后由维护者添加。**
-<!-- MacBook screenshot slot: media/release-1.41.1/macbook.png; privacy/provenance review required. -->
+<!-- MacBook screenshot slot: media/release-1.42.2/macbook.png; privacy/provenance review required. -->
 
 [贡献](../CONTRIBUTING.md) / [安全](../SECURITY.md) / [验证资料](evidence/README.md) / [消耗预测](FORECAST.md)
 

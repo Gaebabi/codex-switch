@@ -37,17 +37,17 @@ Linuxは統合プレビューです。キーストア・インストール済み
 
 ## 実際のアプリ画面
 
-[Windows/Linux最新画像と検証範囲](media/release-1.41.1/README.md)。実際のタイトルバーを残して単色背景に配置し、架空のUI入力と実アカウント検証を明記します。
+[Windows/Linux最新画像と検証範囲](media/release-1.42.2/README.md)。実際のタイトルバーを残して単色背景に配置し、架空のUI入力と実アカウント検証を明記します。
 
-![Windows実行画面](media/release-1.41.1/windows.png)
+![Windows実行画面](media/release-1.42.2/windows.png)
 
-**Windows x64:** 実際のWPFアプリに架空のデモアカウントとCPU設定ボタンを表示しています。個人アカウントやデスクトップは使用していません。
-![実際のXfce OSタイトルバーと4つのデモアカウントを同時に撮影したLinuxアプリ](media/release-1.41.1/linux-x64-dark.png)
+**Windows x64:** 実際のWPFアプリの架空アカウント、番号付きProプラン、明確な自動切替表示です。デモのみOnを選択し、既定はOffです。個人アカウントやデスクトップは使用していません。
+![実際のXfce OSタイトルバーと4つのデモアカウントを同時に撮影したLinuxアプリ](media/release-1.42.2/linux-x64-dark.png)
 
-**Linux x64 · X11/Xfwm4:** 実際のOSタイトルバーと架空のデモアカウント4つを同じウィンドウで撮影しました。タイトルバーの合成や個人のログイン情報はありません。[ライトテーマ・出典・ハッシュ・検証範囲](media/release-1.41.1/README.md)。
+**Linux x64 · X11/Xfwm4:** 実際のOSタイトルバーと架空のデモアカウント4つを同じウィンドウで撮影しました。タイトルバーの合成や個人のログイン情報はありません。[ライトテーマ・出典・ハッシュ・検証範囲](media/release-1.42.2/README.md)。
 
 **MacBook実機のスクリーンショットは後日追加予定です。**
-<!-- MacBook screenshot slot: media/release-1.41.1/macbook.png; privacy/provenance review required. -->
+<!-- MacBook screenshot slot: media/release-1.42.2/macbook.png; privacy/provenance review required. -->
 
 [貢献](../CONTRIBUTING.md) / [セキュリティ](../SECURITY.md) / [検証資料](evidence/README.md) / [消費予測](FORECAST.md)
 
