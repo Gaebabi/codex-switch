@@ -191,7 +191,7 @@ internal sealed class AccountService
         finally { _querySlots.Release(); Changed?.Invoke(); }
     }
     private bool IsCurrentRevision(AccountProfile profile, long revision) => Vault.Data.Accounts.Contains(profile) && profile.CredentialRevision == revision;
-    public async Task<AccountRegistration> AddAccountAsync(Action<Uri> openBrowser, CancellationToken cancellation)
+    public async Task<AccountRegistration> AddAccountAsync(Action<Uri> openBrowser, CancellationToken cancellation, string? expectedAccountKey = null)
     {
         if (!await _loginGate.WaitAsync(0, cancellation).ConfigureAwait(false)) throw new InvalidOperationException("이미 로그인 창이 열려 있습니다.");
         try
@@ -247,19 +247,22 @@ internal sealed class AccountService
             }
             var auth = home.ReadAuth();
             if (client != null) await client.RequireFileAsync(cancellation, AuthDocument.Parse(auth).AccountId).ConfigureAwait(false);
-            return CompleteRegistrationCore(auth);
+            return CompleteRegistrationCore(auth, expectedAccountKey);
         }
         finally { _loginGate.Release(); Changed?.Invoke(); }
     }
-    internal AccountRegistration CompleteRegistration(string authJson)
+    internal AccountRegistration CompleteRegistration(string authJson, string? expectedAccountKey = null)
     {
-        RequireLegacySync(); return CompleteRegistrationCore(authJson);
+        RequireLegacySync(); return CompleteRegistrationCore(authJson, expectedAccountKey);
     }
-    private AccountRegistration CompleteRegistrationCore(string authJson)
+    private AccountRegistration CompleteRegistrationCore(string authJson, string? expectedAccountKey = null)
     {
         string key;
         lock (Vault.SyncRoot)
         {
+            if (expectedAccountKey != null && (AuthDocument.Parse(authJson).Key != expectedAccountKey ||
+                !Vault.Data.Accounts.Any(p => p.Key == expectedAccountKey)))
+                throw new InvalidOperationException(Loc.T("account.relogin_mismatch"));
             var profile = Vault.Upsert(authJson);
             var active = CanonicalAuthExists() ? ReadCanonicalAuth() : null;
             profile.RequiresApply = active != null && AuthDocument.Parse(active).Key == profile.Key && active != profile.AuthJson;
@@ -333,7 +336,9 @@ internal sealed class AccountService
         lock (Vault.SyncRoot)
         {
             if (key == CurrentKey) throw new InvalidOperationException("현재 로그인 계정은 제거할 수 없습니다.");
-            Vault.Data.Accounts.RemoveAll(a => a.Key == key); Vault.Save();
+            if (Vault.Data.PendingSwitch?.TargetAccountKey == key || Vault.Data.PendingSwitch?.SourceAccountKey == key)
+                throw new InvalidOperationException("남은 채팅 재개 작업을 먼저 처리해 주세요.");
+            Vault.Data.Accounts.RemoveAll(a => a.Key == key); Vault.Data.AutomaticSwitchPriority.RemoveAll(k => k == key); Vault.Save();
         }
         Changed?.Invoke();
     }

@@ -13,6 +13,11 @@ internal sealed class VaultData
     public int TrendHours { get; set; } = 24;
     public List<DrivePreference> Drives { get; set; } = DefaultDrives();
     public AccountSwitchPlan? PendingSwitch { get; set; }
+    public bool AutomaticSwitchEnabled { get; set; }
+    public int AutomaticSwitchThreshold { get; set; } = 10;
+    public bool AutomaticSwitchUsePriority { get; set; }
+    public List<string> AutomaticSwitchPriority { get; set; } = new();
+    public DateTimeOffset? LastAutomaticSwitchAttempt { get; set; }
     private static List<DrivePreference> DefaultDrives()
     {
         if (OperatingSystem.IsMacOS()) return new() { new() { Root = "/", Label = "Macintosh HD" } };

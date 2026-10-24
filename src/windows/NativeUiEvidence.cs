@@ -31,6 +31,14 @@ internal static class NativeUiEvidence
         Directory.CreateDirectory(directory);
         var temporary = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "codex-ui-evidence-" + Guid.NewGuid().ToString("N")));
         var vault = new AccountVault(Path.Combine(temporary, "data")); vault.Data.Accounts.AddRange(SyntheticDashboard.Accounts());
+        // These fictional accounts also exercise real encrypted persistence. Keep the
+        // parsed identity consistent instead of bypassing AccountVault's reload checks.
+        foreach (var profile in vault.Data.Accounts)
+        {
+            profile.AuthJson = Diagnostics.FakeAuth(profile.Key, profile.Email, "native-ui-evidence-workspace");
+            var identity = AuthDocument.Parse(profile.AuthJson);
+            profile.Key = identity.Key; profile.AccountId = identity.AccountId;
+        }
         var service = new AccountService(vault, Path.Combine(temporary, "home"));
         AppContext.SetSwitch("Switch.System.Windows.Media.ShouldRenderEvenWhenNoDisplayDevicesAreAvailable", true);
         System.Windows.Media.RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
@@ -160,6 +168,7 @@ internal static class NativeUiEvidence
                     cases.Add(new { name = name + "-disk-confirmation", passed = true, scope = "Fictional disk throughput/profile/latency in real native app; not manufacturer rating or physical benchmark" });
                 }
                 await AccountWarningEvidence.CaptureAsync(window, service, directory);
+                await AccountAutomationEvidence.CaptureAsync(window, service, directory);
             }
             catch (Exception error)
             {

@@ -32,6 +32,9 @@ internal sealed class AccountSwitchPlan
     public DateTimeOffset RequestedAt { get; set; }
     public SwitchPhase Phase { get; set; }
     public bool AccountApplied { get; set; }
+    public bool Automatic { get; set; }
+    public int AutomaticRecoveryAttempts { get; set; }
+    public bool DesktopRestartRequired { get; set; }
     public List<SwitchChat> Chats { get; set; } = new();
     public string? Error { get; set; }
 }
@@ -75,6 +78,7 @@ internal sealed class AccountSwitchCoordinator
     }
     public async Task<bool> RunAsync(AccountSwitchPlan plan, CancellationToken cancellation)
     {
+        var shutdownConfirmed = plan.AccountApplied || plan.Phase is SwitchPhase.Applying or SwitchPhase.Launching or SwitchPhase.Resuming;
         try
         {
             var current = await _backend.CurrentAccountAsync(cancellation);
@@ -92,7 +96,9 @@ internal sealed class AccountSwitchCoordinator
                 if (await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
                     throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
                 cancellation.ThrowIfCancellationRequested();
+                plan.DesktopRestartRequired = true;
                 Checkpoint(plan, SwitchPhase.Closing); await _backend.CloseDesktopAsync(cancellation);
+                shutdownConfirmed = true;
                 cancellation.ThrowIfCancellationRequested();
                 if (await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
                     throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
@@ -101,7 +107,9 @@ internal sealed class AccountSwitchCoordinator
             }
             if (await _backend.CurrentAccountAsync(cancellation) != plan.TargetAccountKey)
                 throw new InvalidOperationException("선택한 계정과 현재 로그인이 달라 채팅 재개를 중단했습니다.");
+            plan.DesktopRestartRequired = true;
             Checkpoint(plan, SwitchPhase.Launching); await _backend.LaunchDesktopAsync(cancellation);
+            plan.DesktopRestartRequired = false;
             Checkpoint(plan, SwitchPhase.Resuming);
             foreach (var chat in plan.Chats.Where(chat => chat.ResumeState is not (ChatResumeState.Resumed or ChatResumeState.AlreadyRunning or ChatResumeState.Completed)))
             {
@@ -128,6 +136,24 @@ internal sealed class AccountSwitchCoordinator
         catch (Exception error)
         {
             plan.Error = error is OperationCanceledException ? "전환 작업을 취소했습니다." : _describeError(error);
+            if (error is OperationCanceledException && cancellation.IsCancellationRequested && plan.Automatic)
+                plan.AutomaticRecoveryAttempts = Math.Max(1, plan.AutomaticRecoveryAttempts);
+            // A cancellation or failed apply must not leave the desktop closed. Recover only the
+            // recorded source/target identity; never overwrite credentials or repeat Continue here.
+            if (plan.DesktopRestartRequired && shutdownConfirmed)
+            {
+                using var recovery = new CancellationTokenSource(TimeSpan.FromSeconds(35));
+                try
+                {
+                    var current = await _backend.CurrentAccountAsync(recovery.Token);
+                    if (current == plan.SourceAccountKey || current == plan.TargetAccountKey)
+                    {
+                        await _backend.LaunchDesktopAsync(recovery.Token);
+                        plan.DesktopRestartRequired = false;
+                    }
+                }
+                catch (Exception restartError) { plan.Error += "\n" + Loc.F("switch.restart_failed", _describeError(restartError)); }
+            }
             _save(plan); _changed(plan); throw;
         }
     }

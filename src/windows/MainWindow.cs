@@ -34,6 +34,7 @@ internal sealed class MainWindow : Window
     private readonly TextBlock _status = new(), _loginText = new();
     private readonly SessionUsagePanel _sessionCount = new();
     private readonly Button _refresh = new(), _add = new(), _cancelLogin = new(), _cancelSwitch = new();
+    private readonly Button _automaticSwitch = new();
     private MenuItem? _importCurrent;
     private readonly Border _loginPanel = new();
     private readonly List<AccountTankCard> _tankCards = new();
@@ -47,6 +48,7 @@ internal sealed class MainWindow : Window
     private readonly DispatcherTimer _clockTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private Forms.NotifyIcon? _tray;
     private bool _ready, _loggingIn, _switching, _closing, _exit;
+    private bool _started;
     private bool _cpuTemperatureChanging;
     private bool CanRefresh => !_closing && (_ready || _initialization?.IsCompleted != false);
     private string? _queuedKey;
@@ -57,6 +59,7 @@ internal sealed class MainWindow : Window
     private string _statusSource = "Codex 계정 확인 중…";
     private object?[] _statusArguments = Array.Empty<object?>();
     private bool _statusWarning;
+    internal string? EvidenceReloginAccount { get; private set; }
     private object? _languageInteraction;
     private object? _alternateWindowFrame;
     public MainWindow(AccountService service, Program.Options options)
@@ -119,7 +122,7 @@ internal sealed class MainWindow : Window
     }
     private void ApplyTheme()
     {
-        foreach (var element in new FrameworkElement[] { _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _loginPanel, _scroll })
+        foreach (var element in new FrameworkElement[] { _automaticSwitch, _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _loginPanel, _scroll })
         {
             if (element.Parent is Panel panel) panel.Children.Remove(element);
             else if (element.Parent is ContentControl control && ReferenceEquals(control.Content, element)) control.Content = null;
@@ -157,8 +160,19 @@ internal sealed class MainWindow : Window
         body.RowDefinitions.Add(new RowDefinition());
         body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         var toolbarRow = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+        toolbarRow.ColumnDefinitions.Add(new ColumnDefinition());
+        toolbarRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        toolbarRow.ColumnDefinitions.Add(new ColumnDefinition());
         _sessionCount.HorizontalAlignment = HorizontalAlignment.Center;
+        Grid.SetColumn(_sessionCount, 1);
         toolbarRow.Children.Add(_sessionCount); body.Children.Add(toolbarRow);
+        ConfigureButton(_automaticSwitch, "auto.off", null);
+        _automaticSwitch.Name = "AutomaticSwitchButton";
+        _automaticSwitch.HorizontalAlignment = HorizontalAlignment.Right; _automaticSwitch.Margin = new Thickness(6, 0, 0, 0);
+        Grid.SetColumn(_automaticSwitch, 2);
+        _automaticSwitch.FontSize = 10; _automaticSwitch.Padding = new Thickness(6, 2, 6, 2);
+        _automaticSwitch.Click -= OpenAutomaticSwitchMenu; _automaticSwitch.Click += OpenAutomaticSwitchMenu;
+        toolbarRow.Children.Add(_automaticSwitch);
         var login = new DockPanel(); DockPanel.SetDock(_cancelLogin, Dock.Right); login.Children.Add(_cancelLogin); _loginText.TextWrapping = TextWrapping.Wrap; _loginText.VerticalAlignment = VerticalAlignment.Center; _loginText.Margin = new Thickness(0, 0, 12, 0); login.Children.Add(_loginText);
         _loginPanel.Child = login; _loginPanel.Margin = new Thickness(0, 0, 0, 16); Grid.SetRow(_loginPanel, 1); body.Children.Add(_loginPanel);
         _scroll.Content = _rows; Grid.SetRow(_scroll, 2); body.Children.Add(_scroll);
@@ -266,6 +280,7 @@ internal sealed class MainWindow : Window
         content.Children.Add(actions); root.Children.Add(content); dialog.Content = root; return dialog.ShowDialog() == true;
     }
     internal void ShowError(Exception error) => Confirm(Loc.Error(UserErrors.Describe(error)), "Codex Switch", "확인", false);
+    internal void ReportBackgroundError(Exception error) => SetStatus(UserErrors.Describe(error), true);
     private void SetResources()
     {
         var style = new Style(typeof(Button));
@@ -315,8 +330,11 @@ internal sealed class MainWindow : Window
         UpdateControls(); UpdateTray();
         await _initialization; _ready = true; UpdateControls(); RenderAccounts();
     }
+    internal Task StartInTrayAsync() => StartAsync();
     private async Task StartAsync()
     {
+        if (_started) return;
+        _started = true;
         if (_options.UiEvidenceDirectory != null) return;
         _sessions.Start();
         _hardware.Start();
@@ -329,7 +347,9 @@ internal sealed class MainWindow : Window
             if (_options.ReportPath != null) _duringRefreshInteraction = CaptureControls();
             await refresh; SetRefreshStatus();
         });
+        if (_options.ReportPath == null && _options.UiEvidenceDirectory == null) await RecoverAutomaticSwitchAsync();
         if (_options.SwitchAccount != null && _options.ReportPath == null) await SwitchToAccountAsync(_options.SwitchAccount);
+        WriteRunningState("running");
         if (_options.ReportPath != null)
         {
             for (var attempt = 0; attempt < 60 && !_sessions.Current.Available; attempt++) await Task.Delay(250);
@@ -456,6 +476,8 @@ internal sealed class MainWindow : Window
     {
         if (!CanRefresh) return;
         await RunAsync("사용량 갱신 중… 다른 기능을 계속 사용할 수 있습니다.", async token => { await EnsureInitializedAsync(token); await _service.RefreshAllAsync(null, token); SetRefreshStatus(); });
+        await RecoverAutomaticSwitchAsync();
+        await TryAutomaticSwitchAsync();
     }
     private Task ImportCurrentAsync() => RunAsync("현재 로그인 가져오는 중…", async token =>
     {
@@ -464,16 +486,22 @@ internal sealed class MainWindow : Window
         if (profile == null) throw new InvalidOperationException("Codex에서 먼저 로그인하거나 계정 추가를 선택해 주세요.");
         RenderAccounts(); await _service.RefreshAccountAsync(profile.Key, token); SetRefreshStatus();
     });
-    private async Task AddAsync()
+    private Task ReauthenticateAsync(string key)
     {
-        if (!_ready || _loggingIn || _closing) return;
+        if (_options.UiEvidenceDirectory != null || _options.ReportPath != null)
+        { EvidenceReloginAccount = key; return Task.CompletedTask; }
+        return AddAsync(key);
+    }
+    private async Task AddAsync(string? expectedAccountKey = null)
+    {
+        if (!_ready || _loggingIn || _closing || _switching) return;
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         _loginCancellation = cancellation; _loggingIn = true; _loginText.Text = Loc.T("브라우저에서 추가할 계정으로 로그인해 주세요."); UpdateControls();
         await RunAsync("계정 로그인 중…", async _ =>
         {
             try
             {
-                var registration = await _service.AddAccountAsync(uri => Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true })?.Dispose(), cancellation.Token);
+                var registration = await _service.AddAccountAsync(uri => Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true })?.Dispose(), cancellation.Token, expectedAccountKey);
                 _loggingIn = false; UpdateControls(); RenderAccounts();
                 SetStatus("로그인 완료 · 해당 계정의 사용량을 바로 조회하고 있습니다.");
                 await registration.ImmediateRefresh;
@@ -533,18 +561,20 @@ internal sealed class MainWindow : Window
         foreach (var profile in accounts.OrderByDescending(a => a.IsCurrent).ThenBy(a => a.DisplayName, StringComparer.CurrentCultureIgnoreCase))
         {
             var actions = new StackPanel { Orientation = Orientation.Horizontal };
-            var pendingResume = PendingSwitch() is { } pending && pending.TargetAccountKey == profile.Key && profile.IsCurrent;
+            var pendingResume = PendingSwitch() is { } pending && pending.TargetAccountKey == profile.Key;
             var label = profile.Key == _queuedKey && _switching ? _switchPhase == SwitchPhase.BackingUp ? "백업 중" : _switchPhase == SwitchPhase.Resuming ? "재개 중" : "전환 중" :
-                pendingResume ? "채팅 재개" : profile.RequiresApply ? "로그인 적용" : profile.IsCurrent ? "사용 중" : "전환";
+                pendingResume ? "switch.recover" : profile.RequiresApply ? "로그인 적용" : profile.IsCurrent ? "사용 중" : "전환";
             var switchButton = NewButton(label, null, !profile.IsCurrent || profile.RequiresApply || pendingResume);
             switchButton.Tag = "account-switch-action";
+            if (pendingResume) switchButton.ToolTip = PendingSwitch()?.Error;
             switchButton.Margin = new Thickness(0); switchButton.FontSize = 12; switchButton.Padding = new Thickness(8, 5, 8, 5);
-            switchButton.IsEnabled = _ready && !_switching && !_closing && (!profile.IsCurrent || profile.RequiresApply || pendingResume);
+            switchButton.IsEnabled = _ready && !_switching && !_loggingIn && !_closing && (!profile.IsCurrent || profile.RequiresApply || pendingResume);
             switchButton.Click += async (_, _) => await QueueSwitchAsync(profile); actions.Children.Add(switchButton);
             var more = NewButton("", "more"); more.Padding = new Thickness(6); more.Margin = new Thickness(4, 0, 0, 0); more.ToolTip = Loc.T("계정 메뉴"); more.Click += (_, _) => OpenAccountMenu(more, profile); actions.Children.Add(more);
             var details = profile.RequiresApply ? Loc.T("새 로그인 적용 대기") : "";
             var warning = profile.Error == null ? null : profile.Usage == null ? Loc.Error(profile.Error) : Loc.F("갱신 실패 · 이전 조회값\n{0}", Loc.Error(profile.Error));
-            var titleRow = new AccountCardHeader(profile.DisplayName, details, _theme, actions, profile.IsCurrent, warning);
+            var titleRow = new AccountCardHeader(profile.DisplayName, details, _theme, actions, profile.IsCurrent, warning,
+                () => _ = ReauthenticateAsync(profile.Key));
             _selectedQuotas.TryGetValue(profile.Key, out var selected);
             var card = new AccountTankCard(profile, AccountTankCard.SelectQuota(profile, selected), _theme, titleRow, more,
                 selection => { _selectedQuotas[profile.Key] = selection; RenderAccounts(); });
@@ -636,6 +666,16 @@ internal sealed class MainWindow : Window
         var menu = DropdownTheme.Create(owner, _theme);
         var history = new MenuItem { Header = Loc.T("추이 보기") }; history.Click += (_, _) => OpenDetails(profile.Key);
         menu.Items.Add(history); menu.Items.Add(new Separator());
+        var order = AccountAutomation.OrderedAccounts(_service);
+        var priority = new MenuItem { Header = Loc.F("auto.priority", Array.FindIndex(order, p => p.Key == profile.Key) + 1) };
+        for (var index = 1; index <= order.Length; index++)
+        {
+            var position = index;
+            var item = new MenuItem { Header = Loc.F("auto.priority", position), IsCheckable = true, IsChecked = order[position - 1].Key == profile.Key };
+            item.Click += (_, _) => { AccountAutomation.SetPriority(_service, profile.Key, position); UpdateControls(); RenderAccounts(); };
+            priority.Items.Add(item);
+        }
+        menu.Items.Add(priority);
         if (_switching && profile.Key == _queuedKey && _switchPhase is SwitchPhase.BackingUp or SwitchPhase.Resuming)
         {
             var cancel = new MenuItem { Header = Loc.T("전환 작업 취소") }; cancel.Click += (_, _) => CancelSwitch(); menu.Items.Add(cancel);
@@ -714,10 +754,11 @@ internal sealed class MainWindow : Window
         }
         if (Dispatcher.CheckAccess()) ApplyProgress(); else Dispatcher.Invoke(ApplyProgress);
     }
-    private async Task QueueSwitchAsync(AccountProfile profile)
+    private async Task QueueSwitchAsync(AccountProfile profile, bool automatic = false)
     {
         var pending = PendingSwitch();
-        if (_closing || _switching || profile.IsCurrent && !profile.RequiresApply && pending?.TargetAccountKey != profile.Key) return;
+        if (_closing || _switching || _loggingIn || profile.IsCurrent && !profile.RequiresApply && pending?.TargetAccountKey != profile.Key) return;
+        if (pending != null && pending.TargetAccountKey != profile.Key) { SetStatus("남은 채팅 재개 작업을 먼저 처리해 주세요.", true); return; }
         try { _service.CheckCredentialBackend(profile); }
         catch (Exception error) { SetStatus(UserErrors.Describe(error), true); return; }
         _queuedKey = profile.Key; _switching = true; _switchPhase = SwitchPhase.BackingUp;
@@ -728,10 +769,11 @@ internal sealed class MainWindow : Window
             await RunAsync("채팅 이름 백업 중…", async _ =>
             {
                 var cancellation = _switchCancellation.Token;
-                await using var backend = new DesktopSwitchBackend(_service, _sessions);
+                await using var backend = new DesktopSwitchBackend(_service, _sessions, profile.Key);
                 var coordinator = new AccountSwitchCoordinator(backend, SaveSwitch, SwitchChanged, UserErrors.Describe);
                 var plan = pending?.TargetAccountKey == profile.Key ? JsonSerializer.Deserialize<AccountSwitchPlan>(JsonSerializer.Serialize(pending))! :
                     await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, cancellation);
+                plan.Automatic |= automatic; SaveSwitch(plan);
                 if (await coordinator.RunAsync(plan, cancellation)) SetStatus("계정을 전환하고 채팅을 재개했습니다.");
                 else SetStatus("계정 전환 완료. 재개 확인이 필요한 채팅 {0}개", true,
                     plan.Chats.Count(chat => chat.ResumeState is ChatResumeState.Unconfirmed or ChatResumeState.Failed or ChatResumeState.Pending or ChatResumeState.Sending));
@@ -739,6 +781,7 @@ internal sealed class MainWindow : Window
         }
         finally
         {
+            if (automatic && PendingSwitch() != null) AccountAutomation.Pause(_service);
             _switchCancellation.Dispose(); _switchCancellation = null; _switching = false; _queuedKey = null;
             UpdateControls(); RenderAccounts(); UpdateTray();
         }
@@ -753,6 +796,63 @@ internal sealed class MainWindow : Window
     private void CancelSwitch()
     {
         _switchCancellation?.Cancel();
+    }
+    private void OpenAutomaticSwitchMenu(object sender, RoutedEventArgs args)
+    {
+        var menu = BuildAutomaticSwitchMenu();
+        _automaticSwitch.ContextMenu = menu; menu.IsOpen = true;
+    }
+    internal ContextMenu BuildAutomaticSwitchMenu()
+    {
+        var menu = DropdownTheme.Create(_automaticSwitch, _theme);
+        var enabled = new MenuItem { Header = Loc.T("auto.enable"), IsCheckable = true, IsChecked = _service.Vault.Data.AutomaticSwitchEnabled };
+        enabled.Click += (_, _) =>
+        {
+            lock (_service.Vault.SyncRoot) { _service.Vault.Data.AutomaticSwitchEnabled = enabled.IsChecked; _service.Vault.Save(); }
+            UpdateControls();
+        };
+        menu.Items.Add(enabled); menu.Items.Add(new Separator());
+        foreach (var custom in new[] { false, true })
+        {
+            var item = new MenuItem { Header = Loc.T(custom ? "auto.custom" : "auto.optimal"), IsCheckable = true, IsChecked = _service.Vault.Data.AutomaticSwitchUsePriority == custom };
+            if (custom) item.ToolTip = Loc.T("auto.priority_help");
+            item.Click += (_, _) => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.AutomaticSwitchUsePriority = custom; _service.Vault.Save(); } UpdateControls(); };
+            menu.Items.Add(item);
+        }
+        var ranking = new MenuItem { Header = Loc.T("auto.order") };
+        foreach (var profile in AccountAutomation.OrderedAccounts(_service))
+            ranking.Items.Add(new MenuItem { Header = Loc.F("auto.ranked_account", ranking.Items.Count + 1, profile.DisplayName), IsEnabled = false });
+        menu.Items.Add(ranking); menu.Items.Add(new Separator());
+        foreach (var value in new[] { 5, 10, 15, 20 })
+        {
+            var item = new MenuItem { Header = Loc.F("auto.threshold", value), IsCheckable = true, IsChecked = _service.Vault.Data.AutomaticSwitchThreshold == value };
+            item.Click += (_, _) => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.AutomaticSwitchThreshold = value; _service.Vault.Save(); } UpdateControls(); };
+            menu.Items.Add(item);
+        }
+        return menu;
+    }
+    private async Task TryAutomaticSwitchAsync()
+    {
+        if (_options.ReportPath != null || _options.UiEvidenceDirectory != null || !_ready || _closing || _switching || _loggingIn || !_sessions.Current.Available) return;
+        await RunAsync("", async _ =>
+        {
+            if (!RuntimeLocator.IsDesktopRunning(_service.Installation.DesktopPath)) return;
+            var target = AccountAutomation.Reserve(_service, _operations.Count > 1, DateTimeOffset.UtcNow);
+            if (target == null) return;
+            await QueueSwitchAsync(target, true);
+            if (PendingSwitch() != null || !_service.Accounts.Any(p => p.Key == target.Key && p.IsCurrent))
+            { AccountAutomation.Pause(_service); SetStatus("auto.paused", true); }
+        });
+    }
+    private async Task RecoverAutomaticSwitchAsync()
+    {
+        if (_options.ReportPath != null || _options.UiEvidenceDirectory != null || !_ready || _closing || _switching || _loggingIn || _service.IsBusy) return;
+        var pending = PendingSwitch();
+        if (pending is not { Automatic: true, AutomaticRecoveryAttempts: 0 }) return;
+        var target = _service.Accounts.FirstOrDefault(p => p.Key == pending.TargetAccountKey);
+        if (target == null) { AccountAutomation.Pause(_service); SetStatus("auto.paused", true); return; }
+        pending.AutomaticRecoveryAttempts++; SaveSwitch(pending);
+        await QueueSwitchAsync(target, true);
     }
     private void SetRefreshStatus()
     {
@@ -773,6 +873,12 @@ internal sealed class MainWindow : Window
     }
     private void UpdateControls()
     {
+        var automaticSwitchLabel = Loc.T(_service.Vault.Data.AutomaticSwitchEnabled ? "auto.on" : "auto.off");
+        _automaticSwitch.Content = new TextBlock { Text = automaticSwitchLabel + " ▾", TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center };
+        System.Windows.Automation.AutomationProperties.SetName(_automaticSwitch, automaticSwitchLabel);
+        _automaticSwitch.ToolTip = Loc.F("auto.help", _service.Vault.Data.AutomaticSwitchThreshold) + "\n" +
+            Loc.T(_service.Vault.Data.AutomaticSwitchUsePriority ? "auto.custom" : "auto.optimal") + "\n" + Loc.T("auto.priority_help");
+        _automaticSwitch.IsEnabled = _ready && !_closing;
         _refresh.IsEnabled = CanRefresh; _add.IsEnabled = _ready && !_loggingIn && !_closing;
         if (_importCurrent != null) _importCurrent.IsEnabled = !_closing;
         _loginPanel.Visibility = _loggingIn ? Visibility.Visible : Visibility.Collapsed;
@@ -818,7 +924,24 @@ internal sealed class MainWindow : Window
     internal async Task ExitAsync()
     {
         if (_closing) return; _closing = true; _refreshTimer.Stop(); _clockTimer.Stop(); _lifetime.Cancel(); _loginCancellation?.Cancel();
-        await _drives.DisposeAsync(); await _hardware.DisposeAsync(); await _sessions.DisposeAsync(); await _service.StopAsync(); await Task.WhenAll(_operations.ToArray()); _exit = true; _tray?.Dispose(); Application.Current.Shutdown();
+        WriteRunningState("stopping-operations");
+        // Keep IPC/account services alive until a cancelled handoff has reopened the desktop.
+        await Task.WhenAll(_operations.ToArray());
+        WriteRunningState("stopping-drives"); await _drives.DisposeAsync();
+        WriteRunningState("stopping-hardware"); await _hardware.DisposeAsync();
+        WriteRunningState("stopping-sessions"); await _sessions.DisposeAsync();
+        WriteRunningState("stopping-service"); await _service.StopAsync();
+        _exit = true; _tray?.Dispose(); WriteRunningState("stopped"); Application.Current.Shutdown();
+    }
+    private void WriteRunningState(string lifecycle)
+    {
+        if (!_options.StartHidden) return;
+        SecureFiles.AtomicWriteText(Path.Combine(_service.Vault.DirectoryPath, "running-instance.json"), JsonSerializer.Serialize(new {
+            processId = Environment.ProcessId, version = typeof(MainWindow).Assembly.GetName().Version!.ToString(3),
+            atUtc = DateTimeOffset.UtcNow, ready = _ready, accountCount = _service.Accounts.Length,
+            automaticSwitchEnabled = _service.Vault.Data.AutomaticSwitchEnabled,
+            customPriority = _service.Vault.Data.AutomaticSwitchUsePriority,
+            windowVisible = IsVisible, startupMode = "tray", lifecycle, status = _status.Text }));
     }
     internal void CapturePreview(string path, double scale = 1)
     {

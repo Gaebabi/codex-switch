@@ -39,6 +39,7 @@ internal sealed class DeskWindow : Window
     private StackPanel _sessionValues = new(), _volumes = new();
     private TextBlock _status = new();
     private Button _add = new(), _cancel = new(), _refresh = new(), _settingsButton = new(), _startCodex = new();
+    private Button _automaticSwitch = new();
     private IDesktopMenuBar? _tray;
     private readonly Dictionary<string, NativeMenuItem> _nativeItems = new();
     private CancellationTokenSource? _login, _switch;
@@ -105,17 +106,23 @@ internal sealed class DeskWindow : Window
             _sessions.Start(); _resources.Start(); _drives.Configure(_service.Vault.Data.Drives.ToArray()); _drives.Start();
             UpdateTray(); RenderAccounts();
             await _service.RefreshAllAsync(null, token);
+            await RecoverAutomaticSwitchAsync();
         }
         finally { _initializing = false; }
     }
-    private Task RefreshAsync() => RunAsync(_ready ? token => _service!.RefreshAllAsync(null, token) : InitializeAsync);
+    private async Task RefreshAsync()
+    {
+        await RunAsync(_ready ? token => _service!.RefreshAllAsync(null, token) : InitializeAsync);
+        await RecoverAutomaticSwitchAsync();
+        await TryAutomaticSwitchAsync();
+    }
     private void Build()
     {
         if (_host.AccountUnavailableReason != null) _statusMessage = Loc.T(_host.AccountUnavailableReason);
         _theme.Apply(this);
         FlowDirection = Loc.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         var nativeTitle = OperatingSystem.IsLinux();
-        var shell = new Grid { RowDefinitions = new RowDefinitions(nativeTitle ? "34,0,*,50" : "34,22,*,50") };
+        var shell = new Grid { RowDefinitions = new RowDefinitions(nativeTitle ? "34,0,*,50" : "34,Auto,*,50") };
         var titlebar = new Grid { Background = _theme.Brush("chrome"), ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto,Auto,Auto,Auto"), Margin = new Thickness(0) };
         var caption = _theme.Text("Codex Switch", 12); caption.VerticalAlignment = VerticalAlignment.Center;
         var mark = new BrandMark { Width = 18, Height = 18, Ink = _theme.Brush("text") };
@@ -159,15 +166,25 @@ internal sealed class DeskWindow : Window
         }); theme.Name = "ThemeButton"; theme.Classes.Add("title-action"); Grid.SetColumn(theme, 5); titlebar.Children.Add(theme);
         _settingsButton = _theme.IconButton(DeskButtonIconKind.More, Loc.T("설정"), OpenSettings); _settingsButton.Width = 28; _settingsButton.Padding = new Thickness(0);
         Grid.SetColumn(_settingsButton, 6); titlebar.Children.Add(_settingsButton); shell.Children.Add(titlebar);
-        var toolbar = new Grid { Margin = new Thickness(8, 1) };
+        var toolbar = new Grid { Margin = new Thickness(8, 1), ColumnDefinitions = new ColumnDefinitions("*,Auto,*") };
         _cancel = _theme.Button(Loc.T("취소"), () => { _login?.Cancel(); _switch?.Cancel(); }); _cancel.IsVisible = _login != null || _switch != null;
         _cancel.HorizontalAlignment = HorizontalAlignment.Left;
         toolbar.Children.Add(_cancel);
         _sessionValues = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 24, HorizontalAlignment = HorizontalAlignment.Center };
+        Grid.SetColumn(_sessionValues, 1);
         toolbar.Children.Add(_sessionValues);
+        _automaticSwitch = _theme.Button(Loc.T(_service?.Vault.Data.AutomaticSwitchEnabled == true ? "auto.on" : "auto.off") + " ▾", OpenAutomaticSwitchMenu);
+        _automaticSwitch.Name = "AutomaticSwitchButton"; _automaticSwitch.HorizontalAlignment = HorizontalAlignment.Right;
+        var automaticSwitchLabel = Loc.T(_service?.Vault.Data.AutomaticSwitchEnabled == true ? "auto.on" : "auto.off");
+        _automaticSwitch.Content = new TextBlock { Text = automaticSwitchLabel + " ▾", TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center };
+        Avalonia.Automation.AutomationProperties.SetName(_automaticSwitch, automaticSwitchLabel);
+        _automaticSwitch.Margin = new Thickness(6, 0, 0, 0); Grid.SetColumn(_automaticSwitch, 2);
+        _automaticSwitch.FontSize = 10; _automaticSwitch.Padding = new Thickness(5, 1); _automaticSwitch.MinHeight = 20;
+        ToolTip.SetTip(_automaticSwitch, Loc.F("auto.help", _service?.Vault.Data.AutomaticSwitchThreshold ?? 10) + "\n" +
+            Loc.T(_service?.Vault.Data.AutomaticSwitchUsePriority == true ? "auto.custom" : "auto.optimal") + "\n" + Loc.T("auto.priority_help"));
+        toolbar.Children.Add(_automaticSwitch);
         if (nativeTitle)
         {
-            toolbar.ColumnDefinitions = new ColumnDefinitions("Auto,*"); Grid.SetColumn(_sessionValues, 1);
             titlebar.Children.Add(toolbar);
         }
         else { Grid.SetRow(toolbar, 1); shell.Children.Add(toolbar); }
@@ -243,17 +260,18 @@ internal sealed class DeskWindow : Window
         for (var i = 0; i < profiles.Length; i++)
         {
             var profile = profiles[i]; var pending = _service?.Vault.Data.PendingSwitch;
-            var resume = pending?.TargetAccountKey == profile.Key && profile.IsCurrent;
+            var resume = pending?.TargetAccountKey == profile.Key;
             var activeSwitch = _switchTarget == profile.Key && _switch != null;
             var text = activeSwitch ? _phase == SwitchPhase.BackingUp ? "백업 중" : _phase == SwitchPhase.Resuming ? "재개 중" : "전환 중" :
-                resume ? "채팅 재개" : profile.RequiresApply ? "로그인 적용" : profile.IsCurrent ? "사용 중" : "전환";
+                resume ? "switch.recover" : profile.RequiresApply ? "로그인 적용" : profile.IsCurrent ? "사용 중" : "전환";
             var button = _theme.Button(Loc.T(text), () => _ = SwitchAsync(profile));
-            button.IsEnabled = _ready && _switch == null && (!profile.IsCurrent || profile.RequiresApply || resume);
+            if (resume) ToolTip.SetTip(button, pending?.Error);
+            button.IsEnabled = _ready && _switch == null && _login == null && (!profile.IsCurrent || profile.RequiresApply || resume);
             button.FontSize = 10; button.Padding = new Thickness(5, 2);
             var more = _theme.IconButton(DeskButtonIconKind.More, Loc.T("계정 메뉴"), () => { }); more.Width = 25; more.Padding = new Thickness(3, 2);
             more.Click += (_, _) => AccountMenu(more, profile);
             var card = new MacAccountCard(profile, MacAccountCard.Select(profile, _quotas.GetValueOrDefault(profile.Key)), _theme, button, more,
-                choice => { _quotas[profile.Key] = choice; RenderAccounts(); });
+                choice => { _quotas[profile.Key] = choice; RenderAccounts(); }, () => _ = AddAccountAsync(profile.Key));
             Grid.SetColumn(card, i % columns); Grid.SetRow(card, i / columns); _accounts.Children.Add(card); _cards.Add(card);
         }
         ResizeAccounts();
@@ -279,23 +297,23 @@ internal sealed class DeskWindow : Window
             _operations.Remove(completion.Task); completion.SetResult(); if (!Exiting) RenderAccounts();
         }
     }
-    private async Task AddAccountAsync()
+    private async Task AddAccountAsync(string? expectedAccountKey = null)
     {
-        if (!_ready || _login != null) return;
+        if (!_ready || _login != null || _switch != null) return;
         _login = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token); RenderAccounts();
         try
         {
             await RunAsync(async _ =>
             {
-                var registration = await _service!.AddAccountAsync(uri => Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true })?.Dispose(), _login.Token);
+                var registration = await _service!.AddAccountAsync(uri => Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true })?.Dispose(), _login.Token, expectedAccountKey);
                 await registration.ImmediateRefresh;
             });
         }
         finally { _login.Dispose(); _login = null; if (!Exiting) RenderAccounts(); }
     }
-    private async Task SwitchAsync(AccountProfile profile)
+    private async Task SwitchAsync(AccountProfile profile, bool automatic = false)
     {
-        if (!_ready || _switch != null) return;
+        if (!_ready || _switch != null || _login != null) return;
         _switch = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token); _switchTarget = profile.Key; _phase = SwitchPhase.BackingUp; RenderAccounts();
         try
         {
@@ -309,16 +327,76 @@ internal sealed class DeskWindow : Window
                 var pending = _service.Vault.Data.PendingSwitch;
                 if (pending != null && pending.TargetAccountKey != profile.Key) throw new InvalidOperationException(Loc.T("남은 채팅 재개 작업을 먼저 처리해 주세요."));
                 var plan = pending ?? await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, _switch.Token);
-                await coordinator.RunAsync(plan, _switch.Token);
+                plan.Automatic |= automatic;
+                lock (_service.Vault.SyncRoot) { _service.Vault.Data.PendingSwitch = plan; _service.Vault.Save(); }
+                if (!await coordinator.RunAsync(plan, _switch.Token))
+                    _statusMessage = automatic ? Loc.T("auto.paused") : Loc.F("계정 전환 완료. 재개 확인이 필요한 채팅 {0}개",
+                        plan.Chats.Count(chat => chat.ResumeState is ChatResumeState.Unconfirmed or ChatResumeState.Failed or ChatResumeState.Pending or ChatResumeState.Sending));
                 await _service.RefreshAccountAsync(profile.Key, _stop.Token, true);
             });
         }
-        finally { _switch.Dispose(); _switch = null; _switchTarget = null; if (!Exiting) RenderAccounts(); }
+        finally { if (automatic && _service!.Vault.Data.PendingSwitch != null) AccountAutomation.Pause(_service); _switch.Dispose(); _switch = null; _switchTarget = null; if (!Exiting) { Build(); } }
+    }
+    private void OpenAutomaticSwitchMenu()
+    {
+        if (!_ready || _service == null) return;
+        var data = _service.Vault.Data;
+        var menu = _theme.Menu(_automaticSwitch);
+        var enabled = new MenuItem { Header = Loc.T("auto.enable"), ToggleType = MenuItemToggleType.CheckBox, IsChecked = data.AutomaticSwitchEnabled };
+        enabled.Click += (_, _) => { lock (_service.Vault.SyncRoot) { data.AutomaticSwitchEnabled = enabled.IsChecked; _service.Vault.Save(); } Build(); };
+        var items = new List<object> { enabled, new Separator() };
+        foreach (var custom in new[] { false, true })
+        {
+            var mode = new MenuItem { Header = Loc.T(custom ? "auto.custom" : "auto.optimal"), ToggleType = MenuItemToggleType.Radio, IsChecked = data.AutomaticSwitchUsePriority == custom };
+            if (custom) ToolTip.SetTip(mode, Loc.T("auto.priority_help"));
+            mode.Click += (_, _) => { lock (_service.Vault.SyncRoot) { data.AutomaticSwitchUsePriority = custom; _service.Vault.Save(); } Build(); };
+            items.Add(mode);
+        }
+        var order = AccountAutomation.OrderedAccounts(_service);
+        items.Add(new MenuItem { Header = Loc.T("auto.order"), ItemsSource = order.Select((p, i) => new MenuItem { Header = Loc.F("auto.ranked_account", i + 1, p.DisplayName), IsEnabled = false }).ToArray() });
+        items.Add(new Separator());
+        foreach (var value in new[] { 5, 10, 15, 20 })
+        {
+            var item = new MenuItem { Header = Loc.F("auto.threshold", value), ToggleType = MenuItemToggleType.Radio, IsChecked = data.AutomaticSwitchThreshold == value };
+            item.Click += (_, _) => { lock (_service.Vault.SyncRoot) { data.AutomaticSwitchThreshold = value; _service.Vault.Save(); } Build(); };
+            items.Add(item);
+        }
+        menu.ItemsSource = items; menu.Open(_automaticSwitch);
+    }
+    private async Task TryAutomaticSwitchAsync()
+    {
+        if (!_ready || Exiting || _preview != null || _service == null || !_sessions.Current.Available || _login != null || _switch != null) return;
+        await RunAsync(async _ =>
+        {
+            var target = AccountAutomation.Reserve(_service, _operations.Count > 1, DateTimeOffset.UtcNow);
+            if (target == null) return;
+            await SwitchAsync(target, true);
+            if (_service.Vault.Data.PendingSwitch != null || !_service.Accounts.Any(p => p.Key == target.Key && p.IsCurrent))
+            { AccountAutomation.Pause(_service); _statusMessage = Loc.T("auto.paused"); Build(); }
+        });
+    }
+    private async Task RecoverAutomaticSwitchAsync()
+    {
+        if (!_ready || Exiting || _preview != null || _service == null || _login != null || _switch != null || _service.IsBusy) return;
+        var pending = _service.Vault.Data.PendingSwitch;
+        if (pending is not { Automatic: true, AutomaticRecoveryAttempts: 0 }) return;
+        var target = _service.Accounts.FirstOrDefault(p => p.Key == pending.TargetAccountKey);
+        if (target == null) { AccountAutomation.Pause(_service); _statusMessage = Loc.T("auto.paused"); return; }
+        lock (_service.Vault.SyncRoot) { pending.AutomaticRecoveryAttempts++; _service.Vault.Save(); }
+        await SwitchAsync(target, true);
     }
     private void AccountMenu(Button target, AccountProfile profile)
     {
         MenuItem Item(string text, Action action) { var item = new MenuItem { Header = text }; item.Click += (_, _) => action(); return item; }
+        var order = AccountAutomation.OrderedAccounts(_service!);
+        var priority = new MenuItem { Header = Loc.F("auto.priority", Array.FindIndex(order, p => p.Key == profile.Key) + 1) };
+        priority.ItemsSource = Enumerable.Range(1, order.Length).Select(position =>
+        {
+            var item = new MenuItem { Header = Loc.F("auto.priority", position), ToggleType = MenuItemToggleType.Radio, IsChecked = order[position - 1].Key == profile.Key };
+            item.Click += (_, _) => { AccountAutomation.SetPriority(_service!, profile.Key, position); Build(); }; return item;
+        }).ToArray();
         var menu = _theme.Menu(target); menu.ItemsSource = new[] {
+            priority,
             Item(Loc.T("추이 보기"), () => new HistoryWindow(_service!, profile.Key, _theme).Show(this)),
             Item(Loc.T("이 계정 즉시 새로 고침"), () => _ = RunAsync(token => _service!.RefreshAccountAsync(profile.Key, token, true))),
             Item(Loc.T("이름 변경"), async () => { var value = await DeskDialogs.Prompt(this, _theme, Loc.T("이름 변경"), profile.Alias); if (value != null) await RunAsync(_ => { _service!.Rename(profile.Key, value); return Task.CompletedTask; }); }),
@@ -468,8 +546,8 @@ internal sealed class DeskWindow : Window
     public async Task ExitAsync()
     {
         if (Exiting) return; Exiting = true; _clock.Stop(); _stop.Cancel(); _login?.Cancel(); _switch?.Cancel();
-        if (_service != null) await _service.StopAsync();
         await Task.WhenAll(_operations.ToArray());
+        if (_service != null) await _service.StopAsync();
         await _sessions.DisposeAsync(); await _resources.DisposeAsync(); await _drives.DisposeAsync(); _tray?.Dispose();
         _service?.ReleaseDesktop();
         Close(); (Application.Current!.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Shutdown(_host.ExitCode());

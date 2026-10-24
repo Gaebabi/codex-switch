@@ -1,5 +1,7 @@
 # Account switching
 
+Account auto-switch is **Off by default**. Enable its toolbar menu only when you want successful fresh usage refreshes to select an eligible account below the chosen threshold. The same handoff/recovery pipeline runs for manual and automatic selection. Choose optimal remaining quota or saved custom account priority. [Threshold, cooldown, failure/restart guards and verification scope](development/ACCOUNT_AUTOMATION.md).
+
 1. Add an account through **+**, or import the current login from the Windows **↻** right-click menu.
 2. Compare the cards and select **Switch**.
 3. The button shows **Backing up** while active local chat names are saved with an updated date.

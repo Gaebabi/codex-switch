@@ -1,16 +1,18 @@
 # Linux preview package candidates
 
-## Release1.41.1 downloads
+## Release1.42.2 downloads
+
+<a id="release1411-downloads"></a>
 
 <a id="release1407-downloads"></a>
 
 <a id="release1402-downloads"></a>
 
-The legacy 1.40.2 heading anchor is retained for existing links; the packages below are current1.41.1 downloads. [Previous1.40.2 Release](https://github.com/Gaebabi/codex-switch/releases/tag/v1.40.2) stays available.
+Legacy heading anchors are retained for existing links; the packages below are current1.42.2 downloads. [Previous1.40.2 Release](https://github.com/Gaebabi/codex-switch/releases/tag/v1.40.2) stays available.
 
-The [1.41.1 Release](https://github.com/Gaebabi/codex-switch/releases/tag/v1.41.1) provides all six unsigned integration-preview packages: x64/ARM64 × DEB/RPM/tar.gz, with SHA256SUMS.txt. These remain explicit previews with `supportedAccountHandoff: false`; publication does not close #5/#6/#7's remaining authenticated/full-desktop criteria. Earlier records below retain their original checkpoint scope.
+The [1.42.2 Release](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.2) provides all six unsigned integration-preview packages: x64/ARM64 × DEB/RPM/tar.gz, with SHA256SUMS.txt. These remain explicit previews with `supportedAccountHandoff: false`; publication does not close #5/#6/#7's remaining authenticated/full-desktop criteria. Earlier records below retain their original checkpoint scope.
 
-The1.41.1 packages also include [headless terminal account switching and saved CLI-session resumption](LINUX_TERMINAL.md). Native x64 real-account CLI acceptance, ARM64 offline contracts and full desktop acceptance retain separate scopes.
+The1.42.2 packages also include [headless terminal account switching and saved CLI-session resumption](LINUX_TERMINAL.md). Native x64 real-account CLI acceptance, ARM64 offline contracts and full desktop acceptance retain separate scopes.
 
 Desktop integration pins official OpenAI Linux client26.1007.71326 and verifies the installed package, CLI, executable and ASAR. CI retrieves exact unchanged bytes from the official versioned Debian pool. Newer clients require a separate compatibility review. An existing file credential policy and X11/XWayland are required; explicit-checksum CLI-only mode does not resume desktop chats. Fedora RPM installation/UI verification does not establish integration with an unreviewed RPM-native client.
 
