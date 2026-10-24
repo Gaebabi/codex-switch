@@ -1,9 +1,19 @@
 <p align="center"><img src="../assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" /></p>
 <h1 align="center">Codex Switch</h1>
 
-Codex 계정을 수동 또는 선택적 잔여량 기준으로 전환하고, 재개 가능한 미완료 로컬 작업을 이어가세요. **1.42.2 · Windows, macOS15+, Linux 미리보기.**
+**OpenAI Codex 계정 전환과 사용량을 한 화면에서 관리하는 데스크톱 앱입니다.** 여러 계정의 잔여량을 비교하고 다음 계정을 선택하세요. 전환이 중단되면 저장된 기록으로 복구할 수 있습니다. 선택적 사용량 기준 자동 전환은 기본 **꺼짐**입니다.
+
+Windows · macOS15+ · Linux 미리보기 · MIT 오픈소스 · **1.42.2**
 
 [English](../README.md) / 한국어 / [日本語](README.ja.md) / [简体中文](README.zh-CN.md)
+
+[다운로드](#다운로드) · [시작하기](INSTALL.md) · [업데이트 내용](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.2)
+
+<p align="center"><img src="media/discovery/ko-dark-demo.png" width="500" height="400" alt="계정별 잔여량, CPU·메모리·GPU 사용률과 저장장치 2개를 보여주는 Codex Switch UI 데모" /></p>
+
+계정·시스템 정보를 가상으로 입력한 Windows UI 데모입니다. [데모 출처](media/discovery/README.md) / [네이티브 검증](evidence/account-automation/README.md). 인증정보는 로컬 암호화 저장소에 보관되며 **계정 전환 시 Codex가 재시작됩니다.** OpenAI와 제휴하지 않은 독립 프로젝트입니다.
+
+**유용하다면 GitHub Star로 저장하고 다른 Codex 사용자에게도 알려주세요.**
 
 1.42.2에는 경고 버튼의 해당 계정 브라우저 재로그인, 기본 꺼짐인 계정 자동 전환, 최적 자동 선택/사용자 지정 순위, 재시작 복구 기록, 구독 날짜 제목과 공식 Pro 100/200/500 표기가 포함됩니다. [동작과 검증 범위](development/ACCOUNT_AUTOMATION.md) / [릴리즈 절차](development/RELEASE_1_42_2.md).
 

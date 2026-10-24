@@ -1,5 +1,13 @@
 # Operations
 
+## Repository presentation
+
+Keep the four README languages aligned around the released app, downloads and first-use guidance. [Discovery assets](../media/discovery/README.md) contain simulated offscreen account/resource/storage renders and the1280×640 sharing graphic; retain their application/image hashes and captions. The [native application evidence](../evidence/account-automation/README.md) has a separate acceptance scope.
+
+GitHub About/topics/homepage and Settings → Social preview are repository settings, separate from committed files. Applying a PNG in Git does not update that Social preview setting. Retain prior metadata privately, verify the settings and public preview after application, and keep analytics/private drafts outside public source. External community posts require their own explicit publication scope. Topic or README changes are not proof of additional stars or installations. [Presentation delivery](https://github.com/Gaebabi/codex-switch/issues/111).
+
+## Application operation
+
 [Account reauthentication and optional automatic switching](ACCOUNT_AUTOMATION.md) documents the toolbar threshold menu, failure pause, Recover action and bounded startup recovery. Account automation is Off by default; it does not require a vault format or credential migration.
 
 Windows source 1.42.2 adds `--start-hidden` for an ordinary tray-only launch. It initializes the normal utility without showing/activating a window; a duplicate hidden launch does not activate an existing window. Use it to restart the utility after an authorized local installation update while leaving Codex and user focus untouched. Opening the app through its tray/normal shortcut still shows the window. The option rejects diagnostic/account-action combinations. Startup/background errors remain available in status or redirected stderr without a forced popup.

@@ -1,9 +1,19 @@
 <p align="center"><img src="../assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" /></p>
 <h1 align="center">Codex Switch</h1>
 
-手动或按可选的剩余额度规则切换Codex账号，并继续符合条件的未完成本地聊天。**1.42.2 · Windows、macOS15及以上和Linux预览版。**
+**在一个桌面界面中管理OpenAI Codex账号切换和使用额度。** 比较各账号的剩余额度、选择下一个账号，并通过已保存的记录恢复中断的切换。可选的额度阈值自动切换默认**关闭**。
+
+Windows · macOS15及以上 · Linux预览版 · MIT开源 · **1.42.2**
 
 [English](../README.md) / [한국어](README.ko.md) / [日本語](README.ja.md) / 简体中文
+
+[下载](#下载) · [开始使用](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.2)
+
+<p align="center"><img src="media/discovery/en-dark-demo.png" width="500" height="400" alt="Codex Switch英文UI演示：账号剩余额度、CPU与内存及GPU使用率和两个存储设备" /></p>
+
+使用模拟账号和系统数据的Windows英文UI演示。[演示来源](media/discovery/README.md) / [原生验证](evidence/account-automation/README.md)。凭证保存在本地加密存储中，**切换账号会重启Codex。** 本项目独立开发，与OpenAI没有隶属关系。
+
+**如果觉得有用，欢迎Star本仓库并分享给其他Codex用户。**
 
 1.42.2新增警告按钮的指定账号浏览器重新登录、默认关闭的额度阈值自动切换、最佳选择/自定义顺序、重启恢复记录、订阅日期标题及官方Pro 100/200/500名称。[行为与验证范围](development/ACCOUNT_AUTOMATION.md) / [发布流程](development/RELEASE_1_42_2.md)。
 
