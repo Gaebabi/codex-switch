@@ -160,6 +160,7 @@ internal static class NativeUiEvidence
                     cases.Add(new { name = name + "-disk-confirmation", passed = true, scope = "Fictional disk throughput/profile/latency in real native app; not manufacturer rating or physical benchmark" });
                 }
                 await AccountWarningEvidence.CaptureAsync(window, service, directory);
+                await AccountAutomationEvidence.CaptureAsync(window, service, directory);
             }
             catch (Exception error)
             {

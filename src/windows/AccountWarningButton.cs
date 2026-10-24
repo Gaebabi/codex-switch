@@ -11,7 +11,7 @@ namespace CodexAccountDesk;
 
 internal sealed class AccountWarningButton : Button
 {
-    public AccountWarningButton(string accountName, string details, Burn0Theme theme)
+    public AccountWarningButton(string accountName, string details, Burn0Theme theme, Action? relogin = null)
     {
         Name = "AccountWarningButton"; Width = 20; Height = 20; MinWidth = MinHeight = 0;
         Padding = new Thickness(2); Margin = new Thickness(0, 0, 4, 0); VerticalAlignment = VerticalAlignment.Center;
@@ -20,14 +20,14 @@ internal sealed class AccountWarningButton : Button
             Stroke = theme.Color("warning"), StrokeThickness = 1.8, StrokeLineJoin = PenLineJoin.Round,
             StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
             Width = 14, Height = 14, Stretch = Stretch.Uniform, IsHitTestVisible = false };
-        var tip = new ToolTip { Content = details, Style = ToolTipTheme.StyleFor(theme), PlacementTarget = this, Placement = PlacementMode.Bottom };
+        var tip = new ToolTip { Content = details + (relogin == null ? "" : "\n" + Loc.T("account.relogin")), Style = ToolTipTheme.StyleFor(theme), PlacementTarget = this, Placement = PlacementMode.Bottom };
         ToolTip = tip; ToolTipService.SetIsEnabled(this, false);
-        AutomationProperties.SetName(this, accountName + ": " + Loc.T("갱신 필요")); AutomationProperties.SetHelpText(this, details);
+        AutomationProperties.SetName(this, accountName + ": " + Loc.T(relogin == null ? "갱신 필요" : "account.relogin")); AutomationProperties.SetHelpText(this, details);
         var pinned = false;
         void Close() { pinned = false; tip.IsOpen = false; }
         MouseEnter += (_, _) => tip.IsOpen = true;
         MouseLeave += (_, _) => { if (!pinned) tip.IsOpen = false; };
-        Click += (_, _) => { pinned = !pinned; tip.IsOpen = pinned; };
+        Click += (_, _) => { if (relogin != null) { Close(); relogin(); } else { pinned = !pinned; tip.IsOpen = pinned; } };
         PreviewKeyDown += (_, args) => { if (args.Key == Key.Escape) { Close(); args.Handled = true; } };
         LostKeyboardFocus += (_, _) => Close();
         IsVisibleChanged += (_, _) => { if (!IsVisible) Close(); };

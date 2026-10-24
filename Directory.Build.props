@@ -1,5 +1,9 @@
 <Project>
   <PropertyGroup>
-    <Version>1.41.2</Version>
+    <Version>1.42.2</Version>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(SelfContained)' == 'true'">
+    <RuntimeFrameworkVersion>10.0.13</RuntimeFrameworkVersion>
+    <TargetLatestRuntimePatch>false</TargetLatestRuntimePatch>
   </PropertyGroup>
 </Project>

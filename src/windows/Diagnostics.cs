@@ -347,11 +347,11 @@ internal static class Diagnostics
         {
             var now = DateTimeOffset.Parse("2026-10-11T23:59:00+09:00");
             var until = DateTimeOffset.Parse("2026-10-13T00:30:00+09:00");
-            Assert(AccountTankCard.SubscriptionCountdown(until, now) == "D-2", "Countdown used the wrong calendar day");
-            Assert(AccountTankCard.SubscriptionCountdown(until, now.AddMinutes(2)) == "D-1", "Countdown did not change at Korean midnight");
-            Assert(AccountTankCard.SubscriptionCountdown(now.AddSeconds(1), now) == "오늘", "Same-day end was not shown");
-            Assert(AccountTankCard.SubscriptionCountdown(now.AddDays(-1), now) == "D+1", "Elapsed date was shown as future");
-            Assert(AccountTankCard.SubscriptionCountdown(null, now) == "", "Missing date became an invented countdown");
+            Assert(SubscriptionPresentation.Days(until, now) == "2", "Countdown used the wrong calendar day");
+            Assert(SubscriptionPresentation.Days(until, now.AddMinutes(2)) == "1", "Countdown did not change at Korean midnight");
+            Assert(SubscriptionPresentation.Days(now.AddSeconds(1), now) == "오늘", "Same-day end was not shown");
+            Assert(SubscriptionPresentation.Days(now.AddDays(-1), now) == Loc.F("subscription.expired_days", 1), "Elapsed date was shown as future");
+            Assert(SubscriptionPresentation.Days(null, now) == "—", "Missing date became an invented countdown");
         });
         Test("Subscription dates come from subscription claims rather than JWT expiration", () =>
         {
@@ -802,6 +802,7 @@ internal static class Diagnostics
             profile.Usage.Buckets[0].Primary!.UsedPercent = 100; Assert(AccountTankCard.SelectQuota(profile)!.Window.Remaining == 0, "Known zero quota was hidden");
         });
         SwitchDiagnostics.AddTests(Test, Assert, directory);
+        AccountAutomationUiDiagnostics.AddTests(Test, Assert, directory);
         File.WriteAllText(reportPath, JsonSerializer.Serialize(new { version = typeof(Program).Assembly.GetName().Version!.ToString(3), passed = tests.Count - failureCount, failed = failureCount,
             scope = "Local encryption, parsing, and isolated authentication-file switching; no live desktop was closed or switched.", tests }, new JsonSerializerOptions { WriteIndented = true }));
         Directory.Delete(directory, true);

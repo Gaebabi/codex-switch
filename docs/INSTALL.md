@@ -1,6 +1,6 @@
 # Build and install
 
-Download complete [1.41.1 Windows packages and Linux previews](https://github.com/Gaebabi/codex-switch/releases/tag/v1.41.1), or build from this repository. [macOS15+ packages remain 1.40.2](https://github.com/Gaebabi/codex-switch/releases/tag/v1.40.2); this release does not republish or relabel them. Packages include .NET10.0.13; a global .NET installation is unnecessary. Building requires .NET10.0.4xx SDK. Codex desktop/CLI must be installed separately.
+Download complete [1.42.2 Windows/macOS packages and Linux previews](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.2), or build from this repository. Packages include .NET10.0.13; a global .NET installation is unnecessary. Building requires .NET10.0.4xx SDK. Codex desktop/CLI must be installed separately.
 
 ## Windows
 
@@ -34,7 +34,7 @@ The installer validates the new app and preserves the previous installation. Loc
 
 ## Linux preview
 
-Release1.41.1 includes complete unsigned x64/ARM64 tar.gz/deb/rpm integration previews. [Download/use/build/native verification](development/LINUX_PACKAGES.md). DEB/RPM install system dependencies through the package manager; tar packages include a per-user installer. An existing supported Secret Service provider is required and is never replaced automatically. Full desktop/authenticated handoff acceptance remains separate from UI/package checks. [Requirements and pending gates](development/LINUX.md)
+Release1.42.2 includes complete unsigned x64/ARM64 tar.gz/deb/rpm integration previews. [Download/use/build/native verification](development/LINUX_PACKAGES.md). DEB/RPM install system dependencies through the package manager; tar packages include a per-user installer. An existing supported Secret Service provider is required and is never replaced automatically. Full desktop/authenticated handoff acceptance remains separate from UI/package checks. [Requirements and pending gates](development/LINUX.md)
 
 Desktop integration pins official OpenAI Linux client26.1007.71326; newer versions require compatibility review. The selected context must already use file credentials. Start Codex through the utility before working. Explicit-checksum CLI-only mode provides account/usage actions without desktop resumption. [Local desktop-session scope](development/LINUX_DESKTOP_SESSION.md)
 
@@ -44,4 +44,4 @@ Select **+**, complete browser sign-in, compare the cards and choose **Switch**.
 
 If sign-in automatically reuses the previous browser account, open the new authorization request in a separate browser profile/private window. Never paste authorization URLs, tokens or login codes into an issue.
 
-Release1.41.1's SHA256SUMS.txt covers its seven Windows/Linux packages and verification attachments. macOS1.40.2 has its own unchanged checksums. No automatic updater is configured. Mac packages are not notarized; use the normal first-launch approval flow in [Mac setup](MACOS.md). Existing releases remain available; current documentation describes current requirements.
+Release1.42.2's SHA256SUMS.txt covers its nine native-built Windows/macOS/Linux packages and verification attachments. No automatic updater is configured. Mac packages are not notarized; use the normal first-launch approval flow in [Mac setup](MACOS.md). Existing releases remain available; current documentation describes current requirements.

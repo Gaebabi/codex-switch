@@ -21,6 +21,7 @@ internal static class Program
         public string? PreviewPath { get; set; }
         public bool SelfTest { get; set; }
         public bool ExitExisting { get; set; }
+        public bool StartHidden { get; set; }
         public string? LanguageOverride { get; set; }
         public int LanguagePackProblems { get; set; }
         public bool SavedLanguageUnavailable { get; set; }
@@ -44,6 +45,7 @@ internal static class Program
                 var argument = arguments[i];
                 if (argument == "--self-test") { options.SelfTest = true; continue; }
                 if (argument == "--request-exit") { options.ExitExisting = true; continue; }
+                if (argument == "--start-hidden") { options.StartHidden = true; continue; }
                 if (i + 1 >= arguments.Length) throw new ArgumentException("명령행 옵션 값이 없습니다.");
                 var value = arguments[++i];
                 switch (argument)
@@ -75,6 +77,11 @@ internal static class Program
             if (options.SwitchAccount != null && options.ReportPath != null) throw new ArgumentException("조회 검증 모드에서 계정을 전환할 수 없습니다.");
             if (options.RecordDirectory != null && (options.SwitchAccount != null || options.ReportPath != null || options.ExitExisting || options.IconDirectory != null || options.SelfTest))
                 throw new ArgumentException("Choose dashboard recording separately from other commands.");
+            if (options.StartHidden && (options.SwitchAccount != null || options.ReportPath != null || options.ExitExisting || options.SelfTest || options.RecordDirectory != null ||
+                options.UiEvidenceDirectory != null || options.SessionReportPath != null || options.QueueReportPath != null || options.SwitchProtocolReportPath != null ||
+                options.HardwareReportPath != null || options.CpuSensorReportPath != null || options.IconDirectory != null || options.HardwarePreviewDirectory != null ||
+                options.TrendPreviewDirectory != null || options.TankPreviewDirectory != null))
+                throw new ArgumentException("Choose tray-only startup separately from diagnostic or account actions.");
             return options;
         }
     }
@@ -112,7 +119,7 @@ internal static class Program
             if (options.ExitExisting) { RequestExisting(namespaceKey, "exit"); return 0; }
             if (options.RecordDirectory != null) { RequestExisting(namespaceKey, "record:" + options.RecordDirectory); return 0; }
             using var mutex = new Mutex(true, "Local\\CodexAccountDesk-" + namespaceKey, out var firstInstance);
-            if (!firstInstance) { RequestExisting(namespaceKey, options.SwitchAccount == null ? "activate" : "switch:" + options.SwitchAccount); return 0; }
+            if (!firstInstance) { if (!options.StartHidden) RequestExisting(namespaceKey, options.SwitchAccount == null ? "activate" : "switch:" + options.SwitchAccount); return 0; }
             var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             var vault = new AccountVault(options.DataDirectory);
             options.LanguagePackProblems = Loc.LoadInstalled(Path.Combine(vault.DirectoryPath, "languages")).Count;
@@ -127,13 +134,23 @@ internal static class Program
             app.DispatcherUnhandledException += (_, exception) =>
             {
                 exception.Handled = true;
-                window.ShowError(exception.Exception);
+                if (options.StartHidden && !window.IsVisible) window.ReportBackgroundError(exception.Exception);
+                else window.ShowError(exception.Exception);
             };
-            app.Run(window); stop.Cancel();
+            if (options.StartHidden)
+            {
+                app.MainWindow = window;
+                app.Startup += async (_, _) => await window.StartInTrayAsync();
+                app.Run();
+            }
+            else app.Run(window);
+            stop.Cancel();
             return 0;
         }
         catch (Exception error)
         {
+            if (arguments.Contains("--start-hidden", StringComparer.Ordinal))
+            { Console.Error.WriteLine(Loc.Error(UserErrors.Describe(error))); return 1; }
             MessageBox.Show(Loc.Error(UserErrors.Describe(error)), "Codex Switch", MessageBoxButton.OK, MessageBoxImage.Error);
             return 1;
         }

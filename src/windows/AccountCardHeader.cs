@@ -9,7 +9,7 @@ internal sealed class AccountCardHeader : Grid
     public StackPanel Actions { get; }
     private readonly TextBlock _name, _metadata;
     private readonly Dictionary<Button, (Thickness Padding, double Height, double Font)> _sizes = new();
-    public AccountCardHeader(string name, string metadata, Burn0Theme theme, StackPanel actions, bool current = false, string? warning = null)
+    public AccountCardHeader(string name, string metadata, Burn0Theme theme, StackPanel actions, bool current = false, string? warning = null, System.Action? relogin = null)
     {
         Actions = actions;
         ColumnDefinitions.Add(new()); ColumnDefinitions.Add(new() { Width = GridLength.Auto });
@@ -17,7 +17,7 @@ internal sealed class AccountCardHeader : Grid
         _name = new TextBlock { Text = name, FontSize = 14, FontWeight = FontWeights.SemiBold, Foreground = theme.Color("text"), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = name + "\n" + metadata, FlowDirection = FlowDirection.LeftToRight };
         _metadata = new TextBlock { Text = metadata, FontSize = 11, Foreground = theme.Color(current ? "accent" : "muted"), Margin = new Thickness(0, 3, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis };
         var title = new Grid(); title.ColumnDefinitions.Add(new() { Width = GridLength.Auto }); title.ColumnDefinitions.Add(new());
-        if (warning != null) title.Children.Add(new AccountWarningButton(name, warning, theme));
+        if (warning != null) title.Children.Add(new AccountWarningButton(name, warning, theme, relogin));
         _name.VerticalAlignment = VerticalAlignment.Center; Grid.SetColumn(_name, 1); title.Children.Add(_name);
         labels.Children.Add(title); labels.Children.Add(_metadata); Children.Add(labels);
         foreach (Button button in actions.Children) _sizes[button] = (button.Padding, button.MinHeight, button.FontSize);

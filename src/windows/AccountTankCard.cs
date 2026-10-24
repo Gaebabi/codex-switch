@@ -86,10 +86,10 @@ internal sealed class AccountTankCard : Grid
         foreach (var label in new[] { _depletionLabel, _resetLabel }) { label.HorizontalAlignment = HorizontalAlignment.Left; label.Margin = new Thickness(0, 0, 10, 0); label.LineHeight = 14; }
         ConfigureSummary(_depletion); ConfigureSummary(_reset); footer.Children.Add(_depletionLabel); Grid.SetRow(_resetLabel, 1); footer.Children.Add(_resetLabel);
         Grid.SetColumn(_depletion, 1); footer.Children.Add(_depletion); Grid.SetRow(_reset, 1); Grid.SetColumn(_reset, 1); footer.Children.Add(_reset);
-        _plan = Text(PlanLabel(profile.Plan), 12, "text", FontWeights.SemiBold);
+        _plan = Text(SubscriptionPresentation.Plan(profile.Plan), 12, "text", FontWeights.SemiBold);
         _plan.ToolTip = Loc.T("요금제") + " · " + (profile.Plan == "unknown" ? Loc.T("요금제 정보 없음") : _plan.Text);
         _subscriptionDate = Text(profile.SubscriptionActiveUntil is DateTimeOffset end
-            ? UsagePresentation.KoreanTime(end).ToString("MM'/'dd", System.Globalization.CultureInfo.InvariantCulture) : "—", 11, "muted", FontWeights.Medium);
+            ? UsagePresentation.KoreanTime(end).ToString("MM'/'dd", System.Globalization.CultureInfo.InvariantCulture) : "—", 11, "text", FontWeights.SemiBold);
         _subscriptionDate.ToolTip = profile.SubscriptionActiveUntil is DateTimeOffset until
             ? Loc.F("구독 종료 {0:yyyy/MM/dd HH:mm} (한국 시간)", UsagePresentation.KoreanTime(until)) : Loc.T("구독 종료일 정보 없음");
         _subscriptionDate.ToolTip += "\n" + Loc.T("로그인 정보의 구독 기간 기준");
@@ -99,9 +99,12 @@ internal sealed class AccountTankCard : Grid
         _plan.HorizontalAlignment = HorizontalAlignment.Right; _plan.Margin = new Thickness(8, 0, 0, 0); Grid.SetColumn(_plan, 2); footer.Children.Add(_plan);
         _subscriptionDays = Text("", 12, "text", FontWeights.SemiBold);
         _subscriptionDays.LineHeight = 14; _subscriptionDays.Margin = new Thickness(6, 0, 0, 0);
-        _subscriptionDays.Visibility = profile.SubscriptionActiveUntil.HasValue ? Visibility.Visible : Visibility.Collapsed;
+        _subscriptionDays.Visibility = Visibility.Visible;
         _subscriptionLine = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, ToolTip = _subscriptionDate.ToolTip };
-        _subscriptionLine.Children.Add(_subscriptionDate); _subscriptionLine.Children.Add(_subscriptionDays);
+        var endsLabel = Text(Loc.T("subscription.ends"), 11, "muted"); endsLabel.Margin = new Thickness(0, 0, 6, 0);
+        var daysLabel = Text(Loc.T("subscription.left"), 11, "muted"); daysLabel.Margin = new Thickness(8, 0, 0, 0);
+        _subscriptionLine.Children.Add(endsLabel); _subscriptionLine.Children.Add(_subscriptionDate);
+        _subscriptionLine.Children.Add(daysLabel); _subscriptionLine.Children.Add(_subscriptionDays);
         var resetCredits = profile.Usage?.AvailableResets;
         _resetCredits = Text(resetCredits is int count ? Loc.F("초기화권 {0}장", count) : Loc.T("초기화권 —"), 12, "text", FontWeights.SemiBold);
         _resetCredits.ToolTip = resetCredits is int available ? Loc.Count("초기화권 {0}개", available) : Loc.T("초기화권 정보 없음");
@@ -179,26 +182,14 @@ internal sealed class AccountTankCard : Grid
         var value = Math.Abs(amount) >= 10000 ? (amount / 1000).ToString("0.#", Loc.Culture) + "K" : amount.ToString("#,0.##", Loc.Culture);
         return Loc.F("크레딧 {0}", value);
     }
-    private static string PlanLabel(string plan) => plan.Trim().ToLowerInvariant() switch
-    {
-        "" or "unknown" => Loc.T("요금제 —"),
-        "prolite" or "pro_lite" => "Pro Lite",
-        var value => System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(value.Replace('_', ' '))
-    };
-    internal static string SubscriptionCountdown(DateTimeOffset? until, DateTimeOffset now)
-    {
-        if (until is not DateTimeOffset end) return "";
-        var days = (UsagePresentation.KoreanTime(end).Date - UsagePresentation.KoreanTime(now).Date).Days;
-        return days == 0 ? Loc.T("오늘") : days > 0 ? "D-" + days : "D+" + -days;
-    }
     private TextBlock Text(string text, double size, string color, FontWeight? weight = null) => new()
     { Text = text, FontSize = size, Foreground = _theme.Color(color), FontFamily = _theme.Font, FontWeight = weight ?? FontWeights.Normal, HorizontalAlignment = HorizontalAlignment.Center };
     private void ConfigureSummary(TextBlock text) { text.FontSize = 12; text.LineHeight = 14; text.FontWeight = FontWeights.SemiBold; text.Foreground = _theme.Color("text"); text.TextAlignment = TextAlignment.Left; text.VerticalAlignment = VerticalAlignment.Center; text.TextTrimming = TextTrimming.CharacterEllipsis; }
     public void Update(DateTimeOffset now)
     {
-        _subscriptionDays.Text = SubscriptionCountdown(_profile.SubscriptionActiveUntil, now);
+        _subscriptionDays.Text = SubscriptionPresentation.Days(_profile.SubscriptionActiveUntil, now);
         var subscriptionWarning = AccountDateWarnings.Subscription(_profile.SubscriptionActiveUntil, now);
-        _subscriptionDate.Foreground = _theme.Color(subscriptionWarning ? "warning" : "muted");
+        _subscriptionDate.Foreground = _theme.Color(subscriptionWarning ? "warning" : "text");
         _subscriptionDays.Foreground = _theme.Color(subscriptionWarning ? "warning" : "text");
         _reset.Foreground = _theme.Color(AccountDateWarnings.Reset(_choice?.Window.ResetsAt, now) ? "warning" : "text");
         if (_choice == null)
