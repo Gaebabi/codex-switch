@@ -71,16 +71,18 @@ internal static class WindowEvidence
                 window.WindowStartupLocation = WindowStartupLocation.Manual; window.Left = 20; window.Top = 20;
                 window.Show(); await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Loaded);
                 var handle = new WindowInteropHelper(window).Handle;
-                void Capture(string name)
+                async Task Capture(string name)
                 {
                     window.UpdateLayout();
+                    await window.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                    await Task.Delay(200);
                     product.GetType("CodexAccountDesk.NativeUiEvidence", true)!.GetMethod("Capture", BindingFlags.NonPublic | BindingFlags.Static,
                         null, new[] { typeof(Window), typeof(string) }, null)!.Invoke(null, new object[] { window, Path.Combine(output, name + ".png") });
                 }
                 await Call(window, "EnsureInitializedAsync", CancellationToken.None);
                 await Call(window, "RefreshAsync");
                 Check("Native ordinary refresh reads the fictional account", Successful());
-                await Task.Delay(200); Capture("initial");
+                await Capture("initial");
                 File.Delete(oldCli); Environment.SetEnvironmentVariable("CODEX_ACCOUNT_DESK_CLI", newCli);
                 // Invoke the actual button, including its async handler and operation tracking.
                 ((Button)Field(window, "_refresh")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -89,7 +91,7 @@ internal static class WindowEvidence
                 await Task.Delay(200);
                 await Wait(() => VisibleState(window, baseline ? "갱신 실패 · 이전 값" : "현재 로그인"));
                 Check(baseline ? "Baseline retains a visible refresh error after executable removal" : "Actual Refresh button visibly recovers after executable removal", Successful() != baseline);
-                Capture(baseline ? "before" : "after");
+                await Capture(baseline ? "before" : "after");
                 if (!baseline)
                 {
                     var replacementBytes = File.ReadAllBytes(newCli);
@@ -98,7 +100,7 @@ internal static class WindowEvidence
                     await Call(window, "RefreshAsync");
                     await Wait(() => VisibleState(window, "갱신 실패 · 이전 값"));
                     Check("Temporary installation gap is visible on the actual account card", !Successful());
-                    Capture("update-gap");
+                    await Capture("update-gap");
                     File.WriteAllBytes(newCli, replacementBytes);
                     Environment.SetEnvironmentVariable("CODEX_ACCOUNT_DESK_DESKTOP", Environment.ProcessPath);
                     var timer = (DispatcherTimer)Field(window, "_refreshTimer");
@@ -107,7 +109,7 @@ internal static class WindowEvidence
                     await Wait(() => !((bool)serviceType.GetProperty("IsBusy")!.GetValue(service)!));
                     await Wait(() => VisibleState(window, "현재 로그인"));
                     Check("Production timer callback recovers without another button click", Successful());
-                    await Task.Delay(200); Capture("automatic-recovery");
+                    await Capture("automatic-recovery");
                 }
                 Check("The same native window and service remain alive", window.IsVisible && new WindowInteropHelper(window).Handle == handle && ReferenceEquals(Field(window, "_service"), service));
                 Check("Canonical fixture credentials remain unchanged", File.ReadAllText(authPath) == originalAuth);
