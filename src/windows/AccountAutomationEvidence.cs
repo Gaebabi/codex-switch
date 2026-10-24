@@ -45,6 +45,9 @@ internal static class AccountAutomationEvidence
         typeof(MainWindow).GetField("_ready", fields)!.SetValue(window, true);
         try
         {
+            // The preceding warning scenario intentionally leaves a global error visible.
+            // Reset only that fictional status before measuring this independent scenario.
+            typeof(MainWindow).GetMethod("SetStatus", fields)!.Invoke(window, new object[] { "", false, Array.Empty<object?>() });
             for (var index = 0; index < accounts.Length; index++)
             {
                 accounts[index].Plan = new[] { "prolite", "pro", "promax", "free" }[index];
