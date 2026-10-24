@@ -837,7 +837,7 @@ internal static class Diagnostics
             new JsonSerializerOptions { WriteIndented = true }));
         return available ? 0 : 1;
     }
-    private static string FakeAuth(string subject, string email, string account, DateTimeOffset? subscriptionUntil = null, DateTimeOffset? subscriptionChecked = null)
+    internal static string FakeAuth(string subject, string email, string account, DateTimeOffset? subscriptionUntil = null, DateTimeOffset? subscriptionChecked = null)
     {
         string Encode(string value) => Convert.ToBase64String(Encoding.UTF8.GetBytes(value)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
         var token = Encode("{\"alg\":\"none\"}") + "." + Encode(JsonSerializer.Serialize(new Dictionary<string, object> { ["sub"] = subject, ["email"] = email, ["exp"] = 2050000000,
