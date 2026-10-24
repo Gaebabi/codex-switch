@@ -38,7 +38,7 @@ internal static class AutomaticSwitchPolicy
     private static bool Fresh(AccountProfile profile, DateTimeOffset now) =>
         profile.Error == null && !profile.IsRefreshing && !profile.RequiresApply && profile.Usage != null &&
         now >= profile.Usage.CheckedAt && now - profile.Usage.CheckedAt <= MaximumAge;
-    private static bool Valid(UsageWindow window, DateTimeOffset now) => double.IsFinite(window.UsedPercent) &&
+    private static bool Valid(UsageWindow window, DateTimeOffset now) => window.Minutes is > 0 && double.IsFinite(window.UsedPercent) &&
         window.UsedPercent is >= 0 and <= 100 && (window.ResetsAt == null || window.ResetsAt > now.ToUnixTimeSeconds());
     private static IEnumerable<(string Key, UsageWindow Window)> Windows(AccountProfile profile) =>
         profile.Usage!.Buckets.SelectMany(b => new[] {

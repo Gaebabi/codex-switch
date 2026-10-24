@@ -30,6 +30,15 @@ foreach (var change in new Action<AccountProfile>[] {
 }
 var staleSource = Profile("source", 5, true); staleSource.Error = "offline";
 Check("Cached low usage never initiates a switch", Choose(staleSource, target) == null);
+foreach (var duration in new long?[] { null, 0, -1 })
+{
+    var unknownSource = Profile("source", 5, true); var unknownTarget = Profile("target", 80);
+    unknownSource.Usage!.Buckets[0].Primary!.Minutes = duration; unknownTarget.Usage!.Buckets[0].Primary!.Minutes = duration;
+    Check("Matching unknown or invalid durations never qualify: " + (duration?.ToString() ?? "missing"), Choose(unknownSource, unknownTarget) == null);
+}
+var partialTarget = Profile("target", 80);
+partialTarget.Usage!.Buckets[0].Secondary = new() { UsedPercent = 0, Minutes = null };
+Check("An extra candidate window with unknown duration blocks automatic switching", Choose(source, partialTarget) == null);
 Check("Missing source never starts Codex", AutomaticSwitchPolicy.Select(new[] { target }, 10, now) == null);
 Check("Ambiguous current identities fail closed", AutomaticSwitchPolicy.Select(new[] { source, Profile("second-current", 5, true), target }, 10, now) == null);
 Check("Invalid persisted threshold fails closed", AutomaticSwitchPolicy.Select(new[] { source, target }, 99, now) == null);
