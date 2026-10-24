@@ -79,6 +79,21 @@ foreach (var failure in new[] { "launch-once", "launch-always", "apply", "cancel
     Check(failure + ": completed plan cleared", saved == null);
 }
 {
+    var backend = new FakeBackend { Failure = "close" }; AccountSwitchPlan? saved = null;
+    var coordinator = new AccountSwitchCoordinator(backend, p => saved = p, _ => { }, e => e.Message);
+    var plan = await coordinator.PrepareAsync("target", now, CancellationToken.None);
+    try { await coordinator.RunAsync(plan, CancellationToken.None); } catch (IOException) { }
+    Check("Unconfirmed shutdown retains recovery without applying or attempting a launch", saved?.DesktopRestartRequired == true && backend.Applies == 0 && backend.Launches == 0 && backend.Resumes == 0);
+}
+{
+    using var cancellation = new CancellationTokenSource();
+    var backend = new FakeBackend { Failure = "cancel-after-close", Cancel = cancellation }; AccountSwitchPlan? saved = null;
+    var coordinator = new AccountSwitchCoordinator(backend, p => saved = p, _ => { }, e => e.Message);
+    var plan = await coordinator.PrepareAsync("target", now, cancellation.Token); plan.Automatic = true;
+    try { await coordinator.RunAsync(plan, cancellation.Token); } catch (OperationCanceledException) { }
+    Check("Explicit automatic-switch cancellation reopens the source but prevents a later automatic retry", saved?.AutomaticRecoveryAttempts == 1 && backend.Current == "source" && backend.Launches == 1 && backend.Applies == 0 && backend.Resumes == 0);
+}
+{
     var backend = new FakeBackend(); AccountSwitchPlan? saved = null;
     var coordinator = new AccountSwitchCoordinator(backend, p => saved = p, _ => { }, e => e.Message);
     var plan = await coordinator.PrepareAsync("target", now, CancellationToken.None);
@@ -143,7 +158,7 @@ sealed class FakeBackend : IAccountSwitchBackend
     public Task<string?> CurrentAccountAsync(CancellationToken cancellation) => Task.FromResult<string?>(Current);
     public Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation) => Task.FromResult(new[] { new SwitchChat { Id = "chat", OriginalTitle = "Fictional work" } });
     public Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken cancellation) => Task.CompletedTask;
-    public Task CloseDesktopAsync(CancellationToken cancellation) { if (Failure == "cancel-after-close") Cancel!.Cancel(); return Task.CompletedTask; }
+    public Task CloseDesktopAsync(CancellationToken cancellation) { if (Failure == "close") throw new IOException("Synthetic shutdown remains incomplete"); if (Failure == "cancel-after-close") Cancel!.Cancel(); return Task.CompletedTask; }
     public Task ApplyAccountAsync(string key, string? source, CancellationToken cancellation) { if (Failure == "apply") throw new IOException("Synthetic apply failure"); Current = key; Applies++; return Task.CompletedTask; }
     public Task LaunchDesktopAsync(CancellationToken cancellation) { Launches++; if (Failure == "launch-always" || Failure == "launch-once" && Launches == 1) throw new IOException("Synthetic launch failure"); return Task.CompletedTask; }
     public Task<ChatResumeState> ResumeAsync(SwitchChat chat, Action sending, CancellationToken cancellation) { sending(); Resumes++; LastMarker = chat.ContinueMessageId; return Task.FromResult(ChatResumeState.Resumed); }

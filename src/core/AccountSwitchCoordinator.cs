@@ -78,6 +78,7 @@ internal sealed class AccountSwitchCoordinator
     }
     public async Task<bool> RunAsync(AccountSwitchPlan plan, CancellationToken cancellation)
     {
+        var shutdownConfirmed = plan.AccountApplied || plan.Phase is SwitchPhase.Applying or SwitchPhase.Launching or SwitchPhase.Resuming;
         try
         {
             var current = await _backend.CurrentAccountAsync(cancellation);
@@ -97,6 +98,7 @@ internal sealed class AccountSwitchCoordinator
                 cancellation.ThrowIfCancellationRequested();
                 plan.DesktopRestartRequired = true;
                 Checkpoint(plan, SwitchPhase.Closing); await _backend.CloseDesktopAsync(cancellation);
+                shutdownConfirmed = true;
                 cancellation.ThrowIfCancellationRequested();
                 if (await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
                     throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
@@ -134,9 +136,11 @@ internal sealed class AccountSwitchCoordinator
         catch (Exception error)
         {
             plan.Error = error is OperationCanceledException ? "전환 작업을 취소했습니다." : _describeError(error);
+            if (error is OperationCanceledException && cancellation.IsCancellationRequested && plan.Automatic)
+                plan.AutomaticRecoveryAttempts = Math.Max(1, plan.AutomaticRecoveryAttempts);
             // A cancellation or failed apply must not leave the desktop closed. Recover only the
             // recorded source/target identity; never overwrite credentials or repeat Continue here.
-            if (plan.DesktopRestartRequired)
+            if (plan.DesktopRestartRequired && shutdownConfirmed)
             {
                 using var recovery = new CancellationTokenSource(TimeSpan.FromSeconds(35));
                 try
