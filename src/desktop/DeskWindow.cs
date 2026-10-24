@@ -179,7 +179,7 @@ internal sealed class DeskWindow : Window
         _automaticSwitch.Content = new TextBlock { Text = automaticSwitchLabel + " ▾", TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center };
         Avalonia.Automation.AutomationProperties.SetName(_automaticSwitch, automaticSwitchLabel);
         _automaticSwitch.Margin = new Thickness(6, 0, 0, 0); Grid.SetColumn(_automaticSwitch, 2);
-        _automaticSwitch.FontSize = 10; _automaticSwitch.Padding = new Thickness(5, 1);
+        _automaticSwitch.FontSize = 10; _automaticSwitch.Padding = new Thickness(5, 1); _automaticSwitch.MinHeight = 20;
         ToolTip.SetTip(_automaticSwitch, Loc.F("auto.help", _service?.Vault.Data.AutomaticSwitchThreshold ?? 10) + "\n" +
             Loc.T(_service?.Vault.Data.AutomaticSwitchUsePriority == true ? "auto.custom" : "auto.optimal") + "\n" + Loc.T("auto.priority_help"));
         toolbar.Children.Add(_automaticSwitch);

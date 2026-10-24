@@ -1,8 +1,8 @@
 # Mac setup
 
-Current source1.35.0 uses .NET10 LTS with a reviewed macOS15+ support baseline and Codex desktop/CLI installed. Published1.27.6 bundles retain their older12.0 minimum; consult supported-OS policy rather than treating that old metadata as a support guarantee. [Build and install](INSTALL.md#mac)
+Current source1.42.2 uses .NET10 LTS with a reviewed macOS15+ support baseline and Codex desktop/CLI installed. Published1.27.6 bundles retain their older12.0 minimum; consult supported-OS policy rather than treating that old metadata as a support guarantee. [Build and install](INSTALL.md#mac)
 
-Download [1.40.2 Apple Silicon or Intel packages](https://github.com/Gaebabi/codex-switch/releases/tag/v1.40.2) for macOS15+ without installing .NET or building source. Extract the complete ZIP, run `Install.command`, then open the installed app in `~/Applications`. These bundles are ad-hoc signed and not Apple-notarized. If macOS blocks the installed app and you trust its source, use **System Settings → Privacy & Security → Open Anyway** for that app. [Apple's instructions](https://support.apple.com/en-us/102445)
+Download [1.42.2 Apple Silicon or Intel packages](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.2) for macOS15+ without installing .NET or building source. Extract the complete ZIP, run `Install.command`, then open the installed app in `~/Applications`. These bundles are ad-hoc signed and not Apple-notarized. If macOS blocks the installed app and you trust its source, use **System Settings → Privacy & Security → Open Anyway** for that app. [Apple's instructions](https://support.apple.com/en-us/102445)
 
 - **⌘R / F5:** refresh
 - **⌘W:** hide the window

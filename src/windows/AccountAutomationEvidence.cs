@@ -70,6 +70,7 @@ internal static class AccountAutomationEvidence
                     var a = button.TransformToAncestor(window).TransformBounds(new Rect(button.RenderSize));
                     var b = sessions.TransformToAncestor(window).TransformBounds(new Rect(sessions.RenderSize));
                     Check(button.IsEnabled && ((TextBlock)button.Content).Text == Loc.T("auto.off") + " ▾" && !a.IntersectsWith(b) && a.Right <= window.ActualWidth, name + "explicit Off label remains separate from counters");
+                    typeof(MainWindow).GetProperty(nameof(MainWindow.EvidenceReloginAccount), fields)!.SetValue(window, null);
                     Descendants<AccountWarningButton>(window).Single().RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                     Check(window.EvidenceReloginAccount == accounts[3].Key, name + "warning requests only the selected fictional login");
                     Capture(window, name + "500x360.png");
