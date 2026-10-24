@@ -30,6 +30,8 @@ internal static class AccountAutomationEvidence
             pictures.Add(name);
         }
         void Render() { typeof(MainWindow).GetMethod("RenderAccounts", fields)!.Invoke(window, null); typeof(MainWindow).GetMethod("UpdateControls", fields)!.Invoke(window, null); window.UpdateLayout(); }
+        static IntPtr NativeHandle(Visual owner, string action) =>
+            (PresentationSource.FromVisual(owner) as HwndSource ?? throw new InvalidOperationException(action + " has no native popup")).Handle;
         ContextMenu OpenMenu()
         {
             var button = Descendants<Button>(window).Single(b => b.Name == "AutomaticSwitchButton");
@@ -88,6 +90,8 @@ internal static class AccountAutomationEvidence
                 card.MenuButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 var accountMenu = card.MenuButton.ContextMenu!;
                 var priority = accountMenu.Items.OfType<MenuItem>().Single(i => i.Items.Count == 4);
+                priority.IsSubmenuOpen = true; await Task.Delay(120);
+                _ = NativeHandle((MenuItem)priority.Items[0], "Account priority submenu");
                 ((MenuItem)priority.Items[0]).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); accountMenu.IsOpen = false;
                 Check(AccountAutomation.OrderedAccounts(service)[0].Key == accounts[3].Key && new AccountVault(service.Vault.DirectoryPath).Data.AutomaticSwitchUsePriority, prefix + "account menu persists custom first priority");
                 menu = OpenMenu();
@@ -97,11 +101,11 @@ internal static class AccountAutomationEvidence
                 Render(); await Task.Delay(120); Capture(window, prefix + "enabled.png");
                 menu = OpenMenu(); await Task.Delay(120);
                 Check(((MenuItem)menu.Items[0]).IsChecked && menu.Items.OfType<MenuItem>().Single(i => i.Header as string == Loc.T("auto.custom")).IsChecked && menu.Items.OfType<MenuItem>().Single(i => i.Header as string == Loc.F("auto.threshold", 20)).IsChecked, prefix + "reopened menu reflects On custom mode and threshold");
-                Capture(((HwndSource)PresentationSource.FromVisual(menu)!).Handle, prefix + "menu.png");
+                Capture(NativeHandle(menu, "Automatic switching menu"), prefix + "menu.png");
                 var ranking = menu.Items.OfType<MenuItem>().Single(i => i.Header as string == Loc.T("auto.order"));
                 ranking.IsSubmenuOpen = true; await Task.Delay(120);
                 Check(((MenuItem)ranking.Items[0]).Header as string == Loc.F("auto.ranked_account", 1, accounts[3].DisplayName), prefix + "ranked account submenu reflects the chosen order");
-                Capture(((HwndSource)PresentationSource.FromVisual((MenuItem)ranking.Items[0])!).Handle, prefix + "order.png");
+                Capture(NativeHandle((MenuItem)ranking.Items[0], "Ranked account submenu"), prefix + "order.png");
                 menu.IsOpen = false;
             }
             File.WriteAllText(Path.Combine(directory, "account-automation-receipt.json"), JsonSerializer.Serialize(new {
