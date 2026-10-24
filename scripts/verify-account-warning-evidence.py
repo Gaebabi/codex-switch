@@ -12,8 +12,12 @@ parser.add_argument('--revision',required=True);parser.add_argument('--applicati
 parser.add_argument('--baseline',action='store_true');args=parser.parse_args()
 if not re.fullmatch('[0-9a-f]{40}',args.revision) or args.application_source and not re.fullmatch('[0-9a-f]{40}',args.application_source):raise SystemExit('Exact source revision required')
 report=json.loads((args.source/'account-warning-receipt.json').read_text())
-if report['os']!='Windows' or report['architecture']!='X64' or report['failed']!=0 or report['baseline']!=args.baseline or report['passed']!=(8 if args.baseline else 42):
-    raise SystemExit('The complete native warning verification must pass')
+if report['os']!='Windows' or report['architecture']!='X64' or report['failed']!=0 or report['baseline']!=args.baseline or report['passed']!=(8 if args.baseline else 44):
+    raise SystemExit('The complete native warning verification must pass; observed '+str(report.get('passed'))+' checks')
+if not args.baseline:
+    for check in ['Click requests browser reauthentication for the selected account without opening a real login in evidence mode',
+                  'Hover retains the themed wrapped full explanation and reauthentication hint']:
+        if report['checks'].count(check)!=2:raise SystemExit('Both themes require the account-specific login and independent hover checks')
 names={f'en-{theme}-account-warning-{case}.png' for theme in ['dark','light'] for case in (['600x440','500x360'] if args.baseline else ['600x440','500x360','tooltip','global'])}
 if set(report['images'])!=names or len(report['images'])!=len(names):raise SystemExit('Complete declared native warning images required')
 args.destination.mkdir(parents=True,exist_ok=True);images=[]

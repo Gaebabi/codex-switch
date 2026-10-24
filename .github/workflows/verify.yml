@@ -154,6 +154,16 @@ jobs:
           path: artifacts/native-ui/windows/public
           if-no-files-found: error
           retention-days: 14
+      - name: Validate actual account automation and subscription confirmation windows
+        env:
+          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/verify-account-automation-evidence.py artifacts/native-ui/windows/raw artifacts/account-automation/public --revision "${{ env.EVIDENCE_REVISION }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: account-automation-windows
+          path: artifacts/account-automation/public
+          if-no-files-found: error
+          retention-days: 14
       - name: Reproduce the original account-warning footer on the same native worker
         env:
           CODEX_SWITCH_DISPOSABLE_RUNNER: 'true'
@@ -170,16 +180,6 @@ jobs:
           retention-days: 14
       - name: Package the same verified native Windows application
         run: python scripts/package-desktop.py --app artifacts/win-x64 --rid win-x64 --output artifacts/release-candidate/win-x64
-      - name: Validate actual account automation and subscription confirmation windows
-        env:
-          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: python scripts/verify-account-automation-evidence.py artifacts/native-ui/windows/raw artifacts/account-automation/public --revision "${{ env.EVIDENCE_REVISION }}"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: account-automation-windows
-          path: artifacts/account-automation/public
-          if-no-files-found: error
-          retention-days: 14
       - name: Verify ordinary Windows initialization failure recovery
         run: dotnet run --project tests/windows-startup/CodexSwitch.WindowsStartup.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- artifacts/startup-recovery/raw
       - name: Export passing native startup recovery evidence
