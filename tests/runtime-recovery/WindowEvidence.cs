@@ -34,6 +34,18 @@ internal static class WindowEvidence
         Task Call(Window window, string name, params object[] values) => (Task)windowType.GetMethod(name, flags | BindingFlags.Public)!.Invoke(window, values)!;
         object Account() => ((Array)serviceType.GetProperty("Accounts")!.GetValue(service)!).GetValue(0)!;
         bool Successful() => Account().GetType().GetProperty("Error")!.GetValue(Account()) == null;
+        var translate = Assembly.Load("CodexSwitch.Core").GetType("CodexAccountDesk.Loc", true)!.GetMethod("T")!;
+        IEnumerable<DependencyObject> Visuals(DependencyObject parent)
+        {
+            yield return parent;
+            for (var index = 0; index < VisualTreeHelper.GetChildrenCount(parent); index++)
+                foreach (var child in Visuals(VisualTreeHelper.GetChild(parent, index))) yield return child;
+        }
+        bool VisibleState(Window owner, string source)
+        {
+            var expected = (string)translate.Invoke(null, new object[] { source })!;
+            return Visuals(owner).OfType<TextBlock>().Any(text => text.IsVisible && text.Text == expected);
+        }
         async Task Wait(Func<bool> ready)
         {
             var deadline = DateTime.UtcNow.AddSeconds(15);
@@ -75,7 +87,8 @@ internal static class WindowEvidence
                 await Wait(() => !((bool)serviceType.GetProperty("IsBusy")!.GetValue(service)!) &&
                     (int)Field(window, "_operations").GetType().GetProperty("Count")!.GetValue(Field(window, "_operations"))! == 0);
                 await Task.Delay(200);
-                Check(baseline ? "Baseline retains a refresh error after executable removal" : "Actual Refresh button recovers after executable removal", Successful() != baseline);
+                await Wait(() => VisibleState(window, baseline ? "갱신 실패 · 이전 값" : "현재 로그인"));
+                Check(baseline ? "Baseline retains a visible refresh error after executable removal" : "Actual Refresh button visibly recovers after executable removal", Successful() != baseline);
                 Capture(baseline ? "before" : "after");
                 if (!baseline)
                 {
@@ -83,7 +96,8 @@ internal static class WindowEvidence
                     File.Delete(newCli);
                     Environment.SetEnvironmentVariable("CODEX_ACCOUNT_DESK_DESKTOP", Path.Combine(root, "unavailable-during-update.exe"));
                     await Call(window, "RefreshAsync");
-                    Check("Temporary installation gap remains visible as a refresh failure", !Successful());
+                    await Wait(() => VisibleState(window, "갱신 실패 · 이전 값"));
+                    Check("Temporary installation gap is visible on the actual account card", !Successful());
                     Capture("update-gap");
                     File.WriteAllBytes(newCli, replacementBytes);
                     Environment.SetEnvironmentVariable("CODEX_ACCOUNT_DESK_DESKTOP", Environment.ProcessPath);
@@ -91,6 +105,7 @@ internal static class WindowEvidence
                     timer.Interval = TimeSpan.FromMilliseconds(100); timer.Start();
                     await Wait(Successful); timer.Stop();
                     await Wait(() => !((bool)serviceType.GetProperty("IsBusy")!.GetValue(service)!));
+                    await Wait(() => VisibleState(window, "현재 로그인"));
                     Check("Production timer callback recovers without another button click", Successful());
                     await Task.Delay(200); Capture("automatic-recovery");
                 }
