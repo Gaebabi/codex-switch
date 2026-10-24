@@ -83,7 +83,11 @@ internal static class AccountWarningEvidence
                     longWarning.Focus(); longWarning.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); await Task.Delay(150);
                     longWarning.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice, Environment.TickCount) { RoutedEvent = Mouse.MouseLeaveEvent });
                     tip.ApplyTemplate();
-                    Check(!tip.IsOpen && window.EvidenceReloginAccount == accounts[2].Key,
+                    // This same diagnostic is compiled against the unmodified historical
+                    // app for baseline:true. Resolve the new hook only in this after branch.
+                    var requestedLogin = typeof(MainWindow).GetProperty("EvidenceReloginAccount", BindingFlags.Instance | BindingFlags.NonPublic)
+                        ?? throw new InvalidOperationException("Current native app has no account-specific login evidence hook");
+                    Check(!tip.IsOpen && requestedLogin.GetValue(window) as string == accounts[2].Key,
                         "Click requests browser reauthentication for the selected account without opening a real login in evidence mode");
                     longWarning.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice, Environment.TickCount) { RoutedEvent = Mouse.MouseEnterEvent });
                     await Task.Delay(150); tip.ApplyTemplate();
