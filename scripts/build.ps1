@@ -20,5 +20,8 @@ if ($Verify) {
         Write-Output ($taskResult.tests | Where-Object { -not $_.passed } | Select-Object name,failure | ConvertTo-Json -Compress)
     }
     if ($taskProcess.ExitCode -ne 0 -or $taskResult.failed -ne 0) { throw 'Internal verification failed' }
+    $taskRecoveryProject = Join-Path $taskRoot 'tests/runtime-recovery/RuntimeRecovery.Tests.csproj'
+    & dotnet run --project $taskRecoveryProject -c Release --no-launch-profile -p:UseSharedCompilation=false
+    if ($LASTEXITCODE -ne 0) { throw 'Windows runtime replacement regression failed' }
 }
 Write-Output ('Executable: '+(Join-Path $taskOutput 'CodexSwitch.exe'))

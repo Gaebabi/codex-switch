@@ -1,0 +1,39 @@
+{
+  "baselineSource": "2779bfc135e4b3a2c9b7ab1141938c0605ac8e2c",
+  "platform": "Windows x64",
+  "sdk": "10.0.400",
+  "serviceRegressionChecks": 8,
+  "before": {
+    "passed": 4,
+    "checks": [
+      "Native ordinary refresh reads the fictional account",
+      "Baseline retains a refresh error after executable removal",
+      "The same native window and service remain alive",
+      "Canonical fixture credentials remain unchanged"
+    ],
+    "baseline": true,
+    "scope": "Actual Windows WPF window/button/timer and AccountService with fictional authentication and disposable offline JSON-RPC; no personal account, installed client shutdown or live update acceptance."
+  },
+  "after": {
+    "passed": 6,
+    "checks": [
+      "Native ordinary refresh reads the fictional account",
+      "Actual Refresh button recovers after executable removal",
+      "Temporary installation gap remains visible as a refresh failure",
+      "Production timer callback recovers without another button click",
+      "The same native window and service remain alive",
+      "Canonical fixture credentials remain unchanged"
+    ],
+    "baseline": false,
+    "scope": "Actual Windows WPF window/button/timer and AccountService with fictional authentication and disposable offline JSON-RPC; no personal account, installed client shutdown or live update acceptance."
+  },
+  "sha256": {
+    "src/application/AccountService.cs": "d3b8e580dfc7047f720c4109c22a0e873e588f39fe0185070cb1e5ddbdaa7b34",
+    "tests/runtime-recovery/Program.cs": "62d3d3b6327289ff6669e6eda5ffacb2dff3c682972378d89690b44057217281",
+    "tests/runtime-recovery/WindowEvidence.cs": "f4237e98e7708a31f7baab4f32cb5702da44847102e27c0bdf1bfbef334dd886",
+    "tests/runtime-recovery/RuntimeRecovery.Tests.csproj": "9ef74bcd134cc99f4ad9226111fe71c3055c391504689e136c4ef4a448cbd0de",
+    "docs/evidence/runtime-recovery/before.png": "8fd8b561eae42d889525134512acf0752b989b1ed1c4992d329142ea20369b8c",
+    "docs/evidence/runtime-recovery/after.png": "f289dec18c7f27a3683f901fa07fcc1628cf020a93529b6188977ac7e1e922a2",
+    "docs/evidence/runtime-recovery/automatic-recovery.png": "39c8ea28c3819da13306bcf5627bbd381783d23c4b5aa1def6583e59194f4ec6"
+  }
+}

@@ -24,6 +24,7 @@ internal sealed class AccountService
     public event Action? Changed;
     private readonly RefreshCoordinator _queries;
     private readonly SemaphoreSlim _querySlots = new(3, 3);
+    private readonly SemaphoreSlim _installationGate = new(1, 1);
     private readonly SemaphoreSlim _loginGate = new(1, 1);
     private readonly SemaphoreSlim _switchGate = new(1, 1);
     private readonly CancellationTokenSource _shutdown = new();
@@ -402,9 +403,31 @@ internal sealed class AccountService
     private async Task<CodexRpc> OpenAccountRpcAsync(string home, LinuxClientSession? client, string? workspace, CancellationToken cancellation)
     {
         if (client != null) return await client.OpenIsolatedRpcAsync(home, workspace, cancellation).ConfigureAwait(false);
-        var rpc = new CodexRpc(Installation.CliPath, home);
+        var installation = OperatingSystem.IsWindows() ? await WindowsInstallationAsync(cancellation).ConfigureAwait(false) : Installation;
+        var rpc = new CodexRpc(installation.CliPath, home);
         try { await rpc.InitializeAsync(cancellation).ConfigureAwait(false); return rpc; }
         catch { await rpc.DisposeAsync().ConfigureAwait(false); throw; }
+    }
+
+    private async Task<CodexInstallation> WindowsInstallationAsync(CancellationToken cancellation)
+    {
+        cancellation.ThrowIfCancellationRequested();
+        CodexInstallation Read() { lock (Vault.SyncRoot) return Installation; }
+        static bool Available(CodexInstallation value) => File.Exists(value.CliPath) &&
+            (value.DesktopPath.Length == 0 || File.Exists(value.DesktopPath));
+        var installation = Read();
+        if (Available(installation)) return installation;
+        // Most refreshes only check the cached files. Parallel accounts share one rediscovery.
+        await _installationGate.WaitAsync(cancellation).ConfigureAwait(false);
+        try
+        {
+            installation = Read();
+            if (Available(installation)) return installation;
+            installation = await RuntimeLocator.FindAsync(cancellation).ConfigureAwait(false);
+            lock (Vault.SyncRoot) Installation = installation;
+            return installation;
+        }
+        finally { _installationGate.Release(); }
     }
 }
 
