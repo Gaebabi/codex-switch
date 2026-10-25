@@ -166,11 +166,11 @@ internal sealed class DeskWindow : Window
         }); theme.Name = "ThemeButton"; theme.Classes.Add("title-action"); Grid.SetColumn(theme, 5); titlebar.Children.Add(theme);
         _settingsButton = _theme.IconButton(DeskButtonIconKind.More, Loc.T("설정"), OpenSettings); _settingsButton.Width = 28; _settingsButton.Padding = new Thickness(0);
         Grid.SetColumn(_settingsButton, 6); titlebar.Children.Add(_settingsButton); shell.Children.Add(titlebar);
-        var toolbar = new Grid { Margin = new Thickness(8, 1), ColumnDefinitions = new ColumnDefinitions("*,Auto,*") };
+        var toolbar = new Grid { Margin = new Thickness(8, 1), ColumnDefinitions = new ColumnDefinitions(nativeTitle ? "Auto,*,Auto" : "*,Auto,*") };
         _cancel = _theme.Button(Loc.T("취소"), () => { _login?.Cancel(); _switch?.Cancel(); }); _cancel.IsVisible = _login != null || _switch != null;
         _cancel.HorizontalAlignment = HorizontalAlignment.Left;
         toolbar.Children.Add(_cancel);
-        _sessionValues = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 24, HorizontalAlignment = HorizontalAlignment.Center };
+        _sessionValues = new StackPanel { Orientation = Orientation.Horizontal, Spacing = nativeTitle ? 12 : 24, HorizontalAlignment = HorizontalAlignment.Center };
         Grid.SetColumn(_sessionValues, 1);
         toolbar.Children.Add(_sessionValues);
         _automaticSwitch = _theme.Button(Loc.T(_service?.Vault.Data.AutomaticSwitchEnabled == true ? "auto.on" : "auto.off") + " ▾", OpenAutomaticSwitchMenu);
@@ -180,6 +180,7 @@ internal sealed class DeskWindow : Window
         Avalonia.Automation.AutomationProperties.SetName(_automaticSwitch, automaticSwitchLabel);
         _automaticSwitch.Margin = new Thickness(6, 0, 0, 0); Grid.SetColumn(_automaticSwitch, 2);
         _automaticSwitch.FontSize = 10; _automaticSwitch.Padding = new Thickness(5, 1); _automaticSwitch.MinHeight = 20;
+        if (nativeTitle) { _automaticSwitch.MinWidth = 132; _automaticSwitch.MaxWidth = 160; }
         ToolTip.SetTip(_automaticSwitch, Loc.F("auto.help", _service?.Vault.Data.AutomaticSwitchThreshold ?? 10) + "\n" +
             Loc.T(_service?.Vault.Data.AutomaticSwitchUsePriority == true ? "auto.custom" : "auto.optimal") + "\n" + Loc.T("auto.priority_help"));
         toolbar.Children.Add(_automaticSwitch);
@@ -283,6 +284,8 @@ internal sealed class DeskWindow : Window
     { Loc.SetLanguage(language); _theme = new(dark, _host.Appearance); _preview = profiles; Build(); UpdateTray(); }
     internal IReadOnlyList<MacAccountCard> Cards => _cards;
     internal ScrollViewer AccountScroll => _accountScroll;
+    internal Button AutomaticSwitchButton => _automaticSwitch;
+    internal Control SessionValues => _sessionValues;
     private async Task RunAsync(Func<CancellationToken, Task> action)
     {
         if (Exiting) return;

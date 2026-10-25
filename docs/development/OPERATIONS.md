@@ -8,6 +8,8 @@ GitHub About/topics/homepage and Settings → Social preview are repository sett
 
 ## Application operation
 
+Linux minimum-width header captions use content-sized automatic/cancel columns; counter gaps alone become smaller in the native titlebar. The header height and account viewport are unchanged. Native UI diagnostics require the entire rendered automatic-switch caption/state within its button and no action/counter overlap. [Issue115 delivery](RELEASE_1_42_4.md). The disposable framed harness identifies its own Xfconf bus sender by UID/executable/HOME and uses a pidfd to await writer shutdown before deleting the temporary home; it never adopts or stops an owner's desktop process.
+
 [Account reauthentication and optional automatic switching](ACCOUNT_AUTOMATION.md) documents the toolbar threshold menu, failure pause, Recover action and bounded startup recovery. Account automation is Off by default; it does not require a vault format or credential migration.
 
 Windows source 1.42.2 adds `--start-hidden` for an ordinary tray-only launch. It initializes the normal utility without showing/activating a window; a duplicate hidden launch does not activate an existing window. Use it to restart the utility after an authorized local installation update while leaving Codex and user focus untouched. Opening the app through its tray/normal shortcut still shows the window. The option rejects diagnostic/account-action combinations. Startup/background errors remain available in status or redirected stderr without a forced popup.

@@ -101,6 +101,9 @@ try:
     run(['docker', 'cp', identifier + ':/results/.', str(output / 'results')])
     if session.returncode:
         print((output / 'session-private.log').read_text(encoding='utf-8', errors='replace')[-5000:])
+        child_error = output / 'results/failed-command-private.log'
+        if child_error.is_file():
+            print('Disposable fixture child diagnostics:\n' + child_error.read_text(encoding='utf-8', errors='replace')[-4000:])
         raise SystemExit(session.returncode)
     result = json.loads((output / 'results/session.json').read_text(encoding='utf-8'))
     if result['failed'] or result['expected'] != expected or not result['ordinaryUi'] or result['accountsUsed']:

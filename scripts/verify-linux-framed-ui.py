@@ -5,6 +5,8 @@ import json
 import os
 from pathlib import Path
 import re
+import select
+import signal
 import subprocess
 import sys
 import tempfile
@@ -30,6 +32,22 @@ if not args.inside:
     raise SystemExit(0)
 output.mkdir(parents=True);raw=output.parent/(output.name+'-raw')
 if raw.exists():raise SystemExit('Raw capture directory must be fresh')
+def owned_configuration_writer():
+    command=['gdbus','call','--session','--dest','org.freedesktop.DBus','--object-path','/org/freedesktop/DBus','--method']
+    owner=subprocess.run(command+['org.freedesktop.DBus.NameHasOwner','org.xfce.Xfconf'],capture_output=True,text=True,check=True,timeout=5).stdout
+    if owner.strip()=='(false,)':return None
+    if owner.strip()!='(true,)':raise RuntimeError('Unexpected owned Xfconf bus response')
+    value=subprocess.run(command+['org.freedesktop.DBus.GetConnectionUnixProcessID','org.xfce.Xfconf'],capture_output=True,text=True,check=True,timeout=5).stdout
+    match=re.fullmatch(r'\(uint32 (\d+),\)\s*',value)
+    if not match:raise RuntimeError('Owned Xfconf PID is unavailable')
+    pid=int(match.group(1));process=Path('/proc')/str(pid);descriptor=os.pidfd_open(pid)
+    try:
+        environment=dict(entry.split(b'=',1) for entry in (process/'environ').read_bytes().split(b'\0') if b'=' in entry)
+        if process.stat().st_uid!=os.getuid() or (process/'exe').resolve(strict=True).name!='xfconfd' or environment.get(b'HOME')!=os.environ['HOME'].encode():
+            raise RuntimeError('Refuse cleanup of an unrelated configuration process')
+        return descriptor
+    except BaseException:
+        os.close(descriptor);raise
 with (output.parent/(output.name+'-private.log')).open('wb') as log:
     manager=subprocess.Popen(['xfwm4','--compositor=off'],stdout=log,stderr=log)
     try:
@@ -42,8 +60,19 @@ with (output.parent/(output.name+'-private.log')).open('wb') as log:
             time.sleep(.1)
         subprocess.run([str(app),'--verify-ui',str(raw)],stdout=log,stderr=log,check=True,timeout=120)
     finally:
-        if manager.poll() is None:manager.terminate()
-        manager.wait(timeout=10)
+        writer=None
+        try:
+            writer=owned_configuration_writer()
+        finally:
+            try:
+                if manager.poll() is None:manager.terminate()
+                manager.wait(timeout=10)
+            finally:
+                if writer is not None:
+                    try:
+                        if not select.select([writer],[],[],0)[0]:signal.pidfd_send_signal(writer,signal.SIGTERM)
+                        if not select.select([writer],[],[],10)[0]:raise RuntimeError('Owned Xfconf writer did not exit before temporary-home cleanup')
+                    finally:os.close(writer)
 render=json.loads((raw/'render-report.json').read_text());report=json.loads((raw/'wm-report.json').read_text())
 if render['failures'] or len(render['checks'])!=12 or report['failures'] or len(report['frames'])!=12:
     raise RuntimeError('Complete native app/card/frame verification is required')
