@@ -12,6 +12,13 @@ internal static class AutomaticSwitchPolicy
 
     // Compare the same quota buckets/windows, independently of the card's display selection.
     public static AccountProfile? Select(IEnumerable<AccountProfile> accounts, int threshold, DateTimeOffset now, IReadOnlyList<string>? priority = null)
+        => Choose(accounts, threshold, now, priority, true);
+
+    // Read-only forecast: use identical candidate guards without requiring low source quota.
+    public static AccountProfile? Next(IEnumerable<AccountProfile> accounts, int threshold, DateTimeOffset now, IReadOnlyList<string>? priority = null)
+        => Choose(accounts, threshold, now, priority, false);
+
+    private static AccountProfile? Choose(IEnumerable<AccountProfile> accounts, int threshold, DateTimeOffset now, IReadOnlyList<string>? priority, bool requireTrigger)
     {
         if (!ValidThreshold(threshold)) return null;
         var profiles = accounts.ToArray();
@@ -19,7 +26,7 @@ internal static class AutomaticSwitchPolicy
         var current = active.Length == 1 ? active[0] : null;
         if (current == null || !Fresh(current, now)) return null;
         var windows = Windows(current).ToArray();
-        if (windows.Length == 0 || windows.Any(w => !Valid(w.Window, now)) || windows.Min(w => w.Window.Remaining) >= threshold) return null;
+        if (windows.Length == 0 || windows.Any(w => !Valid(w.Window, now)) || requireTrigger && windows.Min(w => w.Window.Remaining) >= threshold) return null;
         return profiles.Where(p => !p.IsCurrent && Fresh(p, now) && p.Usage!.OrdinaryUsageAllowed != false &&
                 !p.Usage.Buckets.Any(b => b.LimitState != null || b.SpendControlReached == true))
             .Select(p => new { Profile = p, Windows = Windows(p).ToDictionary(w => w.Key, w => w.Window) })
@@ -27,6 +34,7 @@ internal static class AutomaticSwitchPolicy
                 candidate.Minutes == w.Window.Minutes && candidate.Remaining >= threshold + 5) &&
                 p.Windows.Values.All(w => Valid(w, now) && w.Remaining >= threshold + 5))
             .OrderBy(p => priority == null ? 0 : Rank(priority, p.Profile.Key))
+            .ThenBy(p => priority == null && p.Profile.SubscriptionActiveUntil is DateTimeOffset until && until > now ? until : DateTimeOffset.MaxValue)
             .ThenByDescending(p => p.Windows.Values.Min(w => w.Remaining))
             .ThenBy(p => p.Profile.Key, StringComparer.Ordinal).Select(p => p.Profile).FirstOrDefault();
     }

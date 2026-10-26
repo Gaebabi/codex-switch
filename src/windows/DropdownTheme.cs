@@ -11,6 +11,32 @@ namespace CodexAccountDesk;
 
 internal static class DropdownTheme
 {
+    public static MenuItem Switch(string label, bool enabled, Burn0Theme theme)
+    {
+        var item = new MenuItem { Header = label, IsCheckable = true, IsChecked = enabled, StaysOpenOnClick = true };
+        var template = new ControlTemplate(typeof(MenuItem));
+        var surface = new FrameworkElementFactory(typeof(Border)); surface.Name = "surface";
+        surface.SetValue(Border.CornerRadiusProperty, new CornerRadius(6)); surface.SetValue(Border.PaddingProperty, new Thickness(8, 7, 10, 7));
+        surface.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+        var panel = new FrameworkElementFactory(typeof(DockPanel));
+        var track = new FrameworkElementFactory(typeof(Border)); track.Name = "track";
+        track.SetValue(DockPanel.DockProperty, Dock.Right); track.SetValue(FrameworkElement.WidthProperty, 34.0); track.SetValue(FrameworkElement.HeightProperty, 18.0);
+        track.SetValue(FrameworkElement.MarginProperty, new Thickness(18, 0, 0, 0)); track.SetValue(Border.CornerRadiusProperty, new CornerRadius(9));
+        track.SetValue(Border.BackgroundProperty, theme.Color("muted")); track.SetValue(Border.PaddingProperty, new Thickness(2));
+        var thumb = new FrameworkElementFactory(typeof(Border)); thumb.Name = "thumb";
+        thumb.SetValue(FrameworkElement.WidthProperty, 14.0); thumb.SetValue(FrameworkElement.HeightProperty, 14.0);
+        thumb.SetValue(Border.CornerRadiusProperty, new CornerRadius(7)); thumb.SetValue(Border.BackgroundProperty, theme.Color("surface"));
+        thumb.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left); track.AppendChild(thumb); panel.AppendChild(track);
+        var text = new FrameworkElementFactory(typeof(TextBlock)); text.SetBinding(TextBlock.TextProperty, ParentBinding("Header"));
+        text.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center); panel.AppendChild(text); surface.AppendChild(panel); template.VisualTree = surface;
+        var on = new Trigger { Property = MenuItem.IsCheckedProperty, Value = true };
+        on.Setters.Add(new Setter(Border.BackgroundProperty, theme.Color("accent"), "track"));
+        on.Setters.Add(new Setter(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Right, "thumb")); template.Triggers.Add(on);
+        var hover = new Trigger { Property = MenuItem.IsHighlightedProperty, Value = true };
+        hover.Setters.Add(new Setter(Border.BackgroundProperty, theme.Color("hover"), "surface")); template.Triggers.Add(hover);
+        item.Template = template;
+        return item;
+    }
     public static ContextMenu Create(FrameworkElement owner, Burn0Theme theme)
     {
         var menu = new ContextMenu { PlacementTarget = owner, Placement = PlacementMode.Custom,

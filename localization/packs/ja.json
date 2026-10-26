@@ -6,7 +6,10 @@
   "culture": "ja-JP",
   "direction": "ltr",
   "strings": {
-    "auto.optimal": "最適なアカウントを自動選択",
+    "auto.title": "Auto Switch",
+    "auto.next": "次の切替: {0}",
+    "auto.next_unavailable": "次の切替: 対象なし",
+    "auto.optimal": "有効期限が近い順",
     "auto.custom": "優先順位を指定",
     "auto.priority": "優先順位{0}",
     "auto.priority_help": "各アカウントのメニューで順位を設定します。利用できないアカウントは除外されます。",

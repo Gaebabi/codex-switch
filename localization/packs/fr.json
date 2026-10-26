@@ -6,7 +6,10 @@
   "culture": "fr-FR",
   "direction": "ltr",
   "strings": {
-    "auto.optimal": "Choisir le meilleur compte",
+    "auto.title": "Auto Switch",
+    "auto.next": "Prochain : {0}",
+    "auto.next_unavailable": "Prochain : aucun compte admissible",
+    "auto.optimal": "Expiration la plus proche en premier",
     "auto.custom": "Priorité personnalisée",
     "auto.priority": "Priorité {0}",
     "auto.priority_help": "Définissez le rang dans le menu du compte. Les comptes indisponibles sont ignorés.",

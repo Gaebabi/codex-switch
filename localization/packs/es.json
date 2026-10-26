@@ -6,7 +6,10 @@
   "culture": "es-ES",
   "direction": "ltr",
   "strings": {
-    "auto.optimal": "Elegir la mejor cuenta",
+    "auto.title": "Auto Switch",
+    "auto.next": "Siguiente: {0}",
+    "auto.next_unavailable": "Siguiente: ninguna cuenta apta",
+    "auto.optimal": "Vencimiento más próximo primero",
     "auto.custom": "Prioridad personalizada",
     "auto.priority": "Prioridad {0}",
     "auto.priority_help": "Ordena las cuentas desde su menú. Se omiten las cuentas no disponibles.",

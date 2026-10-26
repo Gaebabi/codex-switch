@@ -173,15 +173,15 @@ internal sealed class DeskWindow : Window
         _sessionValues = new StackPanel { Orientation = Orientation.Horizontal, Spacing = nativeTitle ? 12 : 24, HorizontalAlignment = HorizontalAlignment.Center };
         Grid.SetColumn(_sessionValues, 1);
         toolbar.Children.Add(_sessionValues);
-        _automaticSwitch = _theme.Button(Loc.T(_service?.Vault.Data.AutomaticSwitchEnabled == true ? "auto.on" : "auto.off") + " ▾", OpenAutomaticSwitchMenu);
+        _automaticSwitch = _theme.Button(Loc.T("auto.title") + " ▾", OpenAutomaticSwitchMenu);
         _automaticSwitch.Name = "AutomaticSwitchButton"; _automaticSwitch.HorizontalAlignment = HorizontalAlignment.Right;
         var automaticSwitchLabel = Loc.T(_service?.Vault.Data.AutomaticSwitchEnabled == true ? "auto.on" : "auto.off");
-        _automaticSwitch.Content = new TextBlock { Text = automaticSwitchLabel + " ▾", TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center };
+        _automaticSwitch.Content = new TextBlock { Text = Loc.T("auto.title") + " ▾", TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center };
         Avalonia.Automation.AutomationProperties.SetName(_automaticSwitch, automaticSwitchLabel);
         _automaticSwitch.Margin = new Thickness(6, 0, 0, 0); Grid.SetColumn(_automaticSwitch, 2);
         _automaticSwitch.FontSize = 10; _automaticSwitch.Padding = new Thickness(5, 1); _automaticSwitch.MinHeight = 20;
         if (nativeTitle) { _automaticSwitch.MinWidth = 132; _automaticSwitch.MaxWidth = 160; }
-        ToolTip.SetTip(_automaticSwitch, Loc.F("auto.help", _service?.Vault.Data.AutomaticSwitchThreshold ?? 10) + "\n" +
+        ToolTip.SetTip(_automaticSwitch, automaticSwitchLabel + "\n" + (_service == null ? Loc.T("auto.next_unavailable") : AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow)) + "\n" + Loc.F("auto.help", _service?.Vault.Data.AutomaticSwitchThreshold ?? 10) + "\n" +
             Loc.T(_service?.Vault.Data.AutomaticSwitchUsePriority == true ? "auto.custom" : "auto.optimal") + "\n" + Loc.T("auto.priority_help"));
         toolbar.Children.Add(_automaticSwitch);
         if (nativeTitle)
@@ -331,6 +331,7 @@ internal sealed class DeskWindow : Window
                 if (pending != null && pending.TargetAccountKey != profile.Key) throw new InvalidOperationException(Loc.T("남은 채팅 재개 작업을 먼저 처리해 주세요."));
                 var plan = pending ?? await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, _switch.Token);
                 plan.Automatic |= automatic;
+                if (!automatic) plan.AutomaticRecoveryAttempts = 0;
                 lock (_service.Vault.SyncRoot) { _service.Vault.Data.PendingSwitch = plan; _service.Vault.Save(); }
                 if (!await coordinator.RunAsync(plan, _switch.Token))
                     _statusMessage = automatic ? Loc.T("auto.paused") : Loc.F("계정 전환 완료. 재개 확인이 필요한 채팅 {0}개",
@@ -345,9 +346,11 @@ internal sealed class DeskWindow : Window
         if (!_ready || _service == null) return;
         var data = _service.Vault.Data;
         var menu = _theme.Menu(_automaticSwitch);
-        var enabled = new MenuItem { Header = Loc.T("auto.enable"), ToggleType = MenuItemToggleType.CheckBox, IsChecked = data.AutomaticSwitchEnabled };
-        enabled.Click += (_, _) => { lock (_service.Vault.SyncRoot) { data.AutomaticSwitchEnabled = enabled.IsChecked; _service.Vault.Save(); } Build(); };
-        var items = new List<object> { enabled, new Separator() };
+        var enabled = new ToggleSwitch { Content = Loc.T("auto.title"), IsChecked = data.AutomaticSwitchEnabled, OnContent = "", OffContent = "" };
+        Avalonia.Automation.AutomationProperties.SetName(enabled, Loc.T("auto.enable"));
+        var next = new MenuItem { Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow), IsEnabled = false };
+        enabled.IsCheckedChanged += (_, _) => { lock (_service.Vault.SyncRoot) { data.AutomaticSwitchEnabled = enabled.IsChecked == true; _service.Vault.Save(); } Build(); };
+        var items = new List<object> { new MenuItem { Header = enabled, StaysOpenOnClick = true }, next, new Separator() };
         foreach (var custom in new[] { false, true })
         {
             var mode = new MenuItem { Header = Loc.T(custom ? "auto.custom" : "auto.optimal"), ToggleType = MenuItemToggleType.Radio, IsChecked = data.AutomaticSwitchUsePriority == custom };

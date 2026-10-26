@@ -166,7 +166,7 @@ internal sealed class MainWindow : Window
         _sessionCount.HorizontalAlignment = HorizontalAlignment.Center;
         Grid.SetColumn(_sessionCount, 1);
         toolbarRow.Children.Add(_sessionCount); body.Children.Add(toolbarRow);
-        ConfigureButton(_automaticSwitch, "auto.off", null);
+        ConfigureButton(_automaticSwitch, "auto.title", null);
         _automaticSwitch.Name = "AutomaticSwitchButton";
         _automaticSwitch.HorizontalAlignment = HorizontalAlignment.Right; _automaticSwitch.Margin = new Thickness(6, 0, 0, 0);
         Grid.SetColumn(_automaticSwitch, 2);
@@ -773,7 +773,9 @@ internal sealed class MainWindow : Window
                 var coordinator = new AccountSwitchCoordinator(backend, SaveSwitch, SwitchChanged, UserErrors.Describe);
                 var plan = pending?.TargetAccountKey == profile.Key ? JsonSerializer.Deserialize<AccountSwitchPlan>(JsonSerializer.Serialize(pending))! :
                     await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, cancellation);
-                plan.Automatic |= automatic; SaveSwitch(plan);
+                plan.Automatic |= automatic;
+                if (!automatic) plan.AutomaticRecoveryAttempts = 0;
+                SaveSwitch(plan);
                 if (await coordinator.RunAsync(plan, cancellation)) SetStatus("계정을 전환하고 채팅을 재개했습니다.");
                 else SetStatus("계정 전환 완료. 재개 확인이 필요한 채팅 {0}개", true,
                     plan.Chats.Count(chat => chat.ResumeState is ChatResumeState.Unconfirmed or ChatResumeState.Failed or ChatResumeState.Pending or ChatResumeState.Sending));
@@ -805,18 +807,20 @@ internal sealed class MainWindow : Window
     internal ContextMenu BuildAutomaticSwitchMenu()
     {
         var menu = DropdownTheme.Create(_automaticSwitch, _theme);
-        var enabled = new MenuItem { Header = Loc.T("auto.enable"), IsCheckable = true, IsChecked = _service.Vault.Data.AutomaticSwitchEnabled };
+        var enabled = DropdownTheme.Switch(Loc.T("auto.title"), _service.Vault.Data.AutomaticSwitchEnabled, _theme);
+        System.Windows.Automation.AutomationProperties.SetName(enabled, Loc.T("auto.enable"));
+        var next = new MenuItem { Name = "NextAutomaticAccount", Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow), IsEnabled = false };
         enabled.Click += (_, _) =>
         {
             lock (_service.Vault.SyncRoot) { _service.Vault.Data.AutomaticSwitchEnabled = enabled.IsChecked; _service.Vault.Save(); }
             UpdateControls();
         };
-        menu.Items.Add(enabled); menu.Items.Add(new Separator());
+        menu.Items.Add(enabled); menu.Items.Add(next); menu.Items.Add(new Separator());
         foreach (var custom in new[] { false, true })
         {
             var item = new MenuItem { Header = Loc.T(custom ? "auto.custom" : "auto.optimal"), IsCheckable = true, IsChecked = _service.Vault.Data.AutomaticSwitchUsePriority == custom };
             if (custom) item.ToolTip = Loc.T("auto.priority_help");
-            item.Click += (_, _) => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.AutomaticSwitchUsePriority = custom; _service.Vault.Save(); } UpdateControls(); };
+            item.Click += (_, _) => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.AutomaticSwitchUsePriority = custom; _service.Vault.Save(); } UpdateControls(); next.Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow); };
             menu.Items.Add(item);
         }
         var ranking = new MenuItem { Header = Loc.T("auto.order") };
@@ -874,11 +878,14 @@ internal sealed class MainWindow : Window
     private void UpdateControls()
     {
         var automaticSwitchLabel = Loc.T(_service.Vault.Data.AutomaticSwitchEnabled ? "auto.on" : "auto.off");
-        _automaticSwitch.Content = new TextBlock { Text = automaticSwitchLabel + " ▾", TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center };
+        _automaticSwitch.Content = new TextBlock { Text = Loc.T("auto.title") + " ▾", TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center };
         System.Windows.Automation.AutomationProperties.SetName(_automaticSwitch, automaticSwitchLabel);
-        _automaticSwitch.ToolTip = Loc.F("auto.help", _service.Vault.Data.AutomaticSwitchThreshold) + "\n" +
+        _automaticSwitch.ToolTip = automaticSwitchLabel + "\n" + AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow) + "\n" + Loc.F("auto.help", _service.Vault.Data.AutomaticSwitchThreshold) + "\n" +
             Loc.T(_service.Vault.Data.AutomaticSwitchUsePriority ? "auto.custom" : "auto.optimal") + "\n" + Loc.T("auto.priority_help");
         _automaticSwitch.IsEnabled = _ready && !_closing;
+        if (_automaticSwitch.ContextMenu is { IsOpen: true } openMenu)
+            foreach (var next in openMenu.Items.OfType<MenuItem>().Where(item => item.Name == "NextAutomaticAccount"))
+                next.Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow);
         _refresh.IsEnabled = CanRefresh; _add.IsEnabled = _ready && !_loggingIn && !_closing;
         if (_importCurrent != null) _importCurrent.IsEnabled = !_closing;
         _loginPanel.Visibility = _loggingIn ? Visibility.Visible : Visibility.Collapsed;

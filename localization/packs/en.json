@@ -6,7 +6,10 @@
   "culture": "en-US",
   "direction": "ltr",
   "strings": {
-    "auto.optimal": "Best available automatically",
+    "auto.title": "Auto Switch",
+    "auto.next": "Next: {0}",
+    "auto.next_unavailable": "Next: no eligible account",
+    "auto.optimal": "Expires soonest first",
     "auto.custom": "Custom priority",
     "auto.priority": "Priority {0}",
     "auto.priority_help": "Set each account position from its account menu. Unavailable accounts are skipped.",

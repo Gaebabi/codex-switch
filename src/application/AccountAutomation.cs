@@ -24,6 +24,21 @@ internal static class AccountAutomation
     {
         lock (service.Vault.SyncRoot) { service.Vault.Data.AutomaticSwitchEnabled = false; service.Vault.Save(); }
     }
+    public static AccountProfile? Next(AccountService service, DateTimeOffset now)
+    {
+        lock (service.Vault.SyncRoot)
+        {
+            var data = service.Vault.Data;
+            if (data.PendingSwitch != null) return service.Accounts.FirstOrDefault(p => p.Key == data.PendingSwitch.TargetAccountKey);
+            return AutomaticSwitchPolicy.Next(service.Accounts, data.AutomaticSwitchThreshold, now,
+                data.AutomaticSwitchUsePriority ? OrderedAccounts(service).Select(p => p.Key).ToArray() : null);
+        }
+    }
+    public static string NextLabel(AccountService service, DateTimeOffset now)
+    {
+        var next = Next(service, now);
+        return next == null ? Loc.T("auto.next_unavailable") : Loc.F("auto.next", next.DisplayName);
+    }
     public static AccountProfile[] OrderedAccounts(AccountService service)
     {
         lock (service.Vault.SyncRoot)

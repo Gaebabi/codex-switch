@@ -81,6 +81,27 @@ internal static class AccountAutomationUiDiagnostics
                 return Enumerable.Range(0, VisualTreeHelper.GetChildrenCount(root)).Any(i => HasRecovery(VisualTreeHelper.GetChild(root, i)));
             }
             assert(HasRecovery(root), "Pending target lost its recovery action while source is current");
+            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            typeof(MainWindow).GetField("_switching", flags)!.SetValue(window, true);
+            typeof(MainWindow).GetField("_queuedKey", flags)!.SetValue(window, "synthetic-1");
+            typeof(MainWindow).GetField("_switchPhase", flags)!.SetValue(window, SwitchPhase.Launching);
+            foreach (var attempt in new[] { 1, 2 })
+            {
+                vault.Data.PendingSwitch!.AutomaticRecoveryAttempts = attempt;
+                typeof(MainWindow).GetMethod("RenderAccounts", flags)!.Invoke(window, null);
+                root.Measure(new Size(600, 400)); root.Arrange(new Rect(0, 0, 600, 400)); root.UpdateLayout();
+                bool HasSwitching(DependencyObject element)
+                {
+                    if (element is Button { IsEnabled: false } button && button.Content is StackPanel stack && stack.Children.OfType<TextBlock>().Any(t => t.Text == Loc.T("전환 중"))) return true;
+                    return Enumerable.Range(0, VisualTreeHelper.GetChildrenCount(element)).Any(i => HasSwitching(VisualTreeHelper.GetChild(element, i)));
+                }
+                assert(!HasRecovery(root) && HasSwitching(root), "Automatic retry exposed Recover or an enabled switch action");
+            }
+            typeof(MainWindow).GetField("_switching", flags)!.SetValue(window, false);
+            typeof(MainWindow).GetField("_queuedKey", flags)!.SetValue(window, null);
+            typeof(MainWindow).GetMethod("RenderAccounts", flags)!.Invoke(window, null);
+            root.Measure(new Size(600, 400)); root.Arrange(new Rect(0, 0, 600, 400)); root.UpdateLayout();
+            assert(HasRecovery(root), "Exhausted retries lost manual recovery");
             void ActivateWarning(DependencyObject element)
             {
                 if (element is AccountWarningButton warning) warning.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));

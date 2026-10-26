@@ -74,7 +74,7 @@ internal static class AccountAutomationEvidence
                     var sessions = Descendants<SessionUsagePanel>(window).Single();
                     var a = button.TransformToAncestor(window).TransformBounds(new Rect(button.RenderSize));
                     var b = sessions.TransformToAncestor(window).TransformBounds(new Rect(sessions.RenderSize));
-                    Check(button.IsEnabled && ((TextBlock)button.Content).Text == Loc.T("auto.off") + " ▾" && !a.IntersectsWith(b) && a.Right <= window.ActualWidth, name + "explicit Off label remains separate from counters");
+                    Check(button.IsEnabled && ((TextBlock)button.Content).Text == Loc.T("auto.title") + " ▾" && System.Windows.Automation.AutomationProperties.GetName(button) == Loc.T("auto.off") && !a.IntersectsWith(b) && a.Right <= window.ActualWidth, name + "Auto Switch title and accessible Off state remain separate from counters");
                     typeof(MainWindow).GetProperty(nameof(MainWindow.EvidenceReloginAccount), fields)!.SetValue(window, null);
                     Descendants<AccountWarningButton>(window).Single().RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                     Check(window.EvidenceReloginAccount == accounts[3].Key, name + "warning requests only the selected fictional login");
@@ -107,6 +107,36 @@ internal static class AccountAutomationEvidence
                 Check(((MenuItem)ranking.Items[0]).Header as string == Loc.F("auto.ranked_account", 1, accounts[3].DisplayName), prefix + "ranked account submenu reflects the chosen order");
                 Capture(NativeHandle((MenuItem)ranking.Items[0], "Ranked account submenu"), prefix + "order.png");
                 menu.IsOpen = false;
+            }
+            // A separate fictional selection scenario retains the original dashboard cases.
+            var usages = accounts.Select(p => p.Usage).ToArray();
+            var currentKey = service.CurrentKey;
+            try
+            {
+                typeof(AccountService).GetProperty(nameof(AccountService.CurrentKey))!.SetValue(service, accounts[0].Key);
+                var now = DateTimeOffset.UtcNow;
+                for (var index = 0; index < accounts.Length; index++) accounts[index].Usage = new() { CheckedAt = now, Buckets = new() {
+                    new() { Id = "codex", Primary = new() { UsedPercent = index == 1 ? 50 : 10, Minutes = 10080, ResetsAt = now.AddDays(3).ToUnixTimeSeconds() } } } };
+                accounts[1].SubscriptionActiveUntil = now.AddDays(1); accounts[2].SubscriptionActiveUntil = now.AddDays(10);
+                foreach (var language in new[] { "en", "ko" })
+                {
+                    window.PrepareUiEvidence(language, language == "en"); window.Width = 600; window.Height = 440;
+                    data.AutomaticSwitchUsePriority = false; data.AutomaticSwitchEnabled = false; data.AutomaticSwitchThreshold = 10;
+                    Render(); var menu = OpenMenu(); await Task.Delay(150);
+                    var toggle = (MenuItem)menu.Items[0]; toggle.ApplyTemplate();
+                    Check(toggle.Template.FindName("track", toggle) is Border && toggle.Template.FindName("thumb", toggle) is Border { HorizontalAlignment: HorizontalAlignment.Left }, language + "native Off toggle has a visible track and left thumb");
+                    Check(((MenuItem)menu.Items[1]).Header as string == Loc.F("auto.next", accounts[1].DisplayName) && AutomaticSwitchPolicy.Select(service.Accounts, 10, now) == null, language + "next expiry preview is visible before low quota without triggering switching");
+                    Capture(NativeHandle(menu, "Next account Off menu"), language + "-auto-switch-next-off.png");
+                    toggle.IsChecked = true; toggle.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); await Task.Delay(120);
+                    Check(new AccountVault(service.Vault.DirectoryPath).Data.AutomaticSwitchEnabled && toggle.Template.FindName("thumb", toggle) is Border { HorizontalAlignment: HorizontalAlignment.Right }, language + "native On toggle moves its thumb and persists");
+                    Check(AccountAutomation.Next(service, now)?.Key == accounts[1].Key && accounts[1].Usage!.LeastRemaining < accounts[2].Usage!.LeastRemaining, language + "nearest eligible expiry precedes higher remaining quota");
+                    Capture(NativeHandle(menu, "Next account On menu"), language + "-auto-switch-next-on.png"); menu.IsOpen = false;
+                }
+            }
+            finally
+            {
+                for (var i = 0; i < accounts.Length; i++) accounts[i].Usage = usages[i];
+                typeof(AccountService).GetProperty(nameof(AccountService.CurrentKey))!.SetValue(service, currentKey);
             }
             File.WriteAllText(Path.Combine(directory, "account-automation-receipt.json"), JsonSerializer.Serialize(new {
                 schema = 1, os = "Windows", architecture = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture.ToString(),
