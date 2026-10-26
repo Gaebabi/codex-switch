@@ -31,7 +31,17 @@ with tarfile.open(fileobj=io.BytesIO(run('git', 'archive', baseline))) as archiv
 original = {str(p.relative_to(source)): sha(p) for p in (source / 'src').rglob('*') if p.is_file()}
 shutil.copytree(root / 'tests/switch-retries', source / 'tests/switch-retries', ignore=shutil.ignore_patterns('bin', 'obj'))
 for name, workspace, extra in [('before', source, ['--baseline']), ('after', root, [])]:
-    run('dotnet', 'run', '--project', 'tests/switch-retries/SwitchRetry.Evidence.csproj', '-c', 'Release', '--no-launch-profile', '-p:UseSharedCompilation=false', '--', str(output / name), *extra, cwd=workspace)
+    project = 'tests/switch-retries/SwitchRetry.Evidence.csproj'
+    run('dotnet', 'build', project, '-c', 'Release', '-p:UseSharedCompilation=false', cwd=workspace)
+    checks = []
+    for language in ['en', 'ko']:
+        for persistent in ([False] if name == 'before' else [False, True]):
+            case = output / name / (language + ('-persistent' if persistent else '-transient'))
+            flags = (['--ko'] if language == 'ko' else []) + (['--persistent'] if persistent else [])
+            # Production ExitAsync shuts down Application.Current: one owned app per process.
+            run('dotnet', 'run', '--no-build', '--project', project, '-c', 'Release', '--no-launch-profile', '--', str(case), *extra, *flags, cwd=workspace)
+            checks.extend(json.loads((case / 'receipt.json').read_text('utf-8'))['checks'])
+    (output / name / 'receipt.json').write_text(json.dumps({'passed': len(checks), 'checks': checks}), 'utf-8')
 assert all(sha(source / path) == value for path, value in original.items())
 public = output / 'public'
 public.mkdir()
@@ -40,7 +50,8 @@ for folder, cases in [('before', ['before']), ('after', ['retry-1', 'retry-2', '
     for language in ['en', 'ko']:
         for case in cases:
             filename = language + '-' + case + '.png'
-            with Image.open(output / folder / filename) as image:
+            scenario = language + ('-persistent' if case == 'exhausted' else '-transient')
+            with Image.open(output / folder / scenario / filename) as image:
                 pixels = image.convert('RGBA').tobytes()
                 size = image.size
                 image.save(public / filename, format='PNG')

@@ -41,13 +41,14 @@ var thread = new Thread(() =>
     AppContext.SetSwitch("Switch.System.Windows.Media.ShouldRenderEvenWhenNoDisplayDevicesAreAvailable", true);
     RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
     var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+    Exception? failure = null;
+    Window? ownedWindow = null;
     app.Startup += async (_, _) =>
     {
-        Exception? failure = null;
         try
         {
-            foreach (var language in new[] { "en", "ko" })
-            foreach (var persistent in baseline ? new[] { false } : new[] { false, true })
+            var language = args.Contains("--ko") ? "ko" : "en";
+            var persistent = args.Contains("--persistent");
             {
                 var vault = new AccountVault(Path.Combine(fixture, language + persistent, "data"));
                 foreach (var profile in SyntheticDashboard.Accounts())
@@ -67,7 +68,7 @@ var thread = new Thread(() =>
                 options.GetType().GetProperty("CodexHome")!.SetValue(options, home);
                 options.GetType().GetProperty("UiEvidenceDirectory")!.SetValue(options, output);
                 var window = (Window)Activator.CreateInstance(type, service, options)!;
-                try
+                ownedWindow = window;
                 {
                     Call(window, "PrepareUiEvidence", language, language == "en");
                     window.ShowInTaskbar = false; window.Width = 600; window.Height = 440;
@@ -116,16 +117,21 @@ var thread = new Thread(() =>
                         Check(language + ": one Continue identity and cleared checkpoint", backend.Sends == 1 && backend.Marker == marker && vault.Data.PendingSwitch == null && !HasAction(window, "switch.recover", true));
                         await Capture("after");
                     }
+                    File.WriteAllText(Path.Combine(output, "receipt.json"), JsonSerializer.Serialize(new { baseline, passed = checks.Count, checks,
+                        scope = "Actual WPF own-HWND windows, production coordinator and native progress/save callbacks with fictional accounts and controlled offline backend. Fixture sets busy context; no real Switch click, client launch, authenticated account change or Continue is claimed." }));
                 }
-                finally { await (Task)Call(window, "ExitAsync")!; }
             }
-            File.WriteAllText(Path.Combine(output, "receipt.json"), JsonSerializer.Serialize(new { baseline, passed = checks.Count, checks,
-                scope = "Actual WPF own-HWND windows, production coordinator and native progress/save callbacks with fictional accounts and controlled offline backend. Fixture sets busy context; no real Switch click, client launch, authenticated account change or Continue is claimed." }));
         }
         catch (Exception error) { failure = error; }
-        finally { app.Shutdown(); if (failure == null) completion.TrySetResult(); else completion.TrySetException(failure); }
+        finally
+        {
+            try { if (ownedWindow != null) await (Task)Call(ownedWindow, "ExitAsync")!; }
+            catch (Exception error) { failure ??= error; }
+            finally { app.Shutdown(); }
+        }
     };
     app.Run();
+    if (failure == null) completion.TrySetResult(); else completion.TrySetException(failure);
 });
 thread.SetApartmentState(ApartmentState.STA); thread.Start();
 try { await completion.Task; }
