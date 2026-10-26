@@ -773,7 +773,9 @@ internal sealed class MainWindow : Window
                 var coordinator = new AccountSwitchCoordinator(backend, SaveSwitch, SwitchChanged, UserErrors.Describe);
                 var plan = pending?.TargetAccountKey == profile.Key ? JsonSerializer.Deserialize<AccountSwitchPlan>(JsonSerializer.Serialize(pending))! :
                     await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, cancellation);
-                plan.Automatic |= automatic; SaveSwitch(plan);
+                plan.Automatic |= automatic;
+                if (!automatic) plan.AutomaticRecoveryAttempts = 0;
+                SaveSwitch(plan);
                 if (await coordinator.RunAsync(plan, cancellation)) SetStatus("계정을 전환하고 채팅을 재개했습니다.");
                 else SetStatus("계정 전환 완료. 재개 확인이 필요한 채팅 {0}개", true,
                     plan.Chats.Count(chat => chat.ResumeState is ChatResumeState.Unconfirmed or ChatResumeState.Failed or ChatResumeState.Pending or ChatResumeState.Sending));

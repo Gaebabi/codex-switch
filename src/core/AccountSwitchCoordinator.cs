@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -62,6 +63,7 @@ internal interface IAccountSwitchBackend : IAsyncDisposable
 
 internal sealed class AccountSwitchCoordinator
 {
+    public const int MaximumRecoveryAttempts = 2;
     private readonly IAccountSwitchBackend _backend;
     private readonly Action<AccountSwitchPlan?> _save;
     private readonly Action<AccountSwitchPlan> _changed;
@@ -78,7 +80,9 @@ internal sealed class AccountSwitchCoordinator
     }
     public async Task<bool> RunAsync(AccountSwitchPlan plan, CancellationToken cancellation)
     {
+        plan.AutomaticRecoveryAttempts = Math.Clamp(plan.AutomaticRecoveryAttempts, 0, MaximumRecoveryAttempts);
         var shutdownConfirmed = plan.AccountApplied || plan.Phase is SwitchPhase.Applying or SwitchPhase.Launching or SwitchPhase.Resuming;
+        var launchAttempted = false;
         try
         {
             var current = await _backend.CurrentAccountAsync(cancellation);
@@ -90,57 +94,95 @@ internal sealed class AccountSwitchCoordinator
                 Checkpoint(plan, SwitchPhase.BackingUp);
                 foreach (var chat in plan.Chats.Where(chat => !chat.NameSaved))
                 {
-                    cancellation.ThrowIfCancellationRequested(); await _backend.BackupNameAsync(chat, plan.RequestedAt, cancellation);
+                    cancellation.ThrowIfCancellationRequested();
+                    await RetryStepAsync(plan, async () =>
+                    {
+                        if (await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
+                            throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
+                        await _backend.BackupNameAsync(chat, plan.RequestedAt, cancellation);
+                    }, cancellation);
                     chat.NameSaved = true; Checkpoint(plan, SwitchPhase.BackingUp);
                 }
                 if (await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
                     throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
                 cancellation.ThrowIfCancellationRequested();
                 plan.DesktopRestartRequired = true;
-                Checkpoint(plan, SwitchPhase.Closing); await _backend.CloseDesktopAsync(cancellation);
+                Checkpoint(plan, SwitchPhase.Closing);
+                await RetryStepAsync(plan, async () =>
+                {
+                    if (await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
+                        throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
+                    await _backend.CloseDesktopAsync(cancellation);
+                }, cancellation);
                 shutdownConfirmed = true;
                 cancellation.ThrowIfCancellationRequested();
                 if (await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
                     throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
-                Checkpoint(plan, SwitchPhase.Applying); await _backend.ApplyAccountAsync(plan.TargetAccountKey, plan.SourceAccountKey, cancellation);
+                Checkpoint(plan, SwitchPhase.Applying);
+                await RetryStepAsync(plan, async () =>
+                {
+                    var account = await _backend.CurrentAccountAsync(cancellation);
+                    if (account == plan.TargetAccountKey) return;
+                    if (account != plan.SourceAccountKey)
+                        throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
+                    await _backend.ApplyAccountAsync(plan.TargetAccountKey, plan.SourceAccountKey, cancellation);
+                }, cancellation);
                 plan.AccountApplied = true; Checkpoint(plan, SwitchPhase.Launching);
             }
-            if (await _backend.CurrentAccountAsync(cancellation) != plan.TargetAccountKey)
-                throw new InvalidOperationException("선택한 계정과 현재 로그인이 달라 채팅 재개를 중단했습니다.");
-            plan.DesktopRestartRequired = true;
-            Checkpoint(plan, SwitchPhase.Launching); await _backend.LaunchDesktopAsync(cancellation);
-            plan.DesktopRestartRequired = false;
-            Checkpoint(plan, SwitchPhase.Resuming);
-            foreach (var chat in plan.Chats.Where(chat => chat.ResumeState is not (ChatResumeState.Resumed or ChatResumeState.AlreadyRunning or ChatResumeState.Completed)))
+            while (true)
             {
-                cancellation.ThrowIfCancellationRequested();
-                if (await _backend.CurrentAccountAsync(cancellation) != plan.TargetAccountKey)
-                    throw new InvalidOperationException("로그인 계정이 변경돼 채팅 재개를 중단했습니다.");
                 try
                 {
-                    chat.Error = null;
-                    chat.ResumeState = await _backend.ResumeAsync(chat, () => { chat.ResumeState = ChatResumeState.Sending; Checkpoint(plan, SwitchPhase.Resuming); }, cancellation);
+                    cancellation.ThrowIfCancellationRequested();
+                    if (await _backend.CurrentAccountAsync(cancellation) != plan.TargetAccountKey)
+                        throw new InvalidOperationException("선택한 계정과 현재 로그인이 달라 채팅 재개를 중단했습니다.");
+                    plan.DesktopRestartRequired = true;
+                    Checkpoint(plan, SwitchPhase.Launching); launchAttempted = true;
+                    await _backend.LaunchDesktopAsync(cancellation);
+                    plan.DesktopRestartRequired = false;
+                    Checkpoint(plan, SwitchPhase.Resuming);
+                    var retryable = false;
+                    foreach (var chat in plan.Chats.Where(chat => chat.ResumeState is not (ChatResumeState.Resumed or ChatResumeState.AlreadyRunning or ChatResumeState.Completed)))
+                    {
+                        cancellation.ThrowIfCancellationRequested();
+                        if (await _backend.CurrentAccountAsync(cancellation) != plan.TargetAccountKey)
+                            throw new InvalidOperationException("로그인 계정이 변경돼 채팅 재개를 중단했습니다.");
+                        try
+                        {
+                            chat.Error = null;
+                            chat.ResumeState = await _backend.ResumeAsync(chat, () => { chat.ResumeState = ChatResumeState.Sending; Checkpoint(plan, SwitchPhase.Resuming); }, cancellation);
+                            retryable |= chat.ResumeState is ChatResumeState.Pending or ChatResumeState.Sending or ChatResumeState.Unconfirmed;
+                        }
+                        catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { throw; }
+                        catch (Exception error)
+                        {
+                            chat.ResumeState = chat.ResumeState is ChatResumeState.Sending or ChatResumeState.Unconfirmed ? ChatResumeState.Unconfirmed : ChatResumeState.Failed;
+                            chat.Error = _describeError(error);
+                            retryable |= IsRetryable(error);
+                        }
+                        Checkpoint(plan, SwitchPhase.Resuming);
+                    }
+                    var complete = plan.Chats.All(chat => chat.ResumeState is ChatResumeState.Resumed or ChatResumeState.AlreadyRunning or ChatResumeState.Completed);
+                    if (complete) { Checkpoint(plan, SwitchPhase.Finished); _save(null); return true; }
+                    if (!retryable || plan.AutomaticRecoveryAttempts >= MaximumRecoveryAttempts) return false;
                 }
-                catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { throw; }
-                catch (Exception error)
+                catch (Exception error) when (!cancellation.IsCancellationRequested && IsRetryable(error) && plan.AutomaticRecoveryAttempts < MaximumRecoveryAttempts)
                 {
-                    chat.ResumeState = chat.ResumeState is ChatResumeState.Sending or ChatResumeState.Unconfirmed ? ChatResumeState.Unconfirmed : ChatResumeState.Failed;
-                    chat.Error = _describeError(error);
+                    plan.Error = _describeError(error);
                 }
-                Checkpoint(plan, SwitchPhase.Resuming);
+                // Keep the caller's switching state until both retries are spent. Persist the
+                // reservation before waiting so a utility restart cannot reset the retry budget.
+                await ReserveRetryAsync(plan, cancellation);
             }
-            var complete = plan.Chats.All(chat => chat.ResumeState is ChatResumeState.Resumed or ChatResumeState.AlreadyRunning or ChatResumeState.Completed);
-            if (complete) { Checkpoint(plan, SwitchPhase.Finished); _save(null); }
-            return complete;
         }
         catch (Exception error)
         {
             plan.Error = error is OperationCanceledException ? "전환 작업을 취소했습니다." : _describeError(error);
             if (error is OperationCanceledException && cancellation.IsCancellationRequested && plan.Automatic)
-                plan.AutomaticRecoveryAttempts = Math.Max(1, plan.AutomaticRecoveryAttempts);
-            // A cancellation or failed apply must not leave the desktop closed. Recover only the
-            // recorded source/target identity; never overwrite credentials or repeat Continue here.
-            if (plan.DesktopRestartRequired && shutdownConfirmed)
+                plan.AutomaticRecoveryAttempts = Math.Max(MaximumRecoveryAttempts, plan.AutomaticRecoveryAttempts);
+            // Reopen after cancellation or a failed apply, but do not add a fourth launch after
+            // exhausting the retries. Never overwrite credentials or repeat Continue here.
+            if (plan.DesktopRestartRequired && shutdownConfirmed && (!launchAttempted || cancellation.IsCancellationRequested))
             {
                 using var recovery = new CancellationTokenSource(TimeSpan.FromSeconds(35));
                 try
@@ -157,6 +199,25 @@ internal sealed class AccountSwitchCoordinator
             _save(plan); _changed(plan); throw;
         }
     }
+    private async Task RetryStepAsync(AccountSwitchPlan plan, Func<Task> action, CancellationToken cancellation)
+    {
+        while (true)
+        {
+            cancellation.ThrowIfCancellationRequested();
+            try { await action(); return; }
+            catch (Exception error) when (!cancellation.IsCancellationRequested && IsRetryable(error) && plan.AutomaticRecoveryAttempts < MaximumRecoveryAttempts)
+            { plan.Error = _describeError(error); }
+            await ReserveRetryAsync(plan, cancellation);
+        }
+    }
+    private Task ReserveRetryAsync(AccountSwitchPlan plan, CancellationToken cancellation)
+    {
+        plan.AutomaticRecoveryAttempts++;
+        _save(plan); _changed(plan);
+        return Task.Delay(TimeSpan.FromSeconds(1), cancellation);
+    }
+    private static bool IsRetryable(Exception error) => error is IOException or TimeoutException ||
+        error is System.ComponentModel.Win32Exception { NativeErrorCode: 2 or 3 or 32 or 33 or 170 };
     private void Checkpoint(AccountSwitchPlan plan, SwitchPhase phase)
     { plan.Phase = phase; plan.Error = null; _save(plan); _changed(plan); }
 }

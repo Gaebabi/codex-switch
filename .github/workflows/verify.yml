@@ -93,6 +93,16 @@ jobs:
           path: artifacts/runtime-recovery/public
           if-no-files-found: error
           retention-days: 14
+      - name: Verify bounded switch retries against unchanged native baseline
+        env:
+          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/verify-switch-retries.py
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: switch-retries-windows
+          path: artifacts/switch-retries/public
+          if-no-files-found: error
+          retention-days: 14
       - name: Inspect complete Windows runtime package
         run: python scripts/verify-runtime-package.py artifacts/win-x64 --rid win-x64 --output artifacts/runtime-win-x64.json
       - name: Verify native account-free CPU worker lifecycle without elevation

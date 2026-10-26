@@ -1,5 +1,7 @@
 # Operations
 
+Issue117 retry verification uses `scripts/verify-switch-retries.py` on disposable hosted Windows only. The unchanged1.42.4 baseline and current production coordinator/native WPF progress/save callbacks receive fictional accounts and an offline lifecycle backend. The fixture sets busy context; it does not click a real Switch button or launch/stop a personal client. Before/retry1/retry2/success/exhaustion frames and persisted reservations complement account104/native handoff regressions. [Release gates](RELEASE_1_42_5.md).
+
 ## Repository presentation
 
 Keep the four README languages aligned around the released app, downloads and first-use guidance. [Discovery assets](../media/discovery/README.md) contain simulated offscreen account/resource/storage renders and the1280×640 sharing graphic; retain their application/image hashes and captions. The [native application evidence](../evidence/account-automation/README.md) has a separate acceptance scope.
@@ -7,6 +9,8 @@ Keep the four README languages aligned around the released app, downloads and fi
 GitHub About/topics/homepage and Settings → Social preview are repository settings, separate from committed files. Applying a PNG in Git does not update that Social preview setting. Retain prior metadata privately, verify the settings and public preview after application, and keep analytics/private drafts outside public source. External community posts require their own explicit publication scope. Topic or README changes are not proof of additional stars or installations. [Presentation delivery](https://github.com/Gaebabi/codex-switch/issues/111).
 
 ## Application operation
+
+Manual and automatic account switching share two persisted additional retries for transient failures, with one-second cancellable waits. Keep the switching action disabled until these attempts finish, then retain Recover if needed. Explicit Recover resets the budget; utility restart and automatic recovery do not. Identity/integrity refusals and cancellation do not continue the switch. [Recovery contract](ACCOUNT_AUTOMATION.md).
 
 Linux minimum-width header captions use content-sized automatic/cancel columns; counter gaps alone become smaller in the native titlebar. The header height and account viewport are unchanged. Native UI diagnostics require the entire rendered automatic-switch caption/state within its button and no action/counter overlap. [Issue115 delivery](RELEASE_1_42_4.md). The disposable framed harness identifies its own Xfconf bus sender by UID/executable/HOME and uses a pidfd to await writer shutdown before deleting the temporary home; it never adopts or stops an owner's desktop process.
 

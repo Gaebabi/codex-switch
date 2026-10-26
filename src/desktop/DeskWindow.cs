@@ -331,6 +331,7 @@ internal sealed class DeskWindow : Window
                 if (pending != null && pending.TargetAccountKey != profile.Key) throw new InvalidOperationException(Loc.T("남은 채팅 재개 작업을 먼저 처리해 주세요."));
                 var plan = pending ?? await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, _switch.Token);
                 plan.Automatic |= automatic;
+                if (!automatic) plan.AutomaticRecoveryAttempts = 0;
                 lock (_service.Vault.SyncRoot) { _service.Vault.Data.PendingSwitch = plan; _service.Vault.Save(); }
                 if (!await coordinator.RunAsync(plan, _switch.Token))
                     _statusMessage = automatic ? Loc.T("auto.paused") : Loc.F("계정 전환 완료. 재개 확인이 필요한 채팅 {0}개",

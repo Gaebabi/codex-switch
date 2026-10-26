@@ -59,7 +59,22 @@ Check("Unknown entitlement is preserved without inventing a plan", SubscriptionP
 Check("Missing subscription days stay unavailable", SubscriptionPresentation.Days(null, now) == "—");
 Check("Subscription days use Korean calendar", SubscriptionPresentation.Days(DateTimeOffset.Parse("2026-10-27T00:00:00+09:00"), DateTimeOffset.Parse("2026-10-24T23:59:00+09:00")) == "3");
 
-foreach (var failure in new[] { "launch-once", "launch-always", "apply", "cancel-after-close" })
+foreach (var failures in new[] { 1, 2 })
+{
+    var backend = new FakeBackend { LaunchFailures = failures }; AccountSwitchPlan? saved = null;
+    var retryReservations = new List<int>();
+    var coordinator = new AccountSwitchCoordinator(backend,
+        p => saved = p == null ? null : JsonSerializer.Deserialize<AccountSwitchPlan>(JsonSerializer.Serialize(p)),
+        p => { if (p.Error != null) retryReservations.Add(p.AutomaticRecoveryAttempts); }, e => e.Message);
+    var plan = await coordinator.PrepareAsync("target", now, CancellationToken.None);
+    var marker = plan.Chats[0].ContinueMessageId;
+    Check(failures + " failed launch(es) complete in the original invocation", await coordinator.RunAsync(plan, CancellationToken.None));
+    Check(failures + " retries reopen without repeating shutdown, backup or credential application",
+        backend.Launches == failures + 1 && backend.Closes == 1 && backend.Names == 1 && backend.Applies == 1);
+    Check(failures + " retries retain one Continue and clear Recover", backend.Resumes == 1 && backend.LastMarker == marker && saved == null);
+    Check(failures + " retries reserve their persisted budget before continuing", retryReservations.SequenceEqual(Enumerable.Range(1, failures)));
+}
+foreach (var failure in new[] { "launch-always", "apply", "cancel-after-close" })
 {
     using var cancel = new CancellationTokenSource();
     var backend = new FakeBackend { Failure = failure, Cancel = cancel };
@@ -73,17 +88,37 @@ foreach (var failure in new[] { "launch-once", "launch-always", "apply", "cancel
     Check(failure + ": original or selected desktop relaunch attempted after close", backend.Launches >= 1);
     Check(failure + ": no Continue during restart recovery", backend.Resumes == 0);
     Check(failure + ": failed restart remains retryable", saved!.DesktopRestartRequired == (failure == "launch-always"));
+    if (failure == "launch-always") Check("Persistent launch failure stops after the initial attempt and exactly two retries",
+        backend.Launches == 3 && saved.AutomaticRecoveryAttempts == 2 && saved.Error == "Synthetic launch failure");
     backend.Failure = ""; backend.Cancel = null;
     Check(failure + ": serialized checkpoint resumes", await coordinator.RunAsync(saved, CancellationToken.None));
     Check(failure + ": same Continue identity survives retry", backend.LastMarker == marker && backend.Resumes == 1);
     Check(failure + ": completed plan cleared", saved == null);
+}
+foreach (var failure in new[] { "name", "close", "apply", "apply-after-write" })
+{
+    var backend = new FakeBackend {
+        NameFailures = failure == "name" ? 1 : 0, CloseFailures = failure == "close" ? 1 : 0,
+        ApplyFailures = failure == "apply" ? 1 : 0, Failure = failure == "apply-after-write" ? failure : "" };
+    var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, e => e.Message);
+    var plan = await coordinator.PrepareAsync("target", now, CancellationToken.None);
+    Check(failure + ": transient failure finishes without manual Recover", await coordinator.RunAsync(plan, CancellationToken.None) && plan.AutomaticRecoveryAttempts == 1);
+    Check(failure + ": retries preserve one credential application and Continue", backend.Applies == 1 && backend.Resumes == 1);
+    if (failure == "apply-after-write") Check("An uncertain successful account write is reconciled before retrying", backend.ApplyCalls == 1);
+}
+{
+    var backend = new FakeBackend { CloseFailures = 1, LaunchFailures = 3 };
+    var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, e => e.Message);
+    var plan = await coordinator.PrepareAsync("target", now, CancellationToken.None);
+    try { await coordinator.RunAsync(plan, CancellationToken.None); } catch (IOException) { }
+    Check("Shutdown and launch share a total two-retry budget", backend.Closes == 2 && backend.Launches == 2 && plan.AutomaticRecoveryAttempts == 2 && backend.Resumes == 0);
 }
 {
     var backend = new FakeBackend { Failure = "close" }; AccountSwitchPlan? saved = null;
     var coordinator = new AccountSwitchCoordinator(backend, p => saved = p, _ => { }, e => e.Message);
     var plan = await coordinator.PrepareAsync("target", now, CancellationToken.None);
     try { await coordinator.RunAsync(plan, CancellationToken.None); } catch (IOException) { }
-    Check("Unconfirmed shutdown retains recovery without applying or attempting a launch", saved?.DesktopRestartRequired == true && backend.Applies == 0 && backend.Launches == 0 && backend.Resumes == 0);
+    Check("Unconfirmed shutdown retains recovery after two retries without applying or launching", saved?.DesktopRestartRequired == true && backend.Closes == 3 && backend.Applies == 0 && backend.Launches == 0 && backend.Resumes == 0);
 }
 {
     using var cancellation = new CancellationTokenSource();
@@ -91,7 +126,7 @@ foreach (var failure in new[] { "launch-once", "launch-always", "apply", "cancel
     var coordinator = new AccountSwitchCoordinator(backend, p => saved = p, _ => { }, e => e.Message);
     var plan = await coordinator.PrepareAsync("target", now, cancellation.Token); plan.Automatic = true;
     try { await coordinator.RunAsync(plan, cancellation.Token); } catch (OperationCanceledException) { }
-    Check("Explicit automatic-switch cancellation reopens the source but prevents a later automatic retry", saved?.AutomaticRecoveryAttempts == 1 && backend.Current == "source" && backend.Launches == 1 && backend.Applies == 0 && backend.Resumes == 0);
+    Check("Explicit automatic-switch cancellation reopens the source but prevents a later automatic retry", saved?.AutomaticRecoveryAttempts == AccountSwitchCoordinator.MaximumRecoveryAttempts && backend.Current == "source" && backend.Launches == 1 && backend.Applies == 0 && backend.Resumes == 0);
 }
 {
     var backend = new FakeBackend(); AccountSwitchPlan? saved = null;
@@ -102,12 +137,65 @@ foreach (var failure in new[] { "launch-once", "launch-always", "apply", "cancel
     Check("Unrelated login prevents shutdown/apply/restart", backend.Launches == 0 && backend.Applies == 0 && saved != null);
 }
 {
-    var backend = new FakeBackend { Current = "target", Failure = "launch-once" };
+    var backend = new FakeBackend { Current = "target", LaunchFailures = 1 };
     AccountSwitchPlan? saved = null;
     var coordinator = new AccountSwitchCoordinator(backend, p => saved = p, _ => { }, e => e.Message);
     var plan = new AccountSwitchPlan { SourceAccountKey = "source", TargetAccountKey = "target", AccountApplied = true, Phase = SwitchPhase.Resuming };
+    Check("A later recovery completes its retry without applying credentials again", await coordinator.RunAsync(plan, CancellationToken.None) && backend.Launches == 2 && backend.Applies == 0 && saved == null);
+}
+{
+    var backend = new FakeBackend { LaunchFailures = 1, LaunchError = new TimeoutException("Synthetic discovery timeout") };
+    var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, e => e.Message);
+    var plan = await coordinator.PrepareAsync("target", now, CancellationToken.None);
+    Check("Desktop discovery timeouts are retried in the same switch", await coordinator.RunAsync(plan, CancellationToken.None) && backend.Launches == 2);
+}
+{
+    var backend = new FakeBackend { LaunchFailures = 3, LaunchError = new InvalidDataException("Synthetic trust refusal") };
+    var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, e => e.Message);
+    var plan = await coordinator.PrepareAsync("target", now, CancellationToken.None);
+    try { await coordinator.RunAsync(plan, CancellationToken.None); } catch (InvalidDataException) { }
+    Check("Integrity refusals are not retried or followed by an extra launcher call", backend.Launches == 1 && plan.AutomaticRecoveryAttempts == 0 && backend.Resumes == 0);
+}
+{
+    var backend = new FakeBackend { LaunchFailures = 3 }; AccountSwitchPlan? saved = null;
+    var coordinator = new AccountSwitchCoordinator(backend, p => saved = p, p => { if (p.AutomaticRecoveryAttempts == 1) backend.Current = "unrelated"; }, e => e.Message);
+    var plan = await coordinator.PrepareAsync("target", now, CancellationToken.None);
+    try { await coordinator.RunAsync(plan, CancellationToken.None); } catch (InvalidOperationException) { }
+    Check("A changed account blocks the next retry without overwriting credentials", backend.Launches == 1 && backend.Applies == 1 && backend.Current == "unrelated" && saved != null && backend.Resumes == 0);
+}
+{
+    using var cancellation = new CancellationTokenSource();
+    var backend = new FakeBackend { LaunchFailures = 3 };
+    var coordinator = new AccountSwitchCoordinator(backend, _ => { }, p => { if (p.AutomaticRecoveryAttempts == 1) cancellation.Cancel(); }, e => e.Message);
+    var plan = await coordinator.PrepareAsync("target", now, cancellation.Token); plan.Automatic = true;
+    try { await coordinator.RunAsync(plan, cancellation.Token); } catch (OperationCanceledException) { }
+    Check("Cancellation during the retry wait prevents another switch attempt and disables restart recovery",
+        backend.Launches == 2 && plan.AutomaticRecoveryAttempts == 2 && backend.Resumes == 0);
+}
+{
+    var backend = new FakeBackend { Current = "target", Failure = "launch-always" };
+    AccountSwitchPlan? saved = null;
+    var coordinator = new AccountSwitchCoordinator(backend, p => saved = p, _ => { }, e => e.Message);
+    var plan = new AccountSwitchPlan { SourceAccountKey = "source", TargetAccountKey = "target", AccountApplied = true, Phase = SwitchPhase.Launching, AutomaticRecoveryAttempts = 1 };
     try { await coordinator.RunAsync(plan, CancellationToken.None); } catch (IOException) { }
-    Check("A later recovery launch failure also attempts bounded reopening", backend.Launches == 2 && backend.Applies == 0 && saved != null && !saved.DesktopRestartRequired);
+    Check("A serialized retry budget permits only its remaining retry", backend.Launches == 2 && saved?.AutomaticRecoveryAttempts == 2);
+}
+{
+    var backend = new FakeBackend { ResumeFailures = 2 }; AccountSwitchPlan? saved = null;
+    var coordinator = new AccountSwitchCoordinator(backend, p => saved = p, _ => { }, e => e.Message);
+    var plan = await coordinator.PrepareAsync("target", now, CancellationToken.None);
+    var done = new SwitchChat { Id = "completed", ResumeState = ChatResumeState.Completed };
+    plan.Chats.Add(done);
+    Check("A transient chat-open failure also completes without exposing Recover", await coordinator.RunAsync(plan, CancellationToken.None) && saved == null);
+    Check("Retrying chat-open never repeats the account switch or an already completed chat", backend.Applies == 1 && backend.Resumes == 1 && backend.ResumeCalls == 3 && done.ResumeState == ChatResumeState.Completed);
+}
+{
+    var backend = new FakeBackend { AmbiguousContinue = true };
+    var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, e => e.Message);
+    var plan = await coordinator.PrepareAsync("target", now, CancellationToken.None);
+    var marker = plan.Chats[0].ContinueMessageId;
+    Check("An ambiguous Continue remains pending after two observation retries", !await coordinator.RunAsync(plan, CancellationToken.None) && plan.AutomaticRecoveryAttempts == 2);
+    Check("Observation retries never resend an ambiguous Continue", backend.ResumeCalls == 3 && backend.Resumes == 1 && plan.Chats[0].ContinueMessageId == marker && plan.Chats[0].ResumeState == ChatResumeState.Unconfirmed);
 }
 // User-local temp retains native ACL ownership; a machine-wide redirected temp can forbid WRITE_OWNER.
 var fixture = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp", "codex-account-automation-" + Guid.NewGuid().ToString("N"));
@@ -153,14 +241,25 @@ sealed class FakeBackend : IAccountSwitchBackend
 {
     public string Current = "source", Failure = "";
     public CancellationTokenSource? Cancel;
-    public int Launches, Applies, Resumes;
+    public int Launches, Applies, Resumes, Closes, Names, LaunchFailures, ResumeFailures, ResumeCalls, CloseFailures, NameFailures, ApplyFailures, ApplyCalls;
+    public Exception? LaunchError;
+    public bool AmbiguousContinue;
     public string? LastMarker;
     public Task<string?> CurrentAccountAsync(CancellationToken cancellation) => Task.FromResult<string?>(Current);
     public Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation) => Task.FromResult(new[] { new SwitchChat { Id = "chat", OriginalTitle = "Fictional work" } });
-    public Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken cancellation) => Task.CompletedTask;
-    public Task CloseDesktopAsync(CancellationToken cancellation) { if (Failure == "close") throw new IOException("Synthetic shutdown remains incomplete"); if (Failure == "cancel-after-close") Cancel!.Cancel(); return Task.CompletedTask; }
-    public Task ApplyAccountAsync(string key, string? source, CancellationToken cancellation) { if (Failure == "apply") throw new IOException("Synthetic apply failure"); Current = key; Applies++; return Task.CompletedTask; }
-    public Task LaunchDesktopAsync(CancellationToken cancellation) { Launches++; if (Failure == "launch-always" || Failure == "launch-once" && Launches == 1) throw new IOException("Synthetic launch failure"); return Task.CompletedTask; }
-    public Task<ChatResumeState> ResumeAsync(SwitchChat chat, Action sending, CancellationToken cancellation) { sending(); Resumes++; LastMarker = chat.ContinueMessageId; return Task.FromResult(ChatResumeState.Resumed); }
+    public Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken cancellation) { Names++; if (Names <= NameFailures) throw new IOException("Synthetic name failure"); return Task.CompletedTask; }
+    public Task CloseDesktopAsync(CancellationToken cancellation) { Closes++; if (Failure == "close" || Closes <= CloseFailures) throw new IOException("Synthetic shutdown remains incomplete"); if (Failure == "cancel-after-close") Cancel!.Cancel(); return Task.CompletedTask; }
+    public Task ApplyAccountAsync(string key, string? source, CancellationToken cancellation) { ApplyCalls++; if (Failure == "apply" || ApplyCalls <= ApplyFailures) throw new IOException("Synthetic apply failure"); Current = key; Applies++; if (Failure == "apply-after-write" && ApplyCalls == 1) throw new IOException("Synthetic failure after writing credentials"); return Task.CompletedTask; }
+    public Task LaunchDesktopAsync(CancellationToken cancellation) { Launches++; if (Failure == "launch-always" || Launches <= LaunchFailures) throw LaunchError ?? new IOException("Synthetic launch failure"); return Task.CompletedTask; }
+    public Task<ChatResumeState> ResumeAsync(SwitchChat chat, Action sending, CancellationToken cancellation)
+    {
+        ResumeCalls++;
+        if (ResumeCalls <= ResumeFailures) throw new IOException("Synthetic chat-open failure");
+        // Match the production backend's observation-only policy after ambiguous delivery.
+        if (SwitchContinuation.Decide(chat, new(chat.Id, "owner", "idle", false, null, null, "resumed", null, null, null)) is ChatResumeState decided) return Task.FromResult(decided);
+        sending(); Resumes++; LastMarker = chat.ContinueMessageId;
+        if (AmbiguousContinue) throw new IOException("Synthetic lost Continue response");
+        return Task.FromResult(ChatResumeState.Resumed);
+    }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

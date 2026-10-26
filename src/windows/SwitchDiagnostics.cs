@@ -86,9 +86,8 @@ internal static class SwitchDiagnostics
             var backend = new Backend { Applying = () => throw new IOException("synthetic checkpoint failure after apply") };
             var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, UserErrors.Describe);
             var plan = coordinator.PrepareAsync("target", at, CancellationToken.None).GetAwaiter().GetResult();
-            try { coordinator.RunAsync(plan, CancellationToken.None).GetAwaiter().GetResult(); } catch (IOException) { }
-            assert(plan.Phase == SwitchPhase.Applying && backend.Account == "target" && !plan.AccountApplied, "Apply failure checkpoint was lost");
-            backend.Applying = null; assert(coordinator.RunAsync(plan, CancellationToken.None).GetAwaiter().GetResult(), "Applied account did not recover");
+            assert(coordinator.RunAsync(plan, CancellationToken.None).GetAwaiter().GetResult(), "Applied account did not recover in the original invocation");
+            assert(plan.Phase == SwitchPhase.Finished && backend.Account == "target" && plan.AccountApplied && plan.AutomaticRecoveryAttempts == 1, "Automatic reconciliation lost its checkpoint or retry budget");
             assert(backend.Calls.Count(call => call == "apply") == 1 && backend.Calls.Count(call => call == "name:a") == 1, "Recovery repeated apply/name writes");
         });
         test("Resume failure preserves an unconfirmed send, resumes other chats, and skips finished work on retry", () =>
