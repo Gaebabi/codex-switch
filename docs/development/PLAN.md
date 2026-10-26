@@ -1,6 +1,6 @@
 # Current plan
 
-Issue117 delivers the existing owner-requested bounded switch retry implementation as1.42.5. Review the persisted total budget, cancellation/identity/trust refusal and ambiguous-send observation, then require actual baseline/retry/exhaustion frames, all six final-head jobs and verified public packages. [Delivery contract](RELEASE_1_42_5.md).
+Issues117/119 deliver expiry-first automatic selection, Auto Switch toggle/next-account forecast and the existing owner-requested bounded retries as1.42.5. Preserve explicit custom ranks and every eligibility/cooldown/recovery guard; forecasting never starts a switch. Review the persisted total budget, cancellation/identity/trust refusal and ambiguous-send observation, then require actual baseline/retry/exhaustion frames, all six final-head jobs and verified public packages. [Delivery contract](RELEASE_1_42_5.md).
 
 Bound switch recovery to two additional transient-failure retries before showing Recover. Keep Windows and shared desktop actions busy throughout, persist the shared budget, reconcile completed credential writes, and preserve cancellation/identity/Continue guards. Validate temporary backend failures, exhausted and interrupted budgets, button states and native disposable shutdown; owner account switching and installation activation remain separate.
 

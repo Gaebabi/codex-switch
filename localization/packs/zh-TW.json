@@ -6,7 +6,10 @@
   "culture": "zh-TW",
   "direction": "ltr",
   "strings": {
-    "auto.optimal": "自動選擇最佳帳號",
+    "auto.title": "Auto Switch",
+    "auto.next": "下次切換：{0}",
+    "auto.next_unavailable": "下次切換：無可用帳號",
+    "auto.optimal": "優先使用即將到期的帳號",
     "auto.custom": "自訂順序",
     "auto.priority": "優先順序{0}",
     "auto.priority_help": "在各帳號選單中設定順序。略過無法使用的帳號。",

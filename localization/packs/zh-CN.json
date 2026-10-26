@@ -6,7 +6,10 @@
   "culture": "zh-CN",
   "direction": "ltr",
   "strings": {
-    "auto.optimal": "自动选择最佳账号",
+    "auto.title": "Auto Switch",
+    "auto.next": "下次切换：{0}",
+    "auto.next_unavailable": "下次切换：无可用账号",
+    "auto.optimal": "优先使用即将到期的账号",
     "auto.custom": "自定义顺序",
     "auto.priority": "优先级{0}",
     "auto.priority_help": "在各账号菜单中设置顺序。跳过不可用账号。",

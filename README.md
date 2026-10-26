@@ -21,7 +21,7 @@ Release1.42.3 recovers Windows usage refresh after Codex replaces its executable
 
 Release1.42.4 keeps the complete Linux account-auto-switch caption visible in the minimum window, without taking space from quota cards or adding dependencies. [Native verification and delivery](docs/development/RELEASE_1_42_4.md).
 
-Release1.42.5 retries a transient handoff up to two additional times while keeping controls busy. The persisted budget and original Continue identities prevent unbounded recovery and duplicate sends. [Behavior and verification](docs/development/RELEASE_1_42_5.md).
+Release1.42.5 prioritizes eligible subscriptions expiring soon and adds an **Auto Switch** toggle with the next account. It retries a transient handoff up to two additional times while keeping controls busy. The persisted budget and original Continue identities prevent unbounded recovery and duplicate sends. [Behavior and verification](docs/development/RELEASE_1_42_5.md).
 
 ## Download
 

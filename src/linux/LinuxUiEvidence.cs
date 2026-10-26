@@ -94,7 +94,7 @@ internal static class LinuxUiEvidence
                 if (window.AccountScroll.Extent.Height > window.AccountScroll.Viewport.Height + 1)
                     throw new InvalidOperationException("Four Linux preview cards unexpectedly require scrolling.");
                 var automatic = window.AutomaticSwitchButton;
-                if (automatic.Content is not TextBlock caption || caption.Text != Loc.T("auto.off") + " ▾" ||
+                if (automatic.Content is not TextBlock caption || caption.Text != Loc.T("auto.title") + " ▾" ||
                     caption.TextLayout.Height > caption.Bounds.Height + 1 || caption.TextLayout.Width > caption.Bounds.Width + 1)
                     throw new InvalidOperationException("The complete automatic-switch caption/state must fit its actual text bounds.");
                 var captionPoint = caption.TranslatePoint(new Point(), automatic);

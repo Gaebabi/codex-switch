@@ -29,8 +29,13 @@ var thread = new Thread(() =>
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             foreach (var child in Visuals(VisualTreeHelper.GetChild(parent, i))) yield return child;
     }
-    bool HasAction(Window window, string text, bool enabled) => Visuals(window).OfType<Button>().Any(button =>
-        button.IsVisible && button.IsEnabled == enabled && Visuals(button).OfType<TextBlock>().Any(t => t.Text == Loc.T(text)));
+    bool HasAction(Window window, string text, bool enabled)
+    {
+        // RenderAccounts replaces controls; apply/arrange their actual templates before inspection.
+        window.UpdateLayout();
+        return Visuals(window).OfType<Button>().Any(button =>
+            button.IsVisible && button.IsEnabled == enabled && Visuals(button).OfType<TextBlock>().Any(t => t.Text == Loc.T(text)));
+    }
     var checks = new List<string>();
     void Check(string name, bool valid) { if (!valid) throw new InvalidOperationException(name); checks.Add(name); }
     AppContext.SetSwitch("Switch.System.Windows.Media.ShouldRenderEvenWhenNoDisplayDevicesAreAvailable", true);

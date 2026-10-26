@@ -6,7 +6,10 @@
   "culture": "de-DE",
   "direction": "ltr",
   "strings": {
-    "auto.optimal": "Bestes Konto automatisch",
+    "auto.title": "Auto Switch",
+    "auto.next": "Nächstes Konto: {0}",
+    "auto.next_unavailable": "Nächstes Konto: keines verfügbar",
+    "auto.optimal": "Nächstes Ablaufdatum zuerst",
     "auto.custom": "Eigene Reihenfolge",
     "auto.priority": "Priorität {0}",
     "auto.priority_help": "Reihenfolge im Kontomenü festlegen. Nicht verfügbare Konten werden übersprungen.",
