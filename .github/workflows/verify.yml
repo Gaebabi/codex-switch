@@ -201,7 +201,7 @@ jobs:
       - name: Package the same verified native Windows application
         run: python scripts/package-desktop.py --app artifacts/win-x64 --rid win-x64 --output artifacts/release-candidate/win-x64
       - name: Verify ordinary Windows initialization failure recovery
-        run: dotnet run --project tests/windows-startup/CodexSwitch.WindowsStartup.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- artifacts/startup-recovery/raw
+        run: dotnet run --project tests/windows-startup/CodexSwitch.WindowsStartup.Tests.csproj -c Release --no-launch-profile -p:SelfContained=true -p:RuntimeIdentifier=win-x64 -p:UseSharedCompilation=false -- artifacts/startup-recovery/raw
       - name: Export passing native startup recovery evidence
         env:
           EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
