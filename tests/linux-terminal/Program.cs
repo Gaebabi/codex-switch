@@ -14,6 +14,9 @@ using CodexAccountDesk;
 if (!OperatingSystem.IsLinux() || LinuxPrivateFiles.UserId == 0 || Environment.GetEnvironmentVariable("CODEX_SWITCH_DISPOSABLE_RUNNER") != "true" ||
     args.Length != 2 || !Path.GetFileName(args[0]).StartsWith("codex-linux-terminal-test-", StringComparison.Ordinal) || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")))
     throw new InvalidOperationException("Only the owned normal-user headless native terminal sandbox is allowed.");
+var expectedCliVersion = Environment.GetEnvironmentVariable("CODEX_SWITCH_TERMINAL_EXPECTED_CLI_VERSION");
+if (expectedCliVersion is not ("0.162.0-alpha.17.2" or "0.162.1" or "0.163.0"))
+    throw new InvalidOperationException("The terminal fixture requires an explicitly declared reviewed CLI version.");
 var root = Path.GetFullPath(args[0]); LinuxPrivateFiles.CreateDirectory(root);
 var home = Path.Combine(root, "home"); LinuxPrivateFiles.CreateDirectory(home);
 var data = Path.Combine(root, "vault"); var project = Path.Combine(root, "project"); LinuxPrivateFiles.CreateDirectory(project);
@@ -72,7 +75,7 @@ await using (var running = CodexRpc.InspectLinuxConfiguration(client.Cli, home))
     await running.InitializeAsync(CancellationToken.None);
     observedStandaloneVersion = LinuxClientSession.ValidateInitialization(running, home);
     var policy = await LinuxClientSession.ReadPolicyAsync(running, project, CancellationToken.None);
-    Check("Exact standalone0.163.0 initialization and effective file credential policy are verified natively", observedStandaloneVersion == "0.163.0" && policy.FileCredentialsAllowed && policy.AllowsAccount("synthetic-workspace"));
+    Check("Exact declared CLI initialization and effective file credential policy are verified natively", observedStandaloneVersion == expectedCliVersion && policy.FileCredentialsAllowed && policy.AllowsAccount("synthetic-workspace"));
     var conflict = await Invoke("switch", first.Key);
     Check("An actual external native app-server blocks switching without stopping it or altering credentials", conflict.Code != 0 && !Process.GetProcessById(running.OwnedProcessId).HasExited && originalVault.SequenceEqual(File.ReadAllBytes(vault.FilePath)) && originalAuth.SequenceEqual(File.ReadAllBytes(Path.Combine(home, "auth.json"))));
 }
@@ -105,5 +108,5 @@ try { LinuxTerminalCommands.Select(after.Data.Accounts.ToArray(), "duplicate"); 
 catch (ArgumentException) { }
 Check("Duplicate account aliases require the explicit stable account ID", true);
 Check("Original Codex configuration remains byte-identical", config.SequenceEqual(File.ReadAllBytes(Path.Combine(home, "config.toml")))) ;
-Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, failed = 0, checks, architecture = RuntimeInformation.ProcessArchitecture.ToString(), sessionId = id, standaloneCliVersion = observedStandaloneVersion,
+Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, failed = 0, checks, architecture = RuntimeInformation.ProcessArchitecture.ToString(), sessionId = id, standaloneCliVersion = observedStandaloneVersion, declaredExpectedCliVersion = expectedCliVersion,
     scope = "Actual published headless commands, encrypted provider and official native standalone CLI with fictional local credentials; no real authentication, inference or Continue acceptance." }));

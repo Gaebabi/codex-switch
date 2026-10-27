@@ -24,3 +24,7 @@ The separate checkpoint b5fd19030075edab8f8ba5df751d924130245328/Run40559276438 
 |Native Linux x64|Native Linux ARM64|
 |---|---|
 |![Actual x64 terminal fixture](linux-x64-terminal-native.png)|![Actual ARM64 terminal fixture](linux-arm64-terminal-native.png)|
+
+## Shared terminal test-host profile correction
+
+The new16th assertion initially hardcoded the standalone0.163.0 pin in a test executable also used for the separately approved installed-desktop CLI0.162.0-alpha.17.2. The full desktop session exposed that test-host mistake after its original earlier contracts passed. Both callers now independently declare the expected reviewed version: the standalone workflow declares0.163.0 and the desktop fixture uses the unchanged checksum-reviewed installed-client manifest. The actual handshake and file policy must match that pin; both consumers require all16 cases. No expected value is inferred from the observed result, and no production version/home/platform/workspace/checksum guard changes. Historical captured host hashes remain intact; current host hashes and unchanged production hashes are recorded separately. Final full native checks remain the acceptance gate.

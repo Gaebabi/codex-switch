@@ -84,6 +84,16 @@
       "tests/linux-terminal/Program.cs": "5e69002ebcae75bed03bae5dce4897bf1f681e891f4fdce51b6e48bc0ff04575",
       "scripts/verify-linux-keyring.py": "526a1db4f5e4a23312b0f59ac5f4eb8b658b010406798a2307d981fd2bc29abf"
     },
-    "scope": "Actual native headless/IPC/file-policy/encrypted account fixture and own terminal frame. Full workflows/final-source promotion still required."
+    "scope": "Actual native headless/IPC/file-policy/encrypted account fixture and own terminal frame. Full workflows/final-source promotion still required.",
+    "productionSourceHashes": {
+      "src/application/LinuxClientSession.cs": "b7d20a6fd38ff7405214ff29db2c807b0bc7ecea279e9c708a0e2938ece3349c"
+    },
+    "currentHostSourceHashes": {
+      "tests/linux-terminal/Program.cs": "765154df6ebbcd048c8253ac83e6f4176413ef36a2409b6a484e334108d8f629",
+      "scripts/verify-linux-keyring.py": "f51569a0546f285ea1b98e520028f018ce31f9a778a6da2a07b0d2075229a3b7",
+      "scripts/run-local-linux-desktop.py": "6e30de969ad70b28c0ebaa2873ca544df0a6ed33e74b56d2b378b81cfb67b69c",
+      "scripts/linux-desktop-session/verify-session.py": "35838bf477caaa27f2a2a242969223c22b93745f9c213bb4084c935a4c316088"
+    },
+    "hostScopeNote": "Historical sourceHashes describe the captured standalone0.163.0 test host. Production initialization code is unchanged. The shared test host now takes an independent caller-declared reviewed version so the separate approved packaged CLI is verified against its manifest pin; both scenarios require16 contracts. Final source-bound native workflows verify that updated host."
   }
 }
