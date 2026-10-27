@@ -3,6 +3,6 @@
   "private": true,
   "description": "Pinned official Codex CLI prerequisite for isolated app-server checks; not part of the shipped application.",
   "dependencies": {
-    "@openai/codex": "0.162.1"
+    "@openai/codex": "0.163.0"
   }
 }
