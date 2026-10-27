@@ -20,6 +20,7 @@ Check("An ambiguous candidate is skipped without throwing away valid alternative
 Check("Ambiguous candidates never initiate a switch", AutomaticSwitchPolicy.Select(new[] { source, duplicate }, 10, now) == null);
 Check("Ambiguous candidate selection leaves the observed quota unchanged", JsonSerializer.Serialize(duplicate.Usage) == observedAmbiguity);
 duplicate.IsCurrent = true; source.IsCurrent = false;
+duplicate.Usage.Buckets[0].Primary!.UsedPercent = 95; // A low source would otherwise trigger a handoff.
 Check("An ambiguous source disables the forecast", AutomaticSwitchPolicy.Next(new[] { duplicate, target }, 10, now) == null);
 Check("An ambiguous source cannot trigger an automatic handoff", AutomaticSwitchPolicy.Select(new[] { duplicate, target }, 10, now) == null);
 duplicate.IsCurrent = false; source.IsCurrent = true;

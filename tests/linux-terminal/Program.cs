@@ -32,7 +32,11 @@ var second = vault.Upsert(FictionalAuth("second")); second.Alias = "Demo work";
 vault.Data.Theme = "light"; vault.Save();
 SecureFiles.AtomicWriteText(Path.Combine(home, "auth.json"), first.AuthJson);
 var checks = new List<string>();
-void Check(string name, bool passed) { if (!passed) throw new InvalidOperationException("Terminal contract failed: " + name); checks.Add(name); }
+void Check(string name, bool passed)
+{
+    if (!passed) throw new InvalidOperationException("Terminal contract failed: " + name);
+    checks.Add(name); Console.Error.WriteLine("Verified disposable terminal contract: " + name);
+}
 async Task<(int Code, string Output, string Error)> Invoke(params string[] command)
 {
     var start = new ProcessStartInfo(Path.GetFullPath(args[1])) { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, RedirectStandardInput = true };
@@ -43,6 +47,7 @@ async Task<(int Code, string Output, string Error)> Invoke(params string[] comma
     await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(35));
     var result = (process.ExitCode, await output, await error);
     if (result.Item2.Contains("synthetic-access", StringComparison.Ordinal) || result.Item3.Contains("synthetic-access", StringComparison.Ordinal)) throw new InvalidOperationException("Credential output was exposed.");
+    if (result.Item1 != 0) Console.Error.WriteLine("Disposable terminal command " + command[0] + " failed: " + result.Item3);
     return result;
 }
 var originalVault = File.ReadAllBytes(vault.FilePath); var originalAuth = File.ReadAllBytes(Path.Combine(home, "auth.json"));

@@ -235,6 +235,11 @@ try:
         task=subprocess.run([*command,str(root/'codex-linux-terminal-test-contracts'),str(a.terminal_app)],env=terminal_environment,capture_output=True,timeout=240)
         if task.returncode:
             private_log.write(task.stdout);private_log.write(task.stderr);private_log.flush()
+            # This executable enforces an owned disposable home and fictional credentials.
+            # Keep stdout private; expose only bounded stderr after its credential-output guard.
+            diagnostic=task.stderr.decode('utf-8',errors='replace')
+            if any(marker in diagnostic for marker in ('synthetic-access','synthetic-refresh','e30.')):raise RuntimeError('Terminal fixture refused unsafe credential diagnostics')
+            print('Disposable headless terminal diagnostics:\n'+diagnostic[-4000:],file=sys.stderr)
             raise RuntimeError('Native headless terminal contracts failed; inspect private diagnostics')
         terminal=json.loads(task.stdout)
         if terminal['failed'] or terminal['passed']!=15 or terminal['architecture']!=a.architecture:raise RuntimeError('Complete native headless terminal verification is required')

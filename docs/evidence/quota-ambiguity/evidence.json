@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "sourceRevision": "0c3cefb6006968a9c0bf54a72215b90ceafd2b97",
+  "baselineSource": "3c6d44d011070c77ac68c2f0a56069902231903d",
+  "nativeRun": 40556935313,
+  "nativeAssertions": 44,
+  "newNativeAssertions": 8,
+  "policyContracts": 125,
+  "images": [
+    {
+      "file": "en-auto-switch-ambiguous-candidate.png",
+      "sha256": "7fca0be9a2adbc5b397910a5f203a7e2512d2c77cadc480af05d87bb8537da04",
+      "width": 207,
+      "height": 346,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-auto-switch-ambiguous-source.png",
+      "sha256": "eded0817a9150b80126d2602ac2e879bc92b2262479cb3144ad62dc8f4aa6cec",
+      "width": 222,
+      "height": 346,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "ko-auto-switch-ambiguous-candidate.png",
+      "sha256": "59218fc8a301d7c82866a9067fadceafd9694d6a46265b3a0c7cc08bb61067f3",
+      "width": 236,
+      "height": 346,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "ko-auto-switch-ambiguous-source.png",
+      "sha256": "580afc74ecce12dc90ffe97af35312664ecfc84129238e0238de36e10e87a248",
+      "width": 240,
+      "height": 346,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    }
+  ],
+  "sourceHashes": {
+    "Directory.Build.props": "1286ac36f5fe595f90d55816e5cf5e2df3f4ed0f32cc1f720e879586b2b0750f",
+    "src/core/AutomaticSwitchPolicy.cs": "e5d3db0a9336adb98297f156bfd5f0d2753dfcdd0fe4f57ffc84e8582ac5b150",
+    "src/core/Models.cs": "54cae14b7092b33022ba537d8db3c991caa70467fda9cfe58fcb148affffa508",
+    "src/application/AccountAutomation.cs": "06b44afbac40ea89251ce28e66e29151534a01c35a9e1da3b829bc4dd2138abb",
+    "src/windows/MainWindow.cs": "6e4b1266c8534da3f180186b85bd8ae170d3f4d93bddb86b880eba695f4824eb",
+    "src/windows/AccountAutomationEvidence.cs": "08fc7fd36283e905fc0e97a5eeb9365fc4b65f41c3325184e468627f6852f6b3",
+    "scripts/verify-account-automation-evidence.py": "e018e714753bf44a46243255c11244aa96414fded33b8307f3388427e1b47fcd",
+    "requirements-dev.txt": "573a84bf2d31e8f20359f0aa3dd0793dbcef14131d9065df2709eb78cdec05e6",
+    "tools/ci-codex/package.json": "18ab16a51a3fdeb64d82900d0f22e168b70fe19a848dd50a9b36ffea8548b2ce",
+    "tools/ci-codex/package-lock.json": "f07aa236e9e2d4298939f96c354d4c9db89e2e445000e100cf6e0d2be3b6651d"
+  },
+  "before": {
+    "exceptionType": "ArgumentException",
+    "reproduction": "Actual UsageSnapshot.Parse duplicate JSON quota keys followed by original AutomaticSwitchPolicy.Next. Healthy prior menu screenshot is separately labeled.",
+    "originalPolicySha256": "309187c086cda4a6523dd88697e01cd5891443738b00dff355930704a74b226e"
+  },
+  "personalDataUsed": false,
+  "originalExportBytesUnchanged": true,
+  "scope": "Actual hosted native Windows own-HWND menu with fictional quotas and intercepted browser intent. Candidate/source malformed data is diagnostic input, not a real account response. No authenticated switch, owner client shutdown, real Continue or shared input."
+}
