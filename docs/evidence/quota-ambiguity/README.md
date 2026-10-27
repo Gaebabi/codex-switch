@@ -14,3 +14,13 @@ The new hosted Windows source `0c3cefb6006968a9c0bf54a72215b90ceafd2b97`, Verify
 The four new exported PNGs were individually inspected without scaling/pixel changes, and retain their original bytes/SHA256 with no image metadata. Inputs are fictional and the window/menu HWND belongs to the app on a disposable hosted runner; no personal screen/account, actual switch, client shutdown or Continue is used. Source/capture/native/authenticated scopes remain separate. Final evidence commits are distinct from capture source; implementation and dependency hashes bind the same code. The final release requires six final-head checks, author COMMENT self-review (not independent approval), expected-head normal merge/tree equality and verified public package downloads.
 
 Development-only PR101/102 are integrated with original ancestry. Their official release/registry review and full native export/protocol validation are recorded in [dependency review](../../development/DEPENDENCY_REVIEW.md). The tools add no shipped runtime dependency. Existing trust checks and all original native assertions remain.
+
+## Exact standalone CLI0.163.0 compatibility
+
+The earlier exact-version gate correctly refused this previously unreviewed standalone CLI. Tagged0.162.1/0.163.0 initialization and credential schema fields/referenced definitions were compared before approving only exact0.163.0; credential-store passthrough still requires native behavior tests. Unknown0.163.1/0.164.0 and wrong home/platform/client headers remain refused. The installed-desktop checksum manifest and credential/workspace policy parser are unchanged.
+
+The separate checkpoint b5fd19030075edab8f8ba5df751d924130245328/Run40559276438 passes16 actual terminal contracts on each native architecture: all15 original account/configuration/conflict/preservation cases plus actual0.163.0 initialization/effective-file-policy verification. The original owned Xfwm4 terminal frames below were individually inspected and retain original bytes/hash/metadata-free provenance. The commands use fictional accounts and no authenticated login, inference or active-task continuation. They are not full-workflow/final-head acceptance; the final six checks and source-bound package promotion remain required.134 portable contracts include nine exact-version/identity accept/refusal cases in addition to the125 quota/account/retry cases.
+
+|Native Linux x64|Native Linux ARM64|
+|---|---|
+|![Actual x64 terminal fixture](linux-x64-terminal-native.png)|![Actual ARM64 terminal fixture](linux-arm64-terminal-native.png)|

@@ -59,5 +59,31 @@
   },
   "personalDataUsed": false,
   "originalExportBytesUnchanged": true,
-  "scope": "Actual hosted native Windows own-HWND menu with fictional quotas and intercepted browser intent. Candidate/source malformed data is diagnostic input, not a real account response. No authenticated switch, owner client shutdown, real Continue or shared input."
+  "scope": "Actual hosted native Windows own-HWND menu with fictional quotas and intercepted browser intent. Candidate/source malformed data is diagnostic input, not a real account response. No authenticated switch, owner client shutdown, real Continue or shared input.",
+  "standaloneCompatibility": {
+    "sourceRevision": "b5fd19030075edab8f8ba5df751d924130245328",
+    "nativeRun": 40559276438,
+    "exactVersion": "0.163.0",
+    "nativeContractsPerArchitecture": 16,
+    "images": [
+      {
+        "file": "linux-x64-terminal-native.png",
+        "sha256": "ec01caa128286956ad3e5ef56f01474f34e85b931b4b2182b48c3784165b3d7a",
+        "rid": "linux-x64",
+        "originalExportBytesUnchanged": true
+      },
+      {
+        "file": "linux-arm64-terminal-native.png",
+        "sha256": "ec01caa128286956ad3e5ef56f01474f34e85b931b4b2182b48c3784165b3d7a",
+        "rid": "linux-arm64",
+        "originalExportBytesUnchanged": true
+      }
+    ],
+    "sourceHashes": {
+      "src/application/LinuxClientSession.cs": "b7d20a6fd38ff7405214ff29db2c807b0bc7ecea279e9c708a0e2938ece3349c",
+      "tests/linux-terminal/Program.cs": "5e69002ebcae75bed03bae5dce4897bf1f681e891f4fdce51b6e48bc0ff04575",
+      "scripts/verify-linux-keyring.py": "526a1db4f5e4a23312b0f59ac5f4eb8b658b010406798a2307d981fd2bc29abf"
+    },
+    "scope": "Actual native headless/IPC/file-policy/encrypted account fixture and own terminal frame. Full workflows/final-source promotion still required."
+  }
 }

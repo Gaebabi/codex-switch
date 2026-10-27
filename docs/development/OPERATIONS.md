@@ -1,5 +1,7 @@
 # Operations
 
+Mac account-count verification explicitly updates the newly rebuilt native layout before reading scroll extent and after changing its offset. A fixed sleep alone can leave the previous tree's extent at inspection time on a busy runner. Keep both8-account extent and actual offset assertions; failures report safe extent/viewport/bounds values. This affects the diagnostic's measurement timing, not the product's account geometry or scroll behavior.
+
 Exact standalone CLI0.163.0 compatibility is reviewed separately from package integrity: upstream initialization/credential schema comparison, exact-version/home/platform/client refusals and native16 terminal checks (the original15 plus actual0.163.0 initialization/file-policy) are required on both Linux architectures. The installed desktop manifest and credential/workspace policy parser are unchanged.134 portable policy/account/retry/initialization checks include rejection of0.163.1/0.164.0 and mismatched home/platform/client headers. Earlier125 counts describe the original capture checkpoint.
 
 The Linux terminal contract host reports only fixed contract labels and command names during its owned fictional fixture. On failure the keyring harness retains stdout privately and exposes at most4000 stderr characters after rejecting known fixture credential markers. Native failures still fail. This makes upstream CLI compatibility failures diagnosable; it does not skip assertions or read any owner home/account.
