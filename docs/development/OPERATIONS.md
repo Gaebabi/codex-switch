@@ -1,5 +1,7 @@
 # Operations
 
+Exact standalone CLI0.163.0 compatibility is reviewed separately from package integrity: upstream initialization/credential schema comparison, exact-version/home/platform/client refusals and native16 terminal checks (the original15 plus actual0.163.0 initialization/file-policy) are required on both Linux architectures. The installed desktop manifest and credential/workspace policy parser are unchanged.134 portable policy/account/retry/initialization checks include rejection of0.163.1/0.164.0 and mismatched home/platform/client headers. Earlier125 counts describe the original capture checkpoint.
+
 The Linux terminal contract host reports only fixed contract labels and command names during its owned fictional fixture. On failure the keyring harness retains stdout privately and exposes at most4000 stderr characters after rejecting known fixture credential markers. Native failures still fail. This makes upstream CLI compatibility failures diagnosable; it does not skip assertions or read any owner home/account.
 
 Issue120 native verification extends the existing hosted Windows account-automation mode with ambiguous candidate/source quotas. Actual EN/KO menu popups must name the valid fallback or explicitly unavailable; the original quota remains unchanged. Policy regression separately reproduces duplicate JSON keys. Development tools are Pillow13.0.0 and the locked official CI CLI0.163.0, preserving no-lifecycle-script install and original bot ancestry. No owner account/client operation is used. [Delivery](RELEASE_1_42_6.md).

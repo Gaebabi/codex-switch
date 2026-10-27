@@ -32,6 +32,7 @@ var second = vault.Upsert(FictionalAuth("second")); second.Alias = "Demo work";
 vault.Data.Theme = "light"; vault.Save();
 SecureFiles.AtomicWriteText(Path.Combine(home, "auth.json"), first.AuthJson);
 var checks = new List<string>();
+string? observedStandaloneVersion = null;
 void Check(string name, bool passed)
 {
     if (!passed) throw new InvalidOperationException("Terminal contract failed: " + name);
@@ -69,6 +70,9 @@ Check("A nonexistent saved session never changes the selected login or fabricate
 await using (var running = CodexRpc.InspectLinuxConfiguration(client.Cli, home))
 {
     await running.InitializeAsync(CancellationToken.None);
+    observedStandaloneVersion = LinuxClientSession.ValidateInitialization(running, home);
+    var policy = await LinuxClientSession.ReadPolicyAsync(running, project, CancellationToken.None);
+    Check("Exact standalone0.163.0 initialization and effective file credential policy are verified natively", observedStandaloneVersion == "0.163.0" && policy.FileCredentialsAllowed && policy.AllowsAccount("synthetic-workspace"));
     var conflict = await Invoke("switch", first.Key);
     Check("An actual external native app-server blocks switching without stopping it or altering credentials", conflict.Code != 0 && !Process.GetProcessById(running.OwnedProcessId).HasExited && originalVault.SequenceEqual(File.ReadAllBytes(vault.FilePath)) && originalAuth.SequenceEqual(File.ReadAllBytes(Path.Combine(home, "auth.json"))));
 }
@@ -101,5 +105,5 @@ try { LinuxTerminalCommands.Select(after.Data.Accounts.ToArray(), "duplicate"); 
 catch (ArgumentException) { }
 Check("Duplicate account aliases require the explicit stable account ID", true);
 Check("Original Codex configuration remains byte-identical", config.SequenceEqual(File.ReadAllBytes(Path.Combine(home, "config.toml")))) ;
-Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, failed = 0, checks, architecture = RuntimeInformation.ProcessArchitecture.ToString(), sessionId = id,
+Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, failed = 0, checks, architecture = RuntimeInformation.ProcessArchitecture.ToString(), sessionId = id, standaloneCliVersion = observedStandaloneVersion,
     scope = "Actual published headless commands, encrypted provider and official native standalone CLI with fictional local credentials; no real authentication, inference or Continue acceptance." }));
