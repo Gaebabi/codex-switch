@@ -3,11 +3,11 @@
 
 **OpenAI Codex 계정 전환과 사용량을 한 화면에서 관리하는 데스크톱 앱입니다.** 여러 계정의 잔여량을 비교하고 다음 계정을 선택하세요. 전환이 중단되면 저장된 기록으로 복구할 수 있습니다. 선택적 사용량 기준 자동 전환은 기본 **꺼짐**입니다.
 
-Windows · macOS15+ · Linux 미리보기 · MIT 오픈소스 · **1.42.5**
+Windows · macOS15+ · Linux 미리보기 · MIT 오픈소스 · **1.42.6**
 
 [English](../README.md) / 한국어 / [日本語](README.ja.md) / [简体中文](README.zh-CN.md)
 
-[다운로드](#다운로드) · [시작하기](INSTALL.md) · [업데이트 내용](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.5)
+[다운로드](#다운로드) · [시작하기](INSTALL.md) · [업데이트 내용](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.6)
 
 <p align="center"><img src="media/discovery/ko-dark-demo.png" width="500" height="400" alt="계정별 잔여량, CPU·메모리·GPU 사용률과 저장장치 2개를 보여주는 Codex Switch UI 데모" /></p>
 
@@ -23,11 +23,13 @@ Windows · macOS15+ · Linux 미리보기 · MIT 오픈소스 · **1.42.5**
 
 1.42.5는 만료가 가까운 사용 가능 구독을 우선 선택하고 **Auto Switch** 토글과 다음 전환 계정을 표시합니다. 일시적인 전환 실패를 최대 두 번 더 자동 재시도하며 진행 상태를 유지합니다. 재시도 횟수를 저장하고 기존 Continue 식별자를 보존해 무한 복구와 중복 전송을 막습니다. [동작과 검증](development/RELEASE_1_42_5.md).
 
+1.42.6은 사용량 식별자가 중복되거나 비어 있어도 Auto Switch가 오류로 중단되지 않도록 개선합니다. 모호한 후보는 제외하고 현재 계정의 정보가 모호하면 전환하지 않습니다. 원본 데이터와 기존 만료일·사용자 순위는 유지합니다. [동작과 검증](development/RELEASE_1_42_6.md).
+
 ## 다운로드
 
-- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.5/CodexSwitch-v1.42.5-win-x64.zip)
-- macOS15+: [Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.5/CodexSwitch-v1.42.5-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.5/CodexSwitch-v1.42.5-osx-x64.zip)
-- Linux **미리보기** x64·ARM64: [DEB·RPM·tar.gz 및 SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.5)
+- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.6/CodexSwitch-v1.42.6-win-x64.zip)
+- macOS15+: [Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.6/CodexSwitch-v1.42.6-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.6/CodexSwitch-v1.42.6-osx-x64.zip)
+- Linux **미리보기** x64·ARM64: [DEB·RPM·tar.gz 및 SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.6)
 
 전체 실행 패키지에 .NET 런타임이 포함되어 소스 빌드나 .NET 설치가 필요 없습니다. 폴더·앱 번들 전체를 유지하세요. Windows·Linux는 미서명이며 Mac은 임시 서명으로 **Apple 공증은 없습니다**. [설치](INSTALL.md) / [Mac 최초 실행](MACOS.md)
 
@@ -37,7 +39,7 @@ Linux는 통합 미리보기입니다. 키 모음·설치 UI·패키지 검증�
 
 경고 아이콘에 마우스를 올리면 원인을 보고, 누르면 해당 계정으로 브라우저에서 다시 로그인할 수 있습니다. [실제 앱 검증 화면](evidence/account-automation/README.md).
 
-**Linux1.42.5 다운로드에는 소스1.41.0에서 추가한 CLI 계정 전환과 저장 세션 재개가 포함됩니다.** `CodexSwitch cli`로 화면 서버 없이 기존 암호화 계정을 관리하고, `cli switch <계정> --resume <CLI 세션 UUID>`로 수동 전환과 공식 CLI 재개를 연결합니다. `--continue`는 후속 메시지 전송을 명시하며, `--exec --continue`는 비대화형 실행입니다. 검증된 네이티브 CLI·체크섬과 잠금 해제된 지원 Secret Service가 필요합니다. Linux x64에서 실제 두 계정 전환 후 기존 문맥을 기억하는 CLI 재개를 확인했습니다. ARM64·오프라인 검증과 전체 데스크톱 수용 범위는 구분합니다. [명령·실제 스크린샷·정확한 검증 범위](development/LINUX_TERMINAL.md).
+**Linux1.42.6 다운로드에는 소스1.41.0에서 추가한 CLI 계정 전환과 저장 세션 재개가 포함됩니다.** `CodexSwitch cli`로 화면 서버 없이 기존 암호화 계정을 관리하고, `cli switch <계정> --resume <CLI 세션 UUID>`로 수동 전환과 공식 CLI 재개를 연결합니다. `--continue`는 후속 메시지 전송을 명시하며, `--exec --continue`는 비대화형 실행입니다. 검증된 네이티브 CLI·체크섬과 잠금 해제된 지원 Secret Service가 필요합니다. Linux x64에서 실제 두 계정 전환 후 기존 문맥을 기억하는 CLI 재개를 확인했습니다. ARM64·오프라인 검증과 전체 데스크톱 수용 범위는 구분합니다. [명령·실제 스크린샷·정확한 검증 범위](development/LINUX_TERMINAL.md).
 
 1. Windows는 `CodexSwitch.exe`, Mac은 `Install.command`로 설치한 **Codex Switch.app**을 실행하세요. Linux는 전체 미리보기 패키지와 지원하는 Secret Service 제공자가 필요합니다.
 2. **+**로 각 계정을 공식 브라우저 로그인합니다. 이전 계정이 자동 선택되면 별도 브라우저 프로필·비공개 창으로 다음 계정을 로그인하세요. Windows는 **↻** 우클릭으로 현재 로그인을 가져올 수 있습니다.

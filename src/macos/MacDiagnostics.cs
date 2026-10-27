@@ -240,13 +240,18 @@ internal static class MacDiagnostics
             foreach (var count in new[] { 0, 1, 8 })
             {
                 window.Width = 500; window.Height = 360; window.Preview("en", true, Profiles(count)); await Task.Delay(120);
+                // Preview replaces the entire scroll subtree. Measure that current tree before
+                // inspecting its extent; elapsed time alone does not complete a native layout pass.
+                await Dispatcher.UIThread.InvokeAsync(window.UpdateLayout, DispatcherPriority.Render);
                 try
                 {
                     Assert(window.Cards.Count == count, "Account count changed.");
                     if (count == 8)
                     {
-                        Assert(window.AccountScroll.Extent.Height > window.AccountScroll.Viewport.Height, "Additional accounts cannot scroll.");
+                        Assert(window.AccountScroll.Extent.Height > window.AccountScroll.Viewport.Height,
+                            "Additional accounts cannot scroll: extent=" + window.AccountScroll.Extent + "; viewport=" + window.AccountScroll.Viewport + "; bounds=" + window.AccountScroll.Bounds);
                         window.AccountScroll.Offset = new Vector(0, window.AccountScroll.Extent.Height); await Task.Delay(80);
+                        await Dispatcher.UIThread.InvokeAsync(window.UpdateLayout, DispatcherPriority.Render);
                         Assert(window.AccountScroll.Offset.Y > 0, "Scroll position did not change.");
                     }
                     checks.Add(new { name = "account-count-" + count, passed = true });
