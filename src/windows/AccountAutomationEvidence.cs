@@ -132,6 +132,24 @@ internal static class AccountAutomationEvidence
                     Check(AccountAutomation.Next(service, now)?.Key == accounts[1].Key && accounts[1].Usage!.LeastRemaining < accounts[2].Usage!.LeastRemaining, language + "nearest eligible expiry precedes higher remaining quota");
                     Capture(NativeHandle(menu, "Next account On menu"), language + "-auto-switch-next-on.png"); menu.IsOpen = false;
                 }
+                var validTarget = accounts[2].Key;
+                var originalTargetUsage = accounts[1].Usage!;
+                var originalSourceUsage = accounts[0].Usage!;
+                accounts[1].Usage = new() { CheckedAt = now, Buckets = new() { originalTargetUsage.Buckets[0], originalTargetUsage.Buckets[0] } };
+                foreach (var language in new[] { "en", "ko" })
+                {
+                    window.PrepareUiEvidence(language, language == "en"); Render();
+                    var menu = OpenMenu(); await Task.Delay(150);
+                    Check(AccountAutomation.Next(service, now)?.Key == validTarget && accounts[1].Usage!.Buckets.Count == 2, language + "ambiguous candidate is skipped without rewriting its quota");
+                    Check(((MenuItem)menu.Items[1]).Header as string == Loc.F("auto.next", accounts[2].DisplayName), language + "native menu still opens and names the valid fallback");
+                    Capture(NativeHandle(menu, "Ambiguous candidate fallback"), language + "-auto-switch-ambiguous-candidate.png"); menu.IsOpen = false;
+                    accounts[0].Usage = new() { CheckedAt = now, Buckets = new() { originalSourceUsage.Buckets[0], originalSourceUsage.Buckets[0] } };
+                    Render(); menu = OpenMenu(); await Task.Delay(150);
+                    Check(AccountAutomation.Next(service, now) == null && AutomaticSwitchPolicy.Select(service.Accounts, 10, now) == null, language + "ambiguous source blocks forecast and switching");
+                    Check(((MenuItem)menu.Items[1]).Header as string == Loc.T("auto.next_unavailable"), language + "native menu explicitly shows unavailable for an ambiguous source");
+                    Capture(NativeHandle(menu, "Ambiguous source refusal"), language + "-auto-switch-ambiguous-source.png"); menu.IsOpen = false;
+                    accounts[0].Usage = originalSourceUsage;
+                }
             }
             finally
             {

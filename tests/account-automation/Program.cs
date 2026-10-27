@@ -10,6 +10,27 @@ AccountProfile Profile(string key, double remaining, bool current = false) => ne
         new() { Id = "codex", Primary = new() { UsedPercent = 100 - remaining, Minutes = 10080, ResetsAt = now.AddDays(2).ToUnixTimeSeconds() } } } } };
 AccountProfile? Choose(AccountProfile source, AccountProfile target) => AutomaticSwitchPolicy.Select(new[] { source, target }, 10, now);
 var source = Profile("source", 9, true); var target = Profile("target", 80);
+UsageSnapshot AmbiguousUsage() => UsageSnapshot.Parse(JsonDocument.Parse("""
+    {"rateLimitsByLimitId":{"codex":{"primary":{"usedPercent":20,"windowDurationMins":10080}},"codex":{"primary":{"usedPercent":30,"windowDurationMins":10080}}}}
+    """).RootElement, "fictional");
+var duplicate = Profile("duplicate", 80); duplicate.Usage = AmbiguousUsage(); duplicate.Usage.CheckedAt = now;
+Check("Ambiguous JSON bucket IDs are retained as observed", duplicate.Usage.Buckets.Count == 2 && duplicate.Usage.Buckets.All(b => b.Id == "codex"));
+var observedAmbiguity = JsonSerializer.Serialize(duplicate.Usage);
+Check("An ambiguous candidate is skipped without throwing away valid alternatives", AutomaticSwitchPolicy.Next(new[] { source, duplicate, target }, 10, now)?.Key == target.Key);
+Check("Ambiguous candidates never initiate a switch", AutomaticSwitchPolicy.Select(new[] { source, duplicate }, 10, now) == null);
+Check("Ambiguous candidate selection leaves the observed quota unchanged", JsonSerializer.Serialize(duplicate.Usage) == observedAmbiguity);
+duplicate.IsCurrent = true; source.IsCurrent = false;
+Check("An ambiguous source disables the forecast", AutomaticSwitchPolicy.Next(new[] { duplicate, target }, 10, now) == null);
+Check("An ambiguous source cannot trigger an automatic handoff", AutomaticSwitchPolicy.Select(new[] { duplicate, target }, 10, now) == null);
+duplicate.IsCurrent = false; source.IsCurrent = true;
+foreach (var identifier in new[] { "", " " })
+{
+    var missing = Profile("missing", 80); missing.Usage!.Buckets[0].Id = identifier;
+    Check("Empty bucket IDs cannot qualify: " + identifier.Length, Choose(source, missing) == null);
+}
+var split = Profile("split", 80); split.Usage!.Buckets.Add(new() { Id = "codex", Secondary = new() { UsedPercent = 0, Minutes = 300 } });
+Check("Duplicate bucket IDs with different slots are still ambiguous", Choose(source, split) == null);
+Check("Rejection preserves the valid candidate and existing trigger behavior", Choose(source, target)?.Key == target.Key);
 Check("Below threshold chooses a fresh eligible account", Choose(source, target) == target);
 var exhausted = Profile("source", 0, true); exhausted.Usage!.OrdinaryUsageAllowed = false; exhausted.Usage.Buckets[0].LimitState = "reached";
 Check("An exhausted source can switch away despite its limit flag", Choose(exhausted, target) == target);

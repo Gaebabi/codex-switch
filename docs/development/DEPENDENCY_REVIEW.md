@@ -1,5 +1,13 @@
 # Dependency review — issue83
 
+## Current development-tool integration — issue120
+
+Source1.42.6 integrates PR101/Pillow13.0.0 and PR102/official CI CLI0.163.0 while preserving both original bot heads. Both are development prerequisites; application runtime dependencies and Linux installed-client trust pins remain unchanged. Existing Python3.12 satisfies [Pillow13's supported Python range](https://pillow.readthedocs.io/en/stable/releasenotes/13.0.0.html). The project uses explicit lossless PNG exports and no removed ImageQt/IM/GIF-netpbm/Makernote interfaces. New full native export/hash/metadata checks must pass with this pin.
+
+[Official CLI0.163.0 release](https://github.com/openai/codex/releases/tag/rust-v0.163.0) and registry metadata were reviewed. All seven locked npm entries (wrapper and six native variants) match official tarball URLs and integrity values, Apache-2.0 license and exact0.163.0 versions. Keep `npm ci --ignore-scripts --no-audit --no-fund` and the exact native Windows executable selection; native prerequisite/protocol/credential-preservation tests must pass without changing assertions. No actual browser login or owner account is used. Final6 integration checks and native package evidence supersede stale isolated PR results.
+
+Use an expected-head normal merge commit so the original heads remain main ancestors; verify both original PRs are reported merged and reviewed/merged trees match. A version bump or successful isolated old PR alone is not integration acceptance. Prior review below retains its historical scope.
+
 Baseline main `083e283609242aa6b071e7f64e126e5de8668bf4`, source1.40.3. The integrated source1.40.4 preserves the eight original bot heads and upgrades both Avalonia packages together. Publication remains1.40.2; no personal installation or owner Linux environment is changed. Existing data/key/bundle/IPC identities, forecast math, account/credential/client policy and Windows WPF code are retained.
 
 | PR | Target | Review focus |

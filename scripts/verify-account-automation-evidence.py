@@ -14,11 +14,12 @@ a = p.parse_args()
 if not re.fullmatch(r'[0-9a-f]{40}', a.revision):
     raise SystemExit('Exact committed revision required')
 receipt = json.loads((a.source / 'account-automation-receipt.json').read_text(encoding='utf-8'))
-if receipt['os'] != 'Windows' or receipt['architecture'] != 'X64' or receipt['passed'] != 36 or receipt['failed'] != 0:
-    raise SystemExit('All 36 actual application account-automation checks must pass')
+if receipt['os'] != 'Windows' or receipt['architecture'] != 'X64' or receipt['passed'] != 44 or receipt['failed'] != 0:
+    raise SystemExit('All 44 actual application account-automation checks must pass')
 names = {f'{language}-{theme}-account-automation-500x360.png' for language in ['en', 'ko'] for theme in ['dark', 'light']}
 names |= {f'en-{theme}-account-automation-{case}.png' for theme in ['dark', 'light'] for case in ['enabled', 'menu', 'order']}
 names |= {f'{language}-auto-switch-next-{state}.png' for language in ['en', 'ko'] for state in ['off', 'on']}
+names |= {f'{language}-auto-switch-ambiguous-{role}.png' for language in ['en', 'ko'] for role in ['candidate', 'source']}
 if set(receipt['images']) != names or len(receipt['images']) != len(names):
     raise SystemExit('All declared actual app/menu confirmation images required')
 a.destination.mkdir(parents=True, exist_ok=True)

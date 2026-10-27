@@ -3,11 +3,11 @@
 
 **OpenAI Codexのアカウント切替と使用量を一画面で管理するデスクトップアプリです。** 各アカウントの残量を比較して次のアカウントを選択し、中断した切替は保存された記録から復旧できます。任意の残量基準による自動切替は初期状態で**オフ**です。
 
-Windows · macOS15以降 · Linuxプレビュー · MITオープンソース · **1.42.5**
+Windows · macOS15以降 · Linuxプレビュー · MITオープンソース · **1.42.6**
 
 [English](../README.md) / [한국어](README.ko.md) / 日本語 / [简体中文](README.zh-CN.md)
 
-[ダウンロード](#ダウンロード) · [使い始める](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.5)
+[ダウンロード](#ダウンロード) · [使い始める](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.6)
 
 <p align="center"><img src="media/discovery/en-dark-demo.png" width="500" height="400" alt="アカウント残量、CPU・メモリ・GPU使用率と2台のストレージを表示するCodex Switch英語UIデモ" /></p>
 
@@ -23,11 +23,13 @@ Windows · macOS15以降 · Linuxプレビュー · MITオープンソース · 
 
 1.42.5は期限が近い利用可能なアカウントを優先し、**Auto Switch**トグルと次のアカウントを表示します。一時的な切り替え失敗を最大2回追加で再試行し、操作中の表示を維持します。保存した回数とContinue識別子で無制限の復旧と重複送信を防ぎます。[動作と検証](development/RELEASE_1_42_5.md)。
 
+1.42.6は使用量IDの重複や欠落でAuto Switchが停止する問題を修正します。不明確な候補を除外し、現在の情報が不明確なら切り替えません。元データと有効期限・指定順位を維持します。[動作と検証](development/RELEASE_1_42_6.md)。
+
 ## ダウンロード
 
-- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.5/CodexSwitch-v1.42.5-win-x64.zip)
-- macOS15以降：[Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.5/CodexSwitch-v1.42.5-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.5/CodexSwitch-v1.42.5-osx-x64.zip)
-- Linux **プレビュー** x64・ARM64：[DEB・RPM・tar.gzとSHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.5)
+- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.6/CodexSwitch-v1.42.6-win-x64.zip)
+- macOS15以降：[Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.6/CodexSwitch-v1.42.6-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.6/CodexSwitch-v1.42.6-osx-x64.zip)
+- Linux **プレビュー** x64・ARM64：[DEB・RPM・tar.gzとSHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.6)
 
 .NETを同梱しており、ビルドやランタイムのインストールは不要です。フォルダー・アプリ全体を保持してください。Windows/Linuxは未署名、Macはアドホック署名で**Apple未公証**です。[インストール](INSTALL.md) / [Mac初回起動](MACOS.md)
 
@@ -37,7 +39,7 @@ Linuxは統合プレビューです。キーストア・インストール済み
 
 警告にホバーすると原因を表示し、押すと対象アカウントでブラウザーに再ログインできます。[実際のアプリ検証](evidence/account-automation/README.md)。
 
-**Linux1.42.5の配布物には、ソース1.41.0で追加した端末のアカウント切り替えと保存済みCLIセッションの再開が含まれます。** `CodexSwitch cli`で画面サーバーなしに既存の暗号化アカウントを管理し、`cli switch <account> --resume <CLI-session-UUID>`で手動切り替えと公式CLIの再開を実行します。`--continue`は追加メッセージ送信を明示し、`--exec --continue`は非対話実行です。検証済みのネイティブCLI・チェックサムと、ロック解除済みの対応Secret Serviceが必要です。Linux x64で実際の2アカウント切り替え後に元の文脈を保持したCLI再開を確認しました。ARM64・オフライン検証と完全なデスクトップ対応は別の範囲です。[コマンド・実際の画像・検証範囲](development/LINUX_TERMINAL.md)。
+**Linux1.42.6の配布物には、ソース1.41.0で追加した端末のアカウント切り替えと保存済みCLIセッションの再開が含まれます。** `CodexSwitch cli`で画面サーバーなしに既存の暗号化アカウントを管理し、`cli switch <account> --resume <CLI-session-UUID>`で手動切り替えと公式CLIの再開を実行します。`--continue`は追加メッセージ送信を明示し、`--exec --continue`は非対話実行です。検証済みのネイティブCLI・チェックサムと、ロック解除済みの対応Secret Serviceが必要です。Linux x64で実際の2アカウント切り替え後に元の文脈を保持したCLI再開を確認しました。ARM64・オフライン検証と完全なデスクトップ対応は別の範囲です。[コマンド・実際の画像・検証範囲](development/LINUX_TERMINAL.md)。
 
 1. Windowsは`CodexSwitch.exe`、Macは`Install.command`でインストールした**Codex Switch.app**を開きます。Linuxは完全なプレビューパッケージと対応するSecret Serviceが必要です。
 2. **+**で公式ブラウザー画面から各アカウントをログインします。以前のアカウントが自動選択される場合は、別のブラウザープロファイル・プライベートウィンドウを使います。Windowsは**↻**の右クリックで現在のログインを取り込めます。
