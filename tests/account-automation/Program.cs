@@ -7,9 +7,9 @@ void Check(string name, bool condition) { if (!condition) throw new Exception(na
 var now = DateTimeOffset.UtcNow;
 JsonElement Hello(string version, string home = "/fictional/home", string os = "linux", string family = "unix", string prefix = "codex_account_desk/") =>
     JsonSerializer.SerializeToElement(new { codexHome = home, platformOs = os, platformFamily = family, userAgent = prefix + version + " (fixture)" });
-foreach (var version in new[] { "0.162.0-alpha.17.2", "0.162.1", "0.163.0" })
+foreach (var version in new[] { "0.162.0-alpha.17.2", "0.162.1", "0.163.0", "0.164.0" })
     Check("Exact reviewed Linux initialization version accepted: " + version, LinuxClientSession.ValidateInitialization(Hello(version), "/fictional/home") == version);
-foreach (var hello in new[] { Hello("0.163.1"), Hello("0.164.0"), Hello("0.163.0", "/other/home"), Hello("0.163.0", os: "windows"), Hello("0.163.0", family: "windows"), Hello("0.163.0", prefix: "unrelated/") })
+foreach (var hello in new[] { Hello("0.163.1"), Hello("0.164.1"), Hello("0.165.0"), Hello("0.164.0", "/other/home"), Hello("0.164.0", os: "windows"), Hello("0.164.0", family: "windows"), Hello("0.164.0", prefix: "unrelated/") })
 {
     var refused = false;
     try { LinuxClientSession.ValidateInitialization(hello, "/fictional/home"); } catch (InvalidDataException) { refused = true; }

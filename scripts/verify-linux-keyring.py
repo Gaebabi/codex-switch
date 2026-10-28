@@ -231,7 +231,7 @@ try:
         import hashlib
         terminal_environment['CODEX_SWITCH_STANDALONE_CLI']=str(native)
         terminal_environment['CODEX_SWITCH_STANDALONE_CLI_SHA']=hashlib.sha256(native.read_bytes()).hexdigest()
-        terminal_environment['CODEX_SWITCH_TERMINAL_EXPECTED_CLI_VERSION']='0.163.0'
+        terminal_environment['CODEX_SWITCH_TERMINAL_EXPECTED_CLI_VERSION']='0.164.0'
         command=(['dotnet',str(a.terminal_assembly)] if a.terminal_assembly.suffix=='.dll' else [str(a.terminal_assembly)])
         task=subprocess.run([*command,str(root/'codex-linux-terminal-test-contracts'),str(a.terminal_app)],env=terminal_environment,capture_output=True,timeout=240)
         if task.returncode:
@@ -243,7 +243,7 @@ try:
             print('Disposable headless terminal diagnostics:\n'+diagnostic[-4000:],file=sys.stderr)
             raise RuntimeError('Native headless terminal contracts failed; inspect private diagnostics')
         terminal=json.loads(task.stdout)
-        if terminal['failed'] or terminal['passed']!=16 or terminal['architecture']!=a.architecture or terminal['standaloneCliVersion']!='0.163.0' or terminal['declaredExpectedCliVersion']!='0.163.0':raise RuntimeError('Complete native headless terminal and exact standalone0.163.0 verification is required')
+        if terminal['failed'] or terminal['passed']!=16 or terminal['architecture']!=a.architecture or terminal['standaloneCliVersion']!='0.164.0' or terminal['declaredExpectedCliVersion']!='0.164.0':raise RuntimeError('Complete native headless terminal and exact standalone0.164.0 verification is required')
         verify_owner()
         if a.terminal_lifecycle:
             sandbox=root/'codex-linux-terminal-test-contracts';report.parent.mkdir(parents=True,exist_ok=True)

@@ -1,5 +1,16 @@
 # Dependency review — issue83
 
+## Current integration — issue125
+
+Source1.42.7 preserves original PR122/setup-python7.1.0, PR123/official CI CLI0.164.0 and PR124/System.Management10.0.14 heads. [The CLI release](https://github.com/openai/codex/releases/tag/rust-v0.164.0) and all seven wrapper/native npm entries match exact official tarball URLs and SRI. The actual prior native failure is an unreviewed initialization-version refusal, not evidence that checks should be skipped. Tagged0.163.0/0.164.0 initialization schemas and selected configuration/managed credential definitions match; credential-store additional-properties still requires real effective-policy verification. Only exact0.164.0 is added.0.163.1/0.164.1/0.165.0 and wrong home/OS/family/client remain refused; the desktop checksum manifest and production credential/workspace parser are unchanged.
+
+[setup-python7.1.0](https://github.com/actions/setup-python/releases/tag/v7.1.0) resolves to official signed commit6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 and Node24. Python3.12 remains explicit, new mirror/token inputs are unused, read-only CI/persist-credentials:false and no privileged fork event remain. npm lifecycle scripts stay disabled and the native executable path stays explicit.
+
+[Official System.Management10.0.14 package metadata](https://api.nuget.org/v3-flatcontainer/system.management/10.0.14/system.management.nuspec) declares Microsoft/MIT and the official dotnet/dotnet source. Its existing System.CodeDom edge patches to10.0.14; no new package edge or minimum target framework is added. The separately pinned application runtime stays10.0.13. Existing native Windows WMI/hardware, sensor, wrong-OS and package/license checks must pass; no new polling, service, sensor driver or authentication change is included.
+
+Require all16 native terminal cases on actual x64/ARM64, original command/credential/configuration/lifecycle tests, fresh inspected native terminal pictures, complete exact-head6 CI, tree/new-history privacy audit, author COMMENT self-review and expected-head ancestry-preserving merge. Native success establishes the declared offline integration only; parent authenticated/full-desktop gates stay open. [Release gates](RELEASE_1_42_7.md).
+
+
 ## Current development-tool integration — issue120
 
 Source1.42.6 integrates PR101/Pillow13.0.0 and PR102/official CI CLI0.163.0 while preserving both original bot heads. Both are development prerequisites; application runtime dependencies and Linux installed-client trust pins remain unchanged. Existing Python3.12 satisfies [Pillow13's supported Python range](https://pillow.readthedocs.io/en/stable/releasenotes/13.0.0.html). The project uses explicit lossless PNG exports and no removed ImageQt/IM/GIF-netpbm/Makernote interfaces. New full native export/hash/metadata checks must pass with this pin.

@@ -71,7 +71,7 @@ internal sealed class LinuxClientSession : IAsyncDisposable
         if (!agent.StartsWith(prefix, StringComparison.Ordinal)) throw Unsupported();
         var end = agent.IndexOf(' ', prefix.Length); if (end < 0) throw Unsupported();
         var version = agent[prefix.Length..end];
-        if (version is not ("0.162.0-alpha.17.2" or "0.162.1" or "0.163.0")) throw Unsupported();
+        if (version is not ("0.162.0-alpha.17.2" or "0.162.1" or "0.163.0" or "0.164.0")) throw Unsupported();
         return version;
     }
     private static string Text(JsonElement source, string name) => source.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()! : throw Unsupported();
