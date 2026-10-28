@@ -15,7 +15,7 @@ if (!OperatingSystem.IsLinux() || LinuxPrivateFiles.UserId == 0 || Environment.G
     args.Length != 2 || !Path.GetFileName(args[0]).StartsWith("codex-linux-terminal-test-", StringComparison.Ordinal) || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DISPLAY")))
     throw new InvalidOperationException("Only the owned normal-user headless native terminal sandbox is allowed.");
 var expectedCliVersion = Environment.GetEnvironmentVariable("CODEX_SWITCH_TERMINAL_EXPECTED_CLI_VERSION");
-if (expectedCliVersion is not ("0.162.0-alpha.17.2" or "0.162.1" or "0.163.0"))
+if (expectedCliVersion is not ("0.162.0-alpha.17.2" or "0.162.1" or "0.163.0" or "0.164.0"))
     throw new InvalidOperationException("The terminal fixture requires an explicitly declared reviewed CLI version.");
 var root = Path.GetFullPath(args[0]); LinuxPrivateFiles.CreateDirectory(root);
 var home = Path.Combine(root, "home"); LinuxPrivateFiles.CreateDirectory(home);

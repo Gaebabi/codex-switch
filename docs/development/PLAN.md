@@ -1,5 +1,7 @@
 # Current plan
 
+Issue125/source1.42.7 reviews and enables exact standalone CLI0.164.0 on Linux. Preserve adjacent unknown-version refusals, the separately approved desktop manifest, credential/workspace guards and all16 native terminal checks per architecture. Integrate PR122/123/124 with original ancestry and verify final6 checks/native packages/public delivery. [Gates](RELEASE_1_42_7.md).
+
 Issue120/source1.42.6 rejects duplicate/empty quota bucket IDs at automatic selection without modifying observations. Require source refusal, candidate skipping, valid fallback/native menu evidence and data preservation. Integrate reviewed development PR101/102 with original ancestry, final6 CI and verified public packages. [Delivery contract](RELEASE_1_42_6.md).
 
 Issues117/119 deliver expiry-first automatic selection, Auto Switch toggle/next-account forecast and the existing owner-requested bounded retries as1.42.5. Preserve explicit custom ranks and every eligibility/cooldown/recovery guard; forecasting never starts a switch. Review the persisted total budget, cancellation/identity/trust refusal and ambiguous-send observation, then require actual baseline/retry/exhaustion frames, all six final-head jobs and verified public packages. [Delivery contract](RELEASE_1_42_5.md).

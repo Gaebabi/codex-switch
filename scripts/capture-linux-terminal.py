@@ -29,6 +29,10 @@ if args.render:
     try:
         print('Codex Switch | Linux terminal account verification',flush=True)
         print('Actual native executable; fictional accounts; commands run without DISPLAY.\n',flush=True)
+        version=subprocess.run([args.client,'--version'],env=env,capture_output=True,text=True,check=True,timeout=10).stdout.strip()
+        expected=os.environ.get('CODEX_SWITCH_TERMINAL_EXPECTED_CLI_VERSION')
+        if not expected or version!='codex-cli '+expected:raise RuntimeError('Observed terminal CLI version differs from the independently declared reviewed pin')
+        print('$ codex --version\n'+version+'\n',flush=True)
         for command in [['switch','Demo personal'],['list']]:
             print('$ codex-switch cli '+('switch "Demo personal"' if command[0]=='switch' else 'list'),flush=True)
             result=subprocess.run([args.app,'cli',*command,*common],env=env,capture_output=True,text=True,timeout=35,check=True)
