@@ -1,0 +1,7 @@
+# Release1.43.0
+
+Deliver credit History, default-allowed optional local quota protection, usable past-date selection and dynamic diagnostic versions from PR128/131. Keep runtime10.0.13 and existing dependencies/trust/platform boundaries unchanged. [Feature behavior](CREDIT_HISTORY.md) / [native original confirmation](../evidence/credits/README.md).
+
+Require all six exact-head protected checks, inspected native Windows/Mac/Linux application artifacts and safe complete package/runtime/license/provenance inventories. Record author COMMENT, normal expected-head merge and reviewed/merged tree equality. Publish nine Windows/macOS ZIP/Linux preview packages plus source-bound verification ZIP/manifest/checksums; verify public downloaded sizes/SHA256. Preserve previous releases, Windows/Linux unsigned, Mac ad-hoc/unnotarized and Linux supportedAccountHandoff:false limits.
+
+The owner explicitly authorizes current Windows installation/restart after public verification. Preserve accounts, encryption/key identity, settings, original install and active Codex. Set automatic switching Off and credit use allowed before starting the replacement without focus activation; verify the same data directory, loaded version, fresh usage and unchanged identity/credential/configuration fingerprints. Do not test by performing a real switch, Codex shutdown or Continue. Keep binary staging W-only and evidence/private backups D-only.
