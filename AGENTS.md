@@ -1,6 +1,7 @@
 # Repository instructions
 
 - Public `Gaebabi/codex-switch` is the canonical source, baseline branch `main`. Use focused issue-linked branches/PRs. The former codex-account-desk repository is historical recovery material.
+- New public OSS maintainer commits use English subjects in `[n/n English task] English description` format. Use an English PR title and squash subject; preserve published history and original contributor/bot ancestry. Other discussion/document languages remain welcome. Follow `docs/development/MAINTAINING.md` for review, settings verification and recoverable housekeeping.
 - Read `README.md`, `CONTRIBUTING.md`, `docs/development/OPERATIONS.md`, `docs/development/PLAN.md`, `docs/development/STATUS.md` and relevant architecture/release guides. Respect closer instructions and the user's explicit scope.
 - Edit sources and Korean documents with `apply_patch` or equivalent UTF-8-safe patches. PowerShell string replacement/save can corrupt encoding.
 - Fix root causes; do not swallow failures, fabricate observations, relax trust checks or change fixtures to force the expected result.

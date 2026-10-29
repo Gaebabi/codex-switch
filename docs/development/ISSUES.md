@@ -1,5 +1,7 @@
 # Issue metadata and evidence
 
+Triage and archival decisions follow [the maintainer workflow](MAINTAINING.md). Put current unmet acceptance and its next action first; collapse historical checkpoints rather than deleting evidence. A contributor is not automatically a collaborator. Keep real Linux desktop/account gates open until verified, and keep history-privacy remediation separate from deleting old branch refs.
+
 Keep attributes small: one type (`type:bug`, `type:feature`, `type:maintenance`), one main area (`area:repository`, `area:platform`, `area:security`), and one priority (`priority:high`, `priority:normal`). GitHub open/closed tracks status; do not duplicate it with labels. Use a milestone for a concrete delivery group, and reference the parent/dependency issues. Assign an implementer only when work is active.
 
 The roadmap is [#1](https://github.com/Gaebabi/codex-switch/issues/1). Foundation work is [#2](https://github.com/Gaebabi/codex-switch/issues/2). Future platform/core/runtime issues stay open until their acceptance gates pass. Closing the foundation does not close Linux support.
