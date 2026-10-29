@@ -10,6 +10,8 @@ Start with [the support roadmap](docs/PLATFORM_SUPPORT_PLAN.md), [architecture](
 
 Branch from `main` and reference an issue. Discuss switching/storage/platform changes before implementation; small docs fixes may go directly to a PR. Keep source moves, behavior changes and runtime upgrades reviewable separately. `Closes #...` means all that issue's acceptance criteria are satisfied.
 
+Use an English PR title and new commit subjects so contributors can follow the history. PR titles use printable ASCII, checked in Repository checks, including title edits; translations belong in the body. Maintainer commits use `[n/n English task] English description`; contributors may use concise conventional English subjects. Original contributor/bot ancestry and published history are preserved. [Maintainer roles, review and cleanup](docs/development/MAINTAINING.md) explain the solo-maintainer approval limit and how external fork runs are reviewed.
+
 Issues use type, area, priority and milestone; native GitHub open/closed state tracks status. [Issue and evidence conventions](docs/development/ISSUES.md). Include before/after screenshots for a change, or a confirmation screenshot for a new feature, plus commands/results and unrun checks. A planned issue shows the current baseline and labels post-implementation confirmation pending. Never represent a mockup as native acceptance. Respectful review is expected regardless of language, identity or desktop/distro preference.
 
 ## Setup and checks

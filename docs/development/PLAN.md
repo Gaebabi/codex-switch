@@ -1,5 +1,7 @@
 # Current plan
 
+Issue134 establishes explicit maintainer roles, English new PR/maintainer commit subjects and recoverable issue/branch triage. Preserve the existing six protected checks and solo-maintainer approval limits. Management-only changes do not require a new product release. [Maintaining the repository](MAINTAINING.md).
+
 Release1.43.0 delivers the reviewed credit History/protection and diagnostic metadata changes. Owner-authorized public packages and Windows installation preserve existing data/active Codex; Auto Switch Off and credit use allowed. [Release gates](RELEASE_1_43_0.md).
 
 Issues129/130 add observed credit history, default-allowed credit use with opt-in normal stop/recovery at zero quota, and priority for still-usable past subscription dates. Preserve fresh matching quotas, server restrictions, custom order, credentials and Continue identities. Require current-source native charts/toggle/paused/past-target confirmations and all six protected final-head checks before reviewed merge. [Contract](CREDIT_HISTORY.md).

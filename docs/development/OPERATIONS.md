@@ -1,5 +1,7 @@
 # Operations
 
+For contributor review, current main protection, English subjects and private-bundle/expected-head branch cleanup, follow [the maintainer guide](MAINTAINING.md). Inspect fork workflow changes before approving a run; all external contributors require approval, Actions are full-SHA pinned, and PR workflows cannot approve or publish releases. Read server settings back after changes; source policy alone is not protection evidence. Never remove unfinished issue acceptance or rewrite published history as routine cleanup.
+
 Release1.43.0 delivers the reviewed credit History/protection and diagnostic metadata changes. Owner-authorized public packages and Windows installation preserve existing data/active Codex; Auto Switch Off and credit use allowed. [Release gates](RELEASE_1_43_0.md).
 
 Issues129/130 use the existing60-second account refresh for optional credit tracks and quota protection. Existing vaults default AllowCreditUse=true. The CreditPaused checkpoint and depleted-source relaunch guard must survive restart; never test by closing an owner client. Hosted native evidence uses separate credits subdirectories and `scripts/verify-credit-evidence.py`; preserve all original history/UI/handoff assertions. [Contract](CREDIT_HISTORY.md).
