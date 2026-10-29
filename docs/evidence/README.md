@@ -1,5 +1,7 @@
 # Application screenshots and verification
 
+- [Reset-boundary automatic switching](reset-boundary/README.md): original native Windows/Mac menus with a fresh zero source after reset time, independent original-policy regression and explicit fictional-account scope.
+
 ## Current source evidence
 
 - [Observed credit history and quota protection](credits/README.md): actual Windows/Mac credit graphs and permission/paused/past-date menus with fictional inputs, strict native checks and source/image receipts. Local client protection is distinct from billing enforcement or owner-account acceptance.
