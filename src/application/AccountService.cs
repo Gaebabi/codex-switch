@@ -52,7 +52,8 @@ internal sealed class AccountService
                 Key = p.Key, Alias = p.Alias, Email = p.Email, AccountId = p.AccountId, Plan = p.Plan,
                 SubscriptionActiveUntil = p.SubscriptionActiveUntil, SubscriptionLastChecked = p.SubscriptionLastChecked,
                 IsCurrent = p.Key == CurrentKey, RequiresApply = p.RequiresApply, Usage = p.Usage, Error = p.Error,
-                IsRefreshing = _queries.IsRunning(p.Key), History = p.History.Select(t => t.Copy()).ToList()
+                IsRefreshing = _queries.IsRunning(p.Key), History = p.History.Select(t => t.Copy()).ToList(),
+                CreditHistory = p.CreditHistory.Select(t => t.Copy()).ToList()
             }).ToArray();
         }
     }
@@ -345,6 +346,9 @@ internal sealed class AccountService
     }
     public Task StopAsync() { _shutdown.Cancel(); return _queries.CancelAndDrainAsync(); }
     internal void ReleaseDesktop() => LinuxDesktop?.Dispose();
+    // Keep read-only native provider types out of the shared UI assembly.
+    internal bool DesktopRunning(CancellationToken cancellation) => OperatingSystem.IsLinux() ?
+        LinuxDesktopRuntime.Running(cancellation).Length != 0 : RuntimeLocator.IsDesktopRunning(Installation.DesktopPath);
     internal Task StartDesktopAsync(CancellationToken cancellation) => LinuxDesktop?.StartAsync(cancellation) ??
         throw new PlatformNotSupportedException("This client selection has no managed Linux desktop.");
     internal Task<LinuxClientSession> OpenMetadataSessionAsync(CancellationToken cancellation) =>

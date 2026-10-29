@@ -145,6 +145,7 @@ sealed class RetryBackend(string source, string target, bool persistent, Action 
     public Func<Task>? BeforeLaunch;
     public Task<string?> CurrentAccountAsync(CancellationToken token) => Task.FromResult<string?>(Current);
     public Task<SwitchChat[]> CaptureAsync(CancellationToken token) => Task.FromResult(new[] { new SwitchChat { Id = "fictional-chat", OriginalTitle = "Fictional work" } });
+    public Task ValidateChatsForTargetAsync(SwitchChat[] chats, string target, CancellationToken cancellation) => Task.CompletedTask;
     public Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken token) { Names++; return Task.CompletedTask; }
     public Task CloseDesktopAsync(CancellationToken token) { Closes++; return Task.CompletedTask; }
     public Task ApplyAccountAsync(string key, string? previous, CancellationToken token) { Applies++; Current = target; applied(); return Task.CompletedTask; }

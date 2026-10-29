@@ -1,0 +1,486 @@
+{
+  "captureRevision": "8fd6c737fe9dc110f3ec0a57b6c583b53d51d8e1",
+  "bindings": [
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/core/CreditHistory.cs",
+      "canonicalGitSha256": "2140d05401b50816dd21d2b8c46168e9004bf122b505b248fa0aaa31a69f0b64",
+      "capturedCheckoutSha256": "2140d05401b50816dd21d2b8c46168e9004bf122b505b248fa0aaa31a69f0b64",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/core/CreditPresentation.cs",
+      "canonicalGitSha256": "82cd866a4d8265a07c53922ef2651e330326c71055590f5426bd754cc8435086",
+      "capturedCheckoutSha256": "82cd866a4d8265a07c53922ef2651e330326c71055590f5426bd754cc8435086",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/core/Models.cs",
+      "canonicalGitSha256": "a1f32d53a757aaa54852e35682d2aed18607d787e036ae284d6f7b6c4c54c231",
+      "capturedCheckoutSha256": "a1f32d53a757aaa54852e35682d2aed18607d787e036ae284d6f7b6c4c54c231",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/core/UsageAnalysis.cs",
+      "canonicalGitSha256": "53411f56c0ccf16a3b724c12989e509e41df99d7829c0e0d366cb3ec74b4a95b",
+      "capturedCheckoutSha256": "53411f56c0ccf16a3b724c12989e509e41df99d7829c0e0d366cb3ec74b4a95b",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/core/AutomaticSwitchPolicy.cs",
+      "canonicalGitSha256": "665935f518cf03289d2bb584e0409103dbe0426409b22e20a2cad2d06d01da01",
+      "capturedCheckoutSha256": "665935f518cf03289d2bb584e0409103dbe0426409b22e20a2cad2d06d01da01",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/core/AccountSwitchCoordinator.cs",
+      "canonicalGitSha256": "5a2efc6fb55185dfa2664f5c9e5544ad37301ad7c940eac7c4c6a2059b30fe27",
+      "capturedCheckoutSha256": "5a2efc6fb55185dfa2664f5c9e5544ad37301ad7c940eac7c4c6a2059b30fe27",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/application/AccountAutomation.cs",
+      "canonicalGitSha256": "848ca74c5db797751af19e2cde1de63bac7e55cba2c6f6eae6356d2361208c67",
+      "capturedCheckoutSha256": "848ca74c5db797751af19e2cde1de63bac7e55cba2c6f6eae6356d2361208c67",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/application/AccountService.cs",
+      "canonicalGitSha256": "2fb0cfff846ff094cccc94b9408c34e1a03ea28d95adeee24506ef781f4e4fc7",
+      "capturedCheckoutSha256": "2fb0cfff846ff094cccc94b9408c34e1a03ea28d95adeee24506ef781f4e4fc7",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/application/Storage.cs",
+      "canonicalGitSha256": "90f90d108a2f2e87bd77487e0e509e7150c562937d25468e3f6c4c27ff09445b",
+      "capturedCheckoutSha256": "90f90d108a2f2e87bd77487e0e509e7150c562937d25468e3f6c4c27ff09445b",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/application/VaultData.cs",
+      "canonicalGitSha256": "aa2b519b295e7f833b30bfd72e7ba27fb23cc0f97e197265175afffa9d40c975",
+      "capturedCheckoutSha256": "aa2b519b295e7f833b30bfd72e7ba27fb23cc0f97e197265175afffa9d40c975",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/application/DesktopSwitchBackend.cs",
+      "canonicalGitSha256": "39e82c16a5b2941693688130088fcf71f8e81a4db386425c587da342f8898616",
+      "capturedCheckoutSha256": "39e82c16a5b2941693688130088fcf71f8e81a4db386425c587da342f8898616",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/windows/AccountDetailWindow.cs",
+      "canonicalGitSha256": "da062a515c152143b833179c218a7318ee2a059a1d0f7f95039317170d099d2e",
+      "capturedCheckoutSha256": "da062a515c152143b833179c218a7318ee2a059a1d0f7f95039317170d099d2e",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/windows/CreditTrendChart.cs",
+      "canonicalGitSha256": "7efb2ee5f95d0d9245c27dba330cf9b6e9d27f6ecd71208443ed1c1353e78d8f",
+      "capturedCheckoutSha256": "7efb2ee5f95d0d9245c27dba330cf9b6e9d27f6ecd71208443ed1c1353e78d8f",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/windows/MainWindow.cs",
+      "canonicalGitSha256": "fa925882bccc30362f8104730bdc99d3d5419b450fb7687050c014295ab159c8",
+      "capturedCheckoutSha256": "fa925882bccc30362f8104730bdc99d3d5419b450fb7687050c014295ab159c8",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/windows/CreditEvidence.cs",
+      "canonicalGitSha256": "b266b998d3cd13f8d7bb74340b44a757931c2b9bed8d4b01331761ef4bc83360",
+      "capturedCheckoutSha256": "b266b998d3cd13f8d7bb74340b44a757931c2b9bed8d4b01331761ef4bc83360",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/desktop/HistoryWindow.cs",
+      "canonicalGitSha256": "09f43ad1e4bf78530f117dcee60b8a2bfb71c855235a4a5737721dc7b2979c81",
+      "capturedCheckoutSha256": "09f43ad1e4bf78530f117dcee60b8a2bfb71c855235a4a5737721dc7b2979c81",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/desktop/CreditChart.cs",
+      "canonicalGitSha256": "f91b0800de5af9fd80fb2161a45f8e1b1fc28c09065eab3235ba962136c5a208",
+      "capturedCheckoutSha256": "f91b0800de5af9fd80fb2161a45f8e1b1fc28c09065eab3235ba962136c5a208",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/desktop/DeskWindow.cs",
+      "canonicalGitSha256": "18be2591b3e658a6509f0cd67aff7c31527e2b7091fed8039b550e8a67757bc0",
+      "capturedCheckoutSha256": "18be2591b3e658a6509f0cd67aff7c31527e2b7091fed8039b550e8a67757bc0",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "src/macos/CreditEvidence.cs",
+      "canonicalGitSha256": "65fd5ae3284917e653769f65ca90f60d1b401c85c4288404f108503541b16e9a",
+      "capturedCheckoutSha256": "65fd5ae3284917e653769f65ca90f60d1b401c85c4288404f108503541b16e9a",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "file": "Directory.Build.props",
+      "canonicalGitSha256": "3e30e5544615b953e3b9247556d6d279c63588fef2df82f05965de479180e2d5",
+      "capturedCheckoutSha256": "3e30e5544615b953e3b9247556d6d279c63588fef2df82f05965de479180e2d5",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/core/CreditHistory.cs",
+      "canonicalGitSha256": "2140d05401b50816dd21d2b8c46168e9004bf122b505b248fa0aaa31a69f0b64",
+      "capturedCheckoutSha256": "2140d05401b50816dd21d2b8c46168e9004bf122b505b248fa0aaa31a69f0b64",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/core/CreditPresentation.cs",
+      "canonicalGitSha256": "82cd866a4d8265a07c53922ef2651e330326c71055590f5426bd754cc8435086",
+      "capturedCheckoutSha256": "82cd866a4d8265a07c53922ef2651e330326c71055590f5426bd754cc8435086",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/core/Models.cs",
+      "canonicalGitSha256": "a1f32d53a757aaa54852e35682d2aed18607d787e036ae284d6f7b6c4c54c231",
+      "capturedCheckoutSha256": "a1f32d53a757aaa54852e35682d2aed18607d787e036ae284d6f7b6c4c54c231",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/core/UsageAnalysis.cs",
+      "canonicalGitSha256": "53411f56c0ccf16a3b724c12989e509e41df99d7829c0e0d366cb3ec74b4a95b",
+      "capturedCheckoutSha256": "53411f56c0ccf16a3b724c12989e509e41df99d7829c0e0d366cb3ec74b4a95b",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/core/AutomaticSwitchPolicy.cs",
+      "canonicalGitSha256": "665935f518cf03289d2bb584e0409103dbe0426409b22e20a2cad2d06d01da01",
+      "capturedCheckoutSha256": "665935f518cf03289d2bb584e0409103dbe0426409b22e20a2cad2d06d01da01",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/core/AccountSwitchCoordinator.cs",
+      "canonicalGitSha256": "5a2efc6fb55185dfa2664f5c9e5544ad37301ad7c940eac7c4c6a2059b30fe27",
+      "capturedCheckoutSha256": "5a2efc6fb55185dfa2664f5c9e5544ad37301ad7c940eac7c4c6a2059b30fe27",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/application/AccountAutomation.cs",
+      "canonicalGitSha256": "848ca74c5db797751af19e2cde1de63bac7e55cba2c6f6eae6356d2361208c67",
+      "capturedCheckoutSha256": "848ca74c5db797751af19e2cde1de63bac7e55cba2c6f6eae6356d2361208c67",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/application/AccountService.cs",
+      "canonicalGitSha256": "2fb0cfff846ff094cccc94b9408c34e1a03ea28d95adeee24506ef781f4e4fc7",
+      "capturedCheckoutSha256": "2fb0cfff846ff094cccc94b9408c34e1a03ea28d95adeee24506ef781f4e4fc7",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/application/Storage.cs",
+      "canonicalGitSha256": "90f90d108a2f2e87bd77487e0e509e7150c562937d25468e3f6c4c27ff09445b",
+      "capturedCheckoutSha256": "90f90d108a2f2e87bd77487e0e509e7150c562937d25468e3f6c4c27ff09445b",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/application/VaultData.cs",
+      "canonicalGitSha256": "aa2b519b295e7f833b30bfd72e7ba27fb23cc0f97e197265175afffa9d40c975",
+      "capturedCheckoutSha256": "aa2b519b295e7f833b30bfd72e7ba27fb23cc0f97e197265175afffa9d40c975",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/application/DesktopSwitchBackend.cs",
+      "canonicalGitSha256": "39e82c16a5b2941693688130088fcf71f8e81a4db386425c587da342f8898616",
+      "capturedCheckoutSha256": "39e82c16a5b2941693688130088fcf71f8e81a4db386425c587da342f8898616",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/windows/AccountDetailWindow.cs",
+      "canonicalGitSha256": "da062a515c152143b833179c218a7318ee2a059a1d0f7f95039317170d099d2e",
+      "capturedCheckoutSha256": "da062a515c152143b833179c218a7318ee2a059a1d0f7f95039317170d099d2e",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/windows/CreditTrendChart.cs",
+      "canonicalGitSha256": "7efb2ee5f95d0d9245c27dba330cf9b6e9d27f6ecd71208443ed1c1353e78d8f",
+      "capturedCheckoutSha256": "7efb2ee5f95d0d9245c27dba330cf9b6e9d27f6ecd71208443ed1c1353e78d8f",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/windows/MainWindow.cs",
+      "canonicalGitSha256": "fa925882bccc30362f8104730bdc99d3d5419b450fb7687050c014295ab159c8",
+      "capturedCheckoutSha256": "fa925882bccc30362f8104730bdc99d3d5419b450fb7687050c014295ab159c8",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/windows/CreditEvidence.cs",
+      "canonicalGitSha256": "b266b998d3cd13f8d7bb74340b44a757931c2b9bed8d4b01331761ef4bc83360",
+      "capturedCheckoutSha256": "b266b998d3cd13f8d7bb74340b44a757931c2b9bed8d4b01331761ef4bc83360",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/desktop/HistoryWindow.cs",
+      "canonicalGitSha256": "09f43ad1e4bf78530f117dcee60b8a2bfb71c855235a4a5737721dc7b2979c81",
+      "capturedCheckoutSha256": "09f43ad1e4bf78530f117dcee60b8a2bfb71c855235a4a5737721dc7b2979c81",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/desktop/CreditChart.cs",
+      "canonicalGitSha256": "f91b0800de5af9fd80fb2161a45f8e1b1fc28c09065eab3235ba962136c5a208",
+      "capturedCheckoutSha256": "f91b0800de5af9fd80fb2161a45f8e1b1fc28c09065eab3235ba962136c5a208",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/desktop/DeskWindow.cs",
+      "canonicalGitSha256": "18be2591b3e658a6509f0cd67aff7c31527e2b7091fed8039b550e8a67757bc0",
+      "capturedCheckoutSha256": "18be2591b3e658a6509f0cd67aff7c31527e2b7091fed8039b550e8a67757bc0",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "src/macos/CreditEvidence.cs",
+      "canonicalGitSha256": "65fd5ae3284917e653769f65ca90f60d1b401c85c4288404f108503541b16e9a",
+      "capturedCheckoutSha256": "65fd5ae3284917e653769f65ca90f60d1b401c85c4288404f108503541b16e9a",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "file": "Directory.Build.props",
+      "canonicalGitSha256": "3e30e5544615b953e3b9247556d6d279c63588fef2df82f05965de479180e2d5",
+      "capturedCheckoutSha256": "3e30e5544615b953e3b9247556d6d279c63588fef2df82f05965de479180e2d5",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/core/CreditHistory.cs",
+      "canonicalGitSha256": "2140d05401b50816dd21d2b8c46168e9004bf122b505b248fa0aaa31a69f0b64",
+      "capturedCheckoutSha256": "2140d05401b50816dd21d2b8c46168e9004bf122b505b248fa0aaa31a69f0b64",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/core/CreditPresentation.cs",
+      "canonicalGitSha256": "82cd866a4d8265a07c53922ef2651e330326c71055590f5426bd754cc8435086",
+      "capturedCheckoutSha256": "82cd866a4d8265a07c53922ef2651e330326c71055590f5426bd754cc8435086",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/core/Models.cs",
+      "canonicalGitSha256": "a1f32d53a757aaa54852e35682d2aed18607d787e036ae284d6f7b6c4c54c231",
+      "capturedCheckoutSha256": "a1f32d53a757aaa54852e35682d2aed18607d787e036ae284d6f7b6c4c54c231",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/core/UsageAnalysis.cs",
+      "canonicalGitSha256": "53411f56c0ccf16a3b724c12989e509e41df99d7829c0e0d366cb3ec74b4a95b",
+      "capturedCheckoutSha256": "53411f56c0ccf16a3b724c12989e509e41df99d7829c0e0d366cb3ec74b4a95b",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/core/AutomaticSwitchPolicy.cs",
+      "canonicalGitSha256": "665935f518cf03289d2bb584e0409103dbe0426409b22e20a2cad2d06d01da01",
+      "capturedCheckoutSha256": "665935f518cf03289d2bb584e0409103dbe0426409b22e20a2cad2d06d01da01",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/core/AccountSwitchCoordinator.cs",
+      "canonicalGitSha256": "5a2efc6fb55185dfa2664f5c9e5544ad37301ad7c940eac7c4c6a2059b30fe27",
+      "capturedCheckoutSha256": "5a2efc6fb55185dfa2664f5c9e5544ad37301ad7c940eac7c4c6a2059b30fe27",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/application/AccountAutomation.cs",
+      "canonicalGitSha256": "848ca74c5db797751af19e2cde1de63bac7e55cba2c6f6eae6356d2361208c67",
+      "capturedCheckoutSha256": "848ca74c5db797751af19e2cde1de63bac7e55cba2c6f6eae6356d2361208c67",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/application/AccountService.cs",
+      "canonicalGitSha256": "2fb0cfff846ff094cccc94b9408c34e1a03ea28d95adeee24506ef781f4e4fc7",
+      "capturedCheckoutSha256": "2fb0cfff846ff094cccc94b9408c34e1a03ea28d95adeee24506ef781f4e4fc7",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/application/Storage.cs",
+      "canonicalGitSha256": "90f90d108a2f2e87bd77487e0e509e7150c562937d25468e3f6c4c27ff09445b",
+      "capturedCheckoutSha256": "90f90d108a2f2e87bd77487e0e509e7150c562937d25468e3f6c4c27ff09445b",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/application/VaultData.cs",
+      "canonicalGitSha256": "aa2b519b295e7f833b30bfd72e7ba27fb23cc0f97e197265175afffa9d40c975",
+      "capturedCheckoutSha256": "aa2b519b295e7f833b30bfd72e7ba27fb23cc0f97e197265175afffa9d40c975",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/application/DesktopSwitchBackend.cs",
+      "canonicalGitSha256": "39e82c16a5b2941693688130088fcf71f8e81a4db386425c587da342f8898616",
+      "capturedCheckoutSha256": "39e82c16a5b2941693688130088fcf71f8e81a4db386425c587da342f8898616",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/windows/AccountDetailWindow.cs",
+      "canonicalGitSha256": "da062a515c152143b833179c218a7318ee2a059a1d0f7f95039317170d099d2e",
+      "capturedCheckoutSha256": "da062a515c152143b833179c218a7318ee2a059a1d0f7f95039317170d099d2e",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/windows/CreditTrendChart.cs",
+      "canonicalGitSha256": "7efb2ee5f95d0d9245c27dba330cf9b6e9d27f6ecd71208443ed1c1353e78d8f",
+      "capturedCheckoutSha256": "7efb2ee5f95d0d9245c27dba330cf9b6e9d27f6ecd71208443ed1c1353e78d8f",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/windows/MainWindow.cs",
+      "canonicalGitSha256": "fa925882bccc30362f8104730bdc99d3d5419b450fb7687050c014295ab159c8",
+      "capturedCheckoutSha256": "fa925882bccc30362f8104730bdc99d3d5419b450fb7687050c014295ab159c8",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/windows/CreditEvidence.cs",
+      "canonicalGitSha256": "b266b998d3cd13f8d7bb74340b44a757931c2b9bed8d4b01331761ef4bc83360",
+      "capturedCheckoutSha256": "b266b998d3cd13f8d7bb74340b44a757931c2b9bed8d4b01331761ef4bc83360",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/desktop/HistoryWindow.cs",
+      "canonicalGitSha256": "09f43ad1e4bf78530f117dcee60b8a2bfb71c855235a4a5737721dc7b2979c81",
+      "capturedCheckoutSha256": "09f43ad1e4bf78530f117dcee60b8a2bfb71c855235a4a5737721dc7b2979c81",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/desktop/CreditChart.cs",
+      "canonicalGitSha256": "f91b0800de5af9fd80fb2161a45f8e1b1fc28c09065eab3235ba962136c5a208",
+      "capturedCheckoutSha256": "f91b0800de5af9fd80fb2161a45f8e1b1fc28c09065eab3235ba962136c5a208",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/desktop/DeskWindow.cs",
+      "canonicalGitSha256": "18be2591b3e658a6509f0cd67aff7c31527e2b7091fed8039b550e8a67757bc0",
+      "capturedCheckoutSha256": "18be2591b3e658a6509f0cd67aff7c31527e2b7091fed8039b550e8a67757bc0",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "src/macos/CreditEvidence.cs",
+      "canonicalGitSha256": "65fd5ae3284917e653769f65ca90f60d1b401c85c4288404f108503541b16e9a",
+      "capturedCheckoutSha256": "65fd5ae3284917e653769f65ca90f60d1b401c85c4288404f108503541b16e9a",
+      "gitCheckoutCRLF": false,
+      "implementationIdentical": true
+    },
+    {
+      "artifact": "credits-windows",
+      "file": "Directory.Build.props",
+      "canonicalGitSha256": "3e30e5544615b953e3b9247556d6d279c63588fef2df82f05965de479180e2d5",
+      "capturedCheckoutSha256": "d9992437fb7559b96289bf7ea9f00130d344821721ac114798f831f7c0222ef0",
+      "gitCheckoutCRLF": true,
+      "implementationIdentical": true
+    }
+  ],
+  "scope": "Captured/current Git source bytes are identical. Directory.Build.props may use the exact Git text=auto Windows CRLF checkout; canonical LF and captured checkout hashes are retained separately. Source values are unchanged."
+}

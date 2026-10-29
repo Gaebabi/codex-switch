@@ -35,6 +35,18 @@ internal static class Program
                 passed.Add("Real delayed same-executable child exits before one coordinator invocation applies, launches and resumes");
             }
             using (var fixture = await StartAsync(executable, directory, 1800))
+            {
+                var backend = new Backend(executable, fixture); AccountSwitchPlan? saved = null;
+                var coordinator = new AccountSwitchCoordinator(backend, plan => saved = plan == null ? null : JsonSerializer.Deserialize<AccountSwitchPlan>(JsonSerializer.Serialize(plan)), _ => { }, UserErrors.Describe);
+                var plan = await coordinator.PrepareAsync("source", DateTimeOffset.UtcNow, CancellationToken.None, creditPause: true);
+                var marker = plan.Chats.Single().ContinueMessageId;
+                Assert(!await coordinator.RunAsync(plan, CancellationToken.None) && fixture.Parent.HasExited && fixture.Child.HasExited,
+                    "Credit protection did not wait for actual normal parent/child exit");
+                Assert(saved is { CreditProtectionPause: true, Phase: SwitchPhase.CreditPaused } && saved.Chats.Single().ContinueMessageId == marker &&
+                    backend.Calls.SequenceEqual(new[] { "name", "close" }), "Credit pause rewrote credentials, launched, sent Continue or lost its checkpoint");
+                passed.Add("Credit protection normally closes the actual disposable parent/child and preserves recovery without apply/launch/Continue");
+            }
+            using (var fixture = await StartAsync(executable, directory, 1800))
             using (var cancellation = new CancellationTokenSource())
             {
                 var backend = new Backend(executable, fixture); var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, UserErrors.Describe);
@@ -108,6 +120,7 @@ internal static class Program
         private string _account = "source";
         public Task<string?> CurrentAccountAsync(CancellationToken cancellation) => Task.FromResult<string?>(_account);
         public Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation) => Task.FromResult(new[] { new SwitchChat { Id = "fictional-chat", OriginalTitle = "Fictional handoff" } });
+        public Task ValidateChatsForTargetAsync(SwitchChat[] chats, string target, CancellationToken cancellation) => Task.CompletedTask;
         public Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken cancellation) { Calls.Add("name"); return Task.CompletedTask; }
         public async Task CloseDesktopAsync(CancellationToken cancellation) { Calls.Add("close"); await DesktopShutdown.CloseAsync(executable, cancellation); }
         public Task ApplyAccountAsync(string key, string? source, CancellationToken cancellation)

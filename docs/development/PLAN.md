@@ -1,5 +1,7 @@
 # Current plan
 
+Issues129/130 add observed credit history, default-allowed credit use with opt-in normal stop/recovery at zero quota, and priority for still-usable past subscription dates. Preserve fresh matching quotas, server restrictions, custom order, credentials and Continue identities. Require current-source native charts/toggle/paused/past-target confirmations and all six protected final-head checks before reviewed merge. [Contract](CREDIT_HISTORY.md).
+
 Issue127 fixes stale Windows resource-report version metadata without changing sampling, unavailable values or diagnostic exit status. Require the actual old-binary regression failure, the corrected published-app report, native application before/after confirmation, all six protected final-head checks and recorded author review. Source/PR delivery only; installed-app replacement and a binary release are separate actions.
 
 The scope also includes the same historical version literals in shared queue, Windows protocol and Mac native diagnostic reports. Verify actual queue reports on all native OS jobs and protocol/Mac outputs on their own OS; preserve all prior success/unavailable/failure meanings and distinguish metadata verification from installed-client discovery acceptance.

@@ -12,10 +12,16 @@ internal static class AccountAutomation
         lock (service.Vault.SyncRoot)
         {
             var data = service.Vault.Data;
-            if (busy || service.IsBusy || !data.AutomaticSwitchEnabled || data.PendingSwitch != null ||
+            if (busy || service.IsBusy || !data.AutomaticSwitchEnabled || data.PendingSwitch is { CreditProtectionPause: false } ||
+                data.PendingSwitch is { CreditProtectionPause: true, Phase: not SwitchPhase.CreditPaused } ||
                 data.LastAutomaticSwitchAttempt is DateTimeOffset last && now - last < AutomaticSwitchPolicy.Cooldown) return null;
-            var target = AutomaticSwitchPolicy.Select(service.Accounts, data.AutomaticSwitchThreshold, now,
+            var accounts = service.Accounts;
+            var currentAccounts = accounts.Where(p => p.IsCurrent).ToArray();
+            var current = currentAccounts.Length == 1 ? currentAccounts[0] : null;
+            if (data.PendingSwitch?.CreditProtectionPause == true && current?.Key != data.PendingSwitch.SourceAccountKey) return null;
+            var target = AutomaticSwitchPolicy.Select(accounts, data.AutomaticSwitchThreshold, now,
                 data.AutomaticSwitchUsePriority ? OrderedAccounts(service).Select(p => p.Key).ToArray() : null);
+            if (target == null && data.PendingSwitch?.CreditProtectionPause == true && current != null && AutomaticSwitchPolicy.OrdinaryAvailable(current, now)) target = current;
             if (target == null) return null;
             data.LastAutomaticSwitchAttempt = now; service.Vault.Save(); return target;
         }
@@ -24,12 +30,39 @@ internal static class AccountAutomation
     {
         lock (service.Vault.SyncRoot) { service.Vault.Data.AutomaticSwitchEnabled = false; service.Vault.Save(); }
     }
+    public static bool CanUse(AccountService service, AccountProfile profile, DateTimeOffset now) =>
+        service.Vault.Data.AllowCreditUse || AutomaticSwitchPolicy.OrdinaryAvailable(profile, now, allowPendingCredentials: true);
+    public static AccountProfile? CreditStopTarget(AccountService service, bool busy, DateTimeOffset now)
+    {
+        lock (service.Vault.SyncRoot)
+        {
+            var data = service.Vault.Data;
+            if (data.AllowCreditUse || busy || service.IsBusy || data.PendingSwitch is { CreditProtectionPause: false } ||
+                data.PendingSwitch is { CreditProtectionPause: true, Phase: not SwitchPhase.CreditPaused }) return null;
+            var current = service.Accounts.Where(p => p.IsCurrent).ToArray();
+            if (data.AutomaticSwitchEnabled && !(data.LastAutomaticSwitchAttempt is DateTimeOffset last && now - last < AutomaticSwitchPolicy.Cooldown) &&
+                AutomaticSwitchPolicy.Select(service.Accounts, data.AutomaticSwitchThreshold, now,
+                    data.AutomaticSwitchUsePriority ? OrderedAccounts(service).Select(p => p.Key).ToArray() : null) != null) return null;
+            return current.Length == 1 && (data.PendingSwitch == null || data.PendingSwitch.TargetAccountKey == current[0].Key) &&
+                AutomaticSwitchPolicy.Exhausted(current[0], now) ? current[0] : null;
+        }
+    }
     public static AccountProfile? Next(AccountService service, DateTimeOffset now)
     {
         lock (service.Vault.SyncRoot)
         {
             var data = service.Vault.Data;
-            if (data.PendingSwitch != null) return service.Accounts.FirstOrDefault(p => p.Key == data.PendingSwitch.TargetAccountKey);
+            if (data.PendingSwitch is { CreditProtectionPause: false }) return service.Accounts.FirstOrDefault(p => p.Key == data.PendingSwitch.TargetAccountKey);
+            if (data.PendingSwitch?.CreditProtectionPause == true)
+            {
+                var current = service.Accounts.Where(p => p.IsCurrent).ToArray();
+                if (current.Length != 1 || current[0].Key != data.PendingSwitch.SourceAccountKey) return null;
+                var candidate = AutomaticSwitchPolicy.Select(service.Accounts, data.AutomaticSwitchThreshold, now,
+                    data.AutomaticSwitchUsePriority ? OrderedAccounts(service).Select(p => p.Key).ToArray() : null);
+                if (candidate != null) return candidate;
+                if (current.Length == 1 && AutomaticSwitchPolicy.OrdinaryAvailable(current[0], now)) return current[0];
+                return null;
+            }
             return AutomaticSwitchPolicy.Next(service.Accounts, data.AutomaticSwitchThreshold, now,
                 data.AutomaticSwitchUsePriority ? OrderedAccounts(service).Select(p => p.Key).ToArray() : null);
         }
@@ -37,7 +70,7 @@ internal static class AccountAutomation
     public static string NextLabel(AccountService service, DateTimeOffset now)
     {
         var next = Next(service, now);
-        return next == null ? Loc.T("auto.next_unavailable") : Loc.F("auto.next", next.DisplayName);
+        return next == null ? Loc.T(service.Vault.Data.PendingSwitch?.CreditProtectionPause == true ? "credits.paused" : "auto.next_unavailable") : Loc.F("auto.next", next.DisplayName);
     }
     public static AccountProfile[] OrderedAccounts(AccountService service)
     {

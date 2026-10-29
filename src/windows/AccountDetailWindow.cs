@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -13,6 +14,11 @@ internal sealed class AccountDetailWindow : Window
     private readonly Action<int> _chooseRange;
     private readonly Func<System.Threading.Tasks.Task> _refresh;
     private readonly List<UsageOutlook> _outlooks = new();
+    private CreditTrendChart? _creditChart;
+    private TextBlock? _creditObserved;
+    private CreditTrack? _creditTrack;
+    private int _creditHours;
+    private long _creditMinute;
     private string? _selectedQuota;
     private bool _moreOpen;
     public AccountDetailWindow(Window owner, Action<int> chooseRange, Func<System.Threading.Tasks.Task> refresh)
@@ -26,7 +32,7 @@ internal sealed class AccountDetailWindow : Window
     }
     public void Refresh(AccountProfile profile, Burn0Theme theme, ResourceDictionary resources, int hours)
     {
-        _outlooks.Clear(); Resources.MergedDictionaries.Clear(); Resources.MergedDictionaries.Add(resources);
+        _outlooks.Clear(); _creditChart = null; _creditObserved = null; _creditTrack = null; Resources.MergedDictionaries.Clear(); Resources.MergedDictionaries.Add(resources);
         Title = profile.DisplayName + " · " + Loc.T("사용량 추이"); Background = theme.Color("canvas"); Foreground = theme.Color("text"); FontFamily = theme.Font;
         WindowFrame.RefreshBorder(this);
         Language = System.Windows.Markup.XmlLanguage.GetLanguage(Loc.Culture.IetfLanguageTag);
@@ -40,17 +46,27 @@ internal sealed class AccountDetailWindow : Window
         var body = new DockPanel { Margin = new Thickness(20, 16, 20, 16) };
         var controls = new DockPanel { Margin = new Thickness(0, 0, 0, 16) };
         var choices = AccountTankCard.Choices(profile); var choice = AccountTankCard.SelectQuota(profile, _selectedQuota);
-        var quota = Button((choice?.Window.PeriodLabel ?? Loc.T("사용 한도")) + (choices.Length > 1 ? " ▾" : "")); quota.Background = Brushes.Transparent;
-        quota.ToolTip = choice?.BucketLabel; quota.IsEnabled = choices.Length > 1;
+        var creditMode = CreditPresentation.Selected(_selectedQuota) || choice == null && profile.CreditHistory.Count > 0;
+        var creditTrack = CreditPresentation.Track(profile, _selectedQuota);
+        var creditTracks = profile.CreditHistory.Count > 0 ? profile.CreditHistory.ToArray() : new[] { creditTrack };
+        var quota = Button((creditMode ? Loc.T("credits.history") : choice?.Window.PeriodLabel ?? Loc.T("사용 한도")) + " ▾"); quota.Background = Brushes.Transparent;
+        quota.Name = "HistoryMetricPicker"; quota.ToolTip = creditMode ? creditTrack.BucketId : choice?.BucketLabel;
+        quota.IsEnabled = choices.Length + creditTracks.Length > 1;
         quota.Click += (_, _) =>
         {
             var menu = DropdownTheme.Create(quota, theme);
             foreach (var entry in choices)
             {
-                var item = new MenuItem { Header = entry.BucketLabel + "  " + entry.Window.PeriodLabel, IsCheckable = true, IsChecked = entry == choice };
+                var item = new MenuItem { Header = entry.BucketLabel + "  " + entry.Window.PeriodLabel, IsCheckable = true, IsChecked = !creditMode && entry == choice };
                 item.Click += (_, _) => { _selectedQuota = entry.BucketId + ":" + entry.Slot; Refresh(profile, theme, resources, hours); }; menu.Items.Add(item);
             }
-            menu.IsOpen = true;
+            if (choices.Length > 0) menu.Items.Add(new Separator());
+            foreach (var track in creditTracks)
+            {
+                var item = new MenuItem { Header = Loc.T("credits.history") + (creditTracks.Length > 1 ? "  " + track.BucketId : ""), IsCheckable = true, IsChecked = creditMode && track.BucketId == creditTrack.BucketId };
+                item.Click += (_, _) => { _selectedQuota = CreditPresentation.Key(track); Refresh(profile, theme, resources, hours); }; menu.Items.Add(item);
+            }
+            quota.ContextMenu = menu; menu.IsOpen = true;
         };
         DockPanel.SetDock(quota, Dock.Left); controls.Children.Add(quota);
         var ranges = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
@@ -61,7 +77,8 @@ internal sealed class AccountDetailWindow : Window
         }
         controls.Children.Add(ranges); DockPanel.SetDock(controls, Dock.Top); body.Children.Add(controls);
         var content = new StackPanel();
-        if (choice != null)
+        if (creditMode) content.Children.Add(Credits(profile, creditTrack, theme, hours));
+        else if (choice != null)
         {
             var outlook = new UsageOutlook(choice.Window, UsageHistory.ForWindow(profile, choice.BucketId, choice.Slot, choice.Window), theme, hours);
             _outlooks.Add(outlook); content.Children.Add(outlook);
@@ -94,5 +111,34 @@ internal sealed class AccountDetailWindow : Window
         void AddText(string text, double size, string color, double top = 8) => content.Children.Add(new TextBlock { Text = text, FontSize = size, Foreground = theme.Color(color), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, top, 0, 0) });
         void Extra(string text) => extra.Children.Add(new TextBlock { Text = text, FontSize = 12, Foreground = theme.Color("muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) });
     }
-    public void Update(DateTimeOffset now) { foreach (var outlook in _outlooks) outlook.Update(now); }
+    private UIElement Credits(AccountProfile profile, CreditTrack track, Burn0Theme theme, int hours)
+    {
+        var panel = new StackPanel(); var metrics = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+        _creditTrack = track; _creditHours = hours; _creditMinute = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 60;
+        metrics.ColumnDefinitions.Add(new()); metrics.ColumnDefinitions.Add(new());
+        Metric(0, "credits.balance", CreditPresentation.Balance(profile, track));
+        Metric(1, "credits.observed", CreditPresentation.Number(CreditHistory.ObservedUse(track, hours, DateTimeOffset.UtcNow)));
+        panel.Children.Add(metrics);
+        _creditChart = new(track, theme, hours); panel.Children.Add(_creditChart);
+        panel.Children.Add(new TextBlock { Text = Loc.T("credits.history_help"), FontSize = 11, Foreground = theme.Color("muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 10, 0, 0) });
+        return panel;
+        void Metric(int column, string label, string value)
+        {
+            var cell = new StackPanel { Margin = new Thickness(0, 0, 12, 0) };
+            cell.Children.Add(new TextBlock { Text = Loc.T(label), FontSize = 11, Foreground = theme.Color("muted") });
+            var number = new TextBlock { Text = value, ToolTip = value, FontSize = 28, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, FlowDirection = FlowDirection.LeftToRight, Margin = new Thickness(0, 5, 0, 0) };
+            if (column == 1) _creditObserved = number;
+            cell.Children.Add(number);
+            Grid.SetColumn(cell, column); metrics.Children.Add(cell);
+        }
+    }
+    internal void SelectCredits(AccountProfile profile, Burn0Theme theme, ResourceDictionary resources, int hours)
+    { _selectedQuota = CreditPresentation.Key(CreditPresentation.Track(profile, null)); Refresh(profile, theme, resources, hours); }
+    public void Update(DateTimeOffset now)
+    {
+        foreach (var outlook in _outlooks) outlook.Update(now); _creditChart?.Update(now);
+        var minute = now.ToUnixTimeSeconds() / 60;
+        if (_creditObserved != null && _creditTrack != null && minute != _creditMinute)
+        { _creditMinute = minute; _creditObserved.Text = CreditPresentation.Number(CreditHistory.ObservedUse(_creditTrack, _creditHours, now)); _creditObserved.ToolTip = _creditObserved.Text; }
+    }
 }

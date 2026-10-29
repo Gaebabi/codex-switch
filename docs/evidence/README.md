@@ -2,6 +2,8 @@
 
 ## Current source evidence
 
+- [Observed credit history and quota protection](credits/README.md): actual Windows/Mac credit graphs and permission/paused/past-date menus with fictional inputs, strict native checks and source/image receipts. Local client protection is distinct from billing enforcement or owner-account acceptance.
+
 - [Diagnostic report build versions](resource-report/README.md): actual resource, queue, Windows protocol and Mac native report checks; original Windows/Mac dashboard before/after captures with fictional accounts. Metadata correctness is separate from physical sensor and installed-client discovery acceptance. Source/PR delivery only.
 
 - [Eight dependency updates and paired Avalonia12 migration, source1.40.4](dependency-updates/README.md):146 inspected exports, unmodified current-main Mac ARM64/Intel before/after, both-theme repeated resource-tooltip lifecycle, Windows/Linux confirmation and ordinary installed Xfce native frame. All six capture-head jobs pass; final exact-head review/merge belongs to PR84. Official Actions pins/signatures and scoped Python/NuGet feed audits are recorded. No owner environment or local GUI is used; published binaries remain1.40.2.

@@ -63,6 +63,16 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
         _linuxMetadata ??= await _service.OpenMetadataSessionAsync(cancellation);
         return await _linuxMetadata.MetadataAsync(method, parameters, cancellation);
     }
+    public async Task ValidateChatsForTargetAsync(SwitchChat[] chats, string target, CancellationToken cancellation)
+    {
+        if (_targetAccountKey != target) throw new InvalidOperationException("선택한 로그인 정보와 계정이 일치하지 않습니다.");
+        foreach (var chat in chats)
+        {
+            var result = await RequestMetadataAsync("thread/read", new { threadId = chat.Id, includeTurns = false }, cancellation);
+            await _service.CheckThreadContextAsync(result.GetProperty("thread"), _service.CurrentKey, cancellation);
+            await _service.CheckThreadContextAsync(result.GetProperty("thread"), target, cancellation);
+        }
+    }
     public async Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken cancellation)
     {
         if (OperatingSystem.IsLinux() && (_service.LinuxDesktop == null || !_service.LinuxDesktop.RequireOwnedOrStopped(cancellation)))

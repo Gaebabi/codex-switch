@@ -5,6 +5,8 @@ using System.Text.Json;
 var checks = new List<string>();
 void Check(string name, bool condition) { if (!condition) throw new Exception(name); checks.Add(name); }
 var now = DateTimeOffset.UtcNow;
+CreditHistoryContracts.Run(Check);
+await CreditProtectionContracts.Run(Check);
 JsonElement Hello(string version, string home = "/fictional/home", string os = "linux", string family = "unix", string prefix = "codex_account_desk/") =>
     JsonSerializer.SerializeToElement(new { codexHome = home, platformOs = os, platformFamily = family, userAgent = prefix + version + " (fixture)" });
 foreach (var version in new[] { "0.162.0-alpha.17.2", "0.162.1", "0.163.0", "0.164.0" })
@@ -82,7 +84,15 @@ Check("Known future expiry precedes an unknown date", AutomaticSwitchPolicy.Sele
 later.SubscriptionActiveUntil = sooner.SubscriptionActiveUntil;
 Check("Equal expiry uses highest minimum remaining", AutomaticSwitchPolicy.Select(new[] { source, sooner, later }, 10, now) == later);
 sooner.SubscriptionActiveUntil = now.AddHours(-1);
-Check("Past expiry cannot jump ahead of a future date", AutomaticSwitchPolicy.Select(new[] { source, sooner, later }, 10, now) == later);
+sooner.Usage!.OrdinaryUsageAllowed = true;
+Check("A past subscription date still usable by the server is consumed before future dates", AutomaticSwitchPolicy.Select(new[] { source, sooner, later }, 10, now) == sooner);
+Check("Past-date forecast agrees with the eligible automatic target", AutomaticSwitchPolicy.Next(new[] { source, sooner, later }, 10, now) == sooner);
+sooner.Usage.OrdinaryUsageAllowed = false;
+Check("Past dates never override explicit server denial", AutomaticSwitchPolicy.Select(new[] { source, sooner, later }, 10, now) == later);
+sooner.Usage.OrdinaryUsageAllowed = true; sooner.Usage.Buckets[0].SpendControlReached = true;
+Check("Past dates never override a spending restriction", AutomaticSwitchPolicy.Select(new[] { source, sooner, later }, 10, now) == later);
+sooner.Usage.Buckets[0].SpendControlReached = false;
+Check("Custom ranks still override date preference", AutomaticSwitchPolicy.Select(new[] { source, sooner, later }, 10, now, new[] { later.Key, sooner.Key }) == later);
 sooner.SubscriptionActiveUntil = now.AddHours(1); sooner.Error = "offline";
 Check("Expiry preference cannot bypass stale or failed account guards", AutomaticSwitchPolicy.Select(new[] { source, sooner, later }, 10, now) == later);
 sooner.Error = null;
@@ -287,6 +297,7 @@ try
     Check("Encrypted preferences and cooldown survive restart", reopened.Data.AutomaticSwitchEnabled && reopened.Data.AutomaticSwitchThreshold == 15 && reopened.Data.LastAutomaticSwitchAttempt == now);
     AccountAutomation.Pause(service);
     Check("Failure pause persists without losing accounts", !new AccountVault(vault.DirectoryPath).Data.AutomaticSwitchEnabled && vault.Data.Accounts.Count == 2);
+    CreditProtectionContracts.Service(Check, service, original, second, now);
 }
 finally { if (Directory.Exists(fixture)) Directory.Delete(fixture, true); }
 Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, failed = 0, checks, scope = "Fictional account files and backend only; no real Codex process, browser, login or chat touched." }, new JsonSerializerOptions { WriteIndented = true }));
@@ -301,6 +312,8 @@ sealed class FakeBackend : IAccountSwitchBackend
     public string? LastMarker;
     public Task<string?> CurrentAccountAsync(CancellationToken cancellation) => Task.FromResult<string?>(Current);
     public Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation) => Task.FromResult(new[] { new SwitchChat { Id = "chat", OriginalTitle = "Fictional work" } });
+    public int TargetValidations;
+    public Task ValidateChatsForTargetAsync(SwitchChat[] chats, string target, CancellationToken cancellation) { TargetValidations++; if (Failure == "target-refused") throw new InvalidDataException("Synthetic workspace refusal"); return Task.CompletedTask; }
     public Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken cancellation) { Names++; if (Names <= NameFailures) throw new IOException("Synthetic name failure"); return Task.CompletedTask; }
     public Task CloseDesktopAsync(CancellationToken cancellation) { Closes++; if (Failure == "close" || Closes <= CloseFailures) throw new IOException("Synthetic shutdown remains incomplete"); if (Failure == "cancel-after-close") Cancel!.Cancel(); return Task.CompletedTask; }
     public Task ApplyAccountAsync(string key, string? source, CancellationToken cancellation) { ApplyCalls++; if (Failure == "apply" || ApplyCalls <= ApplyFailures) throw new IOException("Synthetic apply failure"); Current = key; Applies++; if (Failure == "apply-after-write" && ApplyCalls == 1) throw new IOException("Synthetic failure after writing credentials"); return Task.CompletedTask; }

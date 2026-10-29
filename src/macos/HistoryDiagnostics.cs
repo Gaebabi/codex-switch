@@ -82,7 +82,9 @@ internal static class HistoryDiagnostics
                                 var quota = history.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "HistoryQuota");
                                 quota.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); await Ready();
                                 var menu = quota.ContextMenu ?? throw new InvalidOperationException("Quota menu did not open.");
-                                var items = menu.ItemsSource!.Cast<MenuItem>().ToArray();
+                                // Keep the original two quota choices strict. Credit history is
+                                // a separate metric, verified by its own native evidence mode.
+                                var items = menu.ItemsSource!.Cast<object>().OfType<MenuItem>().Where(item => item.Header as string != Loc.T("credits.history")).ToArray();
                                 Check(theme + "/multiple/selected quota menu", menu.IsOpen && items.Length == 2 && items.Count(item => item.IsChecked) == 1);
                                 await NativeUiCapture.SaveAsync(TopLevel.GetTopLevel(menu) ?? throw new InvalidOperationException("Quota popup has no native root."),
                                     Path.Combine(directory, "en-" + theme + "-history-quota-native.png"));

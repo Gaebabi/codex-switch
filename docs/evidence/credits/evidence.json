@@ -1,0 +1,1045 @@
+{
+  "schema": 1,
+  "captureRevision": "8fd6c737fe9dc110f3ec0a57b6c583b53d51d8e1",
+  "run": 40822704133,
+  "artifacts": [
+    {
+      "artifact": "credits-windows",
+      "id": 12876045589,
+      "sha256": "d4929613a2eab65ab2eb009ac7dfaeabaed147e355d547b907f72d067406e9ff"
+    },
+    {
+      "artifact": "credits-osx-arm64",
+      "id": 12875212673,
+      "sha256": "b9574947799217c55ba21d0343ec6c997413f888e57fcd66035369e8a88b70de"
+    },
+    {
+      "artifact": "credits-osx-x64",
+      "id": 12875022505,
+      "sha256": "2684dce33d74b6407e5ba776be8614f500713a6c2ed03e01ff0120df91b57086"
+    }
+  ],
+  "selected": [
+    {
+      "file": "osx-arm64-en-dark-history.png",
+      "artifact": "credits-osx-arm64",
+      "sha256": "403e88ad1e2fff3c142a5244beb8fc1e893134f434390e6f0d24a2be9df0967a"
+    },
+    {
+      "file": "osx-arm64-ko-light-history.png",
+      "artifact": "credits-osx-arm64",
+      "sha256": "60b6193fd4f6310c73c7512f2583a90a0d0d54314f2e771f6e8dc3ed43f1c021"
+    },
+    {
+      "file": "osx-arm64-en-dark-protected.png",
+      "artifact": "credits-osx-arm64",
+      "sha256": "3d9dd53f014eb959cb1fa44f5081299d51330503fc74b12624b17ba0533a47b9"
+    },
+    {
+      "file": "osx-arm64-en-dark-paused.png",
+      "artifact": "credits-osx-arm64",
+      "sha256": "83a87611d3d9716e7245a0e013bbcfa07b6331afd8df369250dab24f97c8c976"
+    },
+    {
+      "file": "osx-arm64-en-dark-past-expiry.png",
+      "artifact": "credits-osx-arm64",
+      "sha256": "f280bb0b1a09321f3adcb66040d0480ad92704a9d50b26487859379b922570c3"
+    },
+    {
+      "file": "osx-x64-en-dark-history.png",
+      "artifact": "credits-osx-x64",
+      "sha256": "f9ca8f22e0858435e67676a78df935650e902a0b79117ef6353a95b48823ed2c"
+    },
+    {
+      "file": "osx-x64-ko-light-history.png",
+      "artifact": "credits-osx-x64",
+      "sha256": "43c45307a4c3deeb3b60b2745dd1c6cf0180befc71472df58bbba1f98025bc0f"
+    },
+    {
+      "file": "osx-x64-en-dark-protected.png",
+      "artifact": "credits-osx-x64",
+      "sha256": "9acc739ff01ee6e2bcdc8acc880b240d61ebf471fcc9b0bd3e85b20302ba46d4"
+    },
+    {
+      "file": "osx-x64-en-dark-paused.png",
+      "artifact": "credits-osx-x64",
+      "sha256": "9b2d614271c86e9b86ae0306de91ded9c968568b1b2e06592e027007ceffe31c"
+    },
+    {
+      "file": "osx-x64-en-dark-past-expiry.png",
+      "artifact": "credits-osx-x64",
+      "sha256": "9ce92afd8b46ac980b8e605ea18b705dd494490243fc6112cf6435198c2676f0"
+    },
+    {
+      "file": "windows-en-dark-history.png",
+      "artifact": "credits-windows",
+      "sha256": "003f14def2ff685f0a5b5f487e7ebe272ad276c6eef03123c68061b733b197cc"
+    },
+    {
+      "file": "windows-ko-light-history.png",
+      "artifact": "credits-windows",
+      "sha256": "013f4e846903a5a69f01f8b7ffe491d7bf5407c8b550545d6679062f5dfb3fa2"
+    },
+    {
+      "file": "windows-en-dark-protected.png",
+      "artifact": "credits-windows",
+      "sha256": "2e378ab35eb76b114c1a6b1dfbf0b566727a26fd9fa687f0d2c8236b68380c0b"
+    },
+    {
+      "file": "windows-en-dark-paused.png",
+      "artifact": "credits-windows",
+      "sha256": "a570223c6a4fd52c0c363ea45f2c85517b5a0c72ed72c22b01fc2b016921326f"
+    },
+    {
+      "file": "windows-en-dark-past-expiry.png",
+      "artifact": "credits-windows",
+      "sha256": "c8778630b4f321e3000977519d3c5c4fa9264653069b1181a3cef324eee506a8"
+    },
+    {
+      "file": "windows-en-dark-allowed.png",
+      "artifact": "credits-windows",
+      "sha256": "a0f4a88ff1797683e54e95a4eb47696a9ad6322e375998635d3c0969b1ef951d"
+    },
+    {
+      "file": "windows-en-dark-empty.png",
+      "artifact": "credits-windows",
+      "sha256": "c52f880950c8895e3311b613a8ecfef0b504017ea98c797a5017d98ce130afe9"
+    },
+    {
+      "file": "windows-en-dark-minimum.png",
+      "artifact": "credits-windows",
+      "sha256": "6a0c43a0ed589db669077638746a17c7168935ef48cac00d0ad8218635bc3164"
+    }
+  ],
+  "baseline": {
+    "revision": "2c153cf519aaf0c13078de7a871a43e77f95c213",
+    "file": "before-history.png",
+    "sha256": "ecad65f9e3a66d09331c9504df8c4d34776ea841c9106afa503cfa1247cfebf1",
+    "unchangedParentHistorySources": {
+      "src/windows/AccountDetailWindow.cs": "5ef4f26fb05c3ad451936358c37fbfba48b2f83f6e8ba5f6b21c1ed8a2f1b674",
+      "src/windows/UsageOutlook.cs": "9985d4ddd757d537e70ca3cfa1bae68bed5d04720d278468bb2af946771ced4d",
+      "src/windows/UsageTrendChart.cs": "1b1299a90e781faad04464d417dc92ab2c5e78aa90ea85a38eb7acf1c7d0fef0"
+    },
+    "scope": "Actual original1.42.7 own-WPF quota-history window, fictional inputs. This shows absence of the new credit metric, not the past-date ranking error; that error was separately reproduced on the parent policy."
+  },
+  "sourceReceipts": {
+    "credits-osx-arm64": {
+      "schema": 1,
+      "os": "macOS",
+      "architecture": "Arm64",
+      "runtime": ".NET 10.0.13",
+      "version": "1.42.7",
+      "passed": 42,
+      "failed": 0,
+      "checks": [
+        "disposable legacy preferences allow credits by default",
+        "en-dark-default credit permission is visibly On",
+        "en-dark-actual credit toggle persists Off",
+        "en-dark-disabled automatic switching permits protective stop selection",
+        "en-dark-past but usable subscription is the visible next account",
+        "en-dark-no eligible quota requests a protected stop",
+        "en-dark-saved paused chats retain an enabled recovery action",
+        "en-dark-actual credit graph and metrics fit without horizontal overflow",
+        "en-dark-credit units and measured decreases replace percentage forecasts",
+        "en-dark-one credit balance cannot fabricate consumption",
+        "en-dark-minimum credit window preserves horizontal fit and reachable footer",
+        "en-light-default credit permission is visibly On",
+        "en-light-actual credit toggle persists Off",
+        "en-light-disabled automatic switching permits protective stop selection",
+        "en-light-past but usable subscription is the visible next account",
+        "en-light-no eligible quota requests a protected stop",
+        "en-light-saved paused chats retain an enabled recovery action",
+        "en-light-actual credit graph and metrics fit without horizontal overflow",
+        "en-light-credit units and measured decreases replace percentage forecasts",
+        "en-light-one credit balance cannot fabricate consumption",
+        "en-light-minimum credit window preserves horizontal fit and reachable footer",
+        "ko-dark-default credit permission is visibly On",
+        "ko-dark-actual credit toggle persists Off",
+        "ko-dark-disabled automatic switching permits protective stop selection",
+        "ko-dark-past but usable subscription is the visible next account",
+        "ko-dark-no eligible quota requests a protected stop",
+        "ko-dark-saved paused chats retain an enabled recovery action",
+        "ko-dark-actual credit graph and metrics fit without horizontal overflow",
+        "ko-dark-credit units and measured decreases replace percentage forecasts",
+        "ko-dark-one credit balance cannot fabricate consumption",
+        "ko-dark-minimum credit window preserves horizontal fit and reachable footer",
+        "ko-light-default credit permission is visibly On",
+        "ko-light-actual credit toggle persists Off",
+        "ko-light-disabled automatic switching permits protective stop selection",
+        "ko-light-past but usable subscription is the visible next account",
+        "ko-light-no eligible quota requests a protected stop",
+        "ko-light-saved paused chats retain an enabled recovery action",
+        "ko-light-actual credit graph and metrics fit without horizontal overflow",
+        "ko-light-credit units and measured decreases replace percentage forecasts",
+        "ko-light-one credit balance cannot fabricate consumption",
+        "ko-light-minimum credit window preserves horizontal fit and reachable footer",
+        "credit fixture leaves its absent Codex home untouched"
+      ],
+      "images": [
+        {
+          "file": "en-dark-allowed.png",
+          "width": 220,
+          "height": 336,
+          "sha256": "ad6d200e095023efe0880be7273594c75a8346171a760a01a588daab005ce130",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-empty.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "32daa936e9c1c2c8747beaa4c1c27b4e48509c479633ceed48f53bbc5c38751b",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-history.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "403e88ad1e2fff3c142a5244beb8fc1e893134f434390e6f0d24a2be9df0967a",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-minimum.png",
+          "width": 500,
+          "height": 328,
+          "sha256": "e96f9174f573a701c7d8098eb8f763e8ab233e0b6e7726f7c53673bc27fa45ed",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-past-expiry.png",
+          "width": 220,
+          "height": 336,
+          "sha256": "f280bb0b1a09321f3adcb66040d0480ad92704a9d50b26487859379b922570c3",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-paused.png",
+          "width": 600,
+          "height": 440,
+          "sha256": "83a87611d3d9716e7245a0e013bbcfa07b6331afd8df369250dab24f97c8c976",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-protected.png",
+          "width": 220,
+          "height": 336,
+          "sha256": "3d9dd53f014eb959cb1fa44f5081299d51330503fc74b12624b17ba0533a47b9",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-allowed.png",
+          "width": 220,
+          "height": 336,
+          "sha256": "66447d3476dd694da4f882775e9cbb0124be2ba02d652e3432bba37814d2b299",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-empty.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "2a13c35656111a852e3ec027e9f3b4b68a1871edf01d4868a802442a2b735526",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-history.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "3233cfbf83b61a427dc8d8e81ef84669cc1c3f44ba604963e60ccdd1b02140ea",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-minimum.png",
+          "width": 500,
+          "height": 328,
+          "sha256": "ae38513da1766f1d6cf7d63a95c4871af259ba690259fa8c10132d6c701cde61",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-past-expiry.png",
+          "width": 220,
+          "height": 336,
+          "sha256": "fcc16dbbc2a6889c00a3ea056e34267f030ff7f8a3cccf41917ea9967b339876",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-paused.png",
+          "width": 600,
+          "height": 440,
+          "sha256": "8188d3730bc692460e171e0d3e1a47ecdfd12789ce910b7a05dafa3a2cb4e86f",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-protected.png",
+          "width": 220,
+          "height": 336,
+          "sha256": "c44e908c5e6d79f9a2be63c28f27dc5ed35f2ce1f789ea06ef60f0e0dde4401d",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-allowed.png",
+          "width": 184,
+          "height": 336,
+          "sha256": "1357e3799e9b057f78097b11a0487765cd122e0a288be50c0269b9fab86bbe18",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-empty.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "939c5e4bddab777ffc896453708f4e6b5a0c8c41f9d0e8347650fd603022d05c",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-history.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "5d5f40b56983df2e8ab4b0190e3989358b8b4e071960c943f5d4402f1d42d761",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-minimum.png",
+          "width": 500,
+          "height": 328,
+          "sha256": "b240208710607273b673bcf18c472981c18a6d3ed8f2784105c5dd8524d8c8df",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-past-expiry.png",
+          "width": 184,
+          "height": 336,
+          "sha256": "69607e468fc96af2774b3e6475427c88f68ee070dda420b036b16d575353a4a1",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-paused.png",
+          "width": 600,
+          "height": 440,
+          "sha256": "898ac110b8786a28448fd3974c6e345b3d8850306513a7db057a6bff40571f41",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-protected.png",
+          "width": 184,
+          "height": 336,
+          "sha256": "55ec6df9ad29fc42dc2bc923da35b0d8fb70c3f56da33cb58c9863a76d09f2b2",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-allowed.png",
+          "width": 184,
+          "height": 336,
+          "sha256": "faf1e285a034c19dcceb1e4d1b352b5eb554b8177fcb1218564422361c6187b8",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-empty.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "aa7cb57c4057cb4fb966d897e100da44c6cfa82021e994061816ed402175129f",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-history.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "60b6193fd4f6310c73c7512f2583a90a0d0d54314f2e771f6e8dc3ed43f1c021",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-minimum.png",
+          "width": 500,
+          "height": 328,
+          "sha256": "984cdc5b26407ca8e2c3a351655fdc4c65b904e5cd269e6149bf38f98573fca5",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-past-expiry.png",
+          "width": 184,
+          "height": 336,
+          "sha256": "5847d1e9e9cd06a1ff7a8bbc9981fcde6109cd85cff3d93c39c1ea1b6f0b8707",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-paused.png",
+          "width": 600,
+          "height": 440,
+          "sha256": "455d9d530b8493bdaf1e0c9435eaa19650a15693b918416534a286277231ab06",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-protected.png",
+          "width": 184,
+          "height": 336,
+          "sha256": "49301db3b28f9e64a1c33160813cf876e4c9ef94b8aa1a16e13ae7b96d432b39",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        }
+      ],
+      "scope": "Actual owned native Mac windows/popups with fictional credits, quota and paused-state inputs; software rendering. No owner account/login, network, client shutdown or billing mutation. Normal shutdown is separately verified with an owned Windows process fixture.",
+      "revision": "8fd6c737fe9dc110f3ec0a57b6c583b53d51d8e1",
+      "nativeWindowCapture": true,
+      "personalDataUsed": false,
+      "sourceHashes": {
+        "src/core/CreditHistory.cs": "2140d05401b50816dd21d2b8c46168e9004bf122b505b248fa0aaa31a69f0b64",
+        "src/core/CreditPresentation.cs": "82cd866a4d8265a07c53922ef2651e330326c71055590f5426bd754cc8435086",
+        "src/core/Models.cs": "a1f32d53a757aaa54852e35682d2aed18607d787e036ae284d6f7b6c4c54c231",
+        "src/core/UsageAnalysis.cs": "53411f56c0ccf16a3b724c12989e509e41df99d7829c0e0d366cb3ec74b4a95b",
+        "src/core/AutomaticSwitchPolicy.cs": "665935f518cf03289d2bb584e0409103dbe0426409b22e20a2cad2d06d01da01",
+        "src/core/AccountSwitchCoordinator.cs": "5a2efc6fb55185dfa2664f5c9e5544ad37301ad7c940eac7c4c6a2059b30fe27",
+        "src/application/AccountAutomation.cs": "848ca74c5db797751af19e2cde1de63bac7e55cba2c6f6eae6356d2361208c67",
+        "src/application/AccountService.cs": "2fb0cfff846ff094cccc94b9408c34e1a03ea28d95adeee24506ef781f4e4fc7",
+        "src/application/Storage.cs": "90f90d108a2f2e87bd77487e0e509e7150c562937d25468e3f6c4c27ff09445b",
+        "src/application/VaultData.cs": "aa2b519b295e7f833b30bfd72e7ba27fb23cc0f97e197265175afffa9d40c975",
+        "src/application/DesktopSwitchBackend.cs": "39e82c16a5b2941693688130088fcf71f8e81a4db386425c587da342f8898616",
+        "src/windows/AccountDetailWindow.cs": "da062a515c152143b833179c218a7318ee2a059a1d0f7f95039317170d099d2e",
+        "src/windows/CreditTrendChart.cs": "7efb2ee5f95d0d9245c27dba330cf9b6e9d27f6ecd71208443ed1c1353e78d8f",
+        "src/windows/MainWindow.cs": "fa925882bccc30362f8104730bdc99d3d5419b450fb7687050c014295ab159c8",
+        "src/windows/CreditEvidence.cs": "b266b998d3cd13f8d7bb74340b44a757931c2b9bed8d4b01331761ef4bc83360",
+        "src/desktop/HistoryWindow.cs": "09f43ad1e4bf78530f117dcee60b8a2bfb71c855235a4a5737721dc7b2979c81",
+        "src/desktop/CreditChart.cs": "f91b0800de5af9fd80fb2161a45f8e1b1fc28c09065eab3235ba962136c5a208",
+        "src/desktop/DeskWindow.cs": "18be2591b3e658a6509f0cd67aff7c31527e2b7091fed8039b550e8a67757bc0",
+        "src/macos/CreditEvidence.cs": "65fd5ae3284917e653769f65ca90f60d1b401c85c4288404f108503541b16e9a",
+        "Directory.Build.props": "3e30e5544615b953e3b9247556d6d279c63588fef2df82f05965de479180e2d5"
+      },
+      "rendering": "Software (CI native window)"
+    },
+    "credits-osx-x64": {
+      "schema": 1,
+      "os": "macOS",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "version": "1.42.7",
+      "passed": 42,
+      "failed": 0,
+      "checks": [
+        "disposable legacy preferences allow credits by default",
+        "en-dark-default credit permission is visibly On",
+        "en-dark-actual credit toggle persists Off",
+        "en-dark-disabled automatic switching permits protective stop selection",
+        "en-dark-past but usable subscription is the visible next account",
+        "en-dark-no eligible quota requests a protected stop",
+        "en-dark-saved paused chats retain an enabled recovery action",
+        "en-dark-actual credit graph and metrics fit without horizontal overflow",
+        "en-dark-credit units and measured decreases replace percentage forecasts",
+        "en-dark-one credit balance cannot fabricate consumption",
+        "en-dark-minimum credit window preserves horizontal fit and reachable footer",
+        "en-light-default credit permission is visibly On",
+        "en-light-actual credit toggle persists Off",
+        "en-light-disabled automatic switching permits protective stop selection",
+        "en-light-past but usable subscription is the visible next account",
+        "en-light-no eligible quota requests a protected stop",
+        "en-light-saved paused chats retain an enabled recovery action",
+        "en-light-actual credit graph and metrics fit without horizontal overflow",
+        "en-light-credit units and measured decreases replace percentage forecasts",
+        "en-light-one credit balance cannot fabricate consumption",
+        "en-light-minimum credit window preserves horizontal fit and reachable footer",
+        "ko-dark-default credit permission is visibly On",
+        "ko-dark-actual credit toggle persists Off",
+        "ko-dark-disabled automatic switching permits protective stop selection",
+        "ko-dark-past but usable subscription is the visible next account",
+        "ko-dark-no eligible quota requests a protected stop",
+        "ko-dark-saved paused chats retain an enabled recovery action",
+        "ko-dark-actual credit graph and metrics fit without horizontal overflow",
+        "ko-dark-credit units and measured decreases replace percentage forecasts",
+        "ko-dark-one credit balance cannot fabricate consumption",
+        "ko-dark-minimum credit window preserves horizontal fit and reachable footer",
+        "ko-light-default credit permission is visibly On",
+        "ko-light-actual credit toggle persists Off",
+        "ko-light-disabled automatic switching permits protective stop selection",
+        "ko-light-past but usable subscription is the visible next account",
+        "ko-light-no eligible quota requests a protected stop",
+        "ko-light-saved paused chats retain an enabled recovery action",
+        "ko-light-actual credit graph and metrics fit without horizontal overflow",
+        "ko-light-credit units and measured decreases replace percentage forecasts",
+        "ko-light-one credit balance cannot fabricate consumption",
+        "ko-light-minimum credit window preserves horizontal fit and reachable footer",
+        "credit fixture leaves its absent Codex home untouched"
+      ],
+      "images": [
+        {
+          "file": "en-dark-allowed.png",
+          "width": 220,
+          "height": 336,
+          "sha256": "f17dea1f608bf1c31f2e56842c8b56c51acb5c51d0b649c664fb3ff6411001b5",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-empty.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "1493847d3f2bcb4b54a95fd0eb79619dd0849d79711a44980fbf88ec8ecaa195",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-history.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "f9ca8f22e0858435e67676a78df935650e902a0b79117ef6353a95b48823ed2c",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-minimum.png",
+          "width": 500,
+          "height": 328,
+          "sha256": "761de73e5ef486bb25f9dfea5b39ebddf6e6ddd2d4d235e143a5477b475706e9",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-past-expiry.png",
+          "width": 220,
+          "height": 336,
+          "sha256": "9ce92afd8b46ac980b8e605ea18b705dd494490243fc6112cf6435198c2676f0",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-paused.png",
+          "width": 600,
+          "height": 440,
+          "sha256": "9b2d614271c86e9b86ae0306de91ded9c968568b1b2e06592e027007ceffe31c",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-protected.png",
+          "width": 220,
+          "height": 336,
+          "sha256": "9acc739ff01ee6e2bcdc8acc880b240d61ebf471fcc9b0bd3e85b20302ba46d4",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-allowed.png",
+          "width": 220,
+          "height": 336,
+          "sha256": "ac9d6275c55719aa1575a174d49e51dee517cffb8c068b6610f2d60367338a21",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-empty.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "09479542d7264b2a8a4fb23f24f402300998a9e01811cd80a8eed86957350df4",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-history.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "4ad37cfdea124324b394c0d241603c9c399ba71e214d773f3e32040301ad2136",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-minimum.png",
+          "width": 500,
+          "height": 328,
+          "sha256": "ca1dba7f04309129248ad5dec0181c6c6cbc00241f903fb13ee1272b3070c6ee",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-past-expiry.png",
+          "width": 220,
+          "height": 336,
+          "sha256": "7cb12f7632f7c0dab00d5ff6dd04aee64f8f7026271fe36c9ba7db375c25df76",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-paused.png",
+          "width": 600,
+          "height": 440,
+          "sha256": "f426a9dd2e260093d2fd8a031219b8246dfd91336a6568fb4f5ee683dfdf6f58",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-protected.png",
+          "width": 220,
+          "height": 336,
+          "sha256": "c4b0af8400e6f72f5af0864a2c7804a7531233816fed66fa9295841b2da829c5",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-allowed.png",
+          "width": 184,
+          "height": 336,
+          "sha256": "2ffe2881b8088a26709725acf8728e6a74af0838a4fbe05311e3241ffc432999",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-empty.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "4249bf57a4aa993e713509c0533467d6d685a8546a93ea9254e8a50f089c67fe",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-history.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "880e255c8a7fcc847e5642129b280e79cabc4d28bcff05c520496643c133b463",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-minimum.png",
+          "width": 500,
+          "height": 328,
+          "sha256": "a1e3261e5cd35a9aa7b41f89552b285b9d2b9ec33cc4566566d962af1f1498af",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-past-expiry.png",
+          "width": 184,
+          "height": 336,
+          "sha256": "859f4397d5449556b3b3d3c135a75d9167b1843dfeee3ce9abef50faa8f8943f",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-paused.png",
+          "width": 600,
+          "height": 440,
+          "sha256": "dfcc9b2d12ca206e7f40c8cfe22daa6eb7c839ec8e45135e8eaa4f832f85bd00",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-protected.png",
+          "width": 184,
+          "height": 336,
+          "sha256": "acc1dd7bc4ce2a198c892446a060731dc08c5a360fb6bd8366e5c327bc7674b6",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-allowed.png",
+          "width": 184,
+          "height": 336,
+          "sha256": "d3b2c5ae7103f59a1c565b6e848bbac4db4f3e59c35842bc543a934a5a1f31ca",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-empty.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "1b47a15e0853f40aeb8389c0bd8cb72253232ae8f585b5da2f530b3c66e23688",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-history.png",
+          "width": 640,
+          "height": 468,
+          "sha256": "43c45307a4c3deeb3b60b2745dd1c6cf0180befc71472df58bbba1f98025bc0f",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-minimum.png",
+          "width": 500,
+          "height": 328,
+          "sha256": "185e2ab2830ba9e2e8805420c101c3af660e260657d01453e1e10fdc1a4388eb",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-past-expiry.png",
+          "width": 184,
+          "height": 336,
+          "sha256": "6806073b565050c5d7b11f4a2dcc2487ff169e8b0d2e96412477a331bbb029cf",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-paused.png",
+          "width": 600,
+          "height": 440,
+          "sha256": "b55bce3284e0139b7c60cda8de9b331456c4e7368ec09430832d9dece378d757",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-protected.png",
+          "width": 184,
+          "height": 336,
+          "sha256": "0c4823615bb6a13ab74fec9e32c41f49a779d3cafedf6051b6ba01a6d51bc127",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        }
+      ],
+      "scope": "Actual owned native Mac windows/popups with fictional credits, quota and paused-state inputs; software rendering. No owner account/login, network, client shutdown or billing mutation. Normal shutdown is separately verified with an owned Windows process fixture.",
+      "revision": "8fd6c737fe9dc110f3ec0a57b6c583b53d51d8e1",
+      "nativeWindowCapture": true,
+      "personalDataUsed": false,
+      "sourceHashes": {
+        "src/core/CreditHistory.cs": "2140d05401b50816dd21d2b8c46168e9004bf122b505b248fa0aaa31a69f0b64",
+        "src/core/CreditPresentation.cs": "82cd866a4d8265a07c53922ef2651e330326c71055590f5426bd754cc8435086",
+        "src/core/Models.cs": "a1f32d53a757aaa54852e35682d2aed18607d787e036ae284d6f7b6c4c54c231",
+        "src/core/UsageAnalysis.cs": "53411f56c0ccf16a3b724c12989e509e41df99d7829c0e0d366cb3ec74b4a95b",
+        "src/core/AutomaticSwitchPolicy.cs": "665935f518cf03289d2bb584e0409103dbe0426409b22e20a2cad2d06d01da01",
+        "src/core/AccountSwitchCoordinator.cs": "5a2efc6fb55185dfa2664f5c9e5544ad37301ad7c940eac7c4c6a2059b30fe27",
+        "src/application/AccountAutomation.cs": "848ca74c5db797751af19e2cde1de63bac7e55cba2c6f6eae6356d2361208c67",
+        "src/application/AccountService.cs": "2fb0cfff846ff094cccc94b9408c34e1a03ea28d95adeee24506ef781f4e4fc7",
+        "src/application/Storage.cs": "90f90d108a2f2e87bd77487e0e509e7150c562937d25468e3f6c4c27ff09445b",
+        "src/application/VaultData.cs": "aa2b519b295e7f833b30bfd72e7ba27fb23cc0f97e197265175afffa9d40c975",
+        "src/application/DesktopSwitchBackend.cs": "39e82c16a5b2941693688130088fcf71f8e81a4db386425c587da342f8898616",
+        "src/windows/AccountDetailWindow.cs": "da062a515c152143b833179c218a7318ee2a059a1d0f7f95039317170d099d2e",
+        "src/windows/CreditTrendChart.cs": "7efb2ee5f95d0d9245c27dba330cf9b6e9d27f6ecd71208443ed1c1353e78d8f",
+        "src/windows/MainWindow.cs": "fa925882bccc30362f8104730bdc99d3d5419b450fb7687050c014295ab159c8",
+        "src/windows/CreditEvidence.cs": "b266b998d3cd13f8d7bb74340b44a757931c2b9bed8d4b01331761ef4bc83360",
+        "src/desktop/HistoryWindow.cs": "09f43ad1e4bf78530f117dcee60b8a2bfb71c855235a4a5737721dc7b2979c81",
+        "src/desktop/CreditChart.cs": "f91b0800de5af9fd80fb2161a45f8e1b1fc28c09065eab3235ba962136c5a208",
+        "src/desktop/DeskWindow.cs": "18be2591b3e658a6509f0cd67aff7c31527e2b7091fed8039b550e8a67757bc0",
+        "src/macos/CreditEvidence.cs": "65fd5ae3284917e653769f65ca90f60d1b401c85c4288404f108503541b16e9a",
+        "Directory.Build.props": "3e30e5544615b953e3b9247556d6d279c63588fef2df82f05965de479180e2d5"
+      },
+      "rendering": "Software (CI native window)"
+    },
+    "credits-windows": {
+      "schema": 1,
+      "os": "Windows",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "version": "1.42.7",
+      "passed": 41,
+      "failed": 0,
+      "checks": [
+        "disposable legacy preferences allow credits by default",
+        "en-dark-default credit permission is visibly On",
+        "en-dark-actual credit toggle persists Off",
+        "en-dark-disabled automatic switching permits protective stop selection",
+        "en-dark-past but usable subscription is the visible next account",
+        "en-dark-no eligible quota requests a protected stop",
+        "en-dark-saved paused chats retain an enabled recovery action",
+        "en-dark-actual credit graph and metrics fit without horizontal overflow",
+        "en-dark-credit units and measured decreases replace percentage forecasts",
+        "en-dark-one credit balance cannot fabricate consumption",
+        "en-dark-minimum credit window preserves horizontal fit and reachable footer",
+        "en-light-default credit permission is visibly On",
+        "en-light-actual credit toggle persists Off",
+        "en-light-disabled automatic switching permits protective stop selection",
+        "en-light-past but usable subscription is the visible next account",
+        "en-light-no eligible quota requests a protected stop",
+        "en-light-saved paused chats retain an enabled recovery action",
+        "en-light-actual credit graph and metrics fit without horizontal overflow",
+        "en-light-credit units and measured decreases replace percentage forecasts",
+        "en-light-one credit balance cannot fabricate consumption",
+        "en-light-minimum credit window preserves horizontal fit and reachable footer",
+        "ko-dark-default credit permission is visibly On",
+        "ko-dark-actual credit toggle persists Off",
+        "ko-dark-disabled automatic switching permits protective stop selection",
+        "ko-dark-past but usable subscription is the visible next account",
+        "ko-dark-no eligible quota requests a protected stop",
+        "ko-dark-saved paused chats retain an enabled recovery action",
+        "ko-dark-actual credit graph and metrics fit without horizontal overflow",
+        "ko-dark-credit units and measured decreases replace percentage forecasts",
+        "ko-dark-one credit balance cannot fabricate consumption",
+        "ko-dark-minimum credit window preserves horizontal fit and reachable footer",
+        "ko-light-default credit permission is visibly On",
+        "ko-light-actual credit toggle persists Off",
+        "ko-light-disabled automatic switching permits protective stop selection",
+        "ko-light-past but usable subscription is the visible next account",
+        "ko-light-no eligible quota requests a protected stop",
+        "ko-light-saved paused chats retain an enabled recovery action",
+        "ko-light-actual credit graph and metrics fit without horizontal overflow",
+        "ko-light-credit units and measured decreases replace percentage forecasts",
+        "ko-light-one credit balance cannot fabricate consumption",
+        "ko-light-minimum credit window preserves horizontal fit and reachable footer"
+      ],
+      "images": [
+        {
+          "file": "en-dark-allowed.png",
+          "width": 219,
+          "height": 360,
+          "sha256": "a0f4a88ff1797683e54e95a4eb47696a9ad6322e375998635d3c0969b1ef951d",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-empty.png",
+          "width": 620,
+          "height": 430,
+          "sha256": "c52f880950c8895e3311b613a8ecfef0b504017ea98c797a5017d98ce130afe9",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-history.png",
+          "width": 620,
+          "height": 430,
+          "sha256": "003f14def2ff685f0a5b5f487e7ebe272ad276c6eef03123c68061b733b197cc",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-minimum.png",
+          "width": 560,
+          "height": 380,
+          "sha256": "6a0c43a0ed589db669077638746a17c7168935ef48cac00d0ad8218635bc3164",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-past-expiry.png",
+          "width": 219,
+          "height": 360,
+          "sha256": "c8778630b4f321e3000977519d3c5c4fa9264653069b1181a3cef324eee506a8",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-paused.png",
+          "width": 600,
+          "height": 440,
+          "sha256": "a570223c6a4fd52c0c363ea45f2c85517b5a0c72ed72c22b01fc2b016921326f",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-dark-protected.png",
+          "width": 219,
+          "height": 360,
+          "sha256": "2e378ab35eb76b114c1a6b1dfbf0b566727a26fd9fa687f0d2c8236b68380c0b",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-allowed.png",
+          "width": 219,
+          "height": 360,
+          "sha256": "8caa2270cda02f208615b4c5f968abea4db8ce1db5ef02b5142bb3792a5f0b96",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-empty.png",
+          "width": 620,
+          "height": 430,
+          "sha256": "3f1ca31ce885b4514522a670ad737c1a8de4fa80c7d6f67bb1f7ebbb51ce54b2",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-history.png",
+          "width": 620,
+          "height": 430,
+          "sha256": "bb763922fb367406623d68eb2e9537453773aea5875c401249930d4dfcdf850f",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-minimum.png",
+          "width": 560,
+          "height": 380,
+          "sha256": "1529f8643894a81df928595b859ebc9a812ff1c013c48841c0654b1aee9d446a",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-past-expiry.png",
+          "width": 219,
+          "height": 360,
+          "sha256": "6cdef48d8be9edb6de32b9f0d013986b2ab54d9fc5de39fd4b5dfbbf7a3505ee",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-paused.png",
+          "width": 600,
+          "height": 440,
+          "sha256": "ccdbbe76f5beff91f2c6684584184db5113bb5ce6e9ef9f46f30f6f903b1dbfd",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "en-light-protected.png",
+          "width": 219,
+          "height": 360,
+          "sha256": "4ba246aaaee392d88a70de8faed96f7f1616b854ca65339f9455aa5837076f01",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-allowed.png",
+          "width": 248,
+          "height": 360,
+          "sha256": "65a4b5054ff1e1202e5071a034fc3bcf650475adc4f217faf3b2c606be4f9b37",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-empty.png",
+          "width": 620,
+          "height": 430,
+          "sha256": "06e09391eb9a037d55ebe1522b9c2092e382c0b234a59faec78142ca92637901",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-history.png",
+          "width": 620,
+          "height": 430,
+          "sha256": "779666d3065dfaa1d82cc04558ec007ddebf7a921f90b8efc4de977a7de15a18",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-minimum.png",
+          "width": 560,
+          "height": 380,
+          "sha256": "a37f14ac2d69d248d69bcc7637861a79a6cd30ec064317b6095690072f64615f",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-past-expiry.png",
+          "width": 248,
+          "height": 360,
+          "sha256": "ab3bb25dc0e1307054f0bd745ce91563a8395ae46006b84ea4026859c9695a29",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-paused.png",
+          "width": 600,
+          "height": 440,
+          "sha256": "e574e5275fac8d46ff70e6dac90aad46db33f0a54c5b6f895e57fcd08c04e3c3",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-dark-protected.png",
+          "width": 248,
+          "height": 360,
+          "sha256": "7c57061e0a1457a2419c0d6242da29e02337b178416267b168de85b34a341d9e",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-allowed.png",
+          "width": 248,
+          "height": 360,
+          "sha256": "a838d6f8d49ca149037242cf4972762e51aa91fbdbfc5165758b5b0eb2f1f28f",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-empty.png",
+          "width": 620,
+          "height": 430,
+          "sha256": "590da01ac02a62c986c4e6a06f786fe620794ed9e50757dd4da60aee334072fc",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-history.png",
+          "width": 620,
+          "height": 430,
+          "sha256": "013f4e846903a5a69f01f8b7ffe491d7bf5407c8b550545d6679062f5dfb3fa2",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-minimum.png",
+          "width": 560,
+          "height": 380,
+          "sha256": "b354fa862983d9837cb7ee052c6028bab209d9b21b39234c0b801a628355a9ad",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-past-expiry.png",
+          "width": 248,
+          "height": 360,
+          "sha256": "15181c338c95a6389baa13649bd5459a0e060bc70f5640a8b8b7ef32c0348546",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-paused.png",
+          "width": 600,
+          "height": 440,
+          "sha256": "e7c99f0a76611f431ab6764a1f1555e35c89854b120735756481e79ecf1cac6e",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        },
+        {
+          "file": "ko-light-protected.png",
+          "width": 248,
+          "height": 360,
+          "sha256": "6db12b1071de1220f7e46a1e78bcd26c7b080cf3a1df9952bc61ef674be947d1",
+          "capture": "Actual owned native application window or popup",
+          "originalPixelsUnchanged": true
+        }
+      ],
+      "scope": "Actual owned native Windows windows/popups with fictional credits, quota and persisted paused-state inputs. No account login/switch, billing mutation, live Codex shutdown or Continue. Normal owned-process shutdown is a separate native fixture test.",
+      "revision": "8fd6c737fe9dc110f3ec0a57b6c583b53d51d8e1",
+      "nativeWindowCapture": true,
+      "personalDataUsed": false,
+      "sourceHashes": {
+        "src/core/CreditHistory.cs": "2140d05401b50816dd21d2b8c46168e9004bf122b505b248fa0aaa31a69f0b64",
+        "src/core/CreditPresentation.cs": "82cd866a4d8265a07c53922ef2651e330326c71055590f5426bd754cc8435086",
+        "src/core/Models.cs": "a1f32d53a757aaa54852e35682d2aed18607d787e036ae284d6f7b6c4c54c231",
+        "src/core/UsageAnalysis.cs": "53411f56c0ccf16a3b724c12989e509e41df99d7829c0e0d366cb3ec74b4a95b",
+        "src/core/AutomaticSwitchPolicy.cs": "665935f518cf03289d2bb584e0409103dbe0426409b22e20a2cad2d06d01da01",
+        "src/core/AccountSwitchCoordinator.cs": "5a2efc6fb55185dfa2664f5c9e5544ad37301ad7c940eac7c4c6a2059b30fe27",
+        "src/application/AccountAutomation.cs": "848ca74c5db797751af19e2cde1de63bac7e55cba2c6f6eae6356d2361208c67",
+        "src/application/AccountService.cs": "2fb0cfff846ff094cccc94b9408c34e1a03ea28d95adeee24506ef781f4e4fc7",
+        "src/application/Storage.cs": "90f90d108a2f2e87bd77487e0e509e7150c562937d25468e3f6c4c27ff09445b",
+        "src/application/VaultData.cs": "aa2b519b295e7f833b30bfd72e7ba27fb23cc0f97e197265175afffa9d40c975",
+        "src/application/DesktopSwitchBackend.cs": "39e82c16a5b2941693688130088fcf71f8e81a4db386425c587da342f8898616",
+        "src/windows/AccountDetailWindow.cs": "da062a515c152143b833179c218a7318ee2a059a1d0f7f95039317170d099d2e",
+        "src/windows/CreditTrendChart.cs": "7efb2ee5f95d0d9245c27dba330cf9b6e9d27f6ecd71208443ed1c1353e78d8f",
+        "src/windows/MainWindow.cs": "fa925882bccc30362f8104730bdc99d3d5419b450fb7687050c014295ab159c8",
+        "src/windows/CreditEvidence.cs": "b266b998d3cd13f8d7bb74340b44a757931c2b9bed8d4b01331761ef4bc83360",
+        "src/desktop/HistoryWindow.cs": "09f43ad1e4bf78530f117dcee60b8a2bfb71c855235a4a5737721dc7b2979c81",
+        "src/desktop/CreditChart.cs": "f91b0800de5af9fd80fb2161a45f8e1b1fc28c09065eab3235ba962136c5a208",
+        "src/desktop/DeskWindow.cs": "18be2591b3e658a6509f0cd67aff7c31527e2b7091fed8039b550e8a67757bc0",
+        "src/macos/CreditEvidence.cs": "65fd5ae3284917e653769f65ca90f60d1b401c85c4288404f108503541b16e9a",
+        "Directory.Build.props": "d9992437fb7559b96289bf7ea9f00130d344821721ac114798f831f7c0222ef0"
+      },
+      "rendering": "Windows native WPF"
+    }
+  },
+  "scope": "Original owned native Windows/Mac app windows and popups, fictional account/credit/paused state. No owner client shutdown, billing mutation or actual-account acceptance. An independent native owned-process fixture exercises real normal Windows closure."
+}
