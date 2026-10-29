@@ -47,6 +47,27 @@ Check("Rejection preserves the valid candidate and existing trigger behavior", C
 Check("Below threshold chooses a fresh eligible account", Choose(source, target) == target);
 var exhausted = Profile("source", 0, true); exhausted.Usage!.OrdinaryUsageAllowed = false; exhausted.Usage.Buckets[0].LimitState = "reached";
 Check("An exhausted source can switch away despite its limit flag", Choose(exhausted, target) == target);
+foreach (var seconds in new[] { 0, -1, -300 })
+{
+    var awaitingReset = Profile("source", 0, true);
+    awaitingReset.Usage!.Buckets[0].Primary!.ResetsAt = now.AddSeconds(seconds).ToUnixTimeSeconds();
+    var observation = JsonSerializer.Serialize(awaitingReset.Usage);
+    Check("Fresh zero can leave a source whose reset timestamp has arrived: " + seconds, Choose(awaitingReset, target) == target);
+    Check("Reset-boundary forecast matches the actual eligible target: " + seconds,
+        AutomaticSwitchPolicy.Next(new[] { awaitingReset, target }, 10, now) == target);
+    Check("An elapsed reset does not invent available ordinary quota: " + seconds,
+        AutomaticSwitchPolicy.Exhausted(awaitingReset, now) && !AutomaticSwitchPolicy.OrdinaryAvailable(awaitingReset, now));
+    Check("Reset-boundary selection preserves the observed source report: " + seconds, JsonSerializer.Serialize(awaitingReset.Usage) == observation);
+    awaitingReset.Usage.CheckedAt = now.AddMinutes(-3);
+    Check("An elapsed reset cannot rescue a stale zero report: " + seconds, Choose(awaitingReset, target) == null);
+}
+var nonzeroReset = Profile("source", 5, true); nonzeroReset.Usage!.Buckets[0].Primary!.ResetsAt = now.ToUnixTimeSeconds();
+Check("An elapsed nonzero source window still requires a new report", Choose(nonzeroReset, target) == null);
+var pendingTargetReset = Profile("target", 80); pendingTargetReset.Usage!.Buckets[0].Primary!.ResetsAt = now.ToUnixTimeSeconds();
+var pendingSourceReset = Profile("source", 0, true); pendingSourceReset.Usage!.Buckets[0].Primary!.ResetsAt = now.ToUnixTimeSeconds();
+Check("An elapsed destination reset remains ineligible even when leaving a zero source", Choose(pendingSourceReset, pendingTargetReset) == null);
+pendingSourceReset.Usage.Buckets[0].Secondary = new() { UsedPercent = 20, Minutes = 300, ResetsAt = now.ToUnixTimeSeconds() };
+Check("Another expired nonzero source window still blocks automatic selection", Choose(pendingSourceReset, target) == null);
 source.Usage!.Buckets[0].Primary!.UsedPercent = 90;
 Check("Exactly threshold does not switch", Choose(source, target) == null);
 source.Usage.Buckets[0].Primary!.UsedPercent = 91;

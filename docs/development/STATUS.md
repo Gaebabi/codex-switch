@@ -1,5 +1,7 @@
 # Current status
 
+Issue136/source1.43.1 keeps a fresh zero-quota source eligible to leave after its reset timestamp arrives. Candidate resets, freshness, numeric/window identity, priority, cooldown and recovery guards remain strict. Native reset-boundary menu checks and patch-release verification are separate from owner account operations. [Release contract](RELEASE_1_43_1.md).
+
 Issue134 audits contributor attribution separately from collaborator access and main protection. Merged-branch auto-deletion, all-external-fork run approval and full-SHA Actions pinning are enabled with server read-back; existing strict checks/admin enforcement remain. English PR title verification, contributor guidance and recoverable cleanup are tracked with its PR. Historical unmatched backup refs and unmet Linux/privacy acceptance stay open. [Maintainer policy](MAINTAINING.md).
 
 Release1.43.0 delivers the reviewed credit History/protection and diagnostic metadata changes. Owner-authorized public packages and Windows installation preserve existing data/active Codex; Auto Switch Off and credit use allowed. [Release gates](RELEASE_1_43_0.md).

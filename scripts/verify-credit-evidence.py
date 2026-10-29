@@ -15,7 +15,7 @@ p.add_argument('--revision',required=True)
 a=p.parse_args()
 if not re.fullmatch('[0-9a-f]{40}',a.revision):raise SystemExit('Exact committed revision required')
 r=json.loads((a.source/'credit-receipt.json').read_text(encoding='utf-8'))
-expected=41 if a.os=='Windows' else 42
+expected=45 if a.os=='Windows' else 46
 if r['os']!=a.os or r['failed']!=0 or r['passed']!=expected or len(r['checks'])!=expected or len(set(r['checks']))!=expected:
     raise SystemExit('All declared native credit checks must pass')
 if r['architecture'] not in (['X64'] if a.os=='Windows' else ['X64','Arm64']):raise SystemExit('Native architecture mismatch')
@@ -23,7 +23,7 @@ root=Path(__file__).resolve().parents[1]
 props=ET.parse(root/'Directory.Build.props')
 if r['version']!=props.findtext('./PropertyGroup/Version') or r['runtime']!='.NET '+props.findtext("./PropertyGroup/RuntimeFrameworkVersion"):
     raise SystemExit('Declared app and reviewed runtime versions required')
-cases=['allowed','protected','past-expiry','paused','history','empty','minimum']
+cases=['allowed','protected','past-expiry','reset-boundary','paused','history','empty','minimum']
 names={f'{language}-{theme}-{case}.png' for language in ['en','ko'] for theme in ['dark','light'] for case in cases}
 if set(r['images'])!=names or len(r['images'])!=len(names) or {p.name for p in a.source.glob('*.png')}!=names:
     raise SystemExit('Complete credit/history/protection/past-date native confirmation set required')

@@ -43,7 +43,10 @@ internal static class AutomaticSwitchPolicy
         var observed = Windows(current);
         if (observed == null) return null;
         var windows = observed.Select(w => (Key: w.Key, Window: w.Value)).ToArray();
-        if (windows.Length == 0 || windows.Any(w => !Valid(w.Window, now)) || requireTrigger && windows.Min(w => w.Window.Remaining) >= threshold) return null;
+        // A fresh zero remains exhausted while the server's reset timestamp awaits
+        // refresh. It can leave for valid quota, but never qualify as a destination.
+        if (windows.Length == 0 || windows.Any(w => !Valid(w.Window, now) && !(Numeric(w.Window) && w.Window.Remaining == 0)) ||
+            requireTrigger && windows.Min(w => w.Window.Remaining) >= threshold) return null;
         return profiles.Where(p => !p.IsCurrent && Fresh(p, now) && p.Usage!.OrdinaryUsageAllowed != false &&
                 !p.Usage.Buckets.Any(b => b.LimitState != null || b.SpendControlReached == true))
             .Select(p => new { Profile = p, Windows = Windows(p) })

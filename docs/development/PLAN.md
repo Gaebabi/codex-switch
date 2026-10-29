@@ -1,5 +1,7 @@
 # Current plan
 
+Issue136/source1.43.1 keeps a fresh zero-quota source eligible to leave after its reset timestamp arrives. Candidate resets, freshness, numeric/window identity, priority, cooldown and recovery guards remain strict. Native reset-boundary menu checks and patch-release verification are separate from owner account operations. [Release contract](RELEASE_1_43_1.md).
+
 Issue134 establishes explicit maintainer roles, English new PR/maintainer commit subjects and recoverable issue/branch triage. Preserve the existing six protected checks and solo-maintainer approval limits. Management-only changes do not require a new product release. [Maintaining the repository](MAINTAINING.md).
 
 Release1.43.0 delivers the reviewed credit History/protection and diagnostic metadata changes. Owner-authorized public packages and Windows installation preserve existing data/active Codex; Auto Switch Off and credit use allowed. [Release gates](RELEASE_1_43_0.md).
