@@ -1,5 +1,7 @@
 # Current status
 
+Issue127 replaces the historical1.19.0 resource-report literal with the running Windows application's assembly version. The new actual-command regression compares against the independently declared build version and preserves unavailable counters, exit status and account-free execution. Local/native verification and final-head CI are recorded with the issue/PR; this is a source correction, not a new published binary or installed-app replacement.
+
 Issue125/source1.42.7 adds reviewed exact standalone0.164.0 support; previous PR123 native failures were the correct unreviewed-version refusal. Official npm integrity and tagged initialization/credential schemas are checked before adding this single version.136 portable contracts and full native x64/ARM6416-case terminal/lifecycle acceptance remain distinct from authenticated account/full-desktop support. [Delivery](RELEASE_1_42_7.md).
 
 Earlier1.42.6 checkpoint: exact standalone CLI0.163.0 compatibility was reviewed separately from package integrity: upstream initialization/credential schema comparison, exact-version/home/platform/client refusals and native16 terminal checks (the original15 plus actual0.163.0 initialization/file-policy) are required on both Linux architectures. The installed desktop manifest and credential/workspace policy parser are unchanged.134 portable policy/account/retry/initialization checks include rejection of0.163.1/0.164.0 and mismatched home/platform/client headers. Earlier125 counts describe the original capture checkpoint.

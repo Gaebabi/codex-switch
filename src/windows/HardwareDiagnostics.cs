@@ -28,7 +28,7 @@ internal static class HardwareDiagnostics
         var cpuPercent = 100 * (process.TotalProcessorTime - startedCpu).TotalMilliseconds / watch.Elapsed.TotalMilliseconds / Environment.ProcessorCount;
         var available = samples.Any(s => s.Cpu.Percent != null && s.Memory.Percent != null && s.Gpu.Percent != null && s.Vram.Percent != null);
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-        File.WriteAllText(path, JsonSerializer.Serialize(new { version = "1.19.0", available, scope = "Actual Windows system counters and DXGI capacities; no account access or generated system load.",
+        File.WriteAllText(path, JsonSerializer.Serialize(new { version = typeof(Program).Assembly.GetName().Version!.ToString(3), available, scope = "Actual Windows system counters and DXGI capacities; no account access or generated system load.",
             observerCpuPercent = cpuPercent, observerWorkingSetMiB = process.WorkingSet64 / 1048576.0,
             meanWarmSampleMilliseconds = samples.Skip(1).Select(s => s.SampleMilliseconds).DefaultIfEmpty().Average(), samples }, new JsonSerializerOptions { WriteIndented = true }));
         return available ? 0 : 1;
