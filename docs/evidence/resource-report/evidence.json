@@ -1,0 +1,155 @@
+{
+  "schema": 1,
+  "captureRevision": "364475d8f8907711d94e86c8cb807e92327f5940",
+  "verifyRun": 40799800650,
+  "artifacts": [
+    {
+      "name": "native-ui-osx-x64",
+      "id": 12866045077,
+      "sha256": "4f7e09c77fc6dd07ce88554df7fb1396f451c997741302ea348661675923c59a"
+    },
+    {
+      "name": "diagnostic-versions-osx-x64",
+      "id": 12865960008,
+      "sha256": "5fe8143782989e3d05d1b7ca6fbfd517a68b84c25028381934bc03aad8aa7121"
+    },
+    {
+      "name": "diagnostic-versions-windows",
+      "id": 12865856101,
+      "sha256": "9b744a7295f0c590ede1c9737360515a0e4f2a6fbdb6b1aa17ef70cc3a84b134"
+    },
+    {
+      "name": "resource-report-windows",
+      "id": 12865836140,
+      "sha256": "6b15a8e7edce0a1296a58148264785d0c02d8ed2970c677b721264743dd199f7"
+    },
+    {
+      "name": "native-ui-windows",
+      "id": 12865548560,
+      "sha256": "b1e6bbe3f076b710f505329c18540e585a04e728a8597cfe8d1478ffbe432ff0"
+    },
+    {
+      "name": "native-ui-osx-arm64",
+      "id": 12864924126,
+      "sha256": "2a53fd05f0b7f363ee968b37273f211ca3d8e354445812de375b22a114b3fa16"
+    },
+    {
+      "name": "diagnostic-versions-osx-arm64",
+      "id": 12864784643,
+      "sha256": "46f1358b77a97b8e790062a4db74e56d62ca7b96a133019fd3d488bde8744f1c"
+    }
+  ],
+  "baseline": {
+    "revision": "2c153cf519aaf0c13078de7a871a43e77f95c213",
+    "imageSha256": "92905b985715657035918edab6f05503dd6cb7b6c8b5aa55a92e2c15116ae818",
+    "reportExpectedVersion": "1.42.7",
+    "reportObservedVersion": "1.19.0",
+    "scope": "Original native hosted WPF window with fictional accounts; report mismatch separately reproduced using the unchanged installed account-free command."
+  },
+  "after": {
+    "revision": "364475d8f8907711d94e86c8cb807e92327f5940",
+    "imageSha256": "92905b985715657035918edab6f05503dd6cb7b6c8b5aa55a92e2c15116ae818",
+    "reportedVersion": "1.42.7",
+    "runtime": ".NET 10.0.13",
+    "scope": "Actual hosted own-WPF-window with fictional accounts; metadata correctness separately verified by the actual published command."
+  },
+  "localActualCommandRegression": {
+    "baselineRejected": true,
+    "correctedPassed": 3,
+    "correctedDiagnosticExitCode": 1,
+    "allCounterFamiliesAvailable": false
+  },
+  "relatedBaseline": {
+    "protocolOldVersionRejected": true,
+    "queueOldVersionRejected": true,
+    "scope": "Unchanged installed app diagnostic commands on disposable local homes only."
+  },
+  "nativeReports": {
+    "windows": {
+      "schema": 1,
+      "version": "1.42.7",
+      "expectedVersion": "1.42.7",
+      "mode": "switch-protocol",
+      "diagnosticExitCode": 0,
+      "nativeProtocolPassed": true,
+      "metadataVerified": true,
+      "scope": "Actual published native diagnostic with disposable fixtures. No owner account, inference, desktop launch/shutdown or switch. Mac installed-client discovery can remain an explicit failed native check on a runner without Codex; metadata verification is separate from complete installed-client acceptance. No raw errors or paths exported."
+    },
+    "osx-arm64": {
+      "schema": 1,
+      "version": "1.42.7",
+      "expectedVersion": "1.42.7",
+      "mode": "macos",
+      "diagnosticExitCode": 1,
+      "nativeChecksPassed": 10,
+      "nativeChecksFailed": 1,
+      "installedClientDiscoveryAvailable": false,
+      "metadataVerified": true,
+      "scope": "Actual published native diagnostic with disposable fixtures. No owner account, inference, desktop launch/shutdown or switch. Mac installed-client discovery can remain an explicit failed native check on a runner without Codex; metadata verification is separate from complete installed-client acceptance. No raw errors or paths exported."
+    },
+    "osx-x64": {
+      "schema": 1,
+      "version": "1.42.7",
+      "expectedVersion": "1.42.7",
+      "mode": "macos",
+      "diagnosticExitCode": 1,
+      "nativeChecksPassed": 10,
+      "nativeChecksFailed": 1,
+      "installedClientDiscoveryAvailable": false,
+      "metadataVerified": true,
+      "scope": "Actual published native diagnostic with disposable fixtures. No owner account, inference, desktop launch/shutdown or switch. Mac installed-client discovery can remain an explicit failed native check on a runner without Codex; metadata verification is separate from complete installed-client acceptance. No raw errors or paths exported."
+    }
+  },
+  "macImages": [
+    {
+      "rid": "osx-arm64",
+      "before": {
+        "file": "osx-arm64-before.png",
+        "revision": "2c153cf519aaf0c13078de7a871a43e77f95c213",
+        "sha256": "7bf08d9e4d42b44e2750acc45c625332a49840ceeacfce73d39f79fb5a8b9f04",
+        "runtime": ".NET 10.0.13"
+      },
+      "after": {
+        "file": "osx-arm64-after.png",
+        "revision": "364475d8f8907711d94e86c8cb807e92327f5940",
+        "sha256": "a813c47b7b73f3f1e81a8b7fbb6a572339c17bdd649e59ed1db4b956ccfe9812",
+        "runtime": ".NET 10.0.13"
+      },
+      "scope": "Actual hosted native own Mac windows with fictional accounts and software rendering; unchanged dashboard, separate from actual diagnostic JSON verification."
+    },
+    {
+      "rid": "osx-x64",
+      "before": {
+        "file": "osx-x64-before.png",
+        "revision": "2c153cf519aaf0c13078de7a871a43e77f95c213",
+        "sha256": "d4ad44867d6f8c371b84373702080fb14517abfb1752a41a36431fff03709ccc",
+        "runtime": ".NET 10.0.13"
+      },
+      "after": {
+        "file": "osx-x64-after.png",
+        "revision": "364475d8f8907711d94e86c8cb807e92327f5940",
+        "sha256": "f108b119b8962df4e809853e7e6ca4027ae94ee7abeb52c8facb730f60c15540",
+        "runtime": ".NET 10.0.13"
+      },
+      "scope": "Actual hosted native own Mac windows with fictional accounts and software rendering; unchanged dashboard, separate from actual diagnostic JSON verification."
+    }
+  ],
+  "alternateNonReleaseResourceBuild": {
+    "declaredVersion": "9.87.6",
+    "reportedVersion": "9.87.6",
+    "passed": 3
+  },
+  "sourceHashes": {
+    "src/windows/HardwareDiagnostics.cs": "aeb83010183fe68a723bb9cf8f2a87c157ae8c7ca9c66c1d90601dd2edd19a15",
+    "src/windows/Program.cs": "2fc801c8abcfc086571ff3da7e9798f7fd19d8d75f4fbc642df3c6c528936b1c",
+    "src/application/QueueDiagnostics.cs": "ed213ac1df3f6bcde6606a7eadf494442fbc192f5f914654508a97b13aaab955",
+    "src/windows/SwitchProtocolDiagnostics.cs": "f3e7e807158df72b161e3fe3c1b925066fb4e3d3ebf2f68f31b768ee0bb6a426",
+    "src/macos/MacDiagnostics.cs": "84b75ea4f01e7e61a71cf4d53200081539b1c808b41e31c936b81aa32694c2e6",
+    "Directory.Build.props": "3e30e5544615b953e3b9247556d6d279c63588fef2df82f05965de479180e2d5",
+    "scripts/verify-resource-report.py": "a69e9c042ba5278acda791882d5a6dd44ee0e8efa477b0ac55f1a30e0e50798a",
+    "scripts/verify-diagnostic-versions.py": "7ffdc7b6c4c9d91fc8f79ab317336103647b0d10c87f5831d594a81eaa84310e",
+    "scripts/verify-queues.py": "ae57cd2be49dc9bdebafdba24994aa0c3e87d4c17bd162a851d6bc8953998d0a",
+    ".github/workflows/verify.yml": "6a78fe77b7817b3f1b144752711862468b9593719abf31eff229be3e20374e82"
+  },
+  "scope": "Metadata-only correction; dashboard layout has no intended change. Original application pixels and metadata-free exports, separate from actual report assertions. No owner accounts, desktop input, installed-app replacement or binary release."
+}
