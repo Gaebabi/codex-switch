@@ -75,6 +75,14 @@ internal static class CreditEvidence
                 var next = menu.ItemsSource!.Cast<object>().OfType<MenuItem>().Single(i => i.Header as string == Loc.F("auto.next", accounts[1].DisplayName));
                 Check(AccountAutomation.Next(service, now)?.Key == accounts[1].Key && next.IsEnabled == false && next.Opacity == 1, prefix + "past but usable subscription is the visible next account");
                 await Popup(menu, prefix + "past-expiry.png"); menu.Close();
+                current.Usage!.Buckets[0].Primary!.ResetsAt = now.ToUnixTimeSeconds();
+                owner.Preview(language, dark, accounts); menu = Menu(); await Ready(owner);
+                Check(AccountAutomation.Next(service, now)?.Key == accounts[1].Key &&
+                    AutomaticSwitchPolicy.Select(service.Accounts, 10, now)?.Key == accounts[1].Key &&
+                    AccountAutomation.CreditStopTarget(service, false, now) == null &&
+                    menu.ItemsSource!.Cast<object>().OfType<MenuItem>().Any(i => i.Header as string == Loc.F("auto.next", accounts[1].DisplayName)),
+                    prefix + "fresh zero awaiting reset keeps the visible eligible handoff instead of a credit pause");
+                await Popup(menu, prefix + "reset-boundary.png"); menu.Close();
                 foreach (var account in accounts) account.Usage!.Buckets[0].Primary!.UsedPercent = 100;
                 Check(AccountAutomation.CreditStopTarget(service, false, now)?.Key == current.Key, prefix + "no eligible quota requests a protected stop");
                 vault.Data.PendingSwitch = new() { SourceAccountKey = current.Key, TargetAccountKey = current.Key, CreditProtectionPause = true, AccountApplied = true,
