@@ -73,7 +73,7 @@ internal static class CreditEvidence
                 menu = Menu(); await Ready(owner); await Popup(menu, prefix + "protected.png"); menu.Close();
                 vault.Data.AutomaticSwitchEnabled = true; owner.Preview(language, dark, accounts); menu = Menu(); await Ready(owner);
                 var next = menu.ItemsSource!.Cast<object>().OfType<MenuItem>().Single(i => i.Header as string == Loc.F("auto.next", accounts[1].DisplayName));
-                Check(AccountAutomation.Next(service, now)?.Key == accounts[1].Key && next.IsEnabled == false, prefix + "past but usable subscription is the visible next account");
+                Check(AccountAutomation.Next(service, now)?.Key == accounts[1].Key && next.IsEnabled == false && next.Opacity == 1, prefix + "past but usable subscription is the visible next account");
                 await Popup(menu, prefix + "past-expiry.png"); menu.Close();
                 foreach (var account in accounts) account.Usage!.Buckets[0].Primary!.UsedPercent = 100;
                 Check(AccountAutomation.CreditStopTarget(service, false, now)?.Key == current.Key, prefix + "no eligible quota requests a protected stop");

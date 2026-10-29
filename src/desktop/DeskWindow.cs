@@ -358,7 +358,7 @@ internal sealed class DeskWindow : Window
         var menu = _theme.Menu(_automaticSwitch);
         var enabled = new ToggleSwitch { Content = Loc.T("auto.title"), IsChecked = data.AutomaticSwitchEnabled, OnContent = "", OffContent = "" };
         Avalonia.Automation.AutomationProperties.SetName(enabled, Loc.T("auto.enable"));
-        var next = new MenuItem { Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow), IsEnabled = false };
+        var next = new MenuItem { Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow), IsEnabled = false, Opacity = 1, Foreground = _theme.Brush("muted") };
         enabled.IsCheckedChanged += (_, _) => { lock (_service.Vault.SyncRoot) { data.AutomaticSwitchEnabled = enabled.IsChecked == true; _service.Vault.Save(); } Build(); };
         var items = new List<object> { new MenuItem { Header = enabled, StaysOpenOnClick = true }, next, new Separator() };
         var credits = new ToggleSwitch { Name = "AllowCreditUse", Content = Loc.T("credits.allow"), IsChecked = data.AllowCreditUse, OnContent = "", OffContent = "" };

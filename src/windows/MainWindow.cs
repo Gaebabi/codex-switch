@@ -819,7 +819,7 @@ internal sealed class MainWindow : Window
         var menu = DropdownTheme.Create(_automaticSwitch, _theme);
         var enabled = DropdownTheme.Switch(Loc.T("auto.title"), _service.Vault.Data.AutomaticSwitchEnabled, _theme);
         System.Windows.Automation.AutomationProperties.SetName(enabled, Loc.T("auto.enable"));
-        var next = new MenuItem { Name = "NextAutomaticAccount", Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow), IsEnabled = false };
+        var next = new MenuItem { Name = "NextAutomaticAccount", Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow), IsEnabled = false, Opacity = 1, Foreground = _theme.Color("muted") };
         enabled.Click += (_, _) =>
         {
             lock (_service.Vault.SyncRoot) { _service.Vault.Data.AutomaticSwitchEnabled = enabled.IsChecked; _service.Vault.Save(); }
