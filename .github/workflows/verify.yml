@@ -184,6 +184,14 @@ jobs:
         env:
           EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: python scripts/verify-ui-evidence.py artifacts/native-ui/windows/raw artifacts/native-ui/windows/public --os Windows --revision "${{ env.EVIDENCE_REVISION }}"
+      - name: Validate native credit history and protection confirmations
+        run: python scripts/verify-credit-evidence.py artifacts/native-ui/windows/raw/credits artifacts/credits-windows/public --os Windows --revision "${{ github.event.pull_request.head.sha || github.sha }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: credits-windows
+          path: artifacts/credits-windows/public
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-ui-windows
@@ -297,6 +305,14 @@ jobs:
         env:
           EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: python scripts/verify-ui-evidence.py artifacts/native-ui/${{ matrix.rid }}/raw artifacts/native-ui/${{ matrix.rid }}/public --os macOS --revision "$EVIDENCE_REVISION"
+      - name: Validate native credit history and protection confirmations
+        run: python scripts/verify-credit-evidence.py artifacts/native-ui/${{ matrix.rid }}/raw/credits artifacts/credits-${{ matrix.rid }}/public --os macOS --revision "${{ github.event.pull_request.head.sha || github.sha }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: credits-${{ matrix.rid }}
+          path: artifacts/credits-${{ matrix.rid }}/public
+          if-no-files-found: error
+          retention-days: 14
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-ui-${{ matrix.rid }}

@@ -19,6 +19,7 @@ internal static class UsageHistory
 {
     public static void Record(AccountProfile profile, UsageSnapshot snapshot)
     {
+        CreditHistory.Record(profile, snapshot);
         foreach (var bucket in snapshot.Buckets)
         {
             RecordWindow(bucket.Id, "primary", bucket.Primary);

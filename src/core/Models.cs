@@ -22,6 +22,7 @@ internal sealed class AccountProfile
     public bool RequiresApply { get; set; }
     public UsageSnapshot? Usage { get; set; }
     public List<UsageTrack> History { get; set; } = new();
+    public List<CreditTrack> CreditHistory { get; set; } = new();
     [JsonIgnore] public bool IsCurrent { get; set; }
     [JsonIgnore] public string? Error { get; set; }
     [JsonIgnore] public bool IsRefreshing { get; set; }

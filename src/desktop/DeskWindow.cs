@@ -314,9 +314,12 @@ internal sealed class DeskWindow : Window
         }
         finally { _login.Dispose(); _login = null; if (!Exiting) RenderAccounts(); }
     }
-    private async Task SwitchAsync(AccountProfile profile, bool automatic = false)
+    private async Task SwitchAsync(AccountProfile profile, bool automatic = false, bool creditPause = false)
     {
         if (!_ready || _switch != null || _login != null) return;
+        var creditPending = _service!.Vault.Data.PendingSwitch;
+        creditPause |= creditPending is { CreditProtectionPause: true, Phase: not SwitchPhase.CreditPaused } && creditPending.TargetAccountKey == profile.Key && !AccountAutomation.CanUse(_service, profile, DateTimeOffset.UtcNow);
+        if (!creditPause && !AccountAutomation.CanUse(_service, profile, DateTimeOffset.UtcNow)) { _statusMessage = Loc.T("credits.resume_blocked"); _status.Text = _statusMessage; return; }
         _switch = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token); _switchTarget = profile.Key; _phase = SwitchPhase.BackingUp; RenderAccounts();
         try
         {
@@ -328,13 +331,20 @@ internal sealed class DeskWindow : Window
                     plan => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.PendingSwitch = plan; _service.Vault.Save(); } },
                     plan => OnUi(() => { _phase = plan.Phase; RenderAccounts(); }), UserErrors.Describe);
                 var pending = _service.Vault.Data.PendingSwitch;
-                if (pending != null && pending.TargetAccountKey != profile.Key) throw new InvalidOperationException(Loc.T("남은 채팅 재개 작업을 먼저 처리해 주세요."));
-                var plan = pending ?? await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, _switch.Token);
-                plan.Automatic |= automatic;
+                if (pending != null && !pending.CreditProtectionPause && pending.TargetAccountKey != profile.Key) throw new InvalidOperationException(Loc.T("남은 채팅 재개 작업을 먼저 처리해 주세요."));
+                var plan = pending ?? await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, _switch.Token, creditPause);
+                if (plan.CreditProtectionPause)
+                {
+                    if (!creditPause) await coordinator.RetargetCreditPauseAsync(plan, profile.Key, _switch.Token);
+                    else if (plan.Phase == SwitchPhase.CreditPaused) await coordinator.RearmCreditPauseAsync(plan, _switch.Token);
+                }
+                if (creditPause) plan.Automatic = false; else plan.Automatic |= automatic;
+                plan.PreventDepletedSourceRelaunch = !_service.Vault.Data.AllowCreditUse &&
+                    !_service.Accounts.Any(p => p.IsCurrent && p.Key == plan.SourceAccountKey && AutomaticSwitchPolicy.OrdinaryAvailable(p, DateTimeOffset.UtcNow));
                 if (!automatic) plan.AutomaticRecoveryAttempts = 0;
                 lock (_service.Vault.SyncRoot) { _service.Vault.Data.PendingSwitch = plan; _service.Vault.Save(); }
                 if (!await coordinator.RunAsync(plan, _switch.Token))
-                    _statusMessage = automatic ? Loc.T("auto.paused") : Loc.F("계정 전환 완료. 재개 확인이 필요한 채팅 {0}개",
+                    _statusMessage = plan.CreditProtectionPause && plan.Phase == SwitchPhase.CreditPaused ? Loc.T("credits.paused") : automatic ? Loc.T("auto.paused") : Loc.F("계정 전환 완료. 재개 확인이 필요한 채팅 {0}개",
                         plan.Chats.Count(chat => chat.ResumeState is ChatResumeState.Unconfirmed or ChatResumeState.Failed or ChatResumeState.Pending or ChatResumeState.Sending));
                 await _service.RefreshAccountAsync(profile.Key, _stop.Token, true);
             });
@@ -351,6 +361,10 @@ internal sealed class DeskWindow : Window
         var next = new MenuItem { Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow), IsEnabled = false };
         enabled.IsCheckedChanged += (_, _) => { lock (_service.Vault.SyncRoot) { data.AutomaticSwitchEnabled = enabled.IsChecked == true; _service.Vault.Save(); } Build(); };
         var items = new List<object> { new MenuItem { Header = enabled, StaysOpenOnClick = true }, next, new Separator() };
+        var credits = new ToggleSwitch { Name = "AllowCreditUse", Content = Loc.T("credits.allow"), IsChecked = data.AllowCreditUse, OnContent = "", OffContent = "" };
+        ToolTip.SetTip(credits, new TextBlock { Text = Loc.T("credits.allow_help"), MaxWidth = 340, TextWrapping = TextWrapping.Wrap });
+        credits.IsCheckedChanged += (_, _) => { lock (_service.Vault.SyncRoot) { data.AllowCreditUse = credits.IsChecked == true; _service.Vault.Save(); } Build(); };
+        items.Insert(2, new MenuItem { Header = credits, StaysOpenOnClick = true });
         foreach (var custom in new[] { false, true })
         {
             var mode = new MenuItem { Header = Loc.T(custom ? "auto.custom" : "auto.optimal"), ToggleType = MenuItemToggleType.Radio, IsChecked = data.AutomaticSwitchUsePriority == custom };
@@ -367,15 +381,28 @@ internal sealed class DeskWindow : Window
             item.Click += (_, _) => { lock (_service.Vault.SyncRoot) { data.AutomaticSwitchThreshold = value; _service.Vault.Save(); } Build(); };
             items.Add(item);
         }
-        menu.ItemsSource = items; menu.Open(_automaticSwitch);
+        menu.ItemsSource = items; _automaticSwitch.ContextMenu = menu; menu.Open(_automaticSwitch);
     }
     private async Task TryAutomaticSwitchAsync()
     {
-        if (!_ready || Exiting || _preview != null || _service == null || !_sessions.Current.Available || _login != null || _switch != null) return;
+        if (!_ready || Exiting || _preview != null || _service == null || _login != null || _switch != null) return;
+        if (!_sessions.Current.Available && _service.Vault.Data.PendingSwitch?.CreditProtectionPause != true)
+        {
+            if (!_service.Vault.Data.AllowCreditUse && _service.Accounts.Any(p => p.IsCurrent && AutomaticSwitchPolicy.Exhausted(p, DateTimeOffset.UtcNow)) &&
+                _service.DesktopRunning(_stop.Token))
+            { _statusMessage = Loc.T("credits.waiting"); _status.Text = _statusMessage; }
+            return;
+        }
         await RunAsync(async _ =>
         {
             var target = AccountAutomation.Reserve(_service, _operations.Count > 1, DateTimeOffset.UtcNow);
-            if (target == null) return;
+            if (target == null)
+            {
+                var stop = _sessions.Current.Available ? AccountAutomation.CreditStopTarget(_service, _operations.Count > 1, DateTimeOffset.UtcNow) : null;
+                if (stop != null) await SwitchAsync(stop, creditPause: true);
+                else if (_service.Vault.Data.PendingSwitch is { CreditProtectionPause: true, Phase: SwitchPhase.CreditPaused }) _statusMessage = Loc.T("credits.paused");
+                return;
+            }
             await SwitchAsync(target, true);
             if (_service.Vault.Data.PendingSwitch != null || !_service.Accounts.Any(p => p.Key == target.Key && p.IsCurrent))
             { AccountAutomation.Pause(_service); _statusMessage = Loc.T("auto.paused"); Build(); }
@@ -385,7 +412,7 @@ internal sealed class DeskWindow : Window
     {
         if (!_ready || Exiting || _preview != null || _service == null || _login != null || _switch != null || _service.IsBusy) return;
         var pending = _service.Vault.Data.PendingSwitch;
-        if (pending is not { Automatic: true, AutomaticRecoveryAttempts: 0 }) return;
+        if (pending is not { Automatic: true, AutomaticRecoveryAttempts: 0, CreditProtectionPause: false }) return;
         var target = _service.Accounts.FirstOrDefault(p => p.Key == pending.TargetAccountKey);
         if (target == null) { AccountAutomation.Pause(_service); _statusMessage = Loc.T("auto.paused"); return; }
         lock (_service.Vault.SyncRoot) { pending.AutomaticRecoveryAttempts++; _service.Vault.Save(); }

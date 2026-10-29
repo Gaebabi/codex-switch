@@ -20,6 +20,7 @@ internal static class SwitchDiagnostics
         public Func<SwitchChat, Action, ChatResumeState>? Resuming;
         public Task<string?> CurrentAccountAsync(CancellationToken cancellation) => Task.FromResult(Account);
         public Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation) { Calls.Add("capture"); return Task.FromResult(Chats); }
+        public Task ValidateChatsForTargetAsync(SwitchChat[] chats, string target, CancellationToken cancellation) { Calls.Add("validate-target"); return Task.CompletedTask; }
         public Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken cancellation) { Calls.Add("name:" + chat.Id); Naming?.Invoke(chat); return Task.CompletedTask; }
         public Task CloseDesktopAsync(CancellationToken cancellation) { Calls.Add("close"); return Task.CompletedTask; }
         public Task ApplyAccountAsync(string key, string? source, CancellationToken cancellation) { Calls.Add("apply"); if (Account != source) throw new InvalidOperationException("source changed"); Account = key; Applying?.Invoke(); return Task.CompletedTask; }

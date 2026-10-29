@@ -271,6 +271,7 @@ internal static class MacDiagnostics
                 var passed = window.MenuBarProbe is { Visible: true, Template: true, MenuItems: 5 } state && state.Title.Trim() == expected;
                 if (!passed) failures++; checks.Add(new { name = "menu-bar-" + name, passed });
             }
+            if (Program.NativeUiEvidence) await CreditEvidence.CaptureAsync(window, Path.Combine(directory, "credits"));
         }
         catch (Exception error) { failures++; checks.Add(new { name = "render", passed = false, error = error.Message }); Console.Error.WriteLine("Native UI verification failed: " + error.GetType().Name + ": " + error.Message); }
         finally

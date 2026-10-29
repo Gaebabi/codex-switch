@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CodexAccountDesk;
 
-internal enum SwitchPhase { BackingUp, Closing, Applying, Launching, Resuming, Finished }
+internal enum SwitchPhase { BackingUp, Closing, Applying, Launching, Resuming, Finished, CreditPaused }
 internal enum ChatResumeState { Pending, Sending, Resumed, AlreadyRunning, Completed, Unconfirmed, Failed }
 
 internal sealed class SwitchChat
@@ -36,6 +36,8 @@ internal sealed class AccountSwitchPlan
     public bool Automatic { get; set; }
     public int AutomaticRecoveryAttempts { get; set; }
     public bool DesktopRestartRequired { get; set; }
+    public bool CreditProtectionPause { get; set; }
+    public bool PreventDepletedSourceRelaunch { get; set; }
     public List<SwitchChat> Chats { get; set; } = new();
     public string? Error { get; set; }
 }
@@ -54,6 +56,7 @@ internal interface IAccountSwitchBackend : IAsyncDisposable
 {
     Task<string?> CurrentAccountAsync(CancellationToken cancellation);
     Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation);
+    Task ValidateChatsForTargetAsync(SwitchChat[] chats, string target, CancellationToken cancellation);
     Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken cancellation);
     Task CloseDesktopAsync(CancellationToken cancellation);
     Task ApplyAccountAsync(string key, string? source, CancellationToken cancellation);
@@ -70,13 +73,54 @@ internal sealed class AccountSwitchCoordinator
     private readonly Func<Exception, string> _describeError;
     public AccountSwitchCoordinator(IAccountSwitchBackend backend, Action<AccountSwitchPlan?> save, Action<AccountSwitchPlan> changed, Func<Exception, string> describeError)
     { _backend = backend; _save = save; _changed = changed; _describeError = describeError; }
-    public async Task<AccountSwitchPlan> PrepareAsync(string target, DateTimeOffset at, CancellationToken cancellation)
+    public async Task<AccountSwitchPlan> PrepareAsync(string target, DateTimeOffset at, CancellationToken cancellation, bool creditPause = false)
     {
         var source = await _backend.CurrentAccountAsync(cancellation);
+        if (creditPause && (source == null || source != target)) throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
         var chats = await _backend.CaptureAsync(cancellation);
         foreach (var chat in chats) chat.BackupTitle = SwitchTitle.Stamp(chat.OriginalTitle, at);
-        var plan = new AccountSwitchPlan { SourceAccountKey = source, TargetAccountKey = target, RequestedAt = at, Chats = chats.ToList() };
+        var plan = new AccountSwitchPlan { SourceAccountKey = source, TargetAccountKey = target, RequestedAt = at, Chats = chats.ToList(), CreditProtectionPause = creditPause, PreventDepletedSourceRelaunch = creditPause };
         Checkpoint(plan, SwitchPhase.BackingUp); return plan;
+    }
+    public async Task RetargetCreditPauseAsync(AccountSwitchPlan plan, string target, CancellationToken cancellation)
+    {
+        if (!plan.CreditProtectionPause || plan.SourceAccountKey == null || plan.TargetAccountKey != plan.SourceAccountKey)
+            throw new InvalidOperationException("남은 채팅 재개 작업을 먼저 처리해 주세요.");
+        if (await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
+            throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
+        var chats = ProposedChats(plan, await _backend.CaptureAsync(cancellation));
+        await _backend.ValidateChatsForTargetAsync(chats, target, cancellation);
+        if (await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
+            throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
+        plan.Chats = chats.ToList();
+        plan.CreditProtectionPause = false; plan.TargetAccountKey = target; plan.AccountApplied = target == plan.SourceAccountKey;
+        plan.Error = null; plan.AutomaticRecoveryAttempts = 0;
+        Checkpoint(plan, plan.AccountApplied ? SwitchPhase.Launching : SwitchPhase.BackingUp);
+    }
+    public async Task RearmCreditPauseAsync(AccountSwitchPlan plan, CancellationToken cancellation)
+    {
+        if (!plan.CreditProtectionPause || plan.Phase != SwitchPhase.CreditPaused || plan.SourceAccountKey == null || plan.SourceAccountKey != plan.TargetAccountKey ||
+            await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
+            throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
+        var chats = ProposedChats(plan, await _backend.CaptureAsync(cancellation));
+        if (await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
+            throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
+        plan.Chats = chats.ToList();
+        plan.AccountApplied = false; plan.AutomaticRecoveryAttempts = 0; plan.Error = null;
+        Checkpoint(plan, SwitchPhase.BackingUp);
+    }
+    private static SwitchChat[] ProposedChats(AccountSwitchPlan plan, SwitchChat[] captured)
+    {
+        var result = plan.Chats.ToList();
+        var seen = new HashSet<string>(result.Select(chat => chat.Id), StringComparer.Ordinal);
+        var capturedIds = new HashSet<string>(StringComparer.Ordinal);
+        if (seen.Count != result.Count) throw new InvalidDataException(Loc.T("credits.invalid_chats"));
+        foreach (var chat in captured)
+        {
+            if (string.IsNullOrWhiteSpace(chat.Id) || !capturedIds.Add(chat.Id)) throw new InvalidDataException(Loc.T("credits.invalid_chats"));
+            if (seen.Add(chat.Id)) { chat.BackupTitle = SwitchTitle.Stamp(chat.OriginalTitle, plan.RequestedAt); result.Add(chat); }
+        }
+        return result.ToArray();
     }
     public async Task<bool> RunAsync(AccountSwitchPlan plan, CancellationToken cancellation)
     {
@@ -86,6 +130,9 @@ internal sealed class AccountSwitchCoordinator
         try
         {
             var current = await _backend.CurrentAccountAsync(cancellation);
+            if (plan.CreditProtectionPause && (plan.SourceAccountKey == null || plan.SourceAccountKey != plan.TargetAccountKey || current != plan.SourceAccountKey))
+                throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
+            if (plan.CreditProtectionPause && plan.Phase == SwitchPhase.CreditPaused) return false;
             if (!plan.AccountApplied && current == plan.TargetAccountKey && plan.Phase == SwitchPhase.Applying)
             { plan.AccountApplied = true; Checkpoint(plan, SwitchPhase.Launching); }
             if (!plan.AccountApplied)
@@ -118,6 +165,12 @@ internal sealed class AccountSwitchCoordinator
                 cancellation.ThrowIfCancellationRequested();
                 if (await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
                     throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
+                if (plan.CreditProtectionPause)
+                {
+                    plan.AccountApplied = true;
+                    Checkpoint(plan, SwitchPhase.CreditPaused);
+                    return false;
+                }
                 Checkpoint(plan, SwitchPhase.Applying);
                 await RetryStepAsync(plan, async () =>
                 {
@@ -182,13 +235,14 @@ internal sealed class AccountSwitchCoordinator
                 plan.AutomaticRecoveryAttempts = Math.Max(MaximumRecoveryAttempts, plan.AutomaticRecoveryAttempts);
             // Reopen after cancellation or a failed apply, but do not add a fourth launch after
             // exhausting the retries. Never overwrite credentials or repeat Continue here.
-            if (plan.DesktopRestartRequired && shutdownConfirmed && (!launchAttempted || cancellation.IsCancellationRequested))
+            if (!plan.CreditProtectionPause && plan.DesktopRestartRequired && shutdownConfirmed && (!launchAttempted || cancellation.IsCancellationRequested))
             {
                 using var recovery = new CancellationTokenSource(TimeSpan.FromSeconds(35));
                 try
                 {
                     var current = await _backend.CurrentAccountAsync(recovery.Token);
-                    if (current == plan.SourceAccountKey || current == plan.TargetAccountKey)
+                    if ((current == plan.SourceAccountKey || current == plan.TargetAccountKey) &&
+                        (!plan.PreventDepletedSourceRelaunch || current == plan.TargetAccountKey))
                     {
                         await _backend.LaunchDesktopAsync(recovery.Token);
                         plan.DesktopRestartRequired = false;

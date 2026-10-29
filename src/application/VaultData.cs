@@ -14,6 +14,7 @@ internal sealed class VaultData
     public List<DrivePreference> Drives { get; set; } = DefaultDrives();
     public AccountSwitchPlan? PendingSwitch { get; set; }
     public bool AutomaticSwitchEnabled { get; set; }
+    public bool AllowCreditUse { get; set; } = true;
     public int AutomaticSwitchThreshold { get; set; } = 10;
     public bool AutomaticSwitchUsePriority { get; set; }
     public List<string> AutomaticSwitchPriority { get; set; } = new();

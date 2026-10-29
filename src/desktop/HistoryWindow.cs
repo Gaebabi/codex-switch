@@ -25,6 +25,10 @@ internal sealed class HistoryWindow : Window
     private UsageTrendModel? _trend;
     private TextBlock? _depletion, _depletionNote, _reset, _basis;
     private HistoryChart? _chart;
+    private CreditChart? _creditChart;
+    private TextBlock? _creditObserved;
+    private CreditTrack? _creditTrack;
+    private long _creditMinute;
 
     public HistoryWindow(AccountService service, string key, DeskTheme theme)
     {
@@ -48,14 +52,17 @@ internal sealed class HistoryWindow : Window
         Title = profile.DisplayName + " · " + Loc.T("사용량 추이");
         FlowDirection = Loc.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         var selected = MacAccountCard.Select(profile, _selection);
-        _window = selected?.Window; _trend = null; _chart = null;
+        var creditMode = CreditPresentation.Selected(_selection) || selected == null && profile.CreditHistory.Count > 0;
+        var creditTrack = CreditPresentation.Track(profile, _selection);
+        var creditTracks = profile.CreditHistory.Count > 0 ? profile.CreditHistory.ToArray() : new[] { creditTrack };
+        _window = creditMode ? null : selected?.Window; _trend = null; _chart = null; _creditChart = null; _creditObserved = null; _creditTrack = null;
         _depletion = _depletionNote = _reset = _basis = null;
         var root = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto"), Margin = new Thickness(20), MinHeight = 360 };
         var toolbar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(0, 0, 0, 24) };
         var choices = MacAccountCard.Choices(profile);
-        var quotaLabel = selected == null ? Loc.T("사용 한도") : selected.BucketLabel + " · " + selected.Window.PeriodLabel;
+        var quotaLabel = creditMode ? Loc.T("credits.history") : selected == null ? Loc.T("사용 한도") : selected.BucketLabel + " · " + selected.Window.PeriodLabel;
         Control quota;
-        if (choices.Length > 1)
+        if (choices.Length + creditTracks.Length > 1)
         {
             var button = new Button { Name = "HistoryQuota", Content = _theme.Text(quotaLabel + " ▾"),
                 HorizontalAlignment = HorizontalAlignment.Left, HorizontalContentAlignment = HorizontalAlignment.Stretch };
@@ -63,13 +70,20 @@ internal sealed class HistoryWindow : Window
             button.Click += (_, _) =>
             {
                 var menu = _theme.Menu(button);
-                menu.ItemsSource = choices.Select(choice =>
+                var items = choices.Select(choice =>
                 {
                     var item = new MenuItem { Header = choice.BucketLabel + " · " + choice.Window.PeriodLabel,
-                        ToggleType = MenuItemToggleType.Radio, IsChecked = choice == selected };
+                        ToggleType = MenuItemToggleType.Radio, IsChecked = !creditMode && choice == selected };
                     item.Click += (_, _) => { _selection = choice.BucketId + ":" + choice.Slot; Render(); };
                     return item;
-                }).ToArray();
+                }).Cast<object>().ToList();
+                if (choices.Length > 0) items.Add(new Separator());
+                foreach (var track in creditTracks)
+                {
+                    var item = new MenuItem { Header = Loc.T("credits.history") + (creditTracks.Length > 1 ? "  " + track.BucketId : ""), ToggleType = MenuItemToggleType.Radio, IsChecked = creditMode && track.BucketId == creditTrack.BucketId };
+                    item.Click += (_, _) => { _selection = CreditPresentation.Key(track); Render(); }; items.Add(item);
+                }
+                menu.ItemsSource = items;
                 button.ContextMenu = menu; menu.Open(button);
             };
             quota = button;
@@ -100,7 +114,31 @@ internal sealed class HistoryWindow : Window
             ranges.Children.Add(button);
         }
         Grid.SetColumn(ranges, 1); toolbar.Children.Add(ranges); root.Children.Add(toolbar);
-        if (selected == null)
+        if (creditMode)
+        {
+            _creditTrack = creditTrack; _creditMinute = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 60;
+            var metrics = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*"), Margin = new Thickness(0, 0, 0, 18) };
+            CreditMetric(0, "credits.balance", CreditPresentation.Balance(profile, creditTrack));
+            CreditMetric(1, "credits.observed", CreditPresentation.Number(CreditHistory.ObservedUse(creditTrack, _service.Vault.Data.TrendHours, DateTimeOffset.UtcNow)));
+            Grid.SetRow(metrics, 1); root.Children.Add(metrics);
+            _creditChart = new() { Track = creditTrack, Palette = _theme, Hours = _service.Vault.Data.TrendHours, MinHeight = 170, ClipToBounds = true };
+            Grid.SetRow(_creditChart, 2); root.Children.Add(_creditChart);
+            var footer = new StackPanel { Spacing = 5, Margin = new Thickness(0, 14, 0, 0) };
+            var note = _theme.Text(Loc.T("credits.history_help"), 11, "muted"); note.TextWrapping = TextWrapping.Wrap; footer.Children.Add(note);
+            if (profile.Usage != null) footer.Children.Add(_theme.Text(Loc.F("{0:MM/dd HH:mm:ss} 조회", UsagePresentation.KoreanTime(profile.Usage.CheckedAt)), 11, "muted"));
+            if (profile.Error != null)
+            { var error = _theme.Text(Loc.F("갱신 실패 · 이전 조회값\n{0}", Loc.Error(profile.Error)), 11, "warning"); error.TextWrapping = TextWrapping.Wrap; footer.Children.Add(error); }
+            Grid.SetRow(footer, 3); root.Children.Add(footer);
+            void CreditMetric(int column, string label, string value)
+            {
+                var cell = new StackPanel { Spacing = 6, Margin = new Thickness(0, 0, 12, 0) };
+                cell.Children.Add(_theme.Text(Loc.T(label), 11, "muted"));
+                var number = _theme.Text(value, 30); number.FontWeight = FontWeight.SemiBold; number.TextTrimming = TextTrimming.CharacterEllipsis; number.FlowDirection = FlowDirection.LeftToRight;
+                if (column == 1) _creditObserved = number;
+                ToolTip.SetTip(number, value); cell.Children.Add(number); Grid.SetColumn(cell, column); metrics.Children.Add(cell);
+            }
+        }
+        else if (selected == null)
         {
             var empty = _theme.Text(Loc.T("조회 정보 없음"), 13, "muted");
             empty.HorizontalAlignment = HorizontalAlignment.Center; empty.VerticalAlignment = VerticalAlignment.Center;
@@ -148,8 +186,21 @@ internal sealed class HistoryWindow : Window
         Update(DateTimeOffset.UtcNow);
     }
 
+    internal void SelectCredits()
+    {
+        var profile = _service.Accounts.FirstOrDefault(p => p.Key == _key);
+        if (profile == null) return;
+        _selection = CreditPresentation.Key(CreditPresentation.Track(profile, null)); Render();
+    }
     private void Update(DateTimeOffset now)
     {
+        if (_creditChart != null)
+        {
+            _creditChart.Update(now); var minute = now.ToUnixTimeSeconds() / 60;
+            if (_creditTrack != null && _creditObserved != null && minute != _creditMinute)
+            { _creditMinute = minute; _creditObserved.Text = CreditPresentation.Number(CreditHistory.ObservedUse(_creditTrack, _service.Vault.Data.TrendHours, now)); ToolTip.SetTip(_creditObserved, _creditObserved.Text); }
+            return;
+        }
         if (_window == null || _trend == null) return;
         var forecast = UsagePredictor.Evaluate(_window, _trend, now);
         _depletion!.Text = forecast.State == ForecastState.ResetsFirst ? Loc.T("리셋 먼저")

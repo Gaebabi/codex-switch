@@ -169,6 +169,7 @@ internal static class NativeUiEvidence
                 }
                 await AccountWarningEvidence.CaptureAsync(window, service, directory);
                 await AccountAutomationEvidence.CaptureAsync(window, service, directory);
+                await CreditEvidence.CaptureAsync(window, service, Path.Combine(directory, "credits"));
             }
             catch (Exception error)
             {
