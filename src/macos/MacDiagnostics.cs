@@ -122,7 +122,7 @@ internal static class MacDiagnostics
             if (Directory.Exists(directory)) Directory.Delete(directory, true);
         }
         Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
-        File.WriteAllText(reportPath, JsonSerializer.Serialize(new { version = "1.25.0", failures, checks,
+        File.WriteAllText(reportPath, JsonSerializer.Serialize(new { version = typeof(Program).Assembly.GetName().Version!.ToString(3), failures, checks,
             scope = "Disposable vault/socket fixtures, installed bundle discovery and OS resources. No real account access, Codex launch, shutdown, login or switch." }, new JsonSerializerOptions { WriteIndented = true }));
         return failures == 0 ? 0 : 1;
     }
