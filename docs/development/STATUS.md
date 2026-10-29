@@ -1,5 +1,7 @@
 # Current status
 
+Release1.43.0 delivers the reviewed credit History/protection and diagnostic metadata changes. Owner-authorized public packages and Windows installation preserve existing data/active Codex; Auto Switch Off and credit use allowed. [Release gates](RELEASE_1_43_0.md).
+
 [Inspected native Windows/Mac credit graphs, defaults, pause/recovery and past-date confirmations](../evidence/credits/README.md) retain original pixels and source/runtime/artifact hashes.197 local policy/history/recovery regressions and all9catalogs pass. Final-head six-check CI, author review and merge are tracked in [PR131](https://github.com/Gaebabi/codex-switch/pull/131).
 
 Issues129/130 implement separate observed credit-balance decreases and optional zero-quota client protection. Credit use remains allowed by default; normal stop persists chats without applying credentials or resending Continue, and usable past dates remain prioritized after eligibility guards. Local synthetic regressions and Windows/shared builds are distinct from pending native confirmation and final-head review. [Behavior and verification](CREDIT_HISTORY.md).

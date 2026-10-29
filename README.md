@@ -3,11 +3,11 @@
 
 **A desktop account switcher and quota dashboard for OpenAI Codex.** See your accounts together, choose the next one, and recover an interrupted handoff. Optional quota-based switching starts **Off**.
 
-Windows · macOS15+ · Linux preview · MIT open source · **1.42.7**
+Windows · macOS15+ · Linux preview · MIT open source · **1.43.0**
 
 [English](README.md) / [한국어](docs/README.ko.md) / [日本語](docs/README.ja.md) / [简体中文](docs/README.zh-CN.md)
 
-[Download](#download) · [Get started](#get-started) · [What's new](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.7)
+[Download](#download) · [Get started](#get-started) · [What's new](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.0)
 
 <p align="center"><img src="docs/media/discovery/en-dark-demo.png" width="500" height="400" alt="Codex Switch UI demo with account quota cards, CPU and memory and GPU usage percentages, and two storage devices" /></p>
 
@@ -27,25 +27,27 @@ Release1.42.6 keeps Auto Switch usable when quota identifiers are duplicated or 
 
 Release1.42.7 lets Linux terminal accounts work with the reviewed standalone Codex CLI0.164.0. Exact executable integrity and credential/workspace checks still apply. [Compatibility and verification](docs/development/RELEASE_1_42_7.md).
 
+Release1.43.0 adds separate credit-balance decrease graphs in History and optional safe pause/recovery at zero ordinary quota. Credit use stays allowed by default. Usable past-date subscriptions retain priority, and diagnostic reports identify the actual running version. [Verification](https://github.com/Gaebabi/codex-switch/issues/132).
+
 ## Download
 
 Complete packages include the .NET runtime; no source build or .NET installation is needed. Keep the entire extracted folder or app bundle.
 
 | Platform | Download |
 | --- | --- |
-| Windows x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.7/CodexSwitch-v1.42.7-win-x64.zip) |
-| macOS15+ Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.7/CodexSwitch-v1.42.7-osx-arm64.zip) |
-| macOS15+ Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.7/CodexSwitch-v1.42.7-osx-x64.zip) |
-| Linux x64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.7/CodexSwitch-v1.42.7-preview-linux-x64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.7/CodexSwitch-v1.42.7-preview-linux-x64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.7/CodexSwitch-v1.42.7-preview-linux-x64.tar.gz) |
-| Linux ARM64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.7/CodexSwitch-v1.42.7-preview-linux-arm64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.7/CodexSwitch-v1.42.7-preview-linux-arm64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.42.7/CodexSwitch-v1.42.7-preview-linux-arm64.tar.gz) |
+| Windows x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.0/CodexSwitch-v1.43.0-win-x64.zip) |
+| macOS15+ Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.0/CodexSwitch-v1.43.0-osx-arm64.zip) |
+| macOS15+ Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.0/CodexSwitch-v1.43.0-osx-x64.zip) |
+| Linux x64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.0/CodexSwitch-v1.43.0-preview-linux-x64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.0/CodexSwitch-v1.43.0-preview-linux-x64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.0/CodexSwitch-v1.43.0-preview-linux-x64.tar.gz) |
+| Linux ARM64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.0/CodexSwitch-v1.43.0-preview-linux-arm64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.0/CodexSwitch-v1.43.0-preview-linux-arm64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.0/CodexSwitch-v1.43.0-preview-linux-arm64.tar.gz) |
 
-[Release notes and SHA256 checksums](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.7). Windows/Linux packages are unsigned. Mac bundles are ad-hoc signed and **not Apple-notarized**; follow [Mac setup](docs/MACOS.md).
+[Release notes and SHA256 checksums](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.0). Windows/Linux packages are unsigned. Mac bundles are ad-hoc signed and **not Apple-notarized**; follow [Mac setup](docs/MACOS.md).
 
 Linux is an integration preview. Native storage, installed UI and package tests are distinct from supported account handoff and full desktop acceptance. Desktop integration requires approved OpenAI Linux client26.1007.71326, an existing file credential policy and X11/XWayland; newer clients require review. CLI-only mode needs an explicit executable checksum and does not resume desktop chats. [Requirements and limits](docs/development/LINUX.md) / [Linux installation](docs/development/LINUX_PACKAGES.md)
 
 Warning icons retain full hover details; activate one to sign in again for the selected account. [Actual application evidence](docs/evidence/account-automation/README.md).
 
-**Linux1.42.7 downloads include terminal account switching and saved CLI-session resumption, introduced in source1.41.0.** `CodexSwitch cli` manages the existing encrypted accounts without DISPLAY; `cli switch <account> --resume <CLI-session-UUID>` combines manual switching and official CLI resumption. `--continue` explicitly submits a follow-up; `--exec --continue` selects noninteractive continuation. A verified native CLI and an unlocked supported Secret Service are required. Real two-account contextual CLI resumption is verified on Linux x64; native ARM64/offline tests and full desktop acceptance have separate scopes. [Commands, actual screenshots and exact verification limits](docs/development/LINUX_TERMINAL.md).
+**Linux1.43.0 downloads include terminal account switching and saved CLI-session resumption, introduced in source1.41.0.** `CodexSwitch cli` manages the existing encrypted accounts without DISPLAY; `cli switch <account> --resume <CLI-session-UUID>` combines manual switching and official CLI resumption. `--continue` explicitly submits a follow-up; `--exec --continue` selects noninteractive continuation. A verified native CLI and an unlocked supported Secret Service are required. Real two-account contextual CLI resumption is verified on Linux x64; native ARM64/offline tests and full desktop acceptance have separate scopes. [Commands, actual screenshots and exact verification limits](docs/development/LINUX_TERMINAL.md).
 
 ## Get started
 

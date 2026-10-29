@@ -1,5 +1,7 @@
 # Operations
 
+Release1.43.0 delivers the reviewed credit History/protection and diagnostic metadata changes. Owner-authorized public packages and Windows installation preserve existing data/active Codex; Auto Switch Off and credit use allowed. [Release gates](RELEASE_1_43_0.md).
+
 Issues129/130 use the existing60-second account refresh for optional credit tracks and quota protection. Existing vaults default AllowCreditUse=true. The CreditPaused checkpoint and depleted-source relaunch guard must survive restart; never test by closing an owner client. Hosted native evidence uses separate credits subdirectories and `scripts/verify-credit-evidence.py`; preserve all original history/UI/handoff assertions. [Contract](CREDIT_HISTORY.md).
 
 Issue127 corrects Windows `--verify-resources` metadata to the loaded application assembly version, matching the other Windows diagnostics. `python scripts/verify-resource-report.py <published-CodexSwitch.exe> --output <verification.json>` runs the actual account-free command and compares its JSON with the independent version in Directory.Build.props; an explicitly versioned test build can declare `--expected-version`. It also requires absent data/home directories to remain absent and the original all-four-counter availability/exit-code relationship to hold. Missing GPU/VRAM may still produce diagnostic exit1; that is not a metadata failure. Only identifier-free verification receipts are exported; raw hardware samples remain temporary. This source/PR change does not replace a published release or the owner's installed app.
