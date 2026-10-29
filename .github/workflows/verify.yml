@@ -83,6 +83,22 @@ jobs:
         shell: pwsh
         run: ./scripts/build.ps1 -Verify
       - run: python -m pip install -r requirements-dev.txt
+      - name: Verify actual resource report version and unchanged availability status
+        run: python scripts/verify-resource-report.py artifacts/win-x64/CodexSwitch.exe --output artifacts/resource-report/verification.json
+      - name: Verify actual disposable switch protocol report version
+        run: python scripts/verify-diagnostic-versions.py artifacts/win-x64/CodexSwitch.exe --mode switch-protocol --output artifacts/diagnostic-versions/windows.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: diagnostic-versions-windows
+          path: artifacts/diagnostic-versions/windows.json
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: resource-report-windows
+          path: artifacts/resource-report/verification.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Verify runtime replacement in the same window and unchanged main baseline
         env:
           EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -249,6 +265,14 @@ jobs:
         run: python3 scripts/verify-runtime-package.py artifacts/macos-ci/${{ matrix.rid }} --rid ${{ matrix.rid }} --output artifacts/runtime-${{ matrix.rid }}.json
       - name: Run disposable read-only queue checks
         run: python3 scripts/verify-queues.py --executable artifacts/macos-ci/${{ matrix.rid }}/CodexSwitch
+      - name: Verify actual native Mac diagnostic report version
+        run: python3 scripts/verify-diagnostic-versions.py artifacts/macos-ci/${{ matrix.rid }}/CodexSwitch --mode macos --output artifacts/diagnostic-versions/${{ matrix.rid }}.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: diagnostic-versions-${{ matrix.rid }}
+          path: artifacts/diagnostic-versions/${{ matrix.rid }}.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Verify native culture and pack lifecycle
         run: dotnet run --project tests/localization/CodexSwitch.Localization.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - name: Verify portable temperature parsing and presentation

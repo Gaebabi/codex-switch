@@ -1,5 +1,9 @@
 # Current plan
 
+Issue127 fixes stale Windows resource-report version metadata without changing sampling, unavailable values or diagnostic exit status. Require the actual old-binary regression failure, the corrected published-app report, native application before/after confirmation, all six protected final-head checks and recorded author review. Source/PR delivery only; installed-app replacement and a binary release are separate actions.
+
+The scope also includes the same historical version literals in shared queue, Windows protocol and Mac native diagnostic reports. Verify actual queue reports on all native OS jobs and protocol/Mac outputs on their own OS; preserve all prior success/unavailable/failure meanings and distinguish metadata verification from installed-client discovery acceptance.
+
 Issue125/source1.42.7 reviews and enables exact standalone CLI0.164.0 on Linux. Preserve adjacent unknown-version refusals, the separately approved desktop manifest, credential/workspace guards and all16 native terminal checks per architecture. Integrate PR122/123/124 with original ancestry and verify final6 checks/native packages/public delivery. [Gates](RELEASE_1_42_7.md).
 
 Issue120/source1.42.6 rejects duplicate/empty quota bucket IDs at automatic selection without modifying observations. Require source refusal, candidate skipping, valid fallback/native menu evidence and data preservation. Integrate reviewed development PR101/102 with original ancestry, final6 CI and verified public packages. [Delivery contract](RELEASE_1_42_6.md).

@@ -27,7 +27,7 @@ internal static class QueueDiagnostics
             snapshot.Saved.GetValueOrDefault(id) ?? Array.Empty<DesktopQueueMessage>(),
             snapshot.Server.GetValueOrDefault(id) ?? Array.Empty<DesktopQueueMessage>()).Total);
         Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
-        File.WriteAllText(reportPath, JsonSerializer.Serialize(new { version = "1.22.0", available = snapshot != null, error,
+        File.WriteAllText(reportPath, JsonSerializer.Serialize(new { version = typeof(QueueDiagnostics).Assembly.GetName().Version!.ToString(3), available = snapshot != null, error,
             saved = snapshot?.Saved.Values.Sum(m => m.Length), server = snapshot?.Server.Values.Sum(m => m.Length), total,
             elapsedMs = started.Elapsed.TotalMilliseconds, scope = "Read-only saved/server queue identities, no message text, account access or task mutation." },
             new JsonSerializerOptions { WriteIndented = true }));
