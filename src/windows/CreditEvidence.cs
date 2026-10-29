@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace CodexAccountDesk;
 
@@ -77,7 +78,9 @@ internal static class CreditEvidence
                     PreventDepletedSourceRelaunch = true, AccountApplied = true, Phase = SwitchPhase.CreditPaused, DesktopRestartRequired = true,
                     Chats = new() { new() { Id = "fictional-credit-chat", OriginalTitle = "Fictional saved work", NameSaved = true } } };
                 typeof(MainWindow).GetMethod("SetStatus", fields)!.Invoke(owner, new object[] { "credits.paused", true, Array.Empty<object?>() }); Render();
-                Check(Descendants<Button>(owner).Any(b => b.Tag as string == "account-switch-action" && b.IsEnabled && Descendants<TextBlock>(b).Any(t => t.Text == Loc.T("switch.recover"))), prefix + "saved paused chats retain an enabled recovery action");
+                await owner.Dispatcher.InvokeAsync(owner.UpdateLayout, DispatcherPriority.Render); await Task.Delay(120);
+                Check(Descendants<AccountTankCard>(owner).All(card => ((TextBlock)typeof(AccountTankCard).GetField("_number", fields)!.GetValue(card)!).Text == "0") &&
+                    Descendants<Button>(owner).Any(b => b.Tag as string == "account-switch-action" && b.IsEnabled && Descendants<TextBlock>(b).Any(t => t.Text == Loc.T("switch.recover"))), prefix + "saved paused chats retain an enabled recovery action");
                 Capture(owner, prefix + "paused.png");
                 var profile = accounts[0]; profile.CreditHistory = new(); var balance = 1000m;
                 for (var i = 0; i <= 288; i++)
