@@ -6,6 +6,7 @@ var checks = new List<string>();
 void Check(string name, bool condition) { if (!condition) throw new Exception(name); checks.Add(name); }
 var now = DateTimeOffset.UtcNow;
 CreditHistoryContracts.Run(Check);
+await RuntimeCleanupContracts.Run(Check);
 await CreditProtectionContracts.Run(Check);
 JsonElement Hello(string version, string home = "/fictional/home", string os = "linux", string family = "unix", string prefix = "codex_account_desk/") =>
     JsonSerializer.SerializeToElement(new { codexHome = home, platformOs = os, platformFamily = family, userAgent = prefix + version + " (fixture)" });

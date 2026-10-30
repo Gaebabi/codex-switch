@@ -1,5 +1,7 @@
 # Operations
 
+Issue139/source1.43.2 waits asynchronously for transient Windows runtime-file sharing locks for at most two seconds, preserving login cancellation after release. Every attempt revalidates the private GUID path/link boundary; nonsharing and persistent failures still surface. No process termination, permission widening, account setting or background worker is added. [Release gates](RELEASE_1_43_2.md).
+
 Issue136/source1.43.1 keeps a fresh zero-quota source eligible to leave after its reset timestamp arrives. Candidate resets, freshness, numeric/window identity, priority, cooldown and recovery guards remain strict. Native reset-boundary menu checks and patch-release verification are separate from owner account operations. [Release contract](RELEASE_1_43_1.md).
 
 For contributor review, current main protection, English subjects and private-bundle/expected-head branch cleanup, follow [the maintainer guide](MAINTAINING.md). Inspect fork workflow changes before approving a run; all external contributors require approval, Actions are full-SHA pinned, and PR workflows cannot approve or publish releases. Read server settings back after changes; source policy alone is not protection evidence. Never remove unfinished issue acceptance or rewrite published history as routine cleanup.
