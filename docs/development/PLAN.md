@@ -1,5 +1,7 @@
 # Current plan
 
+Issue139/source1.43.2 waits asynchronously for transient Windows runtime-file sharing locks for at most two seconds, preserving login cancellation after release. Every attempt revalidates the private GUID path/link boundary; nonsharing and persistent failures still surface. No process termination, permission widening, account setting or background worker is added. [Release gates](RELEASE_1_43_2.md).
+
 Issue136/source1.43.1 keeps a fresh zero-quota source eligible to leave after its reset timestamp arrives. Candidate resets, freshness, numeric/window identity, priority, cooldown and recovery guards remain strict. Native reset-boundary menu checks and patch-release verification are separate from owner account operations. [Release contract](RELEASE_1_43_1.md).
 
 Issue134 establishes explicit maintainer roles, English new PR/maintainer commit subjects and recoverable issue/branch triage. Preserve the existing six protected checks and solo-maintainer approval limits. Management-only changes do not require a new product release. [Maintaining the repository](MAINTAINING.md).

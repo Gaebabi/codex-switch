@@ -3,11 +3,11 @@
 
 **在一个桌面界面中管理OpenAI Codex账号切换和使用额度。** 比较各账号的剩余额度、选择下一个账号，并通过已保存的记录恢复中断的切换。可选的额度阈值自动切换默认**关闭**。
 
-Windows · macOS15及以上 · Linux预览版 · MIT开源 · **1.43.1**
+Windows · macOS15及以上 · Linux预览版 · MIT开源 · **1.43.2**
 
 [English](../README.md) / [한국어](README.ko.md) / [日本語](README.ja.md) / 简体中文
 
-[下载](#下载) · [开始使用](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.1)
+[下载](#下载) · [开始使用](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.2)
 
 <p align="center"><img src="media/discovery/en-dark-demo.png" width="500" height="400" alt="Codex Switch英文UI演示：账号剩余额度、CPU与内存及GPU使用率和两个存储设备" /></p>
 
@@ -31,11 +31,13 @@ Windows · macOS15及以上 · Linux预览版 · MIT开源 · **1.43.1**
 
 1.43.1修复了重置时间已到但最新查询仍为0%时的自动切换问题。仍会显示可用的下一账户，并优先切换，再考虑点数保护暂停。 [Verification](https://github.com/Gaebabi/codex-switch/issues/136).
 
+1.43.2改进了Windows登录取消处理：临时数据库短暂被占用时，最多异步等待2秒清理。持续占用及权限错误仍会明确报告。 [Verification](https://github.com/Gaebabi/codex-switch/issues/139).
+
 ## 下载
 
-- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.1/CodexSwitch-v1.43.1-win-x64.zip)
-- macOS15及以上：[Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.1/CodexSwitch-v1.43.1-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.1/CodexSwitch-v1.43.1-osx-x64.zip)
-- Linux **预览版** x64、ARM64：[DEB、RPM、tar.gz及SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.1)
+- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.2/CodexSwitch-v1.43.2-win-x64.zip)
+- macOS15及以上：[Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.2/CodexSwitch-v1.43.2-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.2/CodexSwitch-v1.43.2-osx-x64.zip)
+- Linux **预览版** x64、ARM64：[DEB、RPM、tar.gz及SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.2)
 
 完整程序包包含.NET运行时，无需构建或安装.NET。请保留完整文件夹或应用包。Windows/Linux未签名；Mac为临时签名，**未经Apple公证**。[安装](INSTALL.md) / [Mac首次启动](MACOS.md)
 
@@ -45,7 +47,7 @@ Linux仍为集成预览版。原生密钥环、已安装UI和程序包验证，�
 
 悬停警告图标可查看原因，点击可在浏览器中重新登录指定账号。[实际应用验证](evidence/account-automation/README.md)。
 
-**Linux1.43.1下载包含源码1.41.0新增的终端账号切换和已保存CLI会话恢复功能。** `CodexSwitch cli`无需显示服务器即可管理现有加密账号；`cli switch <account> --resume <CLI-session-UUID>`将手动切换与官方CLI恢复连接起来。`--continue`明确请求发送后续消息，`--exec --continue`选择非交互执行。需要经过验证的原生CLI、校验和以及已解锁的受支持Secret Service。已在Linux x64上验证真实双账号切换后保留原有上下文的CLI恢复。ARM64、离线验证及完整桌面支持仍分别记录。[命令、实际截图与验证范围](development/LINUX_TERMINAL.md)。
+**Linux1.43.2下载包含源码1.41.0新增的终端账号切换和已保存CLI会话恢复功能。** `CodexSwitch cli`无需显示服务器即可管理现有加密账号；`cli switch <account> --resume <CLI-session-UUID>`将手动切换与官方CLI恢复连接起来。`--continue`明确请求发送后续消息，`--exec --continue`选择非交互执行。需要经过验证的原生CLI、校验和以及已解锁的受支持Secret Service。已在Linux x64上验证真实双账号切换后保留原有上下文的CLI恢复。ARM64、离线验证及完整桌面支持仍分别记录。[命令、实际截图与验证范围](development/LINUX_TERMINAL.md)。
 
 1. Windows运行`CodexSwitch.exe`；Mac运行`Install.command`后打开已安装的**Codex Switch.app**。Linux需要完整预览包及受支持的Secret Service。
 2. **+**通过官方浏览器页面登录各账号。如果自动选择了之前的账号，请使用独立的浏览器配置或隐私窗口。Windows可右键点击**↻**导入当前登录。

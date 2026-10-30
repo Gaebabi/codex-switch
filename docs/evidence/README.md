@@ -1,5 +1,7 @@
 # Application screenshots and verification
 
+- [Windows runtime cleanup](runtime-cleanup/README.md): original native application continuity frames and an independent actual Windows file-lock/cancellation regression, with explicit non-owner scope.
+
 - [Reset-boundary automatic switching](reset-boundary/README.md): original native Windows/Mac menus with a fresh zero source after reset time, independent original-policy regression and explicit fictional-account scope.
 
 ## Current source evidence

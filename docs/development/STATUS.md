@@ -1,5 +1,9 @@
 # Current status
 
+[Native application continuity and Windows file-lock regression](../evidence/runtime-cleanup/README.md) preserve original pixels and exact source/receipt hashes. Windows220 account/history/recovery checks pass; shared/native Mac/Linux acceptance remains distinct. Final review/public1.43.2 delivery is tracked in [PR140](https://github.com/Gaebabi/codex-switch/pull/140).
+
+Issue139/source1.43.2 waits asynchronously for transient Windows runtime-file sharing locks for at most two seconds, preserving login cancellation after release. Every attempt revalidates the private GUID path/link boundary; nonsharing and persistent failures still surface. No process termination, permission widening, account setting or background worker is added. [Release gates](RELEASE_1_43_2.md).
+
 [Native reset-boundary confirmation](../evidence/reset-boundary/README.md) passes45 Windows/46 per Mac credit assertions with32 original images each;215 local policy/history/recovery checks pass. Final-head protected review and patch delivery are tracked in [PR137](https://github.com/Gaebabi/codex-switch/pull/137).
 
 Issue136/source1.43.1 keeps a fresh zero-quota source eligible to leave after its reset timestamp arrives. Candidate resets, freshness, numeric/window identity, priority, cooldown and recovery guards remain strict. Native reset-boundary menu checks and patch-release verification are separate from owner account operations. [Release contract](RELEASE_1_43_1.md).
