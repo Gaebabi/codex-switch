@@ -55,6 +55,11 @@ else:
     resources = app / 'Contents/Resources'
     shutil.copytree(source, binary)
     resources.mkdir()
+    # Code signing treats nested files in Contents/MacOS as code. License text
+    # is bundle data and must remain present under Contents/Resources instead.
+    published_licenses = binary / 'licenses'
+    if published_licenses.exists():
+        shutil.move(str(published_licenses), str(resources / 'licenses'))
     shutil.copyfile(root / 'src/macos/Info.plist', app / 'Contents/Info.plist')
     shutil.copyfile(root / 'assets/macos/app-icon.icns', resources / 'app-icon.icns')
     shutil.copyfile(root / 'licenses/Burn0Assets.LICENSE.txt', resources / 'Burn0Assets.LICENSE.txt')
@@ -77,6 +82,9 @@ else:
     subprocess.run(['codesign', '--force', '--sign', '-', '--timestamp=none', '--options', 'runtime',
                     '--entitlements', str(resources / 'entitlements.plist'), str(app)], check=True)
     subprocess.run(['codesign', '--verify', '--deep', '--strict', str(app)], check=True)
+    for name in ('OpenAI-Codex.LICENSE.txt', 'OpenAI-Codex.NOTICE.txt'):
+        if (resources / 'licenses' / name).read_bytes() != (root / 'licenses' / name).read_bytes():
+            raise SystemExit('Bundled model instruction license or notice is missing or changed')
     subprocess.run(['ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', str(app), str(archive)], check=True)
     subprocess.run(['/usr/bin/zip', '-q', str(archive), 'Install.command'], cwd=stage, check=True)
     signing = 'Native ad-hoc signature verified; no Developer ID or Apple notarization'

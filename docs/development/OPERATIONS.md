@@ -1,5 +1,7 @@
 # Operations
 
+Model-provider instruction attribution is included in published package `licenses/`. Mac app bundles place those text files in `Contents/Resources/licenses` before signing; Windows and Linux retain the publish directory layout. Native package checks compare the license and notice with the source and verify the complete signed bundle.
+
 Issue139/source1.43.2 waits asynchronously for transient Windows runtime-file sharing locks for at most two seconds, preserving login cancellation after release. Every attempt revalidates the private GUID path/link boundary; nonsharing and persistent failures still surface. No process termination, permission widening, account setting or background worker is added. [Release gates](RELEASE_1_43_2.md).
 
 Issue136/source1.43.1 keeps a fresh zero-quota source eligible to leave after its reset timestamp arrives. Candidate resets, freshness, numeric/window identity, priority, cooldown and recovery guards remain strict. Native reset-boundary menu checks and patch-release verification are separate from owner account operations. [Release contract](RELEASE_1_43_1.md).
