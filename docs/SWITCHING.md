@@ -10,7 +10,7 @@ Account auto-switch is **Off by default**. Enable its toolbar menu only when you
 
 If chat naming or normal shutdown fails, the login change stops. Unclear message-send results are not automatically repeated. A pending handoff can continue through **Resume chats**; cancellation is available from the account menu/tray.
 
-In unreleased source, a confirmed finished receipt does not block another switch; incomplete, ambiguous or restart-required records still do. Windows validates shutdown targets and excludes the Switch process from its Restart Manager session. A reported controller exit has not yet been reproduced, so this protection alone does not establish its cause.
+From 1.43.3, a confirmed finished receipt does not block another switch; incomplete, ambiguous or restart-required records still do. Windows validates shutdown targets and excludes the Switch process from its Restart Manager session. A reported controller exit has not yet been reproduced, so this protection alone does not establish its cause.
 
 One manual **Switch** starts the normal close/apply/reopen/resume sequence. A successful Windows shutdown request has a cancellable 30-second exit deadline; refusal or timeout leaves credentials unchanged. It does not force-kill Codex or retry an uncertain continuation. [Isolated reproduction and application evidence](evidence/single-click-handoff/README.md).
 

@@ -1,6 +1,6 @@
 # Model provider verification
 
-Unreleased local work for [issue138](https://github.com/Gaebabi/codex-switch/issues/138), based on main1331c46. Native desktop confirmation and remote protected CI are pending.
+The implementation originated as local work for [issue138](https://github.com/Gaebabi/codex-switch/issues/138), based on main1331c46. Its original checkpoint evidence is retained below. PR142 merged the source after protected CI; native combined-picker confirmation and external-provider acceptance remain open.
 
 ## Restart action checkpoint, October31
 
@@ -30,4 +30,4 @@ The generic catalog must include a real instruction template; an unsupported app
 
 ## Remaining acceptance
 
-An actual isolated Codex desktop picker screenshot, external Responses-provider tool/stream/follow-up compatibility, workspace-managed routing, native macOS/Linux provider management, complete package checks, protected remote CI and owner installation acceptance remain separate gates. Existing downloaded1.43.1 packages do not contain this source work.
+An actual isolated Codex desktop picker screenshot, external Responses-provider tool/stream/follow-up compatibility, workspace-managed routing and native macOS/Linux provider management remain separate gates. Published packages before1.43.3 do not contain this source work.
