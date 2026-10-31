@@ -23,6 +23,7 @@ internal static class Program
         {
             var watch = Stopwatch.StartNew(); await DesktopShutdown.CloseAsync(executable, CancellationToken.None);
             Assert(watch.Elapsed < TimeSpan.FromSeconds(2), "An absent desktop incurred a shutdown delay"); passed.Add("Absent desktop needs no retry or fixed delay");
+            using (var sentinel = await StartSentinelAsync(executable, directory))
             using (var fixture = await StartAsync(executable, directory, 1800))
             {
                 var backend = new Backend(executable, fixture); var phases = new List<SwitchPhase>();
@@ -30,9 +31,10 @@ internal static class Program
                 var plan = await coordinator.PrepareAsync("target", DateTimeOffset.UtcNow, CancellationToken.None);
                 Assert(await coordinator.RunAsync(plan, CancellationToken.None), "One invocation did not complete the handoff");
                 Assert(fixture.Parent.HasExited && fixture.Child.HasExited, "Credentials changed before actual process exit");
+                Assert(!sentinel.Process.HasExited, "A separate same-name process was terminated by the handoff");
                 Assert(backend.Calls.SequenceEqual(new[] { "name", "close", "apply", "launch", "resume" }) && plan.Phase == SwitchPhase.Finished,
                     "Handoff needed a second invocation, repeated work or reordered shutdown/application");
-                passed.Add("Real delayed same-executable child exits before one coordinator invocation applies, launches and resumes");
+                passed.Add("Real delayed child exits and an unrelated same-name app survives one apply/launch/resume invocation");
             }
             using (var fixture = await StartAsync(executable, directory, 1800))
             {
@@ -89,6 +91,24 @@ internal static class Program
         }
     }
     private static void Assert(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }
+    private static async Task<OwnedSentinel> StartSentinelAsync(string executable, string directory)
+    {
+        var other = Path.Combine(directory, "other"); Directory.CreateDirectory(other);
+        foreach (var file in Directory.GetFiles(Path.GetDirectoryName(executable)!)) File.Copy(file, Path.Combine(other, Path.GetFileName(file)));
+        var copy = Path.Combine(other, Path.GetFileName(executable));
+        var ready = Path.Combine(directory, Guid.NewGuid().ToString("N"));
+        var start = new ProcessStartInfo(copy) { UseShellExecute = false, CreateNoWindow = true };
+        foreach (var value in new[] { "sentinel", ready, "0" }) start.ArgumentList.Add(value);
+        var process = Process.Start(start) ?? throw new IOException("Sentinel did not start");
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        try { while (!File.Exists(ready)) await Task.Delay(25, timeout.Token); return new OwnedSentinel(process); }
+        catch { if (!process.HasExited) process.Kill(); process.Dispose(); throw; }
+    }
+    private sealed class OwnedSentinel(Process process) : IDisposable
+    {
+        public Process Process => process;
+        public void Dispose() { if (!process.HasExited) { process.Kill(); process.WaitForExit(); } process.Dispose(); }
+    }
     private static async Task<Fixture> StartAsync(string executable, string directory, int delay, bool headless = false)
     {
         var ready = Path.Combine(directory, Guid.NewGuid().ToString("N"));

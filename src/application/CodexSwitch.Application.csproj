@@ -4,6 +4,10 @@
     <Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings><DebugType>none</DebugType>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="../../resources/CodexFallbackInstructions.md" LogicalName="CodexAccountDesk.CodexFallbackInstructions.md" />
+    <None Include="../../licenses/OpenAI-Codex.LICENSE.txt" Link="licenses/OpenAI-Codex.LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="../../licenses/OpenAI-Codex.NOTICE.txt" Link="licenses/OpenAI-Codex.NOTICE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <InternalsVisibleTo Include="CodexSwitch.ModelProviders.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.AccountAutomation.Tests" />
     <ProjectReference Include="../core/CodexSwitch.Core.csproj" />
     <ProjectReference Include="../platforms/security/CodexSwitch.PlatformSecurity.csproj" />

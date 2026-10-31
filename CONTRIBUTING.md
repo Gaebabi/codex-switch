@@ -64,6 +64,8 @@ Application/desktop composition changes run `dotnet run --project tests/composit
 
 ## Privacy and review
 
+Provider changes also run the Windows model-providers contract project. Pass --codex with the reviewed official executable to verify real app-server discovery and per-chat changes against fictional upstreams. The model-providers-ui project renders production WPF components offscreen into an explicit evidence directory. Keep these scopes separate from real providers, native desktop picker evidence and owner-account acceptance. [Contract and commands](docs/MODEL_PROVIDERS.md).
+
 Use disposable storage/databases/test accounts. Never stop another person's Codex or switch their real account to test a PR. Report source/build/isolated/native results separately. Screenshots must contain no credentials, private chats, account identities or home paths: irreversibly replace those pixels, then blur the replacement if desired. Strip private metadata and inspect the final export; blur alone is insufficient.
 
 PR CI uses read-only tokens, SHA-pinned actions and no signing/account secrets or release publication. [CI details](docs/CI.md). Dependabot proposes dependency updates for review; it does not merge them. Preserve [MIT](LICENSE) and [asset notices](licenses/Burn0Assets.LICENSE.txt).

@@ -20,6 +20,14 @@ internal static class DesktopShutdown
         public uint Size, Usage, Id; public UIntPtr Heap; public uint Module, Threads, Parent; public int Priority; public uint Flags;
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)] public string File;
     }
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct RestartProcessInfo
+    {
+        public UniqueProcess Process;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)] public string Name;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)] public string Service;
+        public int Type; public uint Status, Session; public int Restartable;
+    }
     [DllImport("kernel32.dll", SetLastError = true)] private static extern IntPtr CreateToolhelp32Snapshot(uint flags, uint process);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern bool Process32FirstW(IntPtr snapshot, ref ProcessEntry entry);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] private static extern bool Process32NextW(IntPtr snapshot, ref ProcessEntry entry);
@@ -28,6 +36,10 @@ internal static class DesktopShutdown
     [DllImport("rstrtmgr.dll", CharSet = CharSet.Unicode)] private static extern uint RmRegisterResources(uint session, uint files, string[]? names,
         uint applications, UniqueProcess[] processes, uint services, string[]? serviceNames);
     [DllImport("rstrtmgr.dll")] private static extern uint RmShutdown(uint session, uint flags, IntPtr progress);
+    [DllImport("rstrtmgr.dll")] private static extern uint RmGetList(uint session, out uint needed, ref uint count,
+        [In, Out] RestartProcessInfo[]? affected, out uint rebootReasons);
+    [DllImport("rstrtmgr.dll", CharSet = CharSet.Unicode)] private static extern uint RmAddFilter(uint session, string? module,
+        ref UniqueProcess process, string? service, int action);
     [DllImport("rstrtmgr.dll")] private static extern uint RmCancelCurrentTask(uint session);
     [DllImport("rstrtmgr.dll")] private static extern uint RmEndSession(uint session);
     public static Task CloseAsync(string executable, CancellationToken cancellation)
@@ -61,6 +73,15 @@ internal static class DesktopShutdown
         try
         {
             Check(RmRegisterResources(session, 0, null, (uint)processes.Count, processes.ToArray(), 0, null));
+            var affected = AffectedProcesses(session);
+            ValidateAffected(processes, affected);
+            // RmShutdown refreshes its own affected list, so protect this controller
+            // by exact PID/start-time even if the list changes after our inspection.
+            using var self = Process.GetCurrentProcess();
+            var selfStart = self.StartTime.ToUniversalTime().ToFileTimeUtc();
+            var selfIdentity = new UniqueProcess { Id = (uint)self.Id,
+                Started = new() { dwLowDateTime = (int)selfStart, dwHighDateTime = (int)(selfStart >> 32) } };
+            Check(RmAddFilter(session, null, ref selfIdentity, null, 2)); // RmNoShutdown
             using var cancel = cancellation.Register(() => RmCancelCurrentTask(session));
             var result = RmShutdown(session, 0, IntPtr.Zero);
             cancellation.ThrowIfCancellationRequested();
@@ -72,6 +93,38 @@ internal static class DesktopShutdown
         }
         finally { RmEndSession(session); }
     }, cancellation);
+    private static bool SameProcess(UniqueProcess left, UniqueProcess right) => left.Id == right.Id &&
+        left.Started.dwLowDateTime == right.Started.dwLowDateTime && left.Started.dwHighDateTime == right.Started.dwHighDateTime;
+    private static void ValidateAffected(List<UniqueProcess> roots, RestartProcessInfo[] affected)
+    {
+        if (affected.Length == 0 || Array.Exists(affected, item => !roots.Exists(root => SameProcess(root, item.Process))))
+            throw new IOException("Codex 종료 대상에 다른 프로그램이 포함되어 계정 전환을 중단했습니다.");
+    }
+    internal static void ValidateAffectedForTest((int Pid, long Start)[] roots, (int Pid, long Start)[] affected)
+    {
+        static UniqueProcess Convert((int Pid, long Start) item) => new() { Id = (uint)item.Pid,
+            Started = new() { dwLowDateTime = (int)item.Start, dwHighDateTime = (int)(item.Start >> 32) } };
+        var list = new List<UniqueProcess>(Array.ConvertAll(roots, Convert));
+        ValidateAffected(list, Array.ConvertAll(affected, item => new RestartProcessInfo { Process = Convert(item) }));
+    }
+    private static RestartProcessInfo[] AffectedProcesses(uint session)
+    {
+        for (var attempt = 0; attempt < 4; attempt++)
+        {
+            uint count = 0;
+            var result = RmGetList(session, out var needed, ref count, null, out var reboot);
+            if (result == 0 && needed == 0) return Array.Empty<RestartProcessInfo>();
+            if (result != 234) { Check(result); throw new IOException("Codex 종료 대상을 확인할 수 없습니다."); }
+            if (needed > 1024 || reboot != 0) throw new IOException("Codex 종료 대상을 안전하게 확인하지 못했습니다.");
+            var items = new RestartProcessInfo[needed]; count = needed;
+            result = RmGetList(session, out _, ref count, items, out reboot);
+            if (result == 234) continue;
+            Check(result);
+            if (reboot != 0) throw new IOException("Codex 종료에 시스템 재시작이 필요합니다.");
+            Array.Resize(ref items, (int)count); return items;
+        }
+        throw new IOException("Codex 종료 대상이 계속 변경되어 전환을 중단했습니다.");
+    }
     private static void Check(uint result) { if (result != 0) throw new Win32Exception((int)result); }
     private static Dictionary<uint, uint> ReadParents()
     {

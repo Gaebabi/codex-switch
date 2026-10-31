@@ -6,8 +6,29 @@ var checks = new List<string>();
 void Check(string name, bool condition) { if (!condition) throw new Exception(name); checks.Add(name); }
 var now = DateTimeOffset.UtcNow;
 CreditHistoryContracts.Run(Check);
+HistoryRangeContracts.Run(Check);
+CreditOverlayContracts.Run(Check);
 await RuntimeCleanupContracts.Run(Check);
 await CreditProtectionContracts.Run(Check);
+await RestartContracts.Run(Check);
+{
+    var completed = new AccountSwitchPlan { Phase = SwitchPhase.Finished, AccountApplied = true,
+        Chats = new() { new() { ResumeState = ChatResumeState.Resumed }, new() { ResumeState = ChatResumeState.AlreadyRunning } } };
+    var vault = new VaultData { PendingSwitch = completed };
+    Check("Confirmed finished handoff remains stored but does not block a new switch", vault.ActivePendingSwitch == null &&
+        ReferenceEquals(vault.PendingSwitch, completed) && !JsonSerializer.Serialize(vault).Contains("ActivePendingSwitch"));
+    foreach (var state in new[] { ChatResumeState.Pending, ChatResumeState.Sending, ChatResumeState.Unconfirmed, ChatResumeState.Failed })
+    {
+        completed.Chats[0].ResumeState = state;
+        Check("Unresolved finished handoff remains blocking: " + state, vault.ActivePendingSwitch == completed);
+    }
+    completed.Chats[0].ResumeState = ChatResumeState.Resumed; completed.DesktopRestartRequired = true;
+    Check("Finished handoff requiring a desktop restart remains blocking", vault.ActivePendingSwitch == completed);
+    completed.DesktopRestartRequired = false; completed.AccountApplied = false;
+    Check("Finished handoff without a confirmed account remains blocking", vault.ActivePendingSwitch == completed);
+    completed.AccountApplied = true; completed.CreditProtectionPause = true;
+    Check("Credit protection remains blocking", vault.ActivePendingSwitch == completed);
+}
 JsonElement Hello(string version, string home = "/fictional/home", string os = "linux", string family = "unix", string prefix = "codex_account_desk/") =>
     JsonSerializer.SerializeToElement(new { codexHome = home, platformOs = os, platformFamily = family, userAgent = prefix + version + " (fixture)" });
 foreach (var version in new[] { "0.162.0-alpha.17.2", "0.162.1", "0.163.0", "0.164.0" })

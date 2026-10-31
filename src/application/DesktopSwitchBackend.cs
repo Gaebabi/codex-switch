@@ -14,8 +14,9 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
     private CodexRpc? _metadata;
     private LinuxClientSession? _linuxMetadata;
     private readonly string? _targetAccountKey;
-    public DesktopSwitchBackend(AccountService service, DesktopSessionMonitor sessions, string? targetAccountKey = null)
-    { _service = service; _sessions = sessions; _targetAccountKey = targetAccountKey; }
+    private readonly bool _includeUnfinished;
+    public DesktopSwitchBackend(AccountService service, DesktopSessionMonitor sessions, string? targetAccountKey = null, bool includeUnfinished = false)
+    { _service = service; _sessions = sessions; _targetAccountKey = targetAccountKey; _includeUnfinished = includeUnfinished; }
     public Task<string?> CurrentAccountAsync(CancellationToken cancellation) => OperatingSystem.IsLinux() ? _service.CurrentAccountKeyAsync(cancellation) : Task.Run(() =>
         File.Exists(_service.AuthPath) ? AuthDocument.Parse(File.ReadAllText(_service.AuthPath)).Key : null, cancellation);
     public async Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation)
@@ -35,7 +36,7 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
             if (!RuntimeLocator.IsDesktopRunning(_service.Installation.DesktopPath)) return Array.Empty<SwitchChat>();
         }
         await _sessions.WaitForDiscoveryAsync(cancellation);
-        var chats = _sessions.Threads.Where(thread => thread.Status == "active").Select(thread => new SwitchChat {
+        var chats = _sessions.Threads.Where(thread => thread.Status == "active" || _includeUnfinished && thread.Status == "idle" && thread.Goal == "active").Select(thread => new SwitchChat {
             Id = thread.Id, OriginalTitle = thread.Title ?? "", OriginalTurnId = thread.LastTurnId, OriginalGoal = thread.Goal }).ToArray();
         foreach (var chat in chats.Where(chat => OperatingSystem.IsLinux() || string.IsNullOrWhiteSpace(chat.OriginalTitle)))
         {

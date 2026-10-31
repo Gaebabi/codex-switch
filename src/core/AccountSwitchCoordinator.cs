@@ -33,6 +33,7 @@ internal sealed class AccountSwitchPlan
     public DateTimeOffset RequestedAt { get; set; }
     public SwitchPhase Phase { get; set; }
     public bool AccountApplied { get; set; }
+    public bool RestartOnly { get; set; }
     public bool Automatic { get; set; }
     public int AutomaticRecoveryAttempts { get; set; }
     public bool DesktopRestartRequired { get; set; }
@@ -40,6 +41,14 @@ internal sealed class AccountSwitchPlan
     public bool PreventDepletedSourceRelaunch { get; set; }
     public List<SwitchChat> Chats { get; set; } = new();
     public string? Error { get; set; }
+}
+
+internal static class SwitchRecovery
+{
+    public static AccountSwitchPlan? Active(AccountSwitchPlan? plan) =>
+        plan is { Phase: SwitchPhase.Finished, AccountApplied: true, DesktopRestartRequired: false, CreditProtectionPause: false } &&
+        plan.Chats != null && plan.Chats.All(chat => chat != null && chat.ResumeState is ChatResumeState.Resumed or ChatResumeState.AlreadyRunning or ChatResumeState.Completed)
+            ? null : plan;
 }
 
 internal static class SwitchTitle
@@ -80,6 +89,16 @@ internal sealed class AccountSwitchCoordinator
         var chats = await _backend.CaptureAsync(cancellation);
         foreach (var chat in chats) chat.BackupTitle = SwitchTitle.Stamp(chat.OriginalTitle, at);
         var plan = new AccountSwitchPlan { SourceAccountKey = source, TargetAccountKey = target, RequestedAt = at, Chats = chats.ToList(), CreditProtectionPause = creditPause, PreventDepletedSourceRelaunch = creditPause };
+        Checkpoint(plan, SwitchPhase.BackingUp); return plan;
+    }
+    public async Task<AccountSwitchPlan> PrepareRestartAsync(string account, DateTimeOffset at, CancellationToken cancellation)
+    {
+        var source = await _backend.CurrentAccountAsync(cancellation);
+        if (source == null || source != account) throw new InvalidOperationException(Loc.T("restart.login_changed"));
+        var chats = await _backend.CaptureAsync(cancellation);
+        foreach (var chat in chats) { chat.BackupTitle = chat.OriginalTitle; chat.NameSaved = true; }
+        if (await _backend.CurrentAccountAsync(cancellation) != source) throw new InvalidOperationException(Loc.T("restart.login_changed"));
+        var plan = new AccountSwitchPlan { SourceAccountKey = source, TargetAccountKey = source, RequestedAt = at, Chats = chats.ToList(), RestartOnly = true };
         Checkpoint(plan, SwitchPhase.BackingUp); return plan;
     }
     public async Task RetargetCreditPauseAsync(AccountSwitchPlan plan, string target, CancellationToken cancellation)
@@ -130,6 +149,8 @@ internal sealed class AccountSwitchCoordinator
         try
         {
             var current = await _backend.CurrentAccountAsync(cancellation);
+            if (plan.RestartOnly && (plan.SourceAccountKey == null || plan.SourceAccountKey != plan.TargetAccountKey || current != plan.SourceAccountKey))
+                throw new InvalidOperationException(Loc.T("restart.login_changed"));
             if (plan.CreditProtectionPause && (plan.SourceAccountKey == null || plan.SourceAccountKey != plan.TargetAccountKey || current != plan.SourceAccountKey))
                 throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
             if (plan.CreditProtectionPause && plan.Phase == SwitchPhase.CreditPaused) return false;
@@ -171,6 +192,8 @@ internal sealed class AccountSwitchCoordinator
                     Checkpoint(plan, SwitchPhase.CreditPaused);
                     return false;
                 }
+                if (!plan.RestartOnly)
+                {
                 Checkpoint(plan, SwitchPhase.Applying);
                 await RetryStepAsync(plan, async () =>
                 {
@@ -180,6 +203,7 @@ internal sealed class AccountSwitchCoordinator
                         throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
                     await _backend.ApplyAccountAsync(plan.TargetAccountKey, plan.SourceAccountKey, cancellation);
                 }, cancellation);
+                }
                 plan.AccountApplied = true; Checkpoint(plan, SwitchPhase.Launching);
             }
             while (true)

@@ -129,7 +129,7 @@ internal static class LinuxTerminalCommands
                 Write(output, new { sessions = result.GetProperty("data").EnumerateArray().Select(t => new { id = t.GetProperty("id").GetString(), cwd = t.GetProperty("cwd").GetString() }), nextCursor = JsonValue.String(result, "nextCursor") });
                 return 0;
             }
-            if (vault.Data.PendingSwitch != null) throw new InvalidOperationException("Complete the existing desktop recovery before terminal account changes or resume.");
+            if (vault.Data.ActivePendingSwitch != null) throw new InvalidOperationException("Complete the existing desktop recovery before terminal account changes or resume.");
             RequireQuiescent(installed.Cli, cancellation);
             if (options.Command == "import")
             {

@@ -1,5 +1,7 @@
 # Current status
 
+Unreleased source work for [issue141](https://github.com/Gaebabi/codex-switch/issues/141) treats a fully confirmed finished handoff as history while keeping unresolved work blocking, and verifies Windows shutdown targets while excluding the controller. The observed controller exit has not been reproduced. Separately, [issue138](https://github.com/Gaebabi/codex-switch/issues/138) tracks provider gateway source and its remaining native picker and external-provider acceptance; published v1.43.2 does not include this work. Review and CI are required before merge.
+
 [Native application continuity and Windows file-lock regression](../evidence/runtime-cleanup/README.md) preserve original pixels and exact source/receipt hashes. Windows220 account/history/recovery checks pass; shared/native Mac/Linux acceptance remains distinct. Final review/public1.43.2 delivery is tracked in [PR140](https://github.com/Gaebabi/codex-switch/pull/140).
 
 Issue139/source1.43.2 waits asynchronously for transient Windows runtime-file sharing locks for at most two seconds, preserving login cancellation after release. Every attempt revalidates the private GUID path/link boundary; nonsharing and persistent failures still surface. No process termination, permission widening, account setting or background worker is added. [Release gates](RELEASE_1_43_2.md).

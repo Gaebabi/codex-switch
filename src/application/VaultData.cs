@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace CodexAccountDesk;
 
@@ -13,6 +14,7 @@ internal sealed class VaultData
     public int TrendHours { get; set; } = 24;
     public List<DrivePreference> Drives { get; set; } = DefaultDrives();
     public AccountSwitchPlan? PendingSwitch { get; set; }
+    [JsonIgnore] public AccountSwitchPlan? ActivePendingSwitch => SwitchRecovery.Active(PendingSwitch);
     public bool AutomaticSwitchEnabled { get; set; }
     public bool AllowCreditUse { get; set; } = true;
     public int AutomaticSwitchThreshold { get; set; } = 10;

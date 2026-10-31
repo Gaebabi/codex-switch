@@ -16,14 +16,18 @@ internal sealed class AccountDetailWindow : Window
     private readonly List<UsageOutlook> _outlooks = new();
     private CreditTrendChart? _creditChart;
     private TextBlock? _creditObserved;
+    private TextBlock? _creditEstimated;
     private CreditTrack? _creditTrack;
     private int _creditHours;
     private long _creditMinute;
     private string? _selectedQuota;
     private bool _moreOpen;
+    private HistoryRange? _customRange;
+    private bool _rangeEditorOpen;
+    private DateTime? _fromDate, _throughDate;
     public AccountDetailWindow(Window owner, Action<int> chooseRange, Func<System.Threading.Tasks.Task> refresh)
     {
-        Owner = owner; _chooseRange = chooseRange; _refresh = refresh; Width = 620; Height = 430; MinWidth = 560; MinHeight = 380;
+        Owner = owner; _chooseRange = chooseRange; _refresh = refresh; Width = 620; Height = 480; MinWidth = 560; MinHeight = 380;
         WindowStartupLocation = WindowStartupLocation.CenterOwner; WindowStyle = WindowStyle.None; ShowInTaskbar = false;
         WindowFrame.Apply(this);
         UseLayoutRounding = true; SnapsToDevicePixels = true;
@@ -32,7 +36,7 @@ internal sealed class AccountDetailWindow : Window
     }
     public void Refresh(AccountProfile profile, Burn0Theme theme, ResourceDictionary resources, int hours)
     {
-        _outlooks.Clear(); _creditChart = null; _creditObserved = null; _creditTrack = null; Resources.MergedDictionaries.Clear(); Resources.MergedDictionaries.Add(resources);
+        _outlooks.Clear(); _creditChart = null; _creditObserved = null; _creditEstimated = null; _creditTrack = null; Resources.MergedDictionaries.Clear(); Resources.MergedDictionaries.Add(resources);
         Title = profile.DisplayName + " · " + Loc.T("사용량 추이"); Background = theme.Color("canvas"); Foreground = theme.Color("text"); FontFamily = theme.Font;
         WindowFrame.RefreshBorder(this);
         Language = System.Windows.Markup.XmlLanguage.GetLanguage(Loc.Culture.IetfLanguageTag);
@@ -44,7 +48,7 @@ internal sealed class AccountDetailWindow : Window
         close.Click += (_, _) => Close(); WindowChrome.SetIsHitTestVisibleInChrome(close, true); DockPanel.SetDock(close, Dock.Right); caption.Children.Add(close);
         caption.Children.Add(new TextBlock { Text = Title, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 14, 0), TextTrimming = TextTrimming.CharacterEllipsis }); root.Children.Add(caption);
         var body = new DockPanel { Margin = new Thickness(20, 16, 20, 16) };
-        var controls = new DockPanel { Margin = new Thickness(0, 0, 0, 16) };
+        var controls = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
         var choices = AccountTankCard.Choices(profile); var choice = AccountTankCard.SelectQuota(profile, _selectedQuota);
         var creditMode = CreditPresentation.Selected(_selectedQuota) || choice == null && profile.CreditHistory.Count > 0;
         var creditTrack = CreditPresentation.Track(profile, _selectedQuota);
@@ -69,18 +73,58 @@ internal sealed class AccountDetailWindow : Window
             quota.ContextMenu = menu; menu.IsOpen = true;
         };
         DockPanel.SetDock(quota, Dock.Left); controls.Children.Add(quota);
-        var ranges = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        foreach (var range in new[] { (Hours: 1, Source: "1시간"), (Hours: 24, Source: "24시간"), (Hours: 168, Source: "7일") })
+        quota.HorizontalAlignment = HorizontalAlignment.Left;
+        var ranges = new WrapPanel { Margin = new Thickness(0, 6, 0, 0) };
+        foreach (var range in new[] { (Hours: 1, Source: "1시간"), (Hours: 24, Source: "24시간"), (Hours: 168, Source: "7일"), (Hours: 720, Source: "history.30_days") })
         {
-            var button = Button(Loc.T(range.Source)); button.Margin = new Thickness(0, 0, 4, 0); button.Background = theme.Color(hours == range.Hours ? "selected" : "surface");
-            button.Foreground = theme.Color(hours == range.Hours ? "accent" : "muted"); button.Click += (_, _) => _chooseRange(range.Hours); ranges.Children.Add(button);
+            var active = _customRange == null && hours == range.Hours;
+            var button = Button(Loc.T(range.Source)); button.Name = "HistoryRange" + range.Hours;
+            button.Margin = new Thickness(0, 0, 4, 0); button.Background = theme.Color(active ? "selected" : "surface");
+            button.Foreground = theme.Color(active ? "accent" : "muted");
+            button.Click += (_, _) => { _customRange = null; _rangeEditorOpen = false; _chooseRange(range.Hours); }; ranges.Children.Add(button);
         }
-        controls.Children.Add(ranges); DockPanel.SetDock(controls, Dock.Top); body.Children.Add(controls);
+        var custom = Button(Loc.T("history.custom")); custom.Name = "HistoryCustomRange";
+        custom.Background = theme.Color(_customRange != null ? "selected" : "surface");
+        custom.Click += (_, _) => { _rangeEditorOpen = !_rangeEditorOpen; Refresh(profile, theme, resources, hours); };
+        ranges.Children.Add(custom); controls.Children.Add(ranges);
+        if (_rangeEditorOpen)
+        {
+            var today = UsagePresentation.KoreanTime(DateTimeOffset.UtcNow).Date;
+            var editor = new StackPanel { Margin = new Thickness(0, 8, 0, 0) };
+            var dates = new WrapPanel();
+            var from = DateInput("HistoryFrom", "history.from", _fromDate ?? today.AddDays(-6));
+            var through = DateInput("HistoryThrough", "history.through", _throughDate ?? today);
+            var apply = Button(Loc.T("history.apply")); apply.Name = "HistoryApplyRange";
+            var error = new TextBlock { Foreground = theme.Color("warning"), TextWrapping = TextWrapping.Wrap };
+            from.SelectedDateChanged += (_, _) => _fromDate = from.SelectedDate;
+            through.SelectedDateChanged += (_, _) => _throughDate = through.SelectedDate;
+            apply.Click += (_, _) =>
+            {
+                if (!HistoryRange.TryDates(from.SelectedDate, through.SelectedDate, DateTimeOffset.UtcNow, out var selected))
+                { error.Text = Loc.T("history.invalid_range"); return; }
+                _customRange = selected; _rangeEditorOpen = false; Refresh(profile, theme, resources, hours);
+            };
+            dates.Children.Add(apply); editor.Children.Add(dates); editor.Children.Add(error);
+            editor.Children.Add(new TextBlock { Text = Loc.T("history.retention"), Foreground = theme.Color("muted"), FontSize = 11, TextWrapping = TextWrapping.Wrap }); controls.Children.Add(editor);
+            DatePicker DateInput(string name, string label, DateTime value)
+            {
+                var cell = new StackPanel { Margin = new Thickness(0, 0, 8, 0) };
+                cell.Children.Add(new TextBlock { Text = Loc.T(label), Foreground = theme.Color("muted"), FontSize = 11 });
+                var picker = new DatePicker { Name = name, SelectedDate = value, DisplayDateEnd = today, Width = 155,
+                    Background = theme.Color("surface"), Foreground = theme.Color("text"), BorderBrush = theme.Color("divider") };
+                picker.Resources.Add(typeof(System.Windows.Controls.Primitives.DatePickerTextBox), new Style(typeof(System.Windows.Controls.Primitives.DatePickerTextBox))
+                { Setters = { new Setter(Control.BackgroundProperty, theme.Color("surface")), new Setter(Control.ForegroundProperty, theme.Color("text")) } });
+                System.Windows.Automation.AutomationProperties.SetName(picker, Loc.T(label));
+                cell.Children.Add(picker); dates.Children.Add(cell); return picker;
+            }
+        }
+        if (_customRange != null) controls.Children.Add(new TextBlock { Text = Loc.F("history.selected_range", UsagePresentation.KoreanTime(_customRange.Start), UsagePresentation.KoreanTime(_customRange.End.AddDays(-1))), Foreground = theme.Color("muted"), FontSize = 11, Margin = new Thickness(0, 6, 0, 0) });
+        DockPanel.SetDock(controls, Dock.Top); body.Children.Add(controls);
         var content = new StackPanel();
         if (creditMode) content.Children.Add(Credits(profile, creditTrack, theme, hours));
         else if (choice != null)
         {
-            var outlook = new UsageOutlook(choice.Window, UsageHistory.ForWindow(profile, choice.BucketId, choice.Slot, choice.Window), theme, hours);
+            var outlook = new UsageOutlook(choice.Window, UsageHistory.ForWindow(profile, choice.BucketId, choice.Slot, choice.Window), theme, hours, _customRange, CreditPresentation.ForQuota(profile, choice.BucketId));
             _outlooks.Add(outlook); content.Children.Add(outlook);
         }
         else AddText(Loc.T("조회 정보 없음"), 14, "muted");
@@ -115,11 +159,12 @@ internal sealed class AccountDetailWindow : Window
     {
         var panel = new StackPanel(); var metrics = new Grid { Margin = new Thickness(0, 0, 0, 12) };
         _creditTrack = track; _creditHours = hours; _creditMinute = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 60;
-        metrics.ColumnDefinitions.Add(new()); metrics.ColumnDefinitions.Add(new());
+        metrics.ColumnDefinitions.Add(new()); metrics.ColumnDefinitions.Add(new()); metrics.ColumnDefinitions.Add(new());
         Metric(0, "credits.balance", CreditPresentation.Balance(profile, track));
-        Metric(1, "credits.observed", CreditPresentation.Number(CreditHistory.ObservedUse(track, hours, DateTimeOffset.UtcNow)));
+        Metric(1, "credits.observed", CreditPresentation.Number(CreditHistory.ObservedUse(track, HistoryRange.Resolve(hours, _customRange, DateTimeOffset.UtcNow))));
+        Metric(2, "credits.estimated", CreditPresentation.Number(CreditHistory.EstimatedUse(track, HistoryRange.Resolve(hours, _customRange, DateTimeOffset.UtcNow))));
         panel.Children.Add(metrics);
-        _creditChart = new(track, theme, hours); panel.Children.Add(_creditChart);
+        _creditChart = new(track, theme, hours) { Range = _customRange }; panel.Children.Add(_creditChart);
         panel.Children.Add(new TextBlock { Text = Loc.T("credits.history_help"), FontSize = 11, Foreground = theme.Color("muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 10, 0, 0) });
         return panel;
         void Metric(int column, string label, string value)
@@ -128,6 +173,7 @@ internal sealed class AccountDetailWindow : Window
             cell.Children.Add(new TextBlock { Text = Loc.T(label), FontSize = 11, Foreground = theme.Color("muted") });
             var number = new TextBlock { Text = value, ToolTip = value, FontSize = 28, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, FlowDirection = FlowDirection.LeftToRight, Margin = new Thickness(0, 5, 0, 0) };
             if (column == 1) _creditObserved = number;
+            if (column == 2) { _creditEstimated = number; number.ToolTip = Loc.T("credits.estimated_help") + "\n" + value; }
             cell.Children.Add(number);
             Grid.SetColumn(cell, column); metrics.Children.Add(cell);
         }
@@ -139,6 +185,10 @@ internal sealed class AccountDetailWindow : Window
         foreach (var outlook in _outlooks) outlook.Update(now); _creditChart?.Update(now);
         var minute = now.ToUnixTimeSeconds() / 60;
         if (_creditObserved != null && _creditTrack != null && minute != _creditMinute)
-        { _creditMinute = minute; _creditObserved.Text = CreditPresentation.Number(CreditHistory.ObservedUse(_creditTrack, _creditHours, now)); _creditObserved.ToolTip = _creditObserved.Text; }
+        {
+            _creditMinute = minute; var range = HistoryRange.Resolve(_creditHours, _customRange, now);
+            _creditObserved.Text = CreditPresentation.Number(CreditHistory.ObservedUse(_creditTrack, range)); _creditObserved.ToolTip = _creditObserved.Text;
+            if (_creditEstimated != null) { _creditEstimated.Text = CreditPresentation.Number(CreditHistory.EstimatedUse(_creditTrack, range)); _creditEstimated.ToolTip = Loc.T("credits.estimated_help") + "\n" + _creditEstimated.Text; }
+        }
     }
 }

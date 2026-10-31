@@ -10,6 +10,12 @@ internal static class Program
     {
         var delay = int.Parse(args[2]);
         if (delay is < 0 or > 35000) throw new ArgumentOutOfRangeException(nameof(delay));
+        if (args[0] == "sentinel")
+        {
+            var survivor = new ShutdownForm();
+            survivor.Load += (_, _) => { File.WriteAllText(args[1] + ".tmp", Environment.ProcessId.ToString()); File.Move(args[1] + ".tmp", args[1]); };
+            Application.Run(survivor); return;
+        }
         if (args[0] == "headless")
         {
             File.WriteAllText(args[1] + ".tmp", Environment.ProcessId.ToString()); File.Move(args[1] + ".tmp", args[1]);

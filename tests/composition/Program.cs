@@ -47,7 +47,7 @@ internal static class Program
             var dark = new DeskTheme(true, appearance); var light = new DeskTheme(false, appearance);
             Assert(!called && dark.Appearance == appearance && light.Appearance == appearance && dark.Brush("canvas").Color != light.Brush("canvas").Color);
         });
-        Check("Usage history places growing used quota upward on a bounded percent/time axis", () =>
+        Check("Usage history places growing quota and credit overflow upward on the selected scale", () =>
         {
             var start = DateTimeOffset.Parse("2026-10-15T00:00:00Z"); var end = start.AddHours(24);
             var plot = new Rect(40, 34, 412, 110);
@@ -55,7 +55,10 @@ internal static class Program
             var high = HistoryChart.Project(new(end, 100, null, 0), plot, start, end);
             Assert(low == plot.BottomLeft && high == plot.TopRight && high.Y < low.Y);
             Assert(HistoryChart.Project(new(start.AddHours(-1), -10, null, 0), plot, start, end) == plot.BottomLeft &&
-                HistoryChart.Project(new(end.AddHours(1), 120, null, 0), plot, start, end) == plot.TopRight);
+                HistoryChart.Project(new(end.AddHours(1), 120, null, 0), plot, start, end, 120) == plot.TopRight);
+            var boundary = HistoryChart.Project(new(end, 100, null, 0), plot, start, end, 150);
+            var credit = HistoryChart.Project(new(end, 130, null, 0), plot, start, end, 150);
+            Assert(credit.Y < boundary.Y && credit.Y > plot.Top && boundary.Y > plot.Top);
         });
         Check("History retains real reset and observation-gap discontinuities", () =>
         {

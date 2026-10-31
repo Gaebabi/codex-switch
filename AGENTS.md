@@ -1,5 +1,14 @@
 # Repository instructions
 
+## Unreleased model provider gateway
+
+- Model provider keys and connection recovery are stored separately in model-providers.vault using the existing protection identity. Preserve this file, the account vault and the original Codex sign-in.
+- Connection/restoration edits use the official version-checked configuration RPC. Model choices route per request; never restart the owner's Codex for verification.
+- The gateway runs inside Switch. Treat an active gateway as part of ongoing Codex work when planning utility updates; use an owner-approved idle handoff.
+- Provider checks use disposable storage, fictional upstreams and an explicit reviewed CLI. Keep component renders, native app-server contracts, native desktop picker confirmation, real provider acceptance and public release as separate states. [Contract](docs/MODEL_PROVIDERS.md).
+
+## General repository rules
+
 - Public `Gaebabi/codex-switch` is the canonical source, baseline branch `main`. Use focused issue-linked branches/PRs. The former codex-account-desk repository is historical recovery material.
 - New public OSS maintainer commits use English subjects in `[n/n English task] English description` format. Use an English PR title and squash subject; preserve published history and original contributor/bot ancestry. Other discussion/document languages remain welcome. Follow `docs/development/MAINTAINING.md` for review, settings verification and recoverable housekeeping.
 - Read `README.md`, `CONTRIBUTING.md`, `docs/development/OPERATIONS.md`, `docs/development/PLAN.md`, `docs/development/STATUS.md` and relevant architecture/release guides. Respect closer instructions and the user's explicit scope.

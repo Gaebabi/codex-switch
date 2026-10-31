@@ -82,11 +82,13 @@ internal sealed class HistoryChart : Control
     public UsageObservation[] Points { get; set; } = Array.Empty<UsageObservation>();
     public required DeskTheme Palette { get; set; }
     public int Hours { get; set; } = 24;
+    public HistoryRange? Range { get; set; }
+    public CreditTrack? Credits { get; set; }
     private DateTimeOffset _now = DateTimeOffset.UtcNow;
-    private Rect Plot => new(40, 34, Math.Max(0, Bounds.Width - 48), Math.Max(0, Bounds.Height - 60));
-    internal static Point Project(UsageObservation point, Rect plot, DateTimeOffset start, DateTimeOffset end) => new(
+    private Rect Plot => new(88, 48, Math.Max(0, Bounds.Width - 96), Math.Max(0, Bounds.Height - 74));
+    internal static Point Project(UsageObservation point, Rect plot, DateTimeOffset start, DateTimeOffset end, double maximum = 100) => new(
         plot.Left + Math.Clamp((point.At - start).TotalSeconds / Math.Max(1, (end - start).TotalSeconds), 0, 1) * plot.Width,
-        plot.Bottom - Math.Clamp(point.UsedPercent, 0, 100) / 100 * plot.Height);
+        plot.Bottom - UsageChartPresentation.Fraction(point.UsedPercent, maximum) * plot.Height);
     internal static bool Connects(UsageObservation previous, UsageObservation next) => previous.Segment == next.Segment &&
         next.At >= previous.At && next.At - previous.At <= TimeSpan.FromMinutes(20);
     public void Update(DateTimeOffset now)
@@ -98,41 +100,57 @@ internal sealed class HistoryChart : Control
     public override void Render(DrawingContext context)
     {
         if (Bounds.Width < 100 || Bounds.Height < 90) return;
-        var now = _now; var start = now.AddHours(-Math.Max(1, Hours));
-        var points = Points.Where(p => p.At >= start && p.At <= now).OrderBy(p => p.At).ToArray();
+        var range = HistoryRange.Resolve(Hours, Range, _now); var now = range.End; var start = range.Start;
+        var series = UsageChartPresentation.Build(Points, Credits);
+        var points = series.Points.Where(p => range.Contains(p.At)).ToArray();
+        var maximum = UsageChartPresentation.Maximum(points);
         var plot = Plot; var left = plot.Left; var right = plot.Right; var top = plot.Top; var bottom = plot.Bottom;
         AutomationProperties.SetName(this, Loc.T("사용량 추이"));
         AutomationProperties.SetHelpText(this, points.Length == 0 ? Loc.T("조회 기록이 쌓이면 추이를 볼 수 있습니다.")
-            : Loc.F("실측 · {0:MM/dd HH:mm:ss} (한국 시간)\n사용 {1:0.##}%", UsagePresentation.KoreanTime(points[^1].At), points[^1].UsedPercent));
-        var pen = new Pen(Palette.Brush("accent"), 2);
+            : UsageChartPresentation.Details(points[^1], series));
         Text(Loc.T("사용량 추이"), 0, 0, "text", 12);
-        Text(Loc.T("실측"), right, 0, "muted", 11, true);
-        foreach (var value in new[] { 0, 25, 50, 75, 100 })
+        var unavailable = series.MissingCreditAmounts?.Any(range.Contains) == true;
+        Text(maximum > 100 ? UsageChartPresentation.Legend(points.LastOrDefault(), series) : unavailable ? Loc.T("history.credit_amount_unavailable") : Loc.T("실측"), right, 0, maximum > 100 || unavailable ? "credit" : "muted", 11, true);
+        if (points.Any(p => series.Credits.ContainsKey(p))) Text(Loc.T(points.Any(p => series.Credits.TryGetValue(p, out var c) && c.Estimated > 0) ? "history.credit_estimate_help" : "history.credit_amount_help"), right, 19, "muted", 10, true);
+        if (maximum > 100)
         {
-            var y = bottom - value / 100.0 * (bottom - top);
+            var fill = Palette.Brush("credit");
+            using (context.PushOpacity(0.08)) context.DrawRectangle(fill, null, new Rect(left, top, right - left, (bottom - top) * (1 - UsageChartPresentation.Fraction(100, maximum))));
+        }
+        var ticks = new[] { 0.0, 25, 50, 75, 100 }.AsEnumerable();
+        if (maximum > 100) ticks = ticks.Concat(new[] { 100 + (maximum - 100) / 2, maximum });
+        foreach (var value in ticks.Distinct())
+        {
+            var y = bottom - UsageChartPresentation.Fraction(value, maximum) * (bottom - top);
             context.DrawLine(new Pen(Palette.Brush("divider"), 1), new Point(left, y), new Point(right, y));
-            Text(value + "%", left - 9, y - 7, "muted", 11, true);
+            Text(UsageChartPresentation.Tick(value), left - 9, y - 7, value > 100 ? "credit" : "muted", 11, true);
         }
         for (var i = 0; i <= 3; i++)
         {
             var at = start.AddTicks((now - start).Ticks * i / 3);
             var x = left + (right - left) * i / 3;
             var datesDiffer = UsagePresentation.KoreanTime(start).Date != UsagePresentation.KoreanTime(now).Date;
-            var label = UsagePresentation.KoreanTime(at).ToString(Hours > 24 ? "MM'/'dd" : datesDiffer && i is 0 or 3 ? "MM'/'dd HH:mm" : "HH:mm", Loc.Culture);
+            var label = UsagePresentation.KoreanTime(at).ToString(now - start > TimeSpan.FromHours(24) ? "MM'/'dd" : datesDiffer && i is 0 or 3 ? "MM'/'dd HH:mm" : "HH:mm", Loc.Culture);
             Text(label, x, bottom + 8, "muted", 11, i == 3, i is 1 or 2);
         }
-        Point Position(UsageObservation point) => Project(point, plot, start, now);
+        Point Position(UsageObservation point) => Project(point, plot, start, now, maximum);
         for (var i = 0; i < points.Length; i++)
         {
-            if (i > 0 && Connects(points[i - 1], points[i]))
-                context.DrawLine(pen, Position(points[i - 1]), Position(points[i]));
-            else context.DrawEllipse(Palette.Brush("accent"), null, Position(points[i]), 2, 2);
+            if (i > 0 && points[i - 1].Segment == points[i].Segment && (Connects(points[i - 1], points[i]) ||
+                series.Credits.TryGetValue(points[i], out var estimate) && estimate.EstimatedInterval))
+                foreach (var span in UsageChartPresentation.Split(points[i - 1], points[i]))
+                {
+                    var pen = new Pen(Palette.Brush(span.Credits ? "credit" : "accent"), 2);
+                    if (series.Credits.TryGetValue(points[i], out var credit) && credit.EstimatedInterval) pen.DashStyle = DashStyle.Dash;
+                    context.DrawLine(pen, Position(span.Start), Position(span.End));
+                }
+            else context.DrawEllipse(Palette.Brush(points[i].UsedPercent > 100 ? "credit" : "accent"), null, Position(points[i]), 2, 2);
         }
         if (points.Length > 0)
         {
             var last = Position(points[^1]);
-            context.DrawEllipse(Palette.Brush("accent"), new Pen(Palette.Brush("canvas"), 2), last, 4, 4);
-            Text(points[^1].UsedPercent.ToString("0.#", Loc.Culture) + "%", right, last.Y < top + 24 ? last.Y + 5 : last.Y - 21, "text", 11, true);
+            context.DrawEllipse(Palette.Brush(points[^1].UsedPercent > 100 ? "credit" : "accent"), new Pen(Palette.Brush("canvas"), 2), last, 4, 4);
+            Text(UsageChartPresentation.Tick(points[^1].UsedPercent), right, last.Y < top + 24 ? last.Y + 5 : last.Y - 21, points[^1].UsedPercent > 100 ? "credit" : "text", 11, true);
         }
         if (points.Length < 2)
             Text(Loc.T("조회 기록이 쌓이면 추이를 볼 수 있습니다."), (left + right) / 2, (top + bottom) / 2 - 7, "muted", 11, false, true);
@@ -146,11 +164,11 @@ internal sealed class HistoryChart : Control
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        var position = e.GetPosition(this); var start = _now.AddHours(-Math.Max(1, Hours));
-        var points = Points.Where(p => p.At >= start && p.At <= _now).ToArray();
-        var nearest = Plot.Contains(position) ? points.MinBy(p => Math.Abs(Project(p, Plot, start, _now).X - position.X)) : null;
-        ToolTip.SetTip(this, nearest == null ? null : Loc.F("실측 · {0:MM/dd HH:mm:ss} (한국 시간)\n사용 {1:0.##}%",
-            UsagePresentation.KoreanTime(nearest.At), nearest.UsedPercent));
+        var position = e.GetPosition(this); var range = HistoryRange.Resolve(Hours, Range, _now);
+        var series = UsageChartPresentation.Build(Points, Credits);
+        var points = series.Points.Where(p => range.Contains(p.At)).ToArray();
+        var nearest = Plot.Contains(position) ? points.MinBy(p => Math.Abs(Project(p, Plot, range.Start, range.End).X - position.X)) : null;
+        ToolTip.SetTip(this, nearest == null ? null : UsageChartPresentation.Details(nearest, series));
     }
     protected override void OnPointerExited(PointerEventArgs e) { base.OnPointerExited(e); ToolTip.SetTip(this, null); }
 }
