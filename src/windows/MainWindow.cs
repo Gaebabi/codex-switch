@@ -35,6 +35,9 @@ internal sealed class MainWindow : Window
     private readonly SessionUsagePanel _sessionCount = new();
     private readonly Button _refresh = new(), _add = new(), _cancelLogin = new(), _cancelSwitch = new();
     private readonly Button _automaticSwitch = new();
+    private readonly Button _providers = new();
+    private readonly Button _restartCodex = new();
+    private bool _providerEditing;
     private MenuItem? _importCurrent;
     private readonly Border _loginPanel = new();
     private readonly List<AccountTankCard> _tankCards = new();
@@ -122,7 +125,7 @@ internal sealed class MainWindow : Window
     }
     private void ApplyTheme()
     {
-        foreach (var element in new FrameworkElement[] { _automaticSwitch, _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _loginPanel, _scroll })
+        foreach (var element in new FrameworkElement[] { _restartCodex, _providers, _automaticSwitch, _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _loginPanel, _scroll })
         {
             if (element.Parent is Panel panel) panel.Children.Remove(element);
             else if (element.Parent is ContentControl control && ReferenceEquals(control.Content, element)) control.Content = null;
@@ -166,6 +169,17 @@ internal sealed class MainWindow : Window
         _sessionCount.HorizontalAlignment = HorizontalAlignment.Center;
         Grid.SetColumn(_sessionCount, 1);
         toolbarRow.Children.Add(_sessionCount); body.Children.Add(toolbarRow);
+        ConfigureButton(_providers, "providers.short", null);
+        _providers.MinWidth = 0;
+        _providers.Name = "ModelProvidersButton"; _providers.HorizontalAlignment = HorizontalAlignment.Left;
+        _providers.FontSize = 10; _providers.Padding = new Thickness(6, 2, 6, 2); _providers.ToolTip = Loc.T("providers.title");
+        _providers.Click -= OpenModelProviders; _providers.Click += OpenModelProviders;
+        ConfigureButton(_restartCodex, "restart.title", null); _restartCodex.Name = "RestartCodexButton";
+        _restartCodex.MinWidth = 0;
+        _restartCodex.FontSize = 10; _restartCodex.Padding = new Thickness(6, 2, 6, 2); _restartCodex.Margin = new Thickness(6, 0, 0, 0);
+        _restartCodex.ToolTip = Loc.T("restart.help"); _restartCodex.Click -= RestartCodexClicked; _restartCodex.Click += RestartCodexClicked;
+        var modelActions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left };
+        modelActions.Children.Add(_providers); modelActions.Children.Add(_restartCodex); toolbarRow.Children.Add(modelActions);
         ConfigureButton(_automaticSwitch, "auto.title", null);
         _automaticSwitch.Name = "AutomaticSwitchButton";
         _automaticSwitch.HorizontalAlignment = HorizontalAlignment.Right; _automaticSwitch.Margin = new Thickness(6, 0, 0, 0);
@@ -246,6 +260,13 @@ internal sealed class MainWindow : Window
             menu.Items.Add(restore);
         }
         owner.ContextMenu = menu; menu.IsOpen = true;
+    }
+    private void OpenModelProviders(object? sender, RoutedEventArgs args)
+    {
+        if (_closing || _switching || _loggingIn) return;
+        try { _providerEditing = true; new ModelProvidersWindow(this, _theme, _service).ShowDialog(); }
+        catch (Exception error) { SetStatus(Loc.T("providers.failed") + " " + error.Message, true); }
+        finally { _providerEditing = false; }
     }
     private async Task ImportLanguagePackAsync()
     {
@@ -583,6 +604,15 @@ internal sealed class MainWindow : Window
         LayoutCards(); RefreshDetails(accounts);
         _scroll.ScrollToVerticalOffset(offset);
     }
+    internal string EvidenceSwitchLabel(string key)
+    {
+        if (_options.UiEvidenceDirectory == null) throw new InvalidOperationException("Evidence mode is required.");
+        var profiles = _service.Accounts.OrderByDescending(a => a.IsCurrent).ThenBy(a => a.DisplayName, StringComparer.CurrentCultureIgnoreCase).ToArray();
+        var index = Array.FindIndex(profiles, profile => profile.Key == key);
+        if (index < 0) throw new InvalidOperationException("Evidence account missing.");
+        return Descendants(_rows.Children[index]).OfType<Button>().Where(button => Equals(button.Tag, "account-switch-action"))
+            .SelectMany(Descendants).OfType<TextBlock>().Single().Text;
+    }
     private void LayoutCards()
     {
         var available = _scroll.ActualWidth > 0 ? _scroll.ActualWidth : Width - 24;
@@ -698,7 +728,7 @@ internal sealed class MainWindow : Window
         dialog.Loaded += (_, _) => input.Focus(); return dialog.ShowDialog() == true ? input.Text : null;
     }
     private AccountSwitchPlan? PendingSwitch()
-    { lock (_service.Vault.SyncRoot) return _service.Vault.Data.PendingSwitch; }
+    { lock (_service.Vault.SyncRoot) return _service.Vault.Data.ActivePendingSwitch; }
     private object ProbeSwitchStages()
     {
         var width = Width; var height = Height; var language = Loc.Language; var switching = _switching; var queued = _queuedKey; var phase = _switchPhase;
@@ -749,15 +779,24 @@ internal sealed class MainWindow : Window
             else if (plan.Phase == SwitchPhase.Resuming) SetStatus("채팅 재개 {0}/{1}", false,
                 plan.Chats.Count(chat => chat.ResumeState is ChatResumeState.Resumed or ChatResumeState.AlreadyRunning or ChatResumeState.Completed), plan.Chats.Count);
             else SetStatus(plan.Phase switch { SwitchPhase.Closing => "Codex 정상 종료 중…", SwitchPhase.Applying => "계정 적용 중…",
-                SwitchPhase.Launching => "Codex 여는 중…", SwitchPhase.CreditPaused => "credits.paused", _ => "계정을 전환하고 채팅을 재개했습니다." });
+                SwitchPhase.Launching => "Codex 여는 중…", SwitchPhase.CreditPaused => "credits.paused", _ => plan.RestartOnly ? Loc.T("restart.done") : "계정을 전환하고 채팅을 재개했습니다." });
             UpdateControls(); RenderAccounts(); UpdateTray();
         }
         if (Dispatcher.CheckAccess()) ApplyProgress(); else Dispatcher.Invoke(ApplyProgress);
     }
-    private async Task QueueSwitchAsync(AccountProfile profile, bool automatic = false, bool creditPause = false)
+    private async void RestartCodexClicked(object? sender, RoutedEventArgs args)
+    {
+        if (!_ready || _closing || _switching || _loggingIn || _providerEditing) return;
+        var current = _service.Accounts.SingleOrDefault(profile => profile.IsCurrent);
+        if (current == null) { SetStatus(Loc.T("restart.login_changed"), true); return; }
+        await QueueSwitchAsync(current, restart: true);
+    }
+    private async Task QueueSwitchAsync(AccountProfile profile, bool automatic = false, bool creditPause = false, bool restart = false)
     {
         var pending = PendingSwitch();
-        if (_closing || _switching || _loggingIn || !creditPause && profile.IsCurrent && !profile.RequiresApply && pending?.TargetAccountKey != profile.Key) return;
+        restart |= pending?.RestartOnly == true;
+        if (_closing || _switching || _loggingIn || !restart && !creditPause && profile.IsCurrent && !profile.RequiresApply && pending?.TargetAccountKey != profile.Key) return;
+        if (restart && pending != null && !pending.RestartOnly) { SetStatus("남은 채팅 재개 작업을 먼저 처리해 주세요.", true); return; }
         if (pending != null && !pending.CreditProtectionPause && pending.TargetAccountKey != profile.Key) { SetStatus("남은 채팅 재개 작업을 먼저 처리해 주세요.", true); return; }
         creditPause |= pending is { CreditProtectionPause: true, Phase: not SwitchPhase.CreditPaused } && pending.TargetAccountKey == profile.Key && !AccountAutomation.CanUse(_service, profile, DateTimeOffset.UtcNow);
         if (!creditPause && !AccountAutomation.CanUse(_service, profile, DateTimeOffset.UtcNow)) { SetStatus("credits.resume_blocked", true); return; }
@@ -771,9 +810,10 @@ internal sealed class MainWindow : Window
             await RunAsync("채팅 이름 백업 중…", async _ =>
             {
                 var cancellation = _switchCancellation.Token;
-                await using var backend = new DesktopSwitchBackend(_service, _sessions, profile.Key);
+                await using var backend = new DesktopSwitchBackend(_service, _sessions, profile.Key, includeUnfinished: restart);
                 var coordinator = new AccountSwitchCoordinator(backend, SaveSwitch, SwitchChanged, UserErrors.Describe);
                 var plan = pending != null ? JsonSerializer.Deserialize<AccountSwitchPlan>(JsonSerializer.Serialize(pending))! :
+                    restart ? await coordinator.PrepareRestartAsync(profile.Key, DateTimeOffset.UtcNow, cancellation) :
                     await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, cancellation, creditPause);
                 if (plan.CreditProtectionPause)
                 {
@@ -785,7 +825,7 @@ internal sealed class MainWindow : Window
                     !_service.Accounts.Any(p => p.IsCurrent && p.Key == plan.SourceAccountKey && AutomaticSwitchPolicy.OrdinaryAvailable(p, DateTimeOffset.UtcNow));
                 if (!automatic) plan.AutomaticRecoveryAttempts = 0;
                 SaveSwitch(plan);
-                if (await coordinator.RunAsync(plan, cancellation)) SetStatus("계정을 전환하고 채팅을 재개했습니다.");
+                if (await coordinator.RunAsync(plan, cancellation)) SetStatus(plan.RestartOnly ? Loc.T("restart.done") : "계정을 전환하고 채팅을 재개했습니다.");
                 else if (plan.CreditProtectionPause && plan.Phase == SwitchPhase.CreditPaused) SetStatus("credits.paused", true);
                 else SetStatus("계정 전환 완료. 재개 확인이 필요한 채팅 {0}개", true,
                     plan.Chats.Count(chat => chat.ResumeState is ChatResumeState.Unconfirmed or ChatResumeState.Failed or ChatResumeState.Pending or ChatResumeState.Sending));
@@ -851,7 +891,7 @@ internal sealed class MainWindow : Window
     }
     private async Task TryAutomaticSwitchAsync()
     {
-        if (_options.ReportPath != null || _options.UiEvidenceDirectory != null || !_ready || _closing || _switching || _loggingIn) return;
+        if (_options.ReportPath != null || _options.UiEvidenceDirectory != null || !_ready || _closing || _switching || _loggingIn || _providerEditing) return;
         if (!_sessions.Current.Available && PendingSwitch()?.CreditProtectionPause != true)
         {
             if (!_service.Vault.Data.AllowCreditUse && _service.Accounts.Any(p => p.IsCurrent && AutomaticSwitchPolicy.Exhausted(p, DateTimeOffset.UtcNow)) && RuntimeLocator.IsDesktopRunning(_service.Installation.DesktopPath))
@@ -906,6 +946,8 @@ internal sealed class MainWindow : Window
     }
     private void UpdateControls()
     {
+        _providers.IsEnabled = !_closing && !_switching && !_loggingIn;
+        _restartCodex.IsEnabled = _ready && !_closing && !_switching && !_loggingIn && !_providerEditing && _service.Accounts.Any(profile => profile.IsCurrent) && PendingSwitch() is not { RestartOnly: false };
         var automaticSwitchLabel = Loc.T(_service.Vault.Data.AutomaticSwitchEnabled ? "auto.on" : "auto.off");
         _automaticSwitch.Content = new TextBlock { Text = Loc.T("auto.title") + " ▾", TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center };
         System.Windows.Automation.AutomationProperties.SetName(_automaticSwitch, automaticSwitchLabel);

@@ -8,6 +8,8 @@ namespace CodexAccountDesk;
 // Observed decreases are not a billing ledger: simultaneous grants, expiry or
 // adjustments can affect a balance. Unknown intervals never invent consumption.
 internal sealed record CreditObservation(DateTimeOffset At, decimal? Balance, decimal? ObservedDecrease, DateTimeOffset? Since, int Segment);
+internal sealed record CreditGapEstimate(DateTimeOffset Since, DateTimeOffset At, decimal Amount);
+internal sealed record RecoveredCreditReading(string BucketId, DateTimeOffset At, string Balance, string SourceSha256);
 
 internal sealed class CreditTrack
 {
@@ -18,6 +20,39 @@ internal sealed class CreditTrack
 
 internal static class CreditHistory
 {
+    // Bounded balance differences only: no extrapolation before/after records.
+    // Known consumption in a partially observed interval is subtracted once.
+    public static CreditGapEstimate[] GapEstimates(CreditTrack track)
+    {
+        var estimates = new List<CreditGapEstimate>(); CreditObservation? previous = null;
+        foreach (var point in track.Points.GroupBy(p => p.At).Where(g => g.Count() == 1).Select(g => g.Single()).OrderBy(p => p.At))
+        {
+            if (point.Balance is not decimal balance) continue;
+            if (previous?.Balance is decimal prior && point.At > previous.At)
+            {
+                var fullyObserved = point.ObservedDecrease >= 0 && point.Since <= previous.At && point.Since <= point.At;
+                if (!fullyObserved)
+                {
+                    try
+                    {
+                        var known = point.ObservedDecrease >= 0 && point.Since >= previous.At && point.Since <= point.At ? point.ObservedDecrease.Value : 0;
+                        var amount = prior - balance - known;
+                        if (amount > 0) estimates.Add(new(previous.At, point.At, amount));
+                    }
+                    catch (OverflowException) { /* An unrepresentable difference remains unavailable. */ }
+                }
+            }
+            previous = point;
+        }
+        return estimates.ToArray();
+    }
+    public static decimal? EstimatedUse(CreditTrack track, HistoryRange range)
+    {
+        try { return EstimatesForRange(track, range).Sum(p => p.Amount); }
+        catch (OverflowException) { return null; }
+    }
+    public static CreditGapEstimate[] EstimatesForRange(CreditTrack track, HistoryRange range) =>
+        GapEstimates(track).Where(p => p.Since >= range.Start && range.Contains(p.At)).ToArray();
     public const int MaximumPoints = 8192;
     public static readonly TimeSpan MaximumGap = TimeSpan.FromMinutes(5);
     public static decimal? Balance(UsageBucket bucket) => bucket.UnlimitedCredits == true ? null :
@@ -78,15 +113,19 @@ internal static class CreditHistory
         track.Points.Where(p => p.At >= now.AddHours(-Math.Clamp(hours, 1, 720)) && p.At <= now).ToArray();
 
     public static decimal? ObservedUse(CreditTrack track, int hours, DateTimeOffset now)
+        => ObservedUse(track, HistoryRange.Resolve(hours, null, now));
+
+    public static decimal? ObservedUse(CreditTrack track, HistoryRange range)
     {
-        var points = IntervalsForRange(track, hours, now);
+        var points = IntervalsForRange(track, range);
         if (points.Length == 0) return null;
         try { return points.Sum(p => p.ObservedDecrease!.Value); }
         catch (OverflowException) { return null; }
     }
     public static CreditObservation[] IntervalsForRange(CreditTrack track, int hours, DateTimeOffset now)
-    {
-        var start = now.AddHours(-Math.Clamp(hours, 1, 720));
-        return ForRange(track, hours, now).Where(p => p.Since >= start && p.Since <= p.At && p.ObservedDecrease >= 0).ToArray();
-    }
+        => IntervalsForRange(track, HistoryRange.Resolve(hours, null, now));
+
+    public static CreditObservation[] IntervalsForRange(CreditTrack track, HistoryRange range) =>
+        track.Points.Where(p => range.Contains(p.At) && p.Since >= range.Start &&
+            p.Since <= p.At && p.ObservedDecrease >= 0).ToArray();
 }

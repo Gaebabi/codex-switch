@@ -17,6 +17,7 @@
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="CodexSwitch.ModelProviders.Tests" />
     <AssemblyMetadata Include="CodexSwitch.CpuSensorSha256" Value="$(CpuSensorWorkerSha256)" Condition="'$(CpuSensorWorkerSha256)' != ''" />
     <ProjectReference Include="../core/CodexSwitch.Core.csproj" />
     <ProjectReference Include="../platforms/security/CodexSwitch.PlatformSecurity.csproj" />

@@ -30,6 +30,26 @@ internal sealed class AccountService
     private readonly CancellationTokenSource _shutdown = new();
     private readonly LinuxClientSelection? _linuxClient;
     private readonly string _contextDirectory;
+    private ModelProviderManager? _modelProviders;
+    private readonly object _modelProvidersGate = new();
+    internal ModelProviderManager ModelProviders
+    {
+        get
+        {
+            lock (_modelProvidersGate)
+            {
+                if (_shutdown.IsCancellationRequested) throw new ObjectDisposedException(nameof(AccountService));
+                return _modelProviders ??= CreateModelProviders();
+            }
+        }
+    }
+    private ModelProviderManager CreateModelProviders() => new ModelProviderManager(Vault.DirectoryPath,
+        (authorization, account) => GatewayIdentity.Authenticate(authorization, account, () =>
+        {
+            if (!File.Exists(AuthPath)) return null;
+            if ((File.GetAttributes(AuthPath) & FileAttributes.ReparsePoint) != 0) throw new IOException("The Codex sign-in file is a linked path.");
+            return Encoding.UTF8.GetString(SecureFiles.ReadPrivateBytes(AuthPath));
+        }));
     internal LinuxDesktopRuntime? LinuxDesktop { get; }
     internal bool HasLinuxDesktop => LinuxDesktop != null;
     private HashSet<string> _switchTargets = new();
@@ -53,7 +73,8 @@ internal sealed class AccountService
                 SubscriptionActiveUntil = p.SubscriptionActiveUntil, SubscriptionLastChecked = p.SubscriptionLastChecked,
                 IsCurrent = p.Key == CurrentKey, RequiresApply = p.RequiresApply, Usage = p.Usage, Error = p.Error,
                 IsRefreshing = _queries.IsRunning(p.Key), History = p.History.Select(t => t.Copy()).ToList(),
-                CreditHistory = p.CreditHistory.Select(t => t.Copy()).ToList()
+                CreditHistory = p.CreditHistory.Select(t => t.Copy()).ToList(),
+                RecoveredCreditHistory = p.RecoveredCreditHistory.ToList()
             }).ToArray();
         }
     }
@@ -66,6 +87,7 @@ internal sealed class AccountService
         if (policy != null && CanonicalAuthExists()) LinuxClientSession.RequireFile(policy, AuthDocument.Parse(ReadCanonicalAuth()).AccountId);
         await Task.Run(() => RuntimeHome.CleanupStale(Vault.DirectoryPath), cancellation).ConfigureAwait(false);
         lock (Vault.SyncRoot) { Installation = installation; SynchronizeCurrentCore(policy); Vault.Save(); }
+        if (File.Exists(Path.Combine(Vault.DirectoryPath, "model-providers.vault"))) ModelProviders.StartConfigured();
         Changed?.Invoke();
     }
     public AccountProfile? SynchronizeCurrent()
@@ -338,14 +360,30 @@ internal sealed class AccountService
         lock (Vault.SyncRoot)
         {
             if (key == CurrentKey) throw new InvalidOperationException("현재 로그인 계정은 제거할 수 없습니다.");
-            if (Vault.Data.PendingSwitch?.TargetAccountKey == key || Vault.Data.PendingSwitch?.SourceAccountKey == key)
+            if (Vault.Data.ActivePendingSwitch?.TargetAccountKey == key || Vault.Data.ActivePendingSwitch?.SourceAccountKey == key)
                 throw new InvalidOperationException("남은 채팅 재개 작업을 먼저 처리해 주세요.");
             Vault.Data.Accounts.RemoveAll(a => a.Key == key); Vault.Data.AutomaticSwitchPriority.RemoveAll(k => k == key); Vault.Save();
         }
         Changed?.Invoke();
     }
-    public Task StopAsync() { _shutdown.Cancel(); return _queries.CancelAndDrainAsync(); }
+    public async Task StopAsync()
+    {
+        _shutdown.Cancel(); await _queries.CancelAndDrainAsync().ConfigureAwait(false);
+        ModelProviderManager? providers;
+        lock (_modelProvidersGate) { providers = _modelProviders; _modelProviders = null; }
+        if (providers != null) await providers.DisposeAsync().ConfigureAwait(false);
+    }
     internal void ReleaseDesktop() => LinuxDesktop?.Dispose();
+    internal Task ConnectModelProvidersAsync(CancellationToken cancellation)
+    {
+        if (string.IsNullOrEmpty(Installation.CliPath)) throw new InvalidOperationException("The Codex runtime is not ready. Refresh the dashboard before connecting.");
+        return ModelProviders.ConnectAsync(Installation.CliPath, CodexHome, cancellation);
+    }
+    internal Task DisconnectModelProvidersAsync(CancellationToken cancellation)
+    {
+        if (string.IsNullOrEmpty(Installation.CliPath)) throw new InvalidOperationException("The Codex runtime is not ready. Refresh the dashboard before restoring.");
+        return ModelProviders.DisconnectAsync(Installation.CliPath, CodexHome, cancellation);
+    }
     // Keep read-only native provider types out of the shared UI assembly.
     internal bool DesktopRunning(CancellationToken cancellation) => OperatingSystem.IsLinux() ?
         LinuxDesktopRuntime.Running(cancellation).Length != 0 : RuntimeLocator.IsDesktopRunning(Installation.DesktopPath);

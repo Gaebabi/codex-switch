@@ -33,6 +33,9 @@ with tempfile.TemporaryDirectory(prefix="mac-install-test-", dir=root / "artifac
     unpacked = fixture / "unpacked"
     subprocess.run(["ditto", "-x", "-k", str(archive), str(unpacked)], check=True, capture_output=True)
     bundle = unpacked / "Codex Switch.app"
+    for name in ("OpenAI-Codex.LICENSE.txt", "OpenAI-Codex.NOTICE.txt"):
+        check("Model instruction license survives bundle packaging: " + name,
+              digest(bundle / "Contents/Resources/licenses" / name) == digest(root / "licenses" / name))
     signed = subprocess.run(["codesign", "--verify", "--deep", "--strict", str(bundle)], capture_output=True)
     check("ZIP extraction preserves complete bundle signatures", signed.returncode == 0)
     destination = fixture / "Applications"

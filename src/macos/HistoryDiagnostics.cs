@@ -51,7 +51,7 @@ internal static class HistoryDiagnostics
                             history.Show(owner); await Ready();
                             Check(theme + "/" + scenario + "/English native window", history.IsVisible && Loc.Language == "en" && history.Title == "Demo · Usage history");
                             var ranges = history.GetVisualDescendants().OfType<ToggleButton>().Where(b => b.Name?.StartsWith("HistoryRange", StringComparison.Ordinal) == true).ToArray();
-                            Check(theme + "/" + scenario + "/selected range", ranges.Length == 3 && ranges.All(b => b.IsChecked == (b.Name == "HistoryRange24")));
+                            Check(theme + "/" + scenario + "/selected range", ranges.Length == 4 && ranges.Select(b => b.Name).OrderBy(n => n).SequenceEqual(new[] { "HistoryRange168", "HistoryRange24", "HistoryRange6", "HistoryRange720" }) && ranges.All(b => b.IsChecked == (b.Name == "HistoryRange24")));
                             var scroll = history.GetVisualDescendants().OfType<ScrollViewer>().First();
                             Check(theme + "/" + scenario + "/no horizontal overflow", scroll.Extent.Width <= scroll.Viewport.Width + 1);
                             if (scenario == "overview")
@@ -67,8 +67,29 @@ internal static class HistoryDiagnostics
                                 await Ready();
                                 Check(theme + "/overview/range change persists through normal vault save", vault.Data.TrendHours == 6 && File.Exists(vault.FilePath) &&
                                     history.GetVisualDescendants().OfType<ToggleButton>().Single(b => b.Name == "HistoryRange6").IsChecked == true);
+                                history.GetVisualDescendants().OfType<ToggleButton>().Single(b => b.Name == "HistoryRange720").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                await Ready();
+                                Check(theme + "/overview/30-day preset reaches the chart", vault.Data.TrendHours == 720 && history.GetVisualDescendants().OfType<HistoryChart>().Single().Hours == 720);
+                                await NativeUiCapture.SaveAsync(history, Path.Combine(directory, "en-" + theme + "-history-30days-native.png"));
+                                history.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "HistoryCustomRange").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                await Ready();
+                                var dates = history.GetVisualDescendants().OfType<CalendarDatePicker>().ToArray();
+                                await NativeUiCapture.SaveAsync(history, Path.Combine(directory, "en-" + theme + "-history-date-editor-native.png"));
+                                var today = UsagePresentation.KoreanTime(DateTimeOffset.UtcNow).Date;
+                                dates.Single(p => p.Name == "HistoryFrom").SelectedDate = today.AddDays(-1);
+                                dates.Single(p => p.Name == "HistoryThrough").SelectedDate = today.AddDays(-2);
+                                history.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "HistoryApplyRange").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                await Ready();
+                                Check(theme + "/overview/reversed custom dates stay in the editor", history.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == Loc.T("history.invalid_range")));
+                                dates.Single(p => p.Name == "HistoryFrom").SelectedDate = today.AddDays(-3);
+                                history.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "HistoryApplyRange").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                                await Ready();
+                                var customRange = history.GetVisualDescendants().OfType<HistoryChart>().Single().Range;
+                                Check(theme + "/overview/custom Korean dates reach the chart", customRange != null && UsagePresentation.KoreanTime(customRange.Start).Date == today.AddDays(-3) && UsagePresentation.KoreanTime(customRange.End).Date == today.AddDays(-1));
+                                await NativeUiCapture.SaveAsync(history, Path.Combine(directory, "en-" + theme + "-history-custom-native.png"));
                                 history.GetVisualDescendants().OfType<ToggleButton>().Single(b => b.Name == "HistoryRange24").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                                 await Ready();
+                                Check(theme + "/overview/preset clears custom bounds", history.GetVisualDescendants().OfType<HistoryChart>().Single().Range == null);
                             }
                             if (scenario == "minimum")
                             {

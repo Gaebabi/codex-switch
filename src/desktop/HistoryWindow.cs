@@ -27,13 +27,17 @@ internal sealed class HistoryWindow : Window
     private HistoryChart? _chart;
     private CreditChart? _creditChart;
     private TextBlock? _creditObserved;
+    private TextBlock? _creditEstimated;
     private CreditTrack? _creditTrack;
     private long _creditMinute;
+    private HistoryRange? _customRange;
+    private bool _rangeEditorOpen;
+    private DateTime? _fromDate, _throughDate;
 
     public HistoryWindow(AccountService service, string key, DeskTheme theme)
     {
         _service = service; _key = key; _theme = theme;
-        Width = 640; Height = 440; MinWidth = 500; MinHeight = 300;
+        Width = 640; Height = 480; MinWidth = 500; MinHeight = 300;
         theme.Apply(this); WindowStartupLocation = WindowStartupLocation.CenterOwner;
         service.Changed += Changed; Loc.Changed += Changed;
         Opened += (_, _) => _clock.Start();
@@ -55,10 +59,10 @@ internal sealed class HistoryWindow : Window
         var creditMode = CreditPresentation.Selected(_selection) || selected == null && profile.CreditHistory.Count > 0;
         var creditTrack = CreditPresentation.Track(profile, _selection);
         var creditTracks = profile.CreditHistory.Count > 0 ? profile.CreditHistory.ToArray() : new[] { creditTrack };
-        _window = creditMode ? null : selected?.Window; _trend = null; _chart = null; _creditChart = null; _creditObserved = null; _creditTrack = null;
+        _window = creditMode ? null : selected?.Window; _trend = null; _chart = null; _creditChart = null; _creditObserved = null; _creditEstimated = null; _creditTrack = null;
         _depletion = _depletionNote = _reset = _basis = null;
         var root = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto"), Margin = new Thickness(20), MinHeight = 360 };
-        var toolbar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(0, 0, 0, 24) };
+        var toolbar = new StackPanel { Spacing = 8, Margin = new Thickness(0, 0, 0, 18) };
         var choices = MacAccountCard.Choices(profile);
         var quotaLabel = creditMode ? Loc.T("credits.history") : selected == null ? Loc.T("사용 한도") : selected.BucketLabel + " · " + selected.Window.PeriodLabel;
         Control quota;
@@ -90,11 +94,11 @@ internal sealed class HistoryWindow : Window
         }
         else quota = _theme.Text(quotaLabel, 13);
         quota.VerticalAlignment = VerticalAlignment.Center; toolbar.Children.Add(quota);
-        var ranges = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
-        foreach (var hours in new[] { 6, 24, 168 })
+        var ranges = new WrapPanel { Orientation = Orientation.Horizontal };
+        foreach (var hours in new[] { 6, 24, 168, 720 })
         {
-            var label = hours == 168 ? Loc.T("7일") : Loc.F("{0}시간", hours);
-            var active = _service.Vault.Data.TrendHours == hours;
+            var label = hours == 720 ? Loc.T("history.30_days") : hours == 168 ? Loc.T("7일") : Loc.F("{0}시간", hours);
+            var active = _customRange == null && _service.Vault.Data.TrendHours == hours;
             var button = new ToggleButton { Name = "HistoryRange" + hours, Content = label, IsChecked = active,
                 Theme = this.FindResource(typeof(Button)) as ControlTheme,
                 BorderThickness = new Thickness(0), CornerRadius = new CornerRadius(8), MinHeight = 26,
@@ -103,6 +107,7 @@ internal sealed class HistoryWindow : Window
             button.Click += (_, _) =>
             {
                 if (active) { button.IsChecked = true; return; }
+                _customRange = null; _rangeEditorOpen = false;
                 lock (_service.Vault.SyncRoot) { _service.Vault.Data.TrendHours = hours; _service.Vault.Save(); }
                 Render();
                 this.GetVisualDescendants().OfType<ToggleButton>().FirstOrDefault(b => b.Name == "HistoryRange" + hours)?.Focus();
@@ -113,15 +118,47 @@ internal sealed class HistoryWindow : Window
             AutomationProperties.SetName(button, label);
             ranges.Children.Add(button);
         }
-        Grid.SetColumn(ranges, 1); toolbar.Children.Add(ranges); root.Children.Add(toolbar);
+        var custom = new Button { Name = "HistoryCustomRange", Content = Loc.T("history.custom"), Padding = new Thickness(8, 3), MinHeight = 26, FontSize = 12,
+            Background = _customRange != null ? _theme.Brush("selected") : Brushes.Transparent };
+        custom.Click += (_, _) => { _rangeEditorOpen = !_rangeEditorOpen; Render(); };
+        ranges.Children.Add(custom); toolbar.Children.Add(ranges);
+        if (_rangeEditorOpen)
+        {
+            var today = UsagePresentation.KoreanTime(DateTimeOffset.UtcNow).Date;
+            var dates = new WrapPanel { Orientation = Orientation.Horizontal };
+            var from = DateInput("HistoryFrom", "history.from", _fromDate ?? today.AddDays(-6));
+            var through = DateInput("HistoryThrough", "history.through", _throughDate ?? today);
+            var apply = new Button { Name = "HistoryApplyRange", Content = Loc.T("history.apply"), VerticalAlignment = VerticalAlignment.Bottom };
+            var error = _theme.Text("", 11, "warning"); error.TextWrapping = TextWrapping.Wrap;
+            from.SelectedDateChanged += (_, _) => _fromDate = from.SelectedDate;
+            through.SelectedDateChanged += (_, _) => _throughDate = through.SelectedDate;
+            apply.Click += (_, _) =>
+            {
+                if (!HistoryRange.TryDates(from.SelectedDate, through.SelectedDate, DateTimeOffset.UtcNow, out var selected))
+                { error.Text = Loc.T("history.invalid_range"); return; }
+                _customRange = selected; _rangeEditorOpen = false; Render();
+            };
+            dates.Children.Add(apply); toolbar.Children.Add(dates); toolbar.Children.Add(error);
+            var retention = _theme.Text(Loc.T("history.retention"), 11, "muted"); retention.TextWrapping = TextWrapping.Wrap; toolbar.Children.Add(retention);
+            CalendarDatePicker DateInput(string name, string label, DateTime value)
+            {
+                var cell = new StackPanel { Spacing = 3, Margin = new Thickness(0, 0, 8, 0) };
+                cell.Children.Add(_theme.Text(Loc.T(label), 11, "muted"));
+                var picker = new CalendarDatePicker { Name = name, SelectedDate = value, DisplayDateEnd = today, Width = 155 };
+                AutomationProperties.SetName(picker, Loc.T(label)); cell.Children.Add(picker); dates.Children.Add(cell); return picker;
+            }
+        }
+        if (_customRange != null) toolbar.Children.Add(_theme.Text(Loc.F("history.selected_range", UsagePresentation.KoreanTime(_customRange.Start), UsagePresentation.KoreanTime(_customRange.End.AddDays(-1))), 11, "muted"));
+        root.Children.Add(toolbar);
         if (creditMode)
         {
             _creditTrack = creditTrack; _creditMinute = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 60;
-            var metrics = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*"), Margin = new Thickness(0, 0, 0, 18) };
+            var metrics = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*"), Margin = new Thickness(0, 0, 0, 18) };
             CreditMetric(0, "credits.balance", CreditPresentation.Balance(profile, creditTrack));
-            CreditMetric(1, "credits.observed", CreditPresentation.Number(CreditHistory.ObservedUse(creditTrack, _service.Vault.Data.TrendHours, DateTimeOffset.UtcNow)));
+            CreditMetric(1, "credits.observed", CreditPresentation.Number(CreditHistory.ObservedUse(creditTrack, HistoryRange.Resolve(_service.Vault.Data.TrendHours, _customRange, DateTimeOffset.UtcNow))));
+            CreditMetric(2, "credits.estimated", CreditPresentation.Number(CreditHistory.EstimatedUse(creditTrack, HistoryRange.Resolve(_service.Vault.Data.TrendHours, _customRange, DateTimeOffset.UtcNow))));
             Grid.SetRow(metrics, 1); root.Children.Add(metrics);
-            _creditChart = new() { Track = creditTrack, Palette = _theme, Hours = _service.Vault.Data.TrendHours, MinHeight = 170, ClipToBounds = true };
+            _creditChart = new() { Track = creditTrack, Palette = _theme, Hours = _service.Vault.Data.TrendHours, Range = _customRange, MinHeight = 170, ClipToBounds = true };
             Grid.SetRow(_creditChart, 2); root.Children.Add(_creditChart);
             var footer = new StackPanel { Spacing = 5, Margin = new Thickness(0, 14, 0, 0) };
             var note = _theme.Text(Loc.T("credits.history_help"), 11, "muted"); note.TextWrapping = TextWrapping.Wrap; footer.Children.Add(note);
@@ -135,6 +172,7 @@ internal sealed class HistoryWindow : Window
                 cell.Children.Add(_theme.Text(Loc.T(label), 11, "muted"));
                 var number = _theme.Text(value, 30); number.FontWeight = FontWeight.SemiBold; number.TextTrimming = TextTrimming.CharacterEllipsis; number.FlowDirection = FlowDirection.LeftToRight;
                 if (column == 1) _creditObserved = number;
+                if (column == 2) { _creditEstimated = number; ToolTip.SetTip(number, Loc.T("credits.estimated_help") + "\n" + value); }
                 ToolTip.SetTip(number, value); cell.Children.Add(number); Grid.SetColumn(cell, column); metrics.Children.Add(cell);
             }
         }
@@ -166,7 +204,7 @@ internal sealed class HistoryWindow : Window
                 return (number, note);
             }
             Grid.SetRow(metrics, 1); root.Children.Add(metrics);
-            _chart = new HistoryChart { Points = points, Palette = _theme, Hours = _service.Vault.Data.TrendHours, MinHeight = 170 };
+            _chart = new HistoryChart { Points = points, Credits = CreditPresentation.ForQuota(profile, selected.BucketId), Palette = _theme, Hours = _service.Vault.Data.TrendHours, Range = _customRange, MinHeight = 170 };
             Grid.SetRow(_chart, 2); root.Children.Add(_chart);
             var footer = new StackPanel { Spacing = 5, Margin = new Thickness(0, 16, 0, 0) };
             _basis = _theme.Text("", 11, "muted"); _basis.TextWrapping = TextWrapping.Wrap; footer.Children.Add(_basis);
@@ -198,7 +236,11 @@ internal sealed class HistoryWindow : Window
         {
             _creditChart.Update(now); var minute = now.ToUnixTimeSeconds() / 60;
             if (_creditTrack != null && _creditObserved != null && minute != _creditMinute)
-            { _creditMinute = minute; _creditObserved.Text = CreditPresentation.Number(CreditHistory.ObservedUse(_creditTrack, _service.Vault.Data.TrendHours, now)); ToolTip.SetTip(_creditObserved, _creditObserved.Text); }
+            {
+                _creditMinute = minute; var range = HistoryRange.Resolve(_service.Vault.Data.TrendHours, _customRange, now);
+                _creditObserved.Text = CreditPresentation.Number(CreditHistory.ObservedUse(_creditTrack, range)); ToolTip.SetTip(_creditObserved, _creditObserved.Text);
+                if (_creditEstimated != null) { _creditEstimated.Text = CreditPresentation.Number(CreditHistory.EstimatedUse(_creditTrack, range)); ToolTip.SetTip(_creditEstimated, Loc.T("credits.estimated_help") + "\n" + _creditEstimated.Text); }
+            }
             return;
         }
         if (_window == null || _trend == null) return;

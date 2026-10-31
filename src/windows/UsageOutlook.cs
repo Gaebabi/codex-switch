@@ -12,7 +12,7 @@ internal sealed class UsageOutlook : StackPanel
     private readonly Burn0Theme _theme;
     private readonly TextBlock _depletion, _reset, _hint;
     private readonly UsageTrendChart _chart;
-    public UsageOutlook(UsageWindow window, UsageObservation[] history, Burn0Theme theme, int hours)
+    public UsageOutlook(UsageWindow window, UsageObservation[] history, Burn0Theme theme, int hours, HistoryRange? range = null, CreditTrack? credits = null)
     {
         _window = window; _theme = theme; _trend = UsagePredictor.Learn(window, history);
         var overview = new Grid(); overview.ColumnDefinitions.Add(new() { Width = new GridLength(0.95, GridUnitType.Star) });
@@ -22,7 +22,7 @@ internal sealed class UsageOutlook : StackPanel
         _hint = Text("", 11, "muted"); _hint.Margin = new Thickness(0, 4, 0, 0); depletion.Children.Add(_hint);
         var reset = Metric(Loc.T("다음 리셋"), out _reset); Grid.SetColumn(reset, 2); overview.Children.Add(reset);
         Children.Add(overview);
-        _chart = new UsageTrendChart(window, history, theme, hours, DateTimeOffset.UtcNow, true) { Margin = new Thickness(0, 16, 0, 0) }; Children.Add(_chart);
+        _chart = new UsageTrendChart(window, history, theme, hours, DateTimeOffset.UtcNow, true) { Range = range, Credits = credits, Margin = new Thickness(0, 16, 0, 0) }; Children.Add(_chart);
         Update(DateTimeOffset.UtcNow);
     }
     private StackPanel Metric(string title, out TextBlock value)

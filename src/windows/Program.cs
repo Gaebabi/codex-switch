@@ -149,7 +149,7 @@ internal static class Program
         }
         catch (Exception error)
         {
-            if (arguments.Contains("--start-hidden", StringComparer.Ordinal))
+            if (arguments.Any(argument => argument is "--start-hidden" or "--self-test" or "--request-exit" || argument.StartsWith("--verify-", StringComparison.Ordinal)))
             { Console.Error.WriteLine(Loc.Error(UserErrors.Describe(error))); return 1; }
             MessageBox.Show(Loc.Error(UserErrors.Describe(error)), "Codex Switch", MessageBoxButton.OK, MessageBoxImage.Error);
             return 1;

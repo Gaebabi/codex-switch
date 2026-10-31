@@ -52,6 +52,7 @@ internal static class NativeUiEvidence
         {
             try
             {
+                await RecoveryEvidence.CaptureAsync(window, service, directory);
                 foreach (var dark in new[] { true, false })
                 foreach (var language in new[] { "en", "ko" })
                 foreach (var size in new[] { (800, 560), (500, 360) })

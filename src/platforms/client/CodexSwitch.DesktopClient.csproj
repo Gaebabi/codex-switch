@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="CodexSwitch.LinuxTerminal.Tests" />
+    <InternalsVisibleTo Include="CodexSwitch.AccountAutomation.Tests" />
     <EmbeddedResource Include="LinuxClients.json" LogicalName="CodexAccountDesk.LinuxClients.json" />
     <ProjectReference Include="../security/CodexSwitch.PlatformSecurity.csproj" />
     <InternalsVisibleTo Include="CodexSwitch" /><InternalsVisibleTo Include="CodexSwitch.Demo" />

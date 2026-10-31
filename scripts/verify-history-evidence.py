@@ -16,14 +16,14 @@ if not re.fullmatch(r"[a-f0-9]{40}", args.revision):
 report = json.loads((args.source / "history-report.json").read_text(encoding="utf-8"))
 if (report["os"] != "macOS" or report["failures"] != 0 or report["nativeWindowCapture"] is not True
         or report["language"] != "en" or report["rendering"] != "Software (native window)"
-        or report["architecture"] not in ("Arm64", "X64") or len(report["checks"]) != 66):
+        or report["architecture"] not in ("Arm64", "X64") or len(report["checks"]) != 74):
     raise SystemExit("Complete English native history verification required")
 if not re.fullmatch(r"\d+\.\d+\.\d+", report["version"]) or not re.fullmatch(r"\.NET \d+\.\d+\.\d+", report["runtime"]):
     raise SystemExit("Invalid application/runtime version")
 expected = {f"en-{theme}-history-{case}-native.png" for theme in ("dark", "light")
-            for case in ("overview", "minimum", "empty", "single", "multiple", "unavailable", "quota")}
+            for case in ("overview", "minimum", "empty", "single", "multiple", "unavailable", "quota", "30days", "date-editor", "custom")}
 if {path.name for path in args.source.glob("*.png")} != expected:
-    raise SystemExit("All fourteen declared history window/popup captures required")
+    raise SystemExit("All twenty declared history window/popup captures required")
 args.destination.mkdir(parents=True, exist_ok=True)
 images = []
 for name in sorted(expected):

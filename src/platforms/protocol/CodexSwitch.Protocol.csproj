@@ -4,6 +4,7 @@
     <Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings><DebugType>none</DebugType>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="CodexSwitch.ModelProviders.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.AccountAutomation.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.LinuxTerminal.Tests" />
     <ProjectReference Include="../../core/CodexSwitch.Core.csproj" />

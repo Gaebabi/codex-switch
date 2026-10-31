@@ -1,5 +1,11 @@
 # Current plan
 
+The current source work covers [safe handoff recovery and shutdown](https://github.com/Gaebabi/codex-switch/issues/141) and [configurable model providers](https://github.com/Gaebabi/codex-switch/issues/138). Complete protected CI and native application evidence before merge. Actual desktop picker behavior, external provider compatibility and the originally reported controller-exit cause remain separate acceptance items.
+
+## Historical delivery checkpoints
+
+The following versioned entries preserve earlier plans and evidence links. Their pending review, release, installation and platform-state statements describe their original checkpoints, not the current release. For current downloads see [Releases](../RELEASES.md); for remaining acceptance use the open issues above and the roadmap.
+
 Issue139/source1.43.2 waits asynchronously for transient Windows runtime-file sharing locks for at most two seconds, preserving login cancellation after release. Every attempt revalidates the private GUID path/link boundary; nonsharing and persistent failures still surface. No process termination, permission widening, account setting or background worker is added. [Release gates](RELEASE_1_43_2.md).
 
 Issue136/source1.43.1 keeps a fresh zero-quota source eligible to leave after its reset timestamp arrives. Candidate resets, freshness, numeric/window identity, priority, cooldown and recovery guards remain strict. Native reset-boundary menu checks and patch-release verification are separate from owner account operations. [Release contract](RELEASE_1_43_1.md).

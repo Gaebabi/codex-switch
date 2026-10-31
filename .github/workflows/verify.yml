@@ -129,6 +129,12 @@ jobs:
         run: dotnet run --project tests/sensors/CodexSwitch.Sensors.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- artifacts/win-x64/sensors/CodexSwitch.Sensors.exe
       - name: Verify automatic switching and restart recovery with fictional accounts
         run: dotnet run --project tests/account-automation/CodexSwitch.AccountAutomation.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
+      - name: Verify encrypted model providers and account-free loopback routing
+        shell: pwsh
+        run: dotnet run --project tests/model-providers/CodexSwitch.ModelProviders.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- --codex "$env:CODEX_ACCOUNT_DESK_CLI"
+      - name: Verify provider editor components
+        shell: pwsh
+        run: dotnet run --project tests/model-providers-ui/ModelProviders.Ui.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- "${{ github.workspace }}/artifacts/model-provider-ui"
       - name: Verify published account-app worker binding without UI or elevation
         shell: pwsh
         run: |
@@ -188,6 +194,14 @@ jobs:
         env:
           EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: python scripts/verify-ui-evidence.py artifacts/native-ui/windows/raw artifacts/native-ui/windows/public --os Windows --revision "${{ env.EVIDENCE_REVISION }}"
+      - name: Verify and export recovery state windows
+        run: python scripts/verify-recovery-evidence.py artifacts/native-ui/windows/raw artifacts/recovery-windows/public
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: recovery-windows
+          path: artifacts/recovery-windows/public
+          if-no-files-found: error
+          retention-days: 14
       - name: Validate native credit history and protection confirmations
         run: python scripts/verify-credit-evidence.py artifacts/native-ui/windows/raw/credits artifacts/credits-windows/public --os Windows --revision "${{ github.event.pull_request.head.sha || github.sha }}"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
