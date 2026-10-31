@@ -1,6 +1,6 @@
 # Build and install
 
-Download complete [1.42.2 Windows/macOS packages and Linux previews](https://github.com/Gaebabi/codex-switch/releases/tag/v1.42.2), or build from this repository. Packages include .NET10.0.13; a global .NET installation is unnecessary. Building requires .NET10.0.4xx SDK. Codex desktop/CLI must be installed separately.
+Download complete [1.43.2 Windows/macOS packages and Linux previews](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.2), or build from this repository. Packages include .NET10.0.13; a global .NET installation is unnecessary. Building requires .NET10.0.4xx SDK. Codex desktop/CLI must be installed separately.
 
 ## Windows
 
