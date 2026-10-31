@@ -1,6 +1,6 @@
 # Configurable model providers
 
-Unreleased source work for [issue138](https://github.com/Gaebabi/codex-switch/issues/138). Published downloads do not contain this feature; this guide covers source builds.
+Available in the 1.43.3 release. [Issue138](https://github.com/Gaebabi/codex-switch/issues/138) tracks remaining actual desktop picker and external-provider compatibility acceptance.
 
 Keep eligible OpenAI models and custom Responses models in the existing Codex model picker. OpenAI models retain their original display names; custom models include their provider name in parentheses. Selecting a model changes that chat's next request; an in-flight response keeps the route and key it started with.
 

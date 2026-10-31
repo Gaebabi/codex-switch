@@ -1,0 +1,7 @@
+# Release 1.43.3
+
+Package the provider gateway, per-model reasoning configuration, current-account restart, credit history ranges and guarded handoff recovery merged in PR142. Provider keys remain in a separately protected local vault. A connected Codex uses the Switch loopback gateway; changing providers can send the conversation to the selected provider. Initial connection needs a Codex restart. [Provider setup, history boundaries and compatibility](../MODEL_PROVIDERS.md).
+
+An isolated official CLI and fictional upstreams verify routing and key separation; native app windows use fictional inputs. An actual combined desktop picker and external production-provider stream/tool/follow-up compatibility remain open in issue138. Windows shutdown validation prevents an unexpected process list and excludes the controller, but the reported controller exit has not been reproduced; issue141 remains open. Do not turn those limitations into a claim of full authenticated handoff or external-provider acceptance.
+
+Publish only after all six required exact-head checks, review and a normal expected-head merge. Verify the merged source tree, nine Windows/macOS/Linux preview packages, license placement, runtime, provenance, checksums and anonymous public downloads. Windows/Linux packages remain unsigned; Mac packages are ad-hoc signed and not notarized. Linux remains a preview with `supportedAccountHandoff:false`. Installation on the owner's machine is separate from publishing the release.
