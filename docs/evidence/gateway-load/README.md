@@ -6,9 +6,9 @@ Issue149 improves image-heavy concurrent chats without increasing the512MiB per-
 
 | Current main | Load-resilience implementation |
 | --- | --- |
-| ![Native Windows application baseline](before-windows.png) | Fresh hosted implementation capture pending. |
+| ![Native Windows application baseline](before-windows.png) | ![Native Windows application after load improvements](after-windows.png) |
 
-The baseline is the actual hosted native Windows own-window app with fictional accounts, source `9741e6ee202f4938ccdb8caf49ae5bc998e89941`, [Verify41302434623](https://github.com/Gaebabi/codex-switch/actions/runs/41302434623), artifact13081834051. Its original800×560 pixels have SHA256 `320049d86e415b3991ed0525e353b855d15949d0f76f1f45bf6c66044e4b9ee8`. It confirms application continuity, not network throughput. Fresh after/final source capture remains pending. Raw private chats and account evidence are excluded.
+These are actual hosted native Windows own-window apps with fictional accounts. The baseline is source `9741e6ee202f4938ccdb8caf49ae5bc998e89941`, [Verify41302434623](https://github.com/Gaebabi/codex-switch/actions/runs/41302434623), artifact13081834051. The implementation is `19cc3666c2d2f2000122b5ffc263ad43771614bc`, [Verify41306288667](https://github.com/Gaebabi/codex-switch/actions/runs/41306288667), artifact13083975412. Both original800×560 images have SHA256 `320049d86e415b3991ed0525e353b855d15949d0f76f1f45bf6c66044e4b9ee8`. They confirm application continuity, not network throughput. [Exact hashes and measurements](evidence.json). Final-head protected CI remains required after this evidence update; production code is unchanged. Raw private chats and account evidence are excluded.
 
 ## Isolated behavior and load measurements
 
@@ -28,4 +28,4 @@ The measured run took9,170ms. Peak managed heap was1,013,850,160bytes; after for
 
 `GatewayLoadContracts` also verifies escaped duplicate property names, nested duplicates, malformed JSON, cancellation/budget release, exact unchanged history slices, opaque-reasoning filtering, Retry-After and overload recovery. The normal Windows protected workflow runs the generated-byte stress mode after ordinary provider/official-client checks. No test weakens authentication, provider provenance or encrypted-compaction refusal.
 
-Source verification, hosted native app continuity, protected final-head CI, an installed package and authenticated upstream acceptance remain separate gates. Current package self-test/installation evidence is recorded when performed; no new public binary release is part of this change.
+The Windows self-contained package includes runtime10.0.13, contains494files and passes99self-tests. Source verification, hosted native app continuity, protected final-head CI, an installed process and authenticated upstream acceptance remain separate gates. No new public binary release is part of this change.
