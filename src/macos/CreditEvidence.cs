@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
@@ -31,12 +32,18 @@ internal static class CreditEvidence
         void Check(bool value, string name) { if (!value) throw new InvalidOperationException(name); checks.Add(name); }
         async Task Capture(TopLevel window, string name) { await NativeUiCapture.SaveAsync(window, Path.Combine(directory, name)); images.Add(name); }
         async Task Ready(TopLevel window) { await Task.Delay(120); await Dispatcher.UIThread.InvokeAsync(window.UpdateLayout, DispatcherPriority.Render); }
-        ContextMenu Menu()
+        MenuItem Menu()
         {
-            typeof(DeskWindow).GetMethod("OpenAutomaticSwitchMenu", fields)!.Invoke(owner, null);
-            return owner.AutomaticSwitchButton.ContextMenu ?? throw new InvalidOperationException("Credit menu did not open.");
+            var menu = owner.BuildSettingsMenu(); menu.Open(owner.SettingsButton);
+            var automatic = menu.ItemsSource!.Cast<object>().OfType<MenuItem>().Single(item => item.Name == "AutomaticSwitchMenuItem");
+            automatic.IsSubMenuOpen = true; return automatic;
         }
-        async Task Popup(ContextMenu menu, string name) => await Capture(TopLevel.GetTopLevel(menu) ?? throw new InvalidOperationException("Credit popup has no native root"), name);
+        void CloseMenu() { owner.SettingsButton.ContextMenu?.Close(); }
+        async Task Popup(MenuItem menu, string name)
+        {
+            var popup = menu.GetTemplateDescendants().OfType<Popup>().Single();
+            await Capture(TopLevel.GetTopLevel(popup.Child!) ?? throw new InvalidOperationException("Credit popup has no native root"), name);
+        }
         var oldService = typeof(DeskWindow).GetField("_service", fields)!.GetValue(owner);
         var oldReady = typeof(DeskWindow).GetField("_ready", fields)!.GetValue(owner);
         var oldStatus = typeof(DeskWindow).GetField("_statusMessage", fields)!.GetValue(owner);
@@ -67,14 +74,14 @@ internal static class CreditEvidence
                 var menu = Menu(); await Ready(owner);
                 var toggle = menu.ItemsSource!.Cast<object>().OfType<MenuItem>().Select(i => i.Header).OfType<ToggleSwitch>().Single(t => t.Name == "AllowCreditUse");
                 Check(toggle.IsChecked == true && new AccountVault(vault.DirectoryPath).Data.AllowCreditUse, prefix + "default credit permission is visibly On");
-                await Popup(menu, prefix + "allowed.png"); toggle.IsChecked = false; menu.Close(); await Ready(owner);
+                await Popup(menu, prefix + "allowed.png"); toggle.IsChecked = false; CloseMenu(); await Ready(owner);
                 Check(!vault.Data.AllowCreditUse && !new AccountVault(vault.DirectoryPath).Data.AllowCreditUse, prefix + "actual credit toggle persists Off");
                 Check(AccountAutomation.CreditStopTarget(service, false, now)?.Key == current.Key, prefix + "disabled automatic switching permits protective stop selection");
-                menu = Menu(); await Ready(owner); await Popup(menu, prefix + "protected.png"); menu.Close();
+                menu = Menu(); await Ready(owner); await Popup(menu, prefix + "protected.png"); CloseMenu();
                 vault.Data.AutomaticSwitchEnabled = true; owner.Preview(language, dark, accounts); menu = Menu(); await Ready(owner);
                 var next = menu.ItemsSource!.Cast<object>().OfType<MenuItem>().Single(i => i.Header as string == Loc.F("auto.next", accounts[1].DisplayName));
                 Check(AccountAutomation.Next(service, now)?.Key == accounts[1].Key && next.IsEnabled == false && next.Opacity == 1, prefix + "past but usable subscription is the visible next account");
-                await Popup(menu, prefix + "past-expiry.png"); menu.Close();
+                await Popup(menu, prefix + "past-expiry.png"); CloseMenu();
                 current.Usage!.Buckets[0].Primary!.ResetsAt = now.ToUnixTimeSeconds();
                 owner.Preview(language, dark, accounts); menu = Menu(); await Ready(owner);
                 Check(AccountAutomation.Next(service, now)?.Key == accounts[1].Key &&
@@ -82,7 +89,7 @@ internal static class CreditEvidence
                     AccountAutomation.CreditStopTarget(service, false, now) == null &&
                     menu.ItemsSource!.Cast<object>().OfType<MenuItem>().Any(i => i.Header as string == Loc.F("auto.next", accounts[1].DisplayName)),
                     prefix + "fresh zero awaiting reset keeps the visible eligible handoff instead of a credit pause");
-                await Popup(menu, prefix + "reset-boundary.png"); menu.Close();
+                await Popup(menu, prefix + "reset-boundary.png"); CloseMenu();
                 foreach (var account in accounts) account.Usage!.Buckets[0].Primary!.UsedPercent = 100;
                 Check(AccountAutomation.CreditStopTarget(service, false, now)?.Key == current.Key, prefix + "no eligible quota requests a protected stop");
                 vault.Data.PendingSwitch = new() { SourceAccountKey = current.Key, TargetAccountKey = current.Key, CreditProtectionPause = true, AccountApplied = true,

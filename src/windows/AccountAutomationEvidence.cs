@@ -32,12 +32,16 @@ internal static class AccountAutomationEvidence
         void Render() { typeof(MainWindow).GetMethod("RenderAccounts", fields)!.Invoke(window, null); typeof(MainWindow).GetMethod("UpdateControls", fields)!.Invoke(window, null); window.UpdateLayout(); }
         static IntPtr NativeHandle(Visual owner, string action) =>
             (PresentationSource.FromVisual(owner) as HwndSource ?? throw new InvalidOperationException(action + " has no native popup")).Handle;
-        ContextMenu OpenMenu()
+        MenuItem OpenMenu()
         {
-            var button = Descendants<Button>(window).Single(b => b.Name == "AutomaticSwitchButton");
+            var button = Descendants<Button>(window).Single(b => b.Name == "SettingsButton");
             button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            return button.ContextMenu ?? throw new InvalidOperationException("Account switching menu did not open");
+            var settings = button.ContextMenu ?? throw new InvalidOperationException("Settings menu did not open");
+            var automatic = settings.Items.OfType<MenuItem>().Single(item => item.Name == "AutomaticSwitchMenuItem");
+            automatic.IsSubmenuOpen = true; return automatic;
         }
+        void CloseMenu() { var button = Descendants<Button>(window).Single(b => b.Name == "SettingsButton"); if (button.ContextMenu != null) button.ContextMenu.IsOpen = false; }
+        static Visual AutomaticSurface(MenuItem item) => ((System.Windows.Controls.Primitives.Popup)item.Template.FindName("PART_Popup", item)).Child;
         var accounts = service.Vault.Data.Accounts.ToArray();
         var originals = accounts.Select(p => (p.Plan, p.SubscriptionActiveUntil, p.Error)).ToArray();
         var data = service.Vault.Data;
@@ -70,11 +74,13 @@ internal static class AccountAutomationEvidence
                     Check(observed.Select(c => c.GetProperty("displayedPlan").GetString()).ToHashSet().SetEquals(new[] { "Pro 100", "Pro 200", "Pro 500", "Free" }) && observed.All(c => c.GetProperty("metadataFits").GetBoolean()), name + "numbered tiers and metadata fit");
                     var texts = Descendants<TextBlock>(window).Select(t => t.Text).ToArray();
                     Check(texts.Contains(Loc.T("subscription.ends")) && texts.Contains(Loc.T("subscription.left")), name + "subscription date and days have headings");
-                    var button = Descendants<Button>(window).Single(b => b.Name == "AutomaticSwitchButton");
+                    var button = Descendants<Button>(window).Single(b => b.Name == "SettingsButton");
                     var sessions = Descendants<SessionUsagePanel>(window).Single();
                     var a = button.TransformToAncestor(window).TransformBounds(new Rect(button.RenderSize));
                     var b = sessions.TransformToAncestor(window).TransformBounds(new Rect(sessions.RenderSize));
-                    Check(button.IsEnabled && ((TextBlock)button.Content).Text == Loc.T("auto.title") + " ▾" && System.Windows.Automation.AutomationProperties.GetName(button) == Loc.T("auto.off") && !a.IntersectsWith(b) && a.Right <= window.ActualWidth, name + "Auto Switch title and accessible Off state remain separate from counters");
+                    var settings = window.HomeActionsMenu();
+                    var automatic = settings.Items.OfType<MenuItem>().Single(item => item.Name == "AutomaticSwitchMenuItem");
+                    Check(button.IsEnabled && automatic.IsEnabled && automatic.Header as string == Loc.T("auto.off") && System.Windows.Automation.AutomationProperties.GetName(automatic) == Loc.T("auto.off") && !a.IntersectsWith(b) && a.Right <= window.ActualWidth, name + "Settings gear and accessible automatic Off state remain reachable and separate from counters");
                     typeof(MainWindow).GetProperty(nameof(MainWindow.EvidenceReloginAccount), fields)!.SetValue(window, null);
                     Descendants<AccountWarningButton>(window).Single().RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                     Check(window.EvidenceReloginAccount == accounts[3].Key, name + "warning requests only the selected fictional login");
@@ -84,7 +90,7 @@ internal static class AccountAutomationEvidence
                 var prefix = "en-" + theme + "-account-automation-";
                 var menu = OpenMenu(); var enabled = (MenuItem)menu.Items[0];
                 Check(!enabled.IsChecked, prefix + "automatic switching starts Off");
-                enabled.IsChecked = true; enabled.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); menu.IsOpen = false;
+                enabled.IsChecked = true; enabled.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); CloseMenu();
                 Check(new AccountVault(service.Vault.DirectoryPath).Data.AutomaticSwitchEnabled, prefix + "On persists through the actual menu action");
                 var card = Descendants<AccountTankCard>(window).Single(c => ((TextBlock)typeof(AccountTankCard).GetField("_plan", fields)!.GetValue(c)!).Text == "Free");
                 card.MenuButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -96,17 +102,17 @@ internal static class AccountAutomationEvidence
                 Check(AccountAutomation.OrderedAccounts(service)[0].Key == accounts[3].Key && new AccountVault(service.Vault.DirectoryPath).Data.AutomaticSwitchUsePriority, prefix + "account menu persists custom first priority");
                 menu = OpenMenu();
                 var threshold = menu.Items.OfType<MenuItem>().Single(i => i.Header as string == Loc.F("auto.threshold", 20));
-                threshold.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); menu.IsOpen = false;
+                threshold.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); CloseMenu();
                 Check(new AccountVault(service.Vault.DirectoryPath).Data.AutomaticSwitchThreshold == 20, prefix + "threshold selection persists");
                 Render(); await Task.Delay(120); Capture(window, prefix + "enabled.png");
                 menu = OpenMenu(); await Task.Delay(120);
                 Check(((MenuItem)menu.Items[0]).IsChecked && menu.Items.OfType<MenuItem>().Single(i => i.Header as string == Loc.T("auto.custom")).IsChecked && menu.Items.OfType<MenuItem>().Single(i => i.Header as string == Loc.F("auto.threshold", 20)).IsChecked, prefix + "reopened menu reflects On custom mode and threshold");
-                Capture(NativeHandle(menu, "Automatic switching menu"), prefix + "menu.png");
+                Capture(NativeHandle(AutomaticSurface(menu), "Automatic switching menu"), prefix + "menu.png");
                 var ranking = menu.Items.OfType<MenuItem>().Single(i => i.Header as string == Loc.T("auto.order"));
                 ranking.IsSubmenuOpen = true; await Task.Delay(120);
                 Check(((MenuItem)ranking.Items[0]).Header as string == Loc.F("auto.ranked_account", 1, accounts[3].DisplayName), prefix + "ranked account submenu reflects the chosen order");
                 Capture(NativeHandle((MenuItem)ranking.Items[0], "Ranked account submenu"), prefix + "order.png");
-                menu.IsOpen = false;
+                CloseMenu();
             }
             // A separate fictional selection scenario retains the original dashboard cases.
             var usages = accounts.Select(p => p.Usage).ToArray();
@@ -126,11 +132,11 @@ internal static class AccountAutomationEvidence
                     var toggle = (MenuItem)menu.Items[0]; toggle.ApplyTemplate();
                     Check(toggle.Template.FindName("track", toggle) is Border && toggle.Template.FindName("thumb", toggle) is Border { HorizontalAlignment: HorizontalAlignment.Left }, language + "native Off toggle has a visible track and left thumb");
                     Check(((MenuItem)menu.Items[1]).Header as string == Loc.F("auto.next", accounts[1].DisplayName) && AutomaticSwitchPolicy.Select(service.Accounts, 10, now) == null, language + "next expiry preview is visible before low quota without triggering switching");
-                    Capture(NativeHandle(menu, "Next account Off menu"), language + "-auto-switch-next-off.png");
+                    Capture(NativeHandle(AutomaticSurface(menu), "Next account Off menu"), language + "-auto-switch-next-off.png");
                     toggle.IsChecked = true; toggle.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); await Task.Delay(120);
                     Check(new AccountVault(service.Vault.DirectoryPath).Data.AutomaticSwitchEnabled && toggle.Template.FindName("thumb", toggle) is Border { HorizontalAlignment: HorizontalAlignment.Right }, language + "native On toggle moves its thumb and persists");
                     Check(AccountAutomation.Next(service, now)?.Key == accounts[1].Key && accounts[1].Usage!.LeastRemaining < accounts[2].Usage!.LeastRemaining, language + "nearest eligible expiry precedes higher remaining quota");
-                    Capture(NativeHandle(menu, "Next account On menu"), language + "-auto-switch-next-on.png"); menu.IsOpen = false;
+                    Capture(NativeHandle(AutomaticSurface(menu), "Next account On menu"), language + "-auto-switch-next-on.png"); CloseMenu();
                 }
                 var validTarget = accounts[2].Key;
                 var originalTargetUsage = accounts[1].Usage!;
@@ -142,12 +148,12 @@ internal static class AccountAutomationEvidence
                     var menu = OpenMenu(); await Task.Delay(150);
                     Check(AccountAutomation.Next(service, now)?.Key == validTarget && accounts[1].Usage!.Buckets.Count == 2, language + "ambiguous candidate is skipped without rewriting its quota");
                     Check(((MenuItem)menu.Items[1]).Header as string == Loc.F("auto.next", accounts[2].DisplayName), language + "native menu still opens and names the valid fallback");
-                    Capture(NativeHandle(menu, "Ambiguous candidate fallback"), language + "-auto-switch-ambiguous-candidate.png"); menu.IsOpen = false;
+                    Capture(NativeHandle(AutomaticSurface(menu), "Ambiguous candidate fallback"), language + "-auto-switch-ambiguous-candidate.png"); CloseMenu();
                     accounts[0].Usage = new() { CheckedAt = now, Buckets = new() { originalSourceUsage.Buckets[0], originalSourceUsage.Buckets[0] } };
                     Render(); menu = OpenMenu(); await Task.Delay(150);
                     Check(AccountAutomation.Next(service, now) == null && AutomaticSwitchPolicy.Select(service.Accounts, 10, now) == null, language + "ambiguous source blocks forecast and switching");
                     Check(((MenuItem)menu.Items[1]).Header as string == Loc.T("auto.next_unavailable"), language + "native menu explicitly shows unavailable for an ambiguous source");
-                    Capture(NativeHandle(menu, "Ambiguous source refusal"), language + "-auto-switch-ambiguous-source.png"); menu.IsOpen = false;
+                    Capture(NativeHandle(AutomaticSurface(menu), "Ambiguous source refusal"), language + "-auto-switch-ambiguous-source.png"); CloseMenu();
                     accounts[0].Usage = originalSourceUsage;
                 }
             }

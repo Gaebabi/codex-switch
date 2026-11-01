@@ -86,8 +86,10 @@ internal static class ProviderUiEvidence
                 checks.Add(language + "/" + (dark ? "dark" : "light") + ": readable recovery steps and fixed-prompt copy without clipboard, provider I/O or input loss");
                 // No window is shown or activated, and no account/client initialization is invoked.
             }
-            service.Vault.Data.Accounts.Add(new AccountProfile { Key = "fictional", Alias = "Demo account", IsCurrent = true });
-            typeof(AccountService).GetProperty("CurrentKey")!.SetValue(service, "fictional");
+            var fixtureClaims = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"sub\":\"home-ui-fixture\",\"email\":\"home@example.invalid\"}")).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            var fixtureAccount = service.Vault.Upsert(JsonSerializer.Serialize(new { auth_mode = "chatgpt", tokens = new { account_id = "home-ui-fixture", id_token = "e30." + fixtureClaims + ".fictional", access_token = "fictional-home-access", refresh_token = "fictional-home-refresh" } }));
+            fixtureAccount.Alias = "Demo account"; fixtureAccount.IsCurrent = true;
+            typeof(AccountService).GetProperty("CurrentKey")!.SetValue(service, fixtureAccount.Key);
             foreach (var language in new[] { "en", "ko" })
             {
                 var main = new MainWindow(service, new Program.Options { DataDirectory = Path.Combine(temporary, "data"), CodexHome = Path.Combine(temporary, "absent-home"), UiEvidenceDirectory = args[0] });
@@ -96,21 +98,50 @@ internal static class ProviderUiEvidence
                 var root = (FrameworkElement)main.Content; root.Width = 500; root.Height = 320;
                 ((Panel)root).Background = main.Background;
                 root.Measure(new Size(500, 320)); root.Arrange(new Rect(0, 0, 500, 320)); root.UpdateLayout();
-                var restart = (Button)typeof(MainWindow).GetField("_restartCodex", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
-                var models = (Button)typeof(MainWindow).GetField("_providers", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
-                var count = (FrameworkElement)typeof(MainWindow).GetField("_sessionCount", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
-                var x = restart.TranslatePoint(new Point(), root).X; var end = x + restart.ActualWidth;
-                if (!restart.IsEnabled || restart.ActualWidth < 65 || x < models.TranslatePoint(new Point(), root).X + models.ActualWidth || end > count.TranslatePoint(new Point(), root).X)
-                    throw new Exception("Restart geometry: " + JsonSerializer.Serialize(new { enabled = restart.IsEnabled, width = restart.ActualWidth, x, end, modelEnd = models.TranslatePoint(new Point(), root).X + models.ActualWidth, counterX = count.TranslatePoint(new Point(), root).X }));
+                var restart = (MenuItem)typeof(MainWindow).GetField("_restartCodex", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
+                var models = (MenuItem)typeof(MainWindow).GetField("_providers", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
+                var settings = main.HomeActionsMenu();
+                var gear = (Button)typeof(MainWindow).GetField("_homeActions", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
+                if (!restart.IsEnabled || !models.IsEnabled || !settings.Items.Contains(restart) || !settings.Items.Contains(models) || gear.ActualWidth < 28 || gear.TranslatePoint(new Point(), root).X + gear.ActualWidth > 500)
+                    throw new Exception("Settings gear must expose enabled model and restart actions at the minimum width.");
+                var titleActions = ((Grid)((Grid)root).Children[0]).Children.OfType<StackPanel>().Single(panel => panel.Name == "TitleBarActions");
+                if (titleActions.Children.OfType<Button>().Count() != 6 || titleActions.Children.OfType<Button>().Any(button => button.Name is "LanguageButton" or "ThemeButton" or "ModelProvidersButton" or "RestartCodexButton"))
+                    throw new Exception("Titlebar must contain only add/refresh/settings and the three native caption controls.");
+                var automatic = settings.Items.OfType<MenuItem>().Single(item => item.Name == "AutomaticSwitchMenuItem");
+                var languageSettings = settings.Items.OfType<MenuItem>().Single(item => item.Name == "LanguageSettingsMenuItem");
+                var themeSettings = settings.Items.OfType<MenuItem>().Single(item => item.Name == "ThemeSettingsMenuItem");
+                if (!automatic.Items.OfType<MenuItem>().Any(item => item.Name == "AllowCreditUse") || languageSettings.Items.OfType<MenuItem>().Count() < Loc.Languages.Count() || themeSettings.Items.Count != 2)
+                    throw new Exception("Gear settings must retain automation/credits, all language choices and both themes.");
+                settings.PlacementTarget = gear;
+                settings.ApplyTemplate(); settings.Measure(new Size(320, 520)); settings.Arrange(new Rect(0, 0, settings.DesiredSize.Width, settings.DesiredSize.Height)); settings.UpdateLayout();
+                var settingsBitmap = new RenderTargetBitmap((int)Math.Ceiling(settings.ActualWidth), (int)Math.Ceiling(settings.ActualHeight), 96, 96, PixelFormats.Pbgra32);
+                settingsBitmap.Render(settings);
+                var settingsEncoder = new PngBitmapEncoder(); settingsEncoder.Frames.Add(BitmapFrame.Create(settingsBitmap));
+                using (var file = File.Create(Path.Combine(args[0], "home-settings-" + language + ".png"))) settingsEncoder.Save(file);
                 var bitmap = new RenderTargetBitmap(500, 320, 96, 96, PixelFormats.Pbgra32); bitmap.Render(root);
                 var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
                 using (var file = File.Create(Path.Combine(args[0], "main-restart-" + language + ".png"))) encoder.Save(file);
-                checks.Add(language + ": enabled Restart Codex in minimum-width main layout, separate from Models and counters; action not invoked");
+                checks.Add(language + ": settings gear exposes enabled Models and Restart at minimum width; action not invoked");
+                var originalLanguage = Loc.Language;
+                var targetLanguage = language == "ko" ? "en" : "ko";
+                languageSettings.Items.OfType<MenuItem>().Single(item => item.Header as string == Loc.Languages.Single(info => info.Code == targetLanguage).NativeName).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                if (Loc.Language != targetLanguage || service.Vault.Data.Language != targetLanguage) throw new Exception("Settings language action must apply and persist its selection.");
+                main.ChangeLanguage(originalLanguage);
+                var themeMenu = main.HomeActionsMenu().Items.OfType<MenuItem>().Single(item => item.Name == "ThemeSettingsMenuItem");
+                themeMenu.Items.OfType<MenuItem>().Single(item => item.Header as string == Loc.T("다크")).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                if (service.Vault.Data.Theme != "dark") throw new Exception("Settings theme action must persist the selected appearance.");
+                var originalAutomatic = service.Vault.Data.AutomaticSwitchEnabled;
+                var toggle = (MenuItem)main.HomeActionsMenu().Items.OfType<MenuItem>().Single(item => item.Name == "AutomaticSwitchMenuItem").Items[0];
+                toggle.IsChecked = !originalAutomatic; toggle.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                if (new AccountVault(service.Vault.DirectoryPath).Data.AutomaticSwitchEnabled != !originalAutomatic) throw new Exception("Settings automatic toggle must persist through the production action.");
+                toggle.IsChecked = originalAutomatic; toggle.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                checks.Add(language + ": gear language, theme and automatic-toggle actions preserve production persistence paths");
                 typeof(MainWindow).GetField("_switching", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(main, true);
                 typeof(MainWindow).GetMethod("UpdateControls", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(main, null);
                 if (restart.IsEnabled) throw new Exception("Restart must be disabled while a handoff is in progress.");
                 checks.Add(language + ": duplicate restart action disabled while busy");
             }
+            HomeLayoutContracts.Verify(service, args[0], checks);
             File.WriteAllText(Path.Combine(args[0], "ui-verification.json"), JsonSerializer.Serialize(new
             {
                 checks,

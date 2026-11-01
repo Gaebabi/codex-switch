@@ -1,0 +1,9 @@
+# Release 1.44.0
+
+Deliver the owner-approved Home simplification and the image/large-request gateway corrections merged after1.43.3. Preserve the tank-fill and active wave, large quota percentage, account grid and direct Switch/Recover actions. Add account and Refresh stay in the titlebar; one Settings gear owns model providers, automatic/credit controls, Restart Codex, language, appearance and drive settings. Existing accounts, native protection identities, provider keys, connection settings and handoff guards are unchanged. [Home behavior](HOME_SIMPLIFICATION.md) / [gateway limits](../MODEL_PROVIDERS.md).
+
+Before promotion, require actual native Windows/Mac/Linux app/menu checks with fictional accounts, before/after screenshots, all six protected final-head checks, recorded review and normal expected-head merge. Verify the reviewed and merged tree, all nine packages, runtime10.0.13, original licenses/notices, payload hashes/modes, Mac staged signing/install and source provenance. Windowless component renders remain labeled and do not substitute for native app screenshots.
+
+Stage a draft against the verified merged tree. Verify all uploaded sizes/digests before publication and all anonymous downloads/checksums afterward. Preserve past releases and historical notes. Windows/Linux are unsigned, Mac is ad-hoc signed and not notarized, and Linux remains an integration preview with supportedAccountHandoff:false. Broader external-provider/desktop-picker/controller and Linux acceptance issues retain their existing scope.
+
+The owner also authorized local Windows installation. Verify the running Switch identity and zero active/queued gateway requests immediately before a normal IPC shutdown; replace only Switch, start hidden, preserve all existing data/providers/configuration and live Codex processes, then verify the loaded published package and shortcuts. Never force Codex/account operations to manufacture an idle window or acceptance result.

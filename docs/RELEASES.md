@@ -1,5 +1,7 @@
 # Binary releases
 
+[Release1.44.0](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0) simplifies Home around the existing quota tanks: Add/Refresh remain visible while one Settings gear groups global actions. It includes the corrected built-in image endpoints and bounded concurrent handling for image-heavy chats. The package set remains Windows x64, macOS15+ Apple Silicon/Intel and Linux x64/ARM64 integration previews. [Verification and installation gates](development/RELEASE_1_44_0.md). Links are staged until publication and public download verification complete.
+
 [Release1.43.3](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.3) provides complete Windows x64 and macOS15+ Apple Silicon/Intel ZIPs, plus unsigned Linux x64/ARM64 DEB/RPM/tar.gz integration previews. Keep the entire folder/app bundle. No source build or global .NET installation is required; Codex desktop/CLI is installed separately. [Downloads](../README.md#download) / [latest published Release](https://github.com/Gaebabi/codex-switch/releases/latest).
 
 Release1.43.3 introduces configurable Responses providers and per-chat model routes, a current-account restart action, clearer credit history ranges and safer handling of completed recovery receipts. Initial provider connection requires a Codex restart and a running Switch gateway. Individual providers and the actual combined desktop picker have separate outstanding compatibility checks. [Setup and limitations](MODEL_PROVIDERS.md).

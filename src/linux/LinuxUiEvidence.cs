@@ -93,13 +93,10 @@ internal static class LinuxUiEvidence
                 }
                 if (window.AccountScroll.Extent.Height > window.AccountScroll.Viewport.Height + 1)
                     throw new InvalidOperationException("Four Linux preview cards unexpectedly require scrolling.");
-                var automatic = window.AutomaticSwitchButton;
-                if (automatic.Content is not TextBlock caption || caption.Text != Loc.T("auto.title") + " ▾" ||
-                    caption.TextLayout.Height > caption.Bounds.Height + 1 || caption.TextLayout.Width > caption.Bounds.Width + 1)
-                    throw new InvalidOperationException("The complete automatic-switch caption/state must fit its actual text bounds.");
-                var captionPoint = caption.TranslatePoint(new Point(), automatic);
-                if (!captionPoint.HasValue || captionPoint.Value.Y < -1 || captionPoint.Value.Y + caption.Bounds.Height > automatic.Bounds.Height + 1)
-                    throw new InvalidOperationException("The automatic-switch caption exceeds the visible button.");
+                var automatic = window.SettingsButton;
+                var settings = window.BuildSettingsMenu();
+                if (!settings.ItemsSource!.Cast<object>().OfType<MenuItem>().Any(item => item.Name == "AutomaticSwitchMenuItem" && item.Header as string == Loc.T("auto.off")))
+                    throw new InvalidOperationException("The settings gear must expose the complete automatic-switch Off state.");
                 var automaticPoint = automatic.TranslatePoint(new Point(), window) ?? throw new InvalidOperationException("Automatic-switch button is detached.");
                 bool Overlaps(Control control)
                 {
@@ -111,7 +108,7 @@ internal static class LinuxUiEvidence
                 if (automaticPoint.X < 0 || automaticPoint.X + automatic.Bounds.Width > window.ClientSize.Width + 1 ||
                     window.GetVisualDescendants().OfType<Button>().Any(button => button.IsVisible && button != automatic && Overlaps(button)) ||
                     window.SessionValues.GetVisualDescendants().OfType<TextBlock>().Any(text => text.IsVisible && Overlaps(text)))
-                    throw new InvalidOperationException("Automatic-switch label overlaps another action/counter or leaves the client bounds.");
+                    throw new InvalidOperationException("Settings gear overlaps another action/counter or leaves the client bounds.");
                 var name = language + "-" + (dark ? "dark" : "light") + "-" + size.Item1 + "x" + size.Item2 + "-native.png";
                 await Capture(window, Path.Combine(directory, name)); checks.Add(name);
             }

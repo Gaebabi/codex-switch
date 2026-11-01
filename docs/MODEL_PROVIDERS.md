@@ -6,10 +6,10 @@ Keep eligible OpenAI models and custom Responses models in the existing Codex mo
 
 ## Set up a provider
 
-1. Open Models in the Windows toolbar, or Model providers in the shared desktop settings menu.
+1. In1.44.0, open Model providers in the titlebar Settings gear. Older1.43.3 Windows packages use Models in the toolbar.
 2. Select Add a provider, enter a display name, API base URL and API key, then choose Discover and save.
 3. If the provider has a large catalog, enter the model IDs to include, one per line. Leave this field empty to discover all models within the supported bounds.
-4. Choose Connect Codex, then use Restart Codex on the main window when ready. Connecting prepares settings; the separate restart action normally closes and reopens Codex and resumes eligible unfinished chats with the same login.
+4. Choose Connect Codex, then use Restart Codex in Settings when ready (on the main window in older1.43.3). Connecting prepares settings; the separate restart action normally closes and reopens Codex and resumes eligible unfinished chats with the same login.
 5. Keep Switch running, including in its tray. Choose OpenAI or a custom model inside each Codex chat. Model-list refresh can take a few minutes after registering models.
 
 Select an existing provider to edit it. An empty key field retains its saved key; changing the destination URL requires a replacement key. Keys remain masked in the editor and encrypted in the separate local model-providers.vault file. The account vault and original OpenAI login are preserved.

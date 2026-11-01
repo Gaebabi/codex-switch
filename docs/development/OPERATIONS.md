@@ -1,5 +1,7 @@
 # Operations
 
+Source1.44.0 keeps Add account and Refresh beside one titlebar Settings gear. Model providers, automatic/credit controls, Restart Codex, language, appearance and drive settings are in that menu. Direct per-account Switch/Recover and warning actions stay on the tanks. [Home contract](HOME_SIMPLIFICATION.md) / [release and installation gates](RELEASE_1_44_0.md).
+
 Built-in image generation requires `images/generations` and `images/edits` in addition to Responses/model discovery. The gateway forwards these JSON requests only with the original OpenAI identity and preserves the body and safe request IDs; custom text aliases and saved custom-provider keys do not select the image route. Browser/loopback authentication, redirect refusal and no-retry behavior still apply.
 
 Conversation and image request bodies remain bounded at512MiB, including chunked bodies. The gateway admits eight large/unknown-length uploads within16 upload/routing slots and a1GiB aggregate request-buffer budget.64MiB stays available for small requests; unknown-length growth counts both old/new arrays before resizing. Uploads time out after two minutes, and completed uploads release their buffers/slots at upstream response headers. Up to48 responses stream independently. Bounded overload responses include503/Retry-After; no internal generation retry is added. Disconnected clients cannot fault the listener's accept loop. [Load verification](../evidence/gateway-load/README.md).

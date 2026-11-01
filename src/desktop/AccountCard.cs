@@ -60,13 +60,13 @@ internal sealed class MacAccountCard : Grid
         Put(theme.Text(Loc.T("소진"), 10, "muted"), 0, 0); Put(theme.Text(Loc.T("리셋"), 10, "muted"), 1, 0);
         _depletion = theme.Text("", 11); _depletion.Margin = new Thickness(6, 0); Put(_depletion, 0, 1);
         _reset = theme.Text("", 11); _reset.Margin = new Thickness(6, 0); Put(_reset, 1, 1);
-        var plan = theme.Text(SubscriptionPresentation.Plan(profile.Plan), 11);
+        var plan = theme.Text(SubscriptionPresentation.Plan(profile.Plan), 11, "muted");
         plan.FlowDirection = FlowDirection.LeftToRight; plan.HorizontalAlignment = HorizontalAlignment.Right; Put(plan, 0, 2);
-        var resets = theme.Text(profile.Usage?.AvailableResets is int count ? Loc.F("초기화권 {0}장", count) : Loc.T("초기화권 —"), 11);
+        var resets = theme.Text(profile.Usage?.AvailableResets is int count ? Loc.F("초기화권 {0}장", count) : Loc.T("초기화권 —"), 11, "muted");
         resets.FlowDirection = FlowDirection.LeftToRight; resets.HorizontalAlignment = HorizontalAlignment.Right; Put(resets, 1, 2);
         _subscription = theme.Text(Subscription(profile.SubscriptionActiveUntil, DateTimeOffset.UtcNow), 10, "muted"); Grid.SetColumnSpan(_subscription, 2); Put(_subscription, 2, 0);
         var bucket = profile.Usage?.Buckets.FirstOrDefault(b => b.Id == quota?.BucketId) ?? profile.Usage?.Buckets.FirstOrDefault();
-        var credit = theme.Text(Credits(bucket), 10); credit.FlowDirection = FlowDirection.LeftToRight; credit.HorizontalAlignment = HorizontalAlignment.Right; Put(credit, 2, 2);
+        var credit = theme.Text(Credits(bucket), 10, "muted"); credit.FlowDirection = FlowDirection.LeftToRight; credit.HorizontalAlignment = HorizontalAlignment.Right; Put(credit, 2, 2);
         ToolTip.SetTip(credit, bucket?.CreditBalance ?? (bucket?.UnlimitedCredits == true ? Loc.T("크레딧 제한 없음") : Loc.T("크레딧 정보 없음")));
         ToolTip.SetTip(this, profile.Error == null ? null : Loc.F("갱신 실패 · 이전 조회값\n{0}", Loc.Error(profile.Error))); Grid.SetRow(footer, 2); layout.Children.Add(footer); Children.Add(layout); Update(DateTimeOffset.UtcNow);
     }
@@ -74,13 +74,17 @@ internal sealed class MacAccountCard : Grid
     {
         _depletion.FlowDirection = FlowDirection.LeftToRight; _reset.FlowDirection = FlowDirection.LeftToRight; _subscription.FlowDirection = FlowDirection.LeftToRight;
         _subscription.Text = Subscription(_profile.SubscriptionActiveUntil, now);
+        _subscription.IsVisible = _profile.SubscriptionActiveUntil.HasValue;
+        ToolTip.SetTip(_subscription, _profile.SubscriptionActiveUntil.HasValue ? _subscription.Text : Loc.T("구독 종료일 정보 없음"));
         _subscription.Foreground = _theme.Brush(AccountDateWarnings.Subscription(_profile.SubscriptionActiveUntil, now) ? "warning" : "muted");
         _reset.Foreground = _theme.Brush(AccountDateWarnings.Reset(_quota?.Window.ResetsAt, now) ? "warning" : "text");
         if (_quota == null) { _depletion.Text = Loc.T(_profile.IsRefreshing ? "측정중" : "정보 없음"); _reset.Text = "—"; return; }
         var forecast = UsagePredictor.Evaluate(_quota.Window, _trend, now);
         _depletion.Text = forecast.State == ForecastState.ResetsFirst ? Loc.T("리셋 먼저") : forecast.ExhaustsAt is DateTimeOffset end ? Compact(end, now) : Loc.T(forecast.State switch {
             ForecastState.Collecting or ForecastState.InsufficientChange => "측정중", ForecastState.NoGrowth => "증가 없음", ForecastState.Stale => "갱신 필요", ForecastState.Exhausted => "한도 도달", _ => "갱신 대기" });
-        if (_profile.Usage?.OrdinaryUsageAllowed == false || _profile.Usage?.Buckets.Any(b => b.LimitState != null || b.SpendControlReached == true) == true) _depletion.Text = Loc.T("사용 제한");
+        _depletion.Foreground = _theme.Brush(forecast.State is ForecastState.Exhausted or ForecastState.Stale ? "warning" : "muted");
+        if (_profile.Usage?.OrdinaryUsageAllowed == false || _profile.Usage?.Buckets.Any(b => b.LimitState != null || b.SpendControlReached == true) == true)
+        { _depletion.Text = Loc.T("사용 제한"); _depletion.Foreground = _theme.Brush("warning"); }
         ToolTip.SetTip(_depletion, UsagePresentation.Outlook(forecast) + "\n" + UsagePresentation.Basis(forecast));
         _reset.Text = _quota.Window.ResetsAt is long time ? Compact(DateTimeOffset.FromUnixTimeSeconds(time), now) : "—";
         ToolTip.SetTip(_reset, _quota.Window.ResetLabel + "\n" + _quota.Window.TimeUntilReset(now));
