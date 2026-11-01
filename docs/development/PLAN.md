@@ -1,5 +1,7 @@
 # Current plan
 
+Correct the remaining64MiB intermediary refusal for image-heavy conversations with a512MiB bounded body reader, limited concurrent large buffers and original-buffer forwarding. Verify declared and chunked requests, exact bounds, cancellation and unchanged history/authentication before local installation and authorized chat resumption. Public delivery remains a separate evidence state.
+
 Integrate the post1.43.3 image-route and large-request hotfix with focused gateway regressions and native application continuity evidence. Preserve original OpenAI image authentication, custom-provider key separation, complete chat inputs and bounded memory use. Require the six protected final-head checks and recorded review before merge. This source update does not publish a new binary release. [Verification](../evidence/image-gateway/README.md).
 
 The current source work covers [safe handoff recovery and shutdown](https://github.com/Gaebabi/codex-switch/issues/141) and [configurable model providers](https://github.com/Gaebabi/codex-switch/issues/138). Complete protected CI and native application evidence before merge. Actual desktop picker behavior, external provider compatibility and the originally reported controller-exit cause remain separate acceptance items.

@@ -11,6 +11,31 @@ var checks = new List<string>();
 void Check(string name, bool value) { if (!value) throw new Exception(name); checks.Add(name); }
 Check("Full chat endpoint normalizes to the API base URL", ProviderCatalog.Endpoint("https://openrouter.ai/api/v1/chat/completions").AbsoluteUri == "https://openrouter.ai/api/v1/");
 Check("Responses and model-list endpoints normalize without changing their authority", ProviderCatalog.Endpoint("https://example.invalid/proxy/v1/responses/").AbsoluteUri == "https://example.invalid/proxy/v1/" && ProviderCatalog.Endpoint("https://example.invalid/v1/models").AbsoluteUri == "https://example.invalid/v1/");
+using (var source = new MemoryStream(Encoding.UTF8.GetBytes("12345678")))
+using (var exact = await ModelGateway.ReadBodyAsync(source, -1, 8, CancellationToken.None))
+    Check("An unknown-length body at the exact bound is retained without closing its source", exact.Length == 8 && source.CanRead && Encoding.UTF8.GetString(exact.GetBuffer(), 0, (int)exact.Length) == "12345678");
+using (var source = new MemoryStream(new byte[9]))
+{
+    var oversized = false;
+    try { using var unexpected = await ModelGateway.ReadBodyAsync(source, -1, 8, CancellationToken.None); }
+    catch (InvalidDataException) { oversized = true; }
+    Check("An unknown-length body is rejected at the first byte above its bound", oversized && source.Position == 9);
+}
+using (var source = new MemoryStream(new byte[9]))
+{
+    var oversized = false;
+    try { using var unexpected = await ModelGateway.ReadBodyAsync(source, 9, 8, CancellationToken.None); }
+    catch (InvalidDataException) { oversized = true; }
+    Check("An oversized declared body is rejected without reading its source", oversized && source.Position == 0);
+}
+using (var cancelled = new CancellationTokenSource())
+using (var source = new MemoryStream(new byte[8]))
+{
+    cancelled.Cancel(); var stopped = false;
+    try { using var unexpected = await ModelGateway.ReadBodyAsync(source, 8, 8, cancelled.Token); }
+    catch (OperationCanceledException) { stopped = true; }
+    Check("Request buffering honors cancellation", stopped);
+}
 async Task Refuses(string name, Func<Task> action)
 { try { await action(); } catch (Exception e) when (e is ArgumentException or InvalidOperationException or IOException or InvalidDataException) { Check(name, true); return; } throw new Exception(name); }
 var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp", "CodexSwitchModelProviders", Guid.NewGuid().ToString("N"));
@@ -116,18 +141,30 @@ try
     using (var result = await client.PostAsync(manager.BaseUrl + "/images/generations", new StringContent(fictionalImage, Encoding.UTF8, "application/json")))
         Check("Image failures are not retried or echoed with credentials", result.StatusCode == HttpStatusCode.TooManyRequests && handler.Requests.Count == beforeFailedImage + 1 && !(await result.Content.ReadAsStringAsync()).Contains("fictional-key"));
     handler.ImageFailure = false;
-    var largeBody = "{\"model\":\"fixture-openai\",\"input\":\"" + new string('x', 17 * 1024 * 1024) + "\"}";
+    var largeBody = "{\"model\":\"fixture-openai\",\"input\":\"" + new string('x', 65 * 1024 * 1024) + "\"}";
     using (var result = await client.PostAsync(manager.BaseUrl + "/responses", new StringContent(largeBody, Encoding.UTF8, "application/json")))
     {
         await result.Content.ReadAsStringAsync();
-        Check("A full-input conversation above the old 16 MiB limit is forwarded unchanged", result.IsSuccessStatusCode && handler.Requests.Last().Body == largeBody);
+        Check("A full-input conversation above 64 MiB is forwarded unchanged", result.IsSuccessStatusCode && handler.Requests.Last().Body == largeBody);
+    }
+    using (var chunked = new HttpRequestMessage(HttpMethod.Post, manager.BaseUrl + "/responses/compact"))
+    {
+        chunked.Headers.TransferEncodingChunked = true;
+        chunked.Content = new StringContent(largeBody, Encoding.UTF8, "application/json");
+        using var result = await client.SendAsync(chunked); await result.Content.ReadAsStringAsync();
+        Check("Chunked compaction above 64 MiB preserves the entire original input", result.IsSuccessStatusCode && handler.Requests.Last().Body == largeBody && handler.Requests.Last().Path.EndsWith("/compact"));
     }
     using (var result = await client.PostAsync(manager.BaseUrl + "/images/edits", new StringContent(largeBody, Encoding.UTF8, "application/json")))
     {
         await result.Content.ReadAsStringAsync();
-        Check("Image edit data above 16 MiB is retained by the same bounded gateway", result.IsSuccessStatusCode && handler.Requests.Last().Body == largeBody);
+        Check("Image edit data above 64 MiB is retained by the same bounded gateway", result.IsSuccessStatusCode && handler.Requests.Last().Body == largeBody);
     }
     var beforeInvalidImage = handler.Requests.Count;
+    foreach (var invalidJson in new[] { "{\"model\":\"fixture-openai\",\"model\":\"cs_missing\"}", "{\"model\":false}", "[1,2]", "{\"model\":\"fixture-openai\",\"input\":[],\"input\":[{\"type\":\"compaction\",\"encrypted_content\":\"opaque\"}]}" })
+    {
+        using var result = await client.PostAsync(manager.BaseUrl + "/responses", new StringContent(invalidJson, Encoding.UTF8, "application/json"));
+        Check("Ambiguous or malformed request JSON refuses before upstream: " + invalidJson, result.StatusCode == HttpStatusCode.BadRequest && handler.Requests.Count == beforeInvalidImage);
+    }
     using (var invalid = new StringContent("{}", Encoding.UTF8, "application/jsonp"))
     using (var result = await client.PostAsync(manager.BaseUrl + "/images/generations", invalid))
         Check("Invalid image media type reports 415 without contacting upstream", result.StatusCode == HttpStatusCode.UnsupportedMediaType && handler.Requests.Count == beforeInvalidImage);
@@ -137,7 +174,27 @@ try
         await oversized.GetStream().WriteAsync(Encoding.ASCII.GetBytes("POST " + endpoint.AbsolutePath + "/responses HTTP/1.1\r\nHost: " + endpoint.Authority + "\r\nAuthorization: Bearer fictional-openai-token\r\nChatGPT-Account-ID: fictional-account\r\nContent-Type: application/json\r\nContent-Length: " + (ModelGateway.MaximumRequestBytes + 1L) + "\r\nConnection: close\r\n\r\n"));
         using var reader = new StreamReader(oversized.GetStream());
         var refusal = await reader.ReadToEndAsync().WaitAsync(TimeSpan.FromSeconds(5));
-        Check("Oversized declared requests report the explicit 64 MiB bound before upstream", refusal.Contains("413") && refusal.Contains("64 MiB") && handler.Requests.Count == beforeInvalidImage);
+        Check("Oversized declared requests report the explicit 512 MiB bound before upstream", refusal.Contains("413") && refusal.Contains("512 MiB") && handler.Requests.Count == beforeInvalidImage);
+    }
+    // Hold two incomplete chunked uploads without allocating large test payloads.
+    // A successful small request orders acceptance before the third large upload.
+    using (var first = new TcpClient())
+    using (var second = new TcpClient())
+    {
+        var endpoint = new Uri(manager.BaseUrl!);
+        foreach (var pending in new[] { first, second })
+        {
+            await pending.ConnectAsync(endpoint.Host, endpoint.Port);
+            await pending.GetStream().WriteAsync(Encoding.ASCII.GetBytes("POST " + endpoint.AbsolutePath + "/responses HTTP/1.1\r\nHost: " + endpoint.Authority + "\r\nAuthorization: Bearer fictional-openai-token\r\nChatGPT-Account-ID: fictional-account\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n1\r\n{\r\n"));
+        }
+        using (var small = await Send("fixture-openai", "large-admission-small"))
+            Check("Small requests remain usable while two unknown-length uploads are pending", small.IsSuccessStatusCode);
+        using var third = new TcpClient(); await third.ConnectAsync(endpoint.Host, endpoint.Port);
+        var beforeBusy = handler.Requests.Count;
+        await third.GetStream().WriteAsync(Encoding.ASCII.GetBytes("POST " + endpoint.AbsolutePath + "/responses HTTP/1.1\r\nHost: " + endpoint.Authority + "\r\nAuthorization: Bearer fictional-openai-token\r\nChatGPT-Account-ID: fictional-account\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n"));
+        using var reader = new StreamReader(third.GetStream());
+        var busy = await reader.ReadToEndAsync().WaitAsync(TimeSpan.FromSeconds(5));
+        Check("A third large upload refuses before buffering or contacting upstream", busy.Contains("503") && handler.Requests.Count == beforeBusy);
     }
     await using (var api = new ModelProviderManager(Path.Combine(root, "api-images"), (authorization, account) => GatewayIdentity.Authenticate(authorization, account, () => "{\"OPENAI_API_KEY\":\"fictional-image-api-key\"}"), new HttpClient(handler)))
     {
