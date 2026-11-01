@@ -123,12 +123,22 @@ internal sealed class ModelGateway : IAsyncDisposable
             var original = document.RootElement;
             if (original.ValueKind != JsonValueKind.Object) throw new InvalidDataException("The Responses request is invalid.");
             JsonObject? body = null;
+            void ReleaseInput(HttpRequestMessage outgoing)
+            {
+                // Upload is complete once response headers arrive. Do not retain its buffers
+                // or admission slot during a potentially long-running response stream.
+                outgoing.Content?.Dispose(); outgoing.Content = null;
+                document.Dispose(); body = null; bytesIn = default;
+                input.SetLength(0); input.Capacity = 0;
+                if (largeBody) { _largeBodies.Release(); largeBody = false; }
+            }
             if (imageRequest)
             {
                 using var image = new HttpRequestMessage(HttpMethod.Post, new Uri((identity.ApiKey ? "https://api.openai.com/v1/" : "https://chatgpt.com/backend-api/codex/") + path["/backend-api/codex/".Length..]));
                 CopyOpenAiHeaders(request, image, identity);
                 image.Content = new ByteArrayContent(input.GetBuffer(), 0, bytesIn.Length); image.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 using var imageResult = await _http.SendAsync(image, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
+                ReleaseInput(image);
                 if (!imageResult.IsSuccessStatusCode)
                 { await ErrorAsync(response, (int)imageResult.StatusCode is >= 300 and < 400 ? 502 : (int)imageResult.StatusCode, "The OpenAI image endpoint returned HTTP " + (int)imageResult.StatusCode + ". No request was retried.", cancellation).ConfigureAwait(false); return; }
                 response.StatusCode = (int)imageResult.StatusCode; response.ContentType = imageResult.Content.Headers.ContentType?.ToString() ?? "application/json";
@@ -198,6 +208,7 @@ internal sealed class ModelGateway : IAsyncDisposable
             upstream.Content = changedBody ? new ByteArrayContent(JsonSerializer.SerializeToUtf8Bytes(body)) : new ByteArrayContent(input.GetBuffer(), 0, bytesIn.Length);
             upstream.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             using var result = await _http.SendAsync(upstream, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
+            ReleaseInput(upstream);
             if (!result.IsSuccessStatusCode)
             { await ErrorAsync(response, (int)result.StatusCode is >= 300 and < 400 ? 502 : (int)result.StatusCode, "The selected upstream returned HTTP " + (int)result.StatusCode + ". No request was retried.", cancellation).ConfigureAwait(false); return; }
             _store.RecordSuccessfulRoute(request.Headers["session_id"] ?? request.Headers["conversation_id"], identity, routeIdentity);

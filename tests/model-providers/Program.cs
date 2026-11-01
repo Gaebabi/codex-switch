@@ -159,6 +159,23 @@ try
         await result.Content.ReadAsStringAsync();
         Check("Image edit data above 64 MiB is retained by the same bounded gateway", result.IsSuccessStatusCode && handler.Requests.Last().Body == largeBody);
     }
+    var pendingStreams = new List<(HttpResponseMessage Response, GatedStream Upstream)>();
+    try
+    {
+        for (var i = 0; i < 2; i++)
+        {
+            handler.StreamNext = true; var slow = handler.Slow = new GatedStream();
+            using var request = new HttpRequestMessage(HttpMethod.Post, manager.BaseUrl + "/responses") { Content = new StringContent(largeBody, Encoding.UTF8, "application/json") };
+            var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+            pendingStreams.Add((response, slow));
+        }
+        using var following = await client.PostAsync(manager.BaseUrl + "/responses", new StringContent(largeBody, Encoding.UTF8, "application/json"));
+        Check("Finished large uploads release admission while their response streams are still open", following.IsSuccessStatusCode && pendingStreams.All(p => p.Response.IsSuccessStatusCode && !p.Upstream.Finish.Task.IsCompleted));
+    }
+    finally
+    {
+        foreach (var pending in pendingStreams) { pending.Upstream.Finish.TrySetResult(); await pending.Response.Content.ReadAsStringAsync(); pending.Response.Dispose(); }
+    }
     var beforeInvalidImage = handler.Requests.Count;
     foreach (var invalidJson in new[] { "{\"model\":\"fixture-openai\",\"model\":\"cs_missing\"}", "{\"model\":false}", "[1,2]", "{\"model\":\"fixture-openai\",\"input\":[],\"input\":[{\"type\":\"compaction\",\"encrypted_content\":\"opaque\"}]}" })
     {

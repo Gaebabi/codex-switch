@@ -1,0 +1,39 @@
+{
+  "scope": "Actual hosted native Windows fictional-account application continuity; screenshots do not establish payload forwarding or authenticated resumption.",
+  "screenshots": [
+    {
+      "file": "before-windows.png",
+      "sourceRevision": "d4725801fd21f9b57a9bcce882f78a1602efebe9",
+      "run": 41284301154,
+      "artifactId": 13074960359,
+      "archiveDigest": "sha256:c796f9ac68bc2d2759ce0b50c1890aa4fd2ea42890dd0f11dd8bdbac05f05d78",
+      "sha256": "320049d86e415b3991ed0525e353b855d15949d0f76f1f45bf6c66044e4b9ee8",
+      "dimensions": [
+        800,
+        560
+      ],
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "after-windows.png",
+      "sourceRevision": "504b2ddf18195cdf7294bacc181b71d1de84f1b5",
+      "run": 41300103733,
+      "artifactId": 13081495441,
+      "archiveDigest": "sha256:92c8b8c47a20d369a6aa32262c56113765e8ae578164870ee3064bc4611f2ddc",
+      "sha256": "320049d86e415b3991ed0525e353b855d15949d0f76f1f45bf6c66044e4b9ee8",
+      "dimensions": [
+        800,
+        560
+      ],
+      "originalPixelsUnchanged": true
+    }
+  ],
+  "pixelEquality": true,
+  "gatewayContracts": {
+    "passed": 121,
+    "officialCli": "0.163.0",
+    "upstreams": "fictional",
+    "operatingSystem": "Windows x64"
+  },
+  "implementationCaptureScope": "504b2dd implementation; final follow-up additionally releases upload buffers after response headers. Final-head native/CI checks remain required."
+}

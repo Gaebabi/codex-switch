@@ -46,6 +46,8 @@ The image-route and 64MiB corrections are source hotfixes after release1.43.3. O
 
 A subsequent source correction raises the64MiB intermediary limit to512MiB because an image-heavy full-input chat can exceed it. The [OpenAI image input guide](https://developers.openai.com/api/docs/guides/images-vision?api-mode=responses) documents up to512MB total payload for the public API; authenticated Codex and custom upstream acceptance must be verified separately. This change preserves image data and encrypted history and does not silently compact or discard them.
 
+The large-upload admission slot and request buffers are released after upstream response headers arrive, so ongoing response streams do not occupy large-upload capacity.
+
 Unregistered model names fail explicitly. OpenAI routes are checked against the current sign-in's catalog, while custom routes use their registered aliases. Managed provider/catalog requirements are refused before preparing a local connection.
 
 The initial configuration selects the codex_switch_router provider with an explicit catalog URL, and also sets the built-in OpenAI base URL to the same listener for pre-existing OpenAI-provider chats. WebSockets and request compression are disabled for portable full-input HTTP replay. Unrelated custom provider definitions are preserved; already-pinned chats using those independent definitions are outside the verified migration scope.
