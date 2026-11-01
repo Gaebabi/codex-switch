@@ -19,6 +19,7 @@ namespace CodexAccountDesk;
 
 internal sealed class ModelGateway : IAsyncDisposable
 {
+    internal const int MaximumRequestBytes = 64 * 1024 * 1024;
     private readonly ModelProviderStore _store;
     private readonly Func<string?, string?, GatewayIdentity?> _authenticate;
     private readonly HttpClient _http;
@@ -93,15 +94,38 @@ internal sealed class ModelGateway : IAsyncDisposable
                 response.ContentType = "application/json"; response.Headers["Cache-Control"] = "no-store"; response.ContentLength64 = bytes.Length;
                 await response.OutputStream.WriteAsync(bytes, cancellation).ConfigureAwait(false); return;
             }
-            if (request.HttpMethod != "POST" || path is not ("/backend-api/codex/responses" or "/backend-api/codex/responses/compact"))
+            var imageRequest = path is "/backend-api/codex/images/generations" or "/backend-api/codex/images/edits";
+            if (request.HttpMethod != "POST" || path == null || !imageRequest && path is not ("/backend-api/codex/responses" or "/backend-api/codex/responses/compact"))
             { await ErrorAsync(response, 404, "This model gateway endpoint is not supported.", cancellation).ConfigureAwait(false); return; }
-            if (request.ContentType?.StartsWith("application/json", StringComparison.OrdinalIgnoreCase) != true || request.ContentLength64 > 16 * 1024 * 1024)
-            { await ErrorAsync(response, 400, "A bounded JSON Responses request is required.", cancellation).ConfigureAwait(false); return; }
+            if (!MediaTypeHeaderValue.TryParse(request.ContentType, out var contentType) || !string.Equals(contentType.MediaType, "application/json", StringComparison.OrdinalIgnoreCase))
+            { await ErrorAsync(response, 415, "Use application/json for model and image requests.", cancellation).ConfigureAwait(false); return; }
+            if (request.ContentLength64 > MaximumRequestBytes)
+            { await ErrorAsync(response, 413, "This request exceeds the Switch gateway's 64 MiB limit. Reduce attached images or prepare a text handoff in the original chat.", cancellation).ConfigureAwait(false); return; }
             if (!string.IsNullOrEmpty(request.Headers["Content-Encoding"]) && request.Headers["Content-Encoding"] != "identity")
             { await ErrorAsync(response, 415, "Disable Codex request compression in the connection settings before using the local gateway.", cancellation).ConfigureAwait(false); return; }
             using var input = new StreamContent(request.InputStream);
-            var bytesIn = await ProviderCatalog.ReadLimitedAsync(input, 16 * 1024 * 1024, cancellation).ConfigureAwait(false);
+            byte[] bytesIn;
+            try { bytesIn = await ProviderCatalog.ReadLimitedAsync(input, MaximumRequestBytes, cancellation).ConfigureAwait(false); }
+            catch (InvalidDataException)
+            { await ErrorAsync(response, 413, "This request exceeds the Switch gateway's 64 MiB limit. Reduce attached images or prepare a text handoff in the original chat.", cancellation).ConfigureAwait(false); return; }
             var body = JsonNode.Parse(bytesIn) as JsonObject ?? throw new InvalidDataException("The Responses request is invalid.");
+            if (imageRequest)
+            {
+                using var image = new HttpRequestMessage(HttpMethod.Post, new Uri((identity.ApiKey ? "https://api.openai.com/v1/" : "https://chatgpt.com/backend-api/codex/") + path["/backend-api/codex/".Length..]));
+                CopyOpenAiHeaders(request, image, identity);
+                image.Content = new ByteArrayContent(bytesIn); image.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                using var imageResult = await _http.SendAsync(image, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
+                if (!imageResult.IsSuccessStatusCode)
+                { await ErrorAsync(response, (int)imageResult.StatusCode is >= 300 and < 400 ? 502 : (int)imageResult.StatusCode, "The OpenAI image endpoint returned HTTP " + (int)imageResult.StatusCode + ". No request was retried.", cancellation).ConfigureAwait(false); return; }
+                response.StatusCode = (int)imageResult.StatusCode; response.ContentType = imageResult.Content.Headers.ContentType?.ToString() ?? "application/json";
+                response.Headers["Cache-Control"] = "no-store";
+                foreach (var name in new[] { "x-codex-imagegen-request-id", "x-request-id" })
+                    if (imageResult.Headers.TryGetValues(name, out var values)) response.Headers[name] = values.FirstOrDefault();
+                response.SendChunked = true; started = true;
+                await using var imageStream = await imageResult.Content.ReadAsStreamAsync(cancellation).ConfigureAwait(false);
+                await imageStream.CopyToAsync(response.OutputStream, cancellation).ConfigureAwait(false);
+                LastError = null; return;
+            }
             var model = body["model"]?.GetValue<string>();
             if (string.IsNullOrEmpty(model)) throw new InvalidDataException("A model must be selected.");
             // Snapshot a route and its key before the first upstream byte. Settings edits never retarget an in-flight request.
