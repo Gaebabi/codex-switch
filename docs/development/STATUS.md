@@ -1,5 +1,7 @@
 # Current status
 
+The post1.43.3 image-gateway hotfix forwards built-in image generation/edit JSON endpoints through the original OpenAI identity and raises the bounded conversation/image body limit from16MiB to64MiB. Size and media failures report413 and415 separately. Local official-client/fictional-upstream verification passes109 checks; an authorized local installation passes99 self-tests, actual built-in generation and continuation of a previously failing chat. External image-edit acceptance and a new public binary release remain separate. [Evidence and limitations](../evidence/image-gateway/README.md).
+
 Release1.43.3 packages the merged provider gateway, history presentation and handoff protection. [Issue141](https://github.com/Gaebabi/codex-switch/issues/141) remains open because the reported controller exit has not been reproduced. [Issue138](https://github.com/Gaebabi/codex-switch/issues/138) retains actual native picker and external-provider compatibility acceptance. Release preparation requires exact-head CI, review and public asset verification; the release link becomes current only after publication.
 
 [Native application continuity and Windows file-lock regression](../evidence/runtime-cleanup/README.md) preserve original pixels and exact source/receipt hashes. Windows220 account/history/recovery checks pass; shared/native Mac/Linux acceptance remains distinct. Final review/public1.43.2 delivery is tracked in [PR140](https://github.com/Gaebabi/codex-switch/pull/140).

@@ -92,6 +92,59 @@ try
     using (var refreshed = await client.GetAsync(manager.BaseUrl + "/models?client_version=0.163.0")) { }
     using (var anonymous = new HttpClient())
     using (var result = await anonymous.GetAsync(manager.BaseUrl + "/models?client_version=0.163.0")) Check("Anonymous loopback requests refuse", result.StatusCode == HttpStatusCode.Unauthorized);
+    var routesBeforeImages = JsonSerializer.Serialize(manager.Settings.ConversationRoutes);
+    var fictionalImage = "{\"model\":\"gpt-image-fixture\",\"prompt\":\"허구 이미지\",\"background\":\"transparent\",\"images\":[{\"image_url\":\"data:image/png;base64,Zml4dHVyZQ==\"}]}";
+    foreach (var endpoint in new[] { "images/generations", "images/edits" })
+    {
+        using var result = await client.PostAsync(manager.BaseUrl + "/" + endpoint, new StringContent(fictionalImage, Encoding.UTF8, "application/json"));
+        Check("Built-in image route completes: " + endpoint, result.IsSuccessStatusCode && (await result.Content.ReadAsStringAsync()).Contains("fixture-image"));
+        var forwarded = handler.Requests.Last();
+        Check("Built-in images retain original login, exact body and endpoint: " + endpoint, forwarded.Host == "chatgpt.com" && forwarded.Path == "/backend-api/codex/" + endpoint && forwarded.Token == "fictional-openai-token" && forwarded.Account == "fictional-account" && forwarded.Body == fictionalImage);
+        Check("Built-in image request IDs survive forwarding: " + endpoint, result.Headers.GetValues("x-codex-imagegen-request-id").Single() == "fixture-image-request");
+    }
+    Check("Images leave conversation provider provenance unchanged", JsonSerializer.Serialize(manager.Settings.ConversationRoutes) == routesBeforeImages);
+    using (var anonymous = new HttpClient())
+    using (var result = await anonymous.PostAsync(manager.BaseUrl + "/images/generations", new StringContent(fictionalImage, Encoding.UTF8, "application/json")))
+        Check("Anonymous image requests are refused", result.StatusCode == HttpStatusCode.Unauthorized);
+    using (var browser = new HttpRequestMessage(HttpMethod.Post, manager.BaseUrl + "/images/edits"))
+    {
+        browser.Headers.Add("Origin", "https://browser.example.invalid"); browser.Content = new StringContent(fictionalImage, Encoding.UTF8, "application/json");
+        using var result = await client.SendAsync(browser); Check("Browser-origin image edits are refused", result.StatusCode == HttpStatusCode.Forbidden);
+    }
+    handler.ImageFailure = true;
+    var beforeFailedImage = handler.Requests.Count;
+    using (var result = await client.PostAsync(manager.BaseUrl + "/images/generations", new StringContent(fictionalImage, Encoding.UTF8, "application/json")))
+        Check("Image failures are not retried or echoed with credentials", result.StatusCode == HttpStatusCode.TooManyRequests && handler.Requests.Count == beforeFailedImage + 1 && !(await result.Content.ReadAsStringAsync()).Contains("fictional-key"));
+    handler.ImageFailure = false;
+    var largeBody = "{\"model\":\"fixture-openai\",\"input\":\"" + new string('x', 17 * 1024 * 1024) + "\"}";
+    using (var result = await client.PostAsync(manager.BaseUrl + "/responses", new StringContent(largeBody, Encoding.UTF8, "application/json")))
+    {
+        await result.Content.ReadAsStringAsync();
+        Check("A full-input conversation above the old 16 MiB limit is forwarded unchanged", result.IsSuccessStatusCode && handler.Requests.Last().Body == largeBody);
+    }
+    using (var result = await client.PostAsync(manager.BaseUrl + "/images/edits", new StringContent(largeBody, Encoding.UTF8, "application/json")))
+    {
+        await result.Content.ReadAsStringAsync();
+        Check("Image edit data above 16 MiB is retained by the same bounded gateway", result.IsSuccessStatusCode && handler.Requests.Last().Body == largeBody);
+    }
+    var beforeInvalidImage = handler.Requests.Count;
+    using (var invalid = new StringContent("{}", Encoding.UTF8, "application/jsonp"))
+    using (var result = await client.PostAsync(manager.BaseUrl + "/images/generations", invalid))
+        Check("Invalid image media type reports 415 without contacting upstream", result.StatusCode == HttpStatusCode.UnsupportedMediaType && handler.Requests.Count == beforeInvalidImage);
+    using (var oversized = new TcpClient())
+    {
+        var endpoint = new Uri(manager.BaseUrl!); await oversized.ConnectAsync(endpoint.Host, endpoint.Port);
+        await oversized.GetStream().WriteAsync(Encoding.ASCII.GetBytes("POST " + endpoint.AbsolutePath + "/responses HTTP/1.1\r\nHost: " + endpoint.Authority + "\r\nAuthorization: Bearer fictional-openai-token\r\nChatGPT-Account-ID: fictional-account\r\nContent-Type: application/json\r\nContent-Length: " + (ModelGateway.MaximumRequestBytes + 1L) + "\r\nConnection: close\r\n\r\n"));
+        using var reader = new StreamReader(oversized.GetStream());
+        var refusal = await reader.ReadToEndAsync().WaitAsync(TimeSpan.FromSeconds(5));
+        Check("Oversized declared requests report the explicit 64 MiB bound before upstream", refusal.Contains("413") && refusal.Contains("64 MiB") && handler.Requests.Count == beforeInvalidImage);
+    }
+    await using (var api = new ModelProviderManager(Path.Combine(root, "api-images"), (authorization, account) => GatewayIdentity.Authenticate(authorization, account, () => "{\"OPENAI_API_KEY\":\"fictional-image-api-key\"}"), new HttpClient(handler)))
+    {
+        api.Start(); using var apiClient = new HttpClient(); apiClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "fictional-image-api-key");
+        using var result = await apiClient.PostAsync(api.BaseUrl + "/images/edits", new StringContent(fictionalImage, Encoding.UTF8, "application/json"));
+        Check("Explicit API-key login uses the OpenAI Images API with its own identity", result.IsSuccessStatusCode && handler.Requests.Last().Host == "api.openai.com" && handler.Requests.Last().Path == "/v1/images/edits" && handler.Requests.Last().Token == "fictional-image-api-key" && handler.Requests.Last().Account == null);
+    }
     using (var request = new HttpRequestMessage(HttpMethod.Get, manager.BaseUrl + "/models?client_version=0.163.0"))
     { request.Headers.Add("Origin", "https://browser.example.invalid"); using var result = await client.SendAsync(request); Check("Browser-origin requests refuse", result.StatusCode == HttpStatusCode.Forbidden); }
     using (var result = await Send("cs_missing", "missing")) Check("Removed or unknown aliases never fall back to OpenAI", result.StatusCode == HttpStatusCode.NotFound);
@@ -201,7 +254,7 @@ finally
     if (Path.GetFileName(root).Length == 32 && Guid.TryParseExact(Path.GetFileName(root), "N", out _) && Directory.Exists(root)) Directory.Delete(root, true);
 }
 
-internal sealed record Captured(string Method, string Host, string? Token, string? Account, string? Body);
+internal sealed record Captured(string Method, string Host, string? Token, string? Account, string? Body, string Path);
 internal sealed class Upstreams : HttpMessageHandler
 {
     internal ConcurrentQueue<Captured> Requests { get; } = new();
@@ -210,6 +263,7 @@ internal sealed class Upstreams : HttpMessageHandler
     internal bool FailNext;
     internal bool BlockDiscovery;
     internal bool MatchingReasoning;
+    internal bool ImageFailure;
     internal TaskCompletionSource DiscoveryEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     internal GatedStream? Slow;
     internal string? BlockedKey;
@@ -219,7 +273,13 @@ internal sealed class Upstreams : HttpMessageHandler
     {
         var body = request.Content == null ? null : await request.Content.ReadAsStringAsync(cancellation);
         Requests.Enqueue(new Captured(request.Method.Method, request.RequestUri!.Host, request.Headers.Authorization?.Parameter,
-            request.Headers.TryGetValues("ChatGPT-Account-ID", out var ids) ? ids.Single() : null, body));
+            request.Headers.TryGetValues("ChatGPT-Account-ID", out var ids) ? ids.Single() : null, body, request.RequestUri.AbsolutePath));
+        if (request.RequestUri.AbsolutePath.Contains("/images/", StringComparison.Ordinal))
+        {
+            if (ImageFailure) return new(HttpStatusCode.TooManyRequests) { Content = new StringContent("fictional-key-must-not-be-echoed") };
+            var image = new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"data\":[{\"b64_json\":\"fixture-image\"}]}", Encoding.UTF8, "application/json") };
+            image.Headers.Add("x-codex-imagegen-request-id", "fixture-image-request"); return image;
+        }
         if (request.RequestUri.Host == "redirect.example.invalid") return new(HttpStatusCode.Found) { Headers = { Location = new Uri("https://other.example.invalid/models") } };
         if (request.Method == HttpMethod.Get)
         {

@@ -1,5 +1,9 @@
 # Operations
 
+Built-in image generation requires `images/generations` and `images/edits` in addition to Responses/model discovery. The gateway forwards these JSON requests only with the original OpenAI identity and preserves the body and safe request IDs; custom text aliases and saved custom-provider keys do not select the image route. Browser/loopback authentication, redirect refusal and no-retry behavior still apply.
+
+Conversation and image request bodies are bounded at64MiB, including chunked bodies. An oversized request reports HTTP413 with the limit; unsupported media types report415. Older builds combined the16MiB and JSON checks into `A bounded JSON Responses request is required`, so a growing full-input chat could fail after a successful tool call. Preserve that chat and update the gateway before retrying. [Hotfix evidence](../evidence/image-gateway/README.md).
+
 Model-provider instruction attribution is included in published package `licenses/`. Mac app bundles place those text files in `Contents/Resources/licenses` before signing; Windows and Linux retain the publish directory layout. Native package checks compare the license and notice with the source and verify the complete signed bundle.
 
 Issue139/source1.43.2 waits asynchronously for transient Windows runtime-file sharing locks for at most two seconds, preserving login cancellation after release. Every attempt revalidates the private GUID path/link boundary; nonsharing and persistent failures still surface. No process termination, permission widening, account setting or background worker is added. [Release gates](RELEASE_1_43_2.md).

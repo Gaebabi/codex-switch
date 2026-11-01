@@ -1,0 +1,45 @@
+{
+  "scope": "Actual hosted native Windows WPF app continuity with fictional profiles; images do not establish image inference, large-body behavior or real account handoff.",
+  "screenshots": [
+    {
+      "file": "before-windows.png",
+      "sourceRevision": "62d87ac196b71dbd2aa97faf8ebf08fbaf870998",
+      "run": 41227072128,
+      "artifactId": 13052132766,
+      "archiveDigest": "sha256:0aac438a1d64b5ceabcde1be6d16366b1e83584949dbad8b8d49943125b7d0e6",
+      "sha256": "320049d86e415b3991ed0525e353b855d15949d0f76f1f45bf6c66044e4b9ee8",
+      "dimensions": [
+        800,
+        560
+      ],
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "after-windows.png",
+      "sourceRevision": "07128055607e474f9bb6c156d318b5e7e54a21df",
+      "run": 41282507176,
+      "artifactId": 13074326551,
+      "archiveDigest": "sha256:daeb09abad591d843e3fed6b809aca1d6456aae0a9b4bb7db50fc145a9b07735",
+      "sha256": "320049d86e415b3991ed0525e353b855d15949d0f76f1f45bf6c66044e4b9ee8",
+      "dimensions": [
+        800,
+        560
+      ],
+      "originalPixelsUnchanged": true
+    }
+  ],
+  "gatewayContracts": {
+    "passed": 109,
+    "officialCli": "0.163.0",
+    "upstreams": "fictional",
+    "operatingSystem": "Windows x64"
+  },
+  "localInstalledVerification": {
+    "packageSelfTests": 99,
+    "builtInGenerationsObserved": 3,
+    "originalChatResumed": true,
+    "liveImageEditingVerified": false,
+    "privateArtifactsPublished": false
+  },
+  "baselineAndAfterPixelEquality": true
+}
