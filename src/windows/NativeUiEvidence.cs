@@ -77,6 +77,11 @@ internal static class NativeUiEvidence
                     var settings = Descendants<Button>(window).Single(b => b.Name == "SettingsButton");
                     settings.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); await Task.Delay(150);
                     var menu = settings.ContextMenu ?? throw new InvalidOperationException("Settings dropdown did not open");
+                    Assert(menu.Items.OfType<MenuItem>().Any(item => item.Name == "ModelProvidersMenuItem") && menu.Items.OfType<MenuItem>().Any(item => item.Name == "RestartCodexMenuItem"), "Settings lost model or restart actions");
+                    var firstSetting = menu.Items.OfType<MenuItem>().First();
+                    Assert(firstSetting.Focus() && firstSetting.IsKeyboardFocusWithin, "Settings rows must accept keyboard focus");
+                    var settingsSource = PresentationSource.FromVisual(menu) as HwndSource ?? throw new InvalidOperationException("Settings popup has no native handle");
+                    Capture(settingsSource.Handle, Path.Combine(directory, name + "-settings.png"));
                     var languages = menu.Items.OfType<MenuItem>().Single(item => item.Name == "LanguageSettingsMenuItem");
                     languages.IsSubmenuOpen = true; await Task.Delay(200);
                     var languagePopup = (System.Windows.Controls.Primitives.Popup)languages.Template.FindName("PART_Popup", languages);

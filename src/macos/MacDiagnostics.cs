@@ -200,6 +200,8 @@ internal static class MacDiagnostics
                 checks.Add(new { name = name + "-resource-tooltip-reopen", passed = true });
                 var owner = window.SettingsButton;
                 var menu = window.BuildSettingsMenu(); menu.Open(owner); await Task.Delay(120);
+                if (Program.NativeUiEvidence)
+                    await NativeUiCapture.SaveAsync(TopLevel.GetTopLevel(menu) ?? throw new InvalidOperationException("Settings popup has no native root"), Path.Combine(directory, name + "-settings-native.png"));
                 var languageSettings = menu.ItemsSource!.Cast<object>().OfType<MenuItem>().Single(item => item.Name == "LanguageSettingsMenuItem");
                 languageSettings.IsSubMenuOpen = true;
                 try
