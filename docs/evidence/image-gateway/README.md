@@ -4,7 +4,11 @@ The gateway previously returned404 for built-in `images/generations` and `images
 
 ## Application evidence
 
-[Actual Windows application baseline](../recovery-shutdown/after.png) uses fictional accounts on a private desktop. It shows the existing Switch application, not the image-route failure. Fresh exact-source hosted application continuity frames are pending capture. Screenshots do not establish image generation, body-size behavior or authenticated handoff; the independent checks below establish their stated scopes.
+| Main1.43.3 baseline | Hotfix application |
+| --- | --- |
+| ![Native Windows account app before hotfix](before-windows.png) | ![Native Windows account app after hotfix](after-windows.png) |
+
+These hosted native Windows own-window captures use fictional accounts and have identical bytes. The baseline is main `62d87ac196b71dbd2aa97faf8ebf08fbaf870998`; the after capture is implementation `07128055607e474f9bb6c156d318b5e7e54a21df`. They confirm application continuity, not the image-route failure or an authenticated handoff. The independent checks below establish image and body-size behavior. [Exact workflow/artifact/image hashes](evidence.json).
 
 ## Behavior verification
 
@@ -13,4 +17,4 @@ The gateway previously returned404 for built-in `images/generations` and `images
 - The authorized local Windows package passes99 self-tests and contains the reviewed self-contained runtime10.0.13. One diagnostic transparent-image generation succeeds. The originally failing chat resumes and completes two more built-in image generations and subsequent commands without another gateway/turn error during the observed interval.
 - Real image-edit acceptance was not exercised. Actual desktop-picker, broader external-provider compatibility and the originally reported controller-exit cause remain in their existing issues. No new binary release is part of this PR.
 
-Private account data, chat text, generated product assets, local paths and raw diagnostic captures are excluded from this public evidence. Native screenshot provenance and final-head CI will be added after capture.
+Private account data, chat text, generated product assets, local paths and raw diagnostic captures are excluded from this public evidence. Capture [Verify41282507176](https://github.com/Gaebabi/codex-switch/actions/runs/41282507176) supplies the after frame; [Verify41227072128](https://github.com/Gaebabi/codex-switch/actions/runs/41227072128) supplies the main baseline. Final-head protected CI remains required after this evidence-only update and the restored UTF-8 test-fixture text; production gateway bytes are unchanged.

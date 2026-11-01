@@ -93,7 +93,7 @@ try
     using (var anonymous = new HttpClient())
     using (var result = await anonymous.GetAsync(manager.BaseUrl + "/models?client_version=0.163.0")) Check("Anonymous loopback requests refuse", result.StatusCode == HttpStatusCode.Unauthorized);
     var routesBeforeImages = JsonSerializer.Serialize(manager.Settings.ConversationRoutes);
-    var fictionalImage = "{\"model\":\"gpt-image-fixture\",\"prompt\":\"�㱸 �̹���\",\"background\":\"transparent\",\"images\":[{\"image_url\":\"data:image/png;base64,Zml4dHVyZQ==\"}]}";
+    var fictionalImage = "{\"model\":\"gpt-image-fixture\",\"prompt\":\"허구 이미지\",\"background\":\"transparent\",\"images\":[{\"image_url\":\"data:image/png;base64,Zml4dHVyZQ==\"}]}";
     foreach (var endpoint in new[] { "images/generations", "images/edits" })
     {
         using var result = await client.PostAsync(manager.BaseUrl + "/" + endpoint, new StringContent(fictionalImage, Encoding.UTF8, "application/json"));
