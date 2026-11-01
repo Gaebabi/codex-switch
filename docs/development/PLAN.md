@@ -1,5 +1,7 @@
 # Current plan
 
+Issue149 strengthens concurrent gateway load with an aggregate request-buffer budget, separate upload/stream limits, sliced custom rewrites and token-based validation. Verify exact512MiB bodies, eight65MiB custom uploads,48open response streams, overload/disconnect recovery and retained-memory measurements. Require final-head protected/native CI and privacy review before repository integration. Local installation and actual provider/account acceptance remain separate.
+
 Correct the remaining64MiB intermediary refusal for image-heavy conversations with a512MiB bounded body reader, limited concurrent large buffers and original-buffer forwarding. Verify declared and chunked requests, exact bounds, cancellation and unchanged history/authentication before local installation and authorized chat resumption. Public delivery remains a separate evidence state.
 
 Integrate the post1.43.3 image-route and large-request hotfix with focused gateway regressions and native application continuity evidence. Preserve original OpenAI image authentication, custom-provider key separation, complete chat inputs and bounded memory use. Require the six protected final-head checks and recorded review before merge. This source update does not publish a new binary release. [Verification](../evidence/image-gateway/README.md).
