@@ -89,6 +89,9 @@ internal sealed class DeskTheme
         // Submenus use Fluent's own popup template rather than ContextMenu.Template.
         // Bound their scroll viewport as well as the root menu, including languages.
         menu.Styles.Add(new Style(selector => selector.OfType<MenuItem>().Template().OfType<ScrollViewer>()) { Setters = {
+            // Fluent's menu scroller uses arrow buttons instead of a scrollbar.
+            // Use the ordinary scroller so the existing private scrollbar theme applies.
+            new Setter(ScrollViewer.ThemeProperty, null),
             new Setter(ScrollViewer.MaxHeightProperty, 300.0),
             new Setter(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto),
             new Setter(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled),
