@@ -132,6 +132,9 @@ jobs:
       - name: Verify encrypted model providers and account-free loopback routing
         shell: pwsh
         run: dotnet run --project tests/model-providers/CodexSwitch.ModelProviders.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- --codex "$env:CODEX_ACCOUNT_DESK_CLI"
+      - name: Verify bounded concurrent gateway load with generated near-limit inputs
+        shell: pwsh
+        run: dotnet run --project tests/model-providers/CodexSwitch.ModelProviders.Tests.csproj -c Release --no-build --no-launch-profile -- --stress
       - name: Verify provider editor components
         shell: pwsh
         run: dotnet run --project tests/model-providers-ui/ModelProviders.Ui.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- "${{ github.workspace }}/artifacts/model-provider-ui"

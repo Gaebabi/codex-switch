@@ -29,7 +29,10 @@ internal sealed class ModelGateway : IAsyncDisposable
     private readonly CancellationTokenSource _stop = new();
     private readonly ConcurrentDictionary<int, Task> _requests = new();
     private readonly SemaphoreSlim _slots = new(16, 16);
-    private readonly SemaphoreSlim _largeBodies = new(2, 2);
+    private readonly SemaphoreSlim _largeBodies = new(8, 8);
+    private readonly SemaphoreSlim _streamSlots = new(48, 48);
+    private readonly SemaphoreSlim _rejections = new(4, 4);
+    private readonly GatewayBodyBudget _bodyBudget = new();
     private Task? _accept;
     private int _nextRequest;
     private sealed record NativeCatalog(Dictionary<string, JsonObject> Models, DateTimeOffset Expires);
@@ -64,10 +67,12 @@ internal sealed class ModelGateway : IAsyncDisposable
             while (!_stop.IsCancellationRequested)
             {
                 var context = await _listener.GetContextAsync().WaitAsync(_stop.Token).ConfigureAwait(false);
-                if (!_slots.Wait(0)) { await ErrorAsync(context.Response, 503, "The local model gateway is busy.", _stop.Token).ConfigureAwait(false); continue; }
+                var admitted = _slots.Wait(0);
+                if (!admitted && !_rejections.Wait(0)) { context.Response.Abort(); continue; }
                 var id = Interlocked.Increment(ref _nextRequest);
-                var task = ServeAsync(context); _requests[id] = task;
-                _ = task.ContinueWith(_ => { _requests.TryRemove(id, out var removed); _slots.Release(); }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+                // Parsing/routing an already-buffered large body must not block acceptance.
+                var task = Task.Run(() => admitted ? ServeAsync(context) : RejectAsync(context)); _requests[id] = task;
+                _ = task.ContinueWith(_ => _requests.TryRemove(id, out var removed), CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
             }
         }
         catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
@@ -76,7 +81,7 @@ internal sealed class ModelGateway : IAsyncDisposable
     }
     private async Task ServeAsync(HttpListenerContext context)
     {
-        var started = false; var largeBody = false;
+        var started = false; var largeBody = false; var workSlot = true; var streamSlot = false;
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token); deadline.CancelAfter(TimeSpan.FromMinutes(30));
         var cancellation = deadline.Token;
         try
@@ -106,37 +111,40 @@ internal sealed class ModelGateway : IAsyncDisposable
             { await ErrorAsync(response, 413, RequestTooLarge, cancellation).ConfigureAwait(false); return; }
             if (!string.IsNullOrEmpty(request.Headers["Content-Encoding"]) && request.Headers["Content-Encoding"] != "identity")
             { await ErrorAsync(response, 415, "Disable Codex request compression in the connection settings before using the local gateway.", cancellation).ConfigureAwait(false); return; }
-            // Unknown-length bodies can also be large. Admit at most two before allocating buffers.
+            streamSlot = _streamSlots.Wait(0);
+            if (!streamSlot) { await ErrorAsync(response, 503, "The local model gateway has reached its concurrent response limit.", cancellation).ConfigureAwait(false); return; }
+            // Unknown-length bodies are budgeted incrementally. Keep small-request headroom.
             if (request.ContentLength64 < 0 || request.ContentLength64 > SmallRequestBytes)
             {
                 largeBody = _largeBodies.Wait(0);
                 if (!largeBody) { await ErrorAsync(response, 503, "The local model gateway is processing other large requests. Try again when they finish.", cancellation).ConfigureAwait(false); return; }
             }
-            MemoryStream input;
-            try { input = await ReadBodyAsync(request.InputStream, request.ContentLength64, MaximumRequestBytes, cancellation).ConfigureAwait(false); }
+            GatewayRequestBody input;
+            using var uploadDeadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+            uploadDeadline.CancelAfter(TimeSpan.FromMinutes(2));
+            try { input = await GatewayRequestBody.ReadAsync(request.InputStream, request.ContentLength64, MaximumRequestBytes, _bodyBudget, largeBody, uploadDeadline.Token).ConfigureAwait(false); }
             catch (InvalidDataException)
             { await ErrorAsync(response, 413, RequestTooLarge, cancellation).ConfigureAwait(false); return; }
             using var bufferedInput = input;
             // Parse the owned buffer without ToArray or a mutable JSON tree for unchanged requests.
-            var bytesIn = input.GetBuffer().AsMemory(0, checked((int)input.Length));
-            using var document = JsonDocument.Parse(bytesIn, new JsonDocumentOptions { AllowDuplicateProperties = false });
-            var original = document.RootElement;
-            if (original.ValueKind != JsonValueKind.Object) throw new InvalidDataException("The Responses request is invalid.");
+            var bytesIn = input.Bytes;
+            var original = new GatewayJsonRequest(bytesIn);
             JsonObject? body = null;
             void ReleaseInput(HttpRequestMessage outgoing)
             {
                 // Upload is complete once response headers arrive. Do not retain its buffers
                 // or admission slot during a potentially long-running response stream.
                 outgoing.Content?.Dispose(); outgoing.Content = null;
-                document.Dispose(); body = null; bytesIn = default;
-                input.SetLength(0); input.Capacity = 0;
+                original.Release(); body = null; bytesIn = default;
+                input.Dispose();
                 if (largeBody) { _largeBodies.Release(); largeBody = false; }
+                if (workSlot) { _slots.Release(); workSlot = false; }
             }
             if (imageRequest)
             {
                 using var image = new HttpRequestMessage(HttpMethod.Post, new Uri((identity.ApiKey ? "https://api.openai.com/v1/" : "https://chatgpt.com/backend-api/codex/") + path["/backend-api/codex/".Length..]));
                 CopyOpenAiHeaders(request, image, identity);
-                image.Content = new ByteArrayContent(input.GetBuffer(), 0, bytesIn.Length); image.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                image.Content = new ReadOnlyMemoryContent(bytesIn); image.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 using var imageResult = await _http.SendAsync(image, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
                 ReleaseInput(image);
                 if (!imageResult.IsSuccessStatusCode)
@@ -150,7 +158,7 @@ internal sealed class ModelGateway : IAsyncDisposable
                 await imageStream.CopyToAsync(response.OutputStream, cancellation).ConfigureAwait(false);
                 LastError = null; return;
             }
-            var model = original.TryGetProperty("model", out var selected) && selected.ValueKind == JsonValueKind.String ? selected.GetString() : null;
+            var model = original.Model;
             if (string.IsNullOrEmpty(model)) throw new InvalidDataException("A model must be selected.");
             // Snapshot a route and its key before the first upstream byte. Settings edits never retarget an in-flight request.
             var providers = _store.Read().Providers;
@@ -161,34 +169,27 @@ internal sealed class ModelGateway : IAsyncDisposable
             { await ErrorAsync(response, 404, "The selected model is not in this account's OpenAI catalog or registered custom routes. Select a model from the combined list.", cancellation).ConfigureAwait(false); return; }
             // Incremental provider state and opaque reasoning cannot be transferred between upstreams.
             // HTTP full-input replay is required for every routed request, including after gateway restart.
-            if (original.TryGetProperty("previous_response_id", out var previous) && previous.ValueKind != JsonValueKind.Null ||
-                original.TryGetProperty("conversation", out var conversation) && conversation.ValueKind != JsonValueKind.Null)
+            if (original.Present("previous_response_id") || original.Present("conversation"))
             { await ErrorAsync(response, 400, "Use full-input HTTP Responses replay; provider-specific response references cannot be routed safely.", cancellation).ConfigureAwait(false); return; }
-            var changedBody = false;
+            var removeReasoning = false;
             var routeIdentity = route.Provider == null ? "openai" : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(route.Provider.Id + "\n" + route.Provider.BaseUrl + "\n" + route.Provider.ApiKey)));
             var portableHistory = _store.RequiresPortableHistory(request.Headers["session_id"] ?? request.Headers["conversation_id"], identity, routeIdentity);
-            if (portableHistory && original.TryGetProperty("input", out var originalItems) && originalItems.ValueKind == JsonValueKind.Array)
+            if (portableHistory)
             {
-                bool Encrypted(JsonElement item, string type) => item.ValueKind == JsonValueKind.Object &&
-                    item.TryGetProperty("type", out var kind) && kind.ValueKind == JsonValueKind.String && kind.GetString() == type &&
-                    item.TryGetProperty("encrypted_content", out var encrypted) && encrypted.ValueKind != JsonValueKind.Null;
-                if (originalItems.EnumerateArray().Any(item => Encrypted(item, "compaction")))
+                if (original.HasEncrypted("compaction"))
                 { await ErrorAsync(response, 400, ModelHistoryHandoff.Refusal, cancellation).ConfigureAwait(false); return; }
-                if (originalItems.EnumerateArray().Any(item => Encrypted(item, "reasoning")))
-                {
-                    body = JsonNode.Parse(bytesIn.Span)!.AsObject();
-                    var items = body["input"]!.AsArray();
-                    for (var i = items.Count - 1; i >= 0; i--)
-                        if (items[i] is JsonObject obj && obj["type"]?.GetValue<string>() == "reasoning" && obj["encrypted_content"] != null) { items.RemoveAt(i); changedBody = true; }
-                }
+                removeReasoning = original.HasEncrypted("reasoning");
             }
             Uri destination;
             if (route.Provider != null)
             {
-                changedBody = true;
-                body ??= JsonNode.Parse(bytesIn.Span)!.AsObject();
-                body["model"] = route.Model.UpstreamId;
-                body.Remove("prompt_cache_key");
+                body = new JsonObject { ["model"] = route.Model.UpstreamId };
+                foreach (var option in GatewayRoutedContent.Fields(bytesIn).Where(field => field.Name is "reasoning" or "text"))
+                    {
+                        // Routing controls are small; unbounded history/images never enter a mutable tree.
+                        if (option.Value.Length > 65536) throw new InvalidDataException("The model routing options are too large.");
+                        body[option.Name] = JsonNode.Parse(option.Value.Span);
+                    }
                 JsonObject? native = null;
                 if (route.Model.GenericMetadata && route.Model.ReasoningOverride == null && body["reasoning"] != null)
                     native = await NativeModelAsync(route.Model.UpstreamId, identity, request, cancellation).ConfigureAwait(false);
@@ -196,7 +197,6 @@ internal sealed class ModelGateway : IAsyncDisposable
                 if (reasoningError != null) { await ErrorAsync(response, 400, reasoningError, cancellation).ConfigureAwait(false); return; }
                 if (route.Model.GenericMetadata)
                 {
-                    body.Remove("service_tier");
                     if (body["text"] is JsonObject text) text.Remove("verbosity");
                 }
                 destination = new Uri(ProviderCatalog.Endpoint(route.Provider.BaseUrl), path.EndsWith("/compact", StringComparison.Ordinal) ? "responses/compact" : "responses");
@@ -205,7 +205,9 @@ internal sealed class ModelGateway : IAsyncDisposable
             using var upstream = new HttpRequestMessage(HttpMethod.Post, destination);
             if (route.Provider == null) CopyOpenAiHeaders(request, upstream, identity);
             else upstream.Headers.Authorization = new AuthenticationHeaderValue("Bearer", route.Provider.ApiKey);
-            upstream.Content = changedBody ? new ByteArrayContent(JsonSerializer.SerializeToUtf8Bytes(body)) : new ByteArrayContent(input.GetBuffer(), 0, bytesIn.Length);
+            upstream.Content = route.Provider != null || removeReasoning ?
+                new GatewayRoutedContent(bytesIn, body ?? new JsonObject(), route.Provider != null, route.Model?.GenericMetadata == true, removeReasoning) :
+                new ReadOnlyMemoryContent(bytesIn);
             upstream.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             using var result = await _http.SendAsync(upstream, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
             ReleaseInput(upstream);
@@ -220,6 +222,8 @@ internal sealed class ModelGateway : IAsyncDisposable
             { await response.OutputStream.WriteAsync(buffer.AsMemory(0, count), cancellation).ConfigureAwait(false); await response.OutputStream.FlushAsync(cancellation).ConfigureAwait(false); }
             LastError = null;
         }
+        catch (GatewayBusyException)
+        { if (!started) await TryErrorAsync(context.Response, 503, "The local model gateway's request buffer budget is busy. Try again when uploads finish.", cancellation).ConfigureAwait(false); }
         catch (OperationCanceledException) { LastError = "The model request was cancelled or timed out."; context.Response.Abort(); }
         catch (Exception error)
         {
@@ -231,23 +235,7 @@ internal sealed class ModelGateway : IAsyncDisposable
                 catch (Exception transport) when (transport is IOException or HttpListenerException or OperationCanceledException or ObjectDisposedException) { context.Response.Abort(); }
             }
         }
-        finally { if (largeBody) _largeBodies.Release(); context.Response.Close(); }
-    }
-    internal static async Task<MemoryStream> ReadBodyAsync(Stream source, long contentLength, int maximum, CancellationToken cancellation)
-    {
-        if (contentLength > maximum) throw new InvalidDataException("The model request is too large.");
-        var target = new MemoryStream(contentLength >= 0 ? checked((int)contentLength) : Math.Min(maximum, 64 * 1024));
-        try
-        {
-            var buffer = new byte[64 * 1024]; int count;
-            while ((count = await source.ReadAsync(buffer.AsMemory(0, (int)Math.Min(buffer.Length, maximum - target.Length + 1)), cancellation).ConfigureAwait(false)) > 0)
-            {
-                if (target.Length + count > maximum) throw new InvalidDataException("The model request is too large.");
-                target.Write(buffer, 0, count);
-            }
-            target.Position = 0; return target;
-        }
-        catch { target.Dispose(); throw; }
+        finally { if (largeBody) _largeBodies.Release(); if (workSlot) _slots.Release(); if (streamSlot) _streamSlots.Release(); context.Response.Close(); }
     }
     private async Task<JsonObject> CatalogAsync(GatewayIdentity identity, HttpListenerRequest incoming, CancellationToken cancellation, string? clientVersion = null)
     {
@@ -316,15 +304,28 @@ internal sealed class ModelGateway : IAsyncDisposable
     private static async Task ErrorAsync(HttpListenerResponse response, int status, string message, CancellationToken cancellation)
     {
         response.StatusCode = status; response.ContentType = "application/json"; response.Headers["Cache-Control"] = "no-store";
+        if (status == 503) response.Headers["Retry-After"] = "1";
         var bytes = JsonSerializer.SerializeToUtf8Bytes(new { error = new { message, type = "model_gateway_error" } }); response.ContentLength64 = bytes.Length;
         try { await response.OutputStream.WriteAsync(bytes, cancellation).ConfigureAwait(false); }
         finally { response.Close(); }
+    }
+    private static async Task TryErrorAsync(HttpListenerResponse response, int status, string message, CancellationToken cancellation)
+    {
+        try { await ErrorAsync(response, status, message, cancellation).ConfigureAwait(false); }
+        catch (Exception error) when (error is IOException or HttpListenerException or ObjectDisposedException or OperationCanceledException) { response.Abort(); }
+    }
+    private async Task RejectAsync(HttpListenerContext context)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
+        deadline.CancelAfter(TimeSpan.FromSeconds(2));
+        try { await TryErrorAsync(context.Response, 503, "The local model gateway is busy.", deadline.Token).ConfigureAwait(false); }
+        finally { _rejections.Release(); }
     }
     public async ValueTask DisposeAsync()
     {
         _stop.Cancel(); _listener.Close();
         if (_accept != null) await _accept.ConfigureAwait(false);
         await Task.WhenAll(_requests.Values).ConfigureAwait(false);
-        _stop.Dispose(); _slots.Dispose(); _largeBodies.Dispose();
+        _stop.Dispose(); _slots.Dispose(); _largeBodies.Dispose(); _streamSlots.Dispose(); _rejections.Dispose();
     }
 }

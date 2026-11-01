@@ -12,19 +12,19 @@ void Check(string name, bool value) { if (!value) throw new Exception(name); che
 Check("Full chat endpoint normalizes to the API base URL", ProviderCatalog.Endpoint("https://openrouter.ai/api/v1/chat/completions").AbsoluteUri == "https://openrouter.ai/api/v1/");
 Check("Responses and model-list endpoints normalize without changing their authority", ProviderCatalog.Endpoint("https://example.invalid/proxy/v1/responses/").AbsoluteUri == "https://example.invalid/proxy/v1/" && ProviderCatalog.Endpoint("https://example.invalid/v1/models").AbsoluteUri == "https://example.invalid/v1/");
 using (var source = new MemoryStream(Encoding.UTF8.GetBytes("12345678")))
-using (var exact = await ModelGateway.ReadBodyAsync(source, -1, 8, CancellationToken.None))
-    Check("An unknown-length body at the exact bound is retained without closing its source", exact.Length == 8 && source.CanRead && Encoding.UTF8.GetString(exact.GetBuffer(), 0, (int)exact.Length) == "12345678");
+using (var exact = await GatewayRequestBody.ReadAsync(source, -1, 8, new GatewayBodyBudget(), true, CancellationToken.None))
+    Check("An unknown-length body at the exact bound is retained without closing its source", exact.Bytes.Length == 8 && source.CanRead && Encoding.UTF8.GetString(exact.Bytes.Span) == "12345678");
 using (var source = new MemoryStream(new byte[9]))
 {
     var oversized = false;
-    try { using var unexpected = await ModelGateway.ReadBodyAsync(source, -1, 8, CancellationToken.None); }
+    try { using var unexpected = await GatewayRequestBody.ReadAsync(source, -1, 8, new GatewayBodyBudget(), true, CancellationToken.None); }
     catch (InvalidDataException) { oversized = true; }
     Check("An unknown-length body is rejected at the first byte above its bound", oversized && source.Position == 9);
 }
 using (var source = new MemoryStream(new byte[9]))
 {
     var oversized = false;
-    try { using var unexpected = await ModelGateway.ReadBodyAsync(source, 9, 8, CancellationToken.None); }
+    try { using var unexpected = await GatewayRequestBody.ReadAsync(source, 9, 8, new GatewayBodyBudget(), true, CancellationToken.None); }
     catch (InvalidDataException) { oversized = true; }
     Check("An oversized declared body is rejected without reading its source", oversized && source.Position == 0);
 }
@@ -32,7 +32,7 @@ using (var cancelled = new CancellationTokenSource())
 using (var source = new MemoryStream(new byte[8]))
 {
     cancelled.Cancel(); var stopped = false;
-    try { using var unexpected = await ModelGateway.ReadBodyAsync(source, 8, 8, cancelled.Token); }
+    try { using var unexpected = await GatewayRequestBody.ReadAsync(source, 8, 8, new GatewayBodyBudget(), true, cancelled.Token); }
     catch (OperationCanceledException) { stopped = true; }
     Check("Request buffering honors cancellation", stopped);
 }
@@ -40,6 +40,16 @@ async Task Refuses(string name, Func<Task> action)
 { try { await action(); } catch (Exception e) when (e is ArgumentException or InvalidOperationException or IOException or InvalidDataException) { Check(name, true); return; } throw new Exception(name); }
 var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp", "CodexSwitchModelProviders", Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
+if (args.Contains("--stress"))
+{
+    try
+    {
+        await GatewayLoadContracts.Run(root, Check, true);
+        Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, scope = "Isolated generated-byte gateway stress; no external inference or owner home." }));
+    }
+    finally { Directory.Delete(root, true); }
+    return;
+}
 var nativeHome = Path.Combine(root, "native-home"); Directory.CreateDirectory(nativeHome);
 var handler = new Upstreams();
 GatewayIdentity? Authenticate(string? auth, string? account) => GatewayIdentity.Authenticate(auth, account, () => "{\"tokens\":{\"access_token\":\"fictional-openai-token\",\"account_id\":\"fictional-account\"}}");
@@ -193,26 +203,26 @@ try
         var refusal = await reader.ReadToEndAsync().WaitAsync(TimeSpan.FromSeconds(5));
         Check("Oversized declared requests report the explicit 512 MiB bound before upstream", refusal.Contains("413") && refusal.Contains("512 MiB") && handler.Requests.Count == beforeInvalidImage);
     }
-    // Hold two incomplete chunked uploads without allocating large test payloads.
-    // A successful small request orders acceptance before the third large upload.
-    using (var first = new TcpClient())
-    using (var second = new TcpClient())
+    // Incomplete uploads verify admission without allocating large test payloads.
+    var pendingUploads = Enumerable.Range(0, 8).Select(_ => new TcpClient()).ToArray();
+    try
     {
         var endpoint = new Uri(manager.BaseUrl!);
-        foreach (var pending in new[] { first, second })
+        foreach (var pending in pendingUploads)
         {
             await pending.ConnectAsync(endpoint.Host, endpoint.Port);
             await pending.GetStream().WriteAsync(Encoding.ASCII.GetBytes("POST " + endpoint.AbsolutePath + "/responses HTTP/1.1\r\nHost: " + endpoint.Authority + "\r\nAuthorization: Bearer fictional-openai-token\r\nChatGPT-Account-ID: fictional-account\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n1\r\n{\r\n"));
         }
         using (var small = await Send("fixture-openai", "large-admission-small"))
-            Check("Small requests remain usable while two unknown-length uploads are pending", small.IsSuccessStatusCode);
+            Check("Small requests remain usable while eight unknown-length uploads are pending", small.IsSuccessStatusCode);
         using var third = new TcpClient(); await third.ConnectAsync(endpoint.Host, endpoint.Port);
         var beforeBusy = handler.Requests.Count;
         await third.GetStream().WriteAsync(Encoding.ASCII.GetBytes("POST " + endpoint.AbsolutePath + "/responses HTTP/1.1\r\nHost: " + endpoint.Authority + "\r\nAuthorization: Bearer fictional-openai-token\r\nChatGPT-Account-ID: fictional-account\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n"));
         using var reader = new StreamReader(third.GetStream());
         var busy = await reader.ReadToEndAsync().WaitAsync(TimeSpan.FromSeconds(5));
-        Check("A third large upload refuses before buffering or contacting upstream", busy.Contains("503") && handler.Requests.Count == beforeBusy);
+        Check("A ninth large upload refuses before buffering or contacting upstream", busy.Contains("503") && busy.Contains("Retry-After: 1") && handler.Requests.Count == beforeBusy);
     }
+    finally { foreach (var pending in pendingUploads) pending.Dispose(); }
     await using (var api = new ModelProviderManager(Path.Combine(root, "api-images"), (authorization, account) => GatewayIdentity.Authenticate(authorization, account, () => "{\"OPENAI_API_KEY\":\"fictional-image-api-key\"}"), new HttpClient(handler)))
     {
         api.Start(); using var apiClient = new HttpClient(); apiClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "fictional-image-api-key");
@@ -321,7 +331,8 @@ try
     var cancelled = false;
     try { await saving; } catch (OperationCanceledException) { cancelled = true; }
     Check("Shutdown cancels and drains discovery before disposing state without saving a partial key", cancelled && !File.Exists(Path.Combine(cancelPath, "model-providers.vault")));
-    Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, nativeClient = args.Length != 0, framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription, scope = "Disposable encrypted storage, loopback gateway and fictional upstreams; no owner home, account or desktop." }, new JsonSerializerOptions { WriteIndented = true }));
+    await GatewayLoadContracts.Run(root, Check, args.Contains("--stress"));
+    Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, nativeClient = args.Contains("--codex"), framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription, scope = "Disposable encrypted storage, loopback gateway and fictional upstreams; no owner home, account or desktop." }, new JsonSerializerOptions { WriteIndented = true }));
 }
 finally
 {
