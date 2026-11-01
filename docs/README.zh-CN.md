@@ -11,9 +11,9 @@ Windows · macOS15及以上 · Linux预览版 · MIT开源 · **1.44.0**
 
 1.44.0保留额度水位卡片和直接账号切换，将模型、自动切换、重启、语言与外观集中到一个设置菜单中。同时改进了含多张图片的会话转发与并发请求处理。[更新内容与兼容范围](development/RELEASE_1_44_0.md)。
 
-<p align="center"><img src="media/discovery/en-dark-demo.png" width="500" height="400" alt="Codex Switch英文UI演示：账号剩余额度、CPU与内存及GPU使用率和两个存储设备" /></p>
+<p align="center"><img src="evidence/home-simplification/native-after-windows.png" width="500" height="350" alt="Codex Switch1.44.0额度水位卡片与统一设置菜单" /></p>
 
-使用模拟账号和系统数据的Windows英文UI演示。[演示来源](media/discovery/README.md) / [原生验证](evidence/account-automation/README.md)。凭证保存在本地加密存储中，**切换账号会重启Codex。** 本项目独立开发，与OpenAI没有隶属关系。
+使用模拟账号验证的实际Windows应用界面。[原始截图与源码验证](evidence/home-simplification/README.md)。凭证保存在本地加密存储中，**切换账号会重启Codex。** 本项目独立开发，与OpenAI没有隶属关系。
 
 **如果觉得有用，欢迎Star本仓库并分享给其他Codex用户。**
 
@@ -54,8 +54,8 @@ Linux仍为集成预览版。原生密钥环、已安装UI和程序包验证，�
 **Linux1.44.0下载包含源码1.41.0新增的终端账号切换和已保存CLI会话恢复功能。** `CodexSwitch cli`无需显示服务器即可管理现有加密账号；`cli switch <account> --resume <CLI-session-UUID>`将手动切换与官方CLI恢复连接起来。`--continue`明确请求发送后续消息，`--exec --continue`选择非交互执行。需要经过验证的原生CLI、校验和以及已解锁的受支持Secret Service。已在Linux x64上验证真实双账号切换后保留原有上下文的CLI恢复。ARM64、离线验证及完整桌面支持仍分别记录。[命令、实际截图与验证范围](development/LINUX_TERMINAL.md)。
 
 1. Windows运行`CodexSwitch.exe`；Mac运行`Install.command`后打开已安装的**Codex Switch.app**。Linux需要完整预览包及受支持的Secret Service。
-2. **+**通过官方浏览器页面登录各账号。如果自动选择了之前的账号，请使用独立的浏览器配置或隐私窗口。Windows可右键点击**↻**导入当前登录。
-3. 比较额度后点击**Switch**。**账号自动切换默认关闭，可从上方菜单手动开启。** Linux用户请先通过本工具的**Start Codex**启动Codex。
+2. **+**通过官方浏览器页面登录各账号。如果自动选择了之前的账号，请使用独立的浏览器配置或隐私窗口。通过**设置 > 导入当前账号**可导入当前登录。
+3. 比较额度后点击**Switch**。**账号自动切换默认关闭，可在设置中手动开启。** Linux用户请先通过**设置 > Start Codex**启动Codex。
 
 - 保存并验证带日期的聊天名称、备份当前登录，正常退出Codex后应用所选账号。重新打开相同聊天ID、目录、模型及权限，向符合条件的未完成空闲聊天**发送一次Continue**，自动继续工作。不重复运行已执行或已完成的工作。
 - **Resume chats**恢复加密保存的交接进度。发送结果不明确时不会自动重发；名称保存或正常退出失败时停止登录变更。Windows等待子进程退出，使一次Switch即可继续后续流程。[切换原理](SWITCHING.md)

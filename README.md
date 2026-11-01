@@ -9,9 +9,9 @@ Windows · macOS15+ · Linux preview · MIT open source · **1.44.0**
 
 [Download](#download) · [Get started](#get-started) · [What's new](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0)
 
-<p align="center"><img src="docs/media/discovery/en-dark-demo.png" width="500" height="400" alt="Codex Switch UI demo with account quota cards, CPU and memory and GPU usage percentages, and two storage devices" /></p>
+<p align="center"><img src="docs/evidence/home-simplification/native-after-windows.png" width="500" height="350" alt="Codex Switch1.44.0 with quota tanks and one Settings gear" /></p>
 
-Windows UI demo with simulated account and system data. [Demo sources](docs/media/discovery/README.md) / [native verification](docs/evidence/account-automation/README.md). Credentials stay in a local encrypted vault; **switching restarts Codex**. Independent project, not affiliated with OpenAI.
+Actual Windows app with fictional account inputs. [Native screenshots and source verification](docs/evidence/home-simplification/README.md). Credentials stay in a local encrypted vault; **switching restarts Codex**. Independent project, not affiliated with OpenAI.
 
 **Find it useful?** Star this repository or share it with another Codex user.
 
@@ -60,8 +60,8 @@ Warning icons retain full hover details; activate one to sign in again for the s
 ## Get started
 
 1. Windows: run `CodexSwitch.exe`. Mac: run `Install.command`, then open the installed **Codex Switch.app**. Linux: install a complete preview package and configure a supported Secret Service provider. [Installation](docs/INSTALL.md)
-2. Select **+** for official browser sign-in. If the previous account is automatically selected, use a separate browser profile/private window for the next login. On Windows, right-click **↻** to import the current Codex login.
-3. Compare the cards and select **Switch**. **Account auto-switch is Off by default; enable it explicitly in its toolbar menu.** On Linux, use the app's **Start Codex** action before working.
+2. Select **+** for official browser sign-in. If the previous account is automatically selected, use a separate browser profile/private window for the next login. **Settings > Import current account** imports the current Codex login.
+3. Compare the cards and select **Switch**. **Account auto-switch is Off by default; enable it explicitly in Settings.** On Linux, use **Settings > Start Codex** before working.
 
 ## Features
 

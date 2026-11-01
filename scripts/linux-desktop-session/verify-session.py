@@ -226,7 +226,8 @@ try:
     capture(window, pid, 'ordinary-native-frame', include_frame=True)
     run(['xdotool', 'windowsize', '--sync', window, '500', '360'])
     before_login_vault = (root / 'share/CodexAccountDesk/accounts.vault').read_bytes()
-    run(['xdotool', 'mousemove', '--window', window, '359', '17', 'click', '1'])
+    # Add/Refresh/Settings are the final three 28px titlebar actions.
+    run(['xdotool', 'mousemove', '--window', window, '430', '17', 'click', '1'])
     def login_controls(pending):
         raw = root / 'login-controls-private.xwd'
         png = root / 'login-controls-private.png'
@@ -242,7 +243,9 @@ try:
     wait_for(lambda: login_controls(False), 20)
     check('Ordinary Cancel restores the ready toolbar without changing existing ciphertext or creating authentication', not (ordinary_home / 'auth.json').exists() and (root / 'share/CodexAccountDesk/accounts.vault').read_bytes() == before_login_vault)
     run(['xdotool', 'windowsize', '--sync', window, '800', '600'])
-    run(['xdotool', 'mousemove', '--window', window, '631', '17', 'click', '1'])
+    run(['xdotool', 'mousemove', '--window', window, '786', '17', 'click', '1'])
+    # Settings ends with Start Codex and Quit; use its real keyboard path.
+    run(['xdotool', 'key', '--delay', '100', 'End', 'Up', 'Return'])
     def managed_client():
         for process in Path('/proc').glob('[0-9]*'):
             try:
@@ -255,7 +258,7 @@ try:
                 continue
         return None
     client_pid, client_window = wait_for(managed_client, 40)
-    check('Ordinary Start Codex button launches its own actual approved desktop child', Path('/proc/' + str(client_pid) + '/exe').resolve() == Path('/usr/lib/chatgpt/ChatGPT'))
+    check('Ordinary Settings > Start Codex launches its own actual approved desktop child', Path('/proc/' + str(client_pid) + '/exe').resolve() == Path('/usr/lib/chatgpt/ChatGPT'))
     run(['xdotool', 'windowactivate', '--sync', client_window])
     active = run(['xdotool', 'getactivewindow'], capture_output=True, text=True).stdout.strip()
     if active != client_window:
@@ -266,12 +269,14 @@ try:
     wait_for(lambda: not Path('/proc/' + str(client_pid)).exists(), 40)
     check('Ordinary managed start keeps authentication empty and allows normal application Quit', not (ordinary_home / 'auth.json').exists())
     run(['xdotool', 'windowactivate', '--sync', window])
-    run(['xdotool', 'mousemove', '--window', window, '758', '17', 'click', '1'])
+    run(['xdotool', 'mousemove', '--window', window, '786', '17', 'click', '1'])
+    # From Quit: Start, import, drives, appearance; then choose Light.
+    run(['xdotool', 'key', '--delay', '100', 'End', 'Up', 'Up', 'Up', 'Up', 'Right', 'End', 'Return'])
     run(['xdotool', 'mousemove', '--window', window, '20', '80'])
     time.sleep(0.5)
     capture(window, pid, 'ordinary-light-800x600')
     with Image.open(results / 'ordinary-dark-800x600.png') as before, Image.open(results / 'ordinary-light-800x600.png') as after:
-        check('Ordinary theme button changes the rendered application theme', sum(after.convert('RGB').getpixel((5, 80))) > sum(before.convert('RGB').getpixel((5, 80))) + 200)
+        check('Ordinary Settings > appearance changes the rendered application theme', sum(after.convert('RGB').getpixel((5, 80))) > sum(before.convert('RGB').getpixel((5, 80))) + 200)
     run(['xdotool', 'key', '--window', window, 'F5'])
     check('Ordinary refresh keeps the installed program alive', Path('/proc/' + str(pid)).exists())
     run(['xdotool', 'windowactivate', '--sync', window])
