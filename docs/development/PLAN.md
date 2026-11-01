@@ -1,5 +1,7 @@
 # Current plan
 
+Issue151 delivers [Home simplification](HOME_SIMPLIFICATION.md) and the already merged image/concurrent-load gateway corrections as1.44.0. Preserve account tanks, large quota numbers, the grid and direct switching; consolidate global actions behind the titlebar gear while retaining Add/Refresh, automatic-state visibility and warning/recovery guards. Complete native application evidence, six protected checks, review, merge, package/public-download verification and separately authorized state-preserving installation. [Release gates](RELEASE_1_44_0.md).
+
 Issue149 strengthens concurrent gateway load with an aggregate request-buffer budget, separate upload/stream limits, sliced custom rewrites and token-based validation. Verify exact512MiB bodies, eight65MiB custom uploads,48open response streams, overload/disconnect recovery and retained-memory measurements. Require final-head protected/native CI and privacy review before repository integration. Local installation and actual provider/account acceptance remain separate.
 
 Correct the remaining64MiB intermediary refusal for image-heavy conversations with a512MiB bounded body reader, limited concurrent large buffers and original-buffer forwarding. Verify declared and chunked requests, exact bounds, cancellation and unchanged history/authentication before local installation and authorized chat resumption. Public delivery remains a separate evidence state.

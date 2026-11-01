@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -197,21 +198,27 @@ internal static class MacDiagnostics
                     Assert(!ToolTip.GetIsOpen(resource) && !resourceTip.Classes.Contains(":open") && surface.Opacity == (palette.Appearance.ReducedMotion() ? 1 : 0), "Resource tooltip did not close and reset its custom surface");
                 }
                 checks.Add(new { name = name + "-resource-tooltip-reopen", passed = true });
-                var owner = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "LanguageButton");
-                var menu = window.OpenLanguageMenu(owner);
+                var owner = window.SettingsButton;
+                var menu = window.BuildSettingsMenu(); menu.Open(owner); await Task.Delay(120);
+                if (Program.NativeUiEvidence)
+                    await NativeUiCapture.SaveAsync(TopLevel.GetTopLevel(menu) ?? throw new InvalidOperationException("Settings popup has no native root"), Path.Combine(directory, name + "-settings-native.png"));
+                var languageSettings = menu.ItemsSource!.Cast<object>().OfType<MenuItem>().Single(item => item.Name == "LanguageSettingsMenuItem");
+                languageSettings.IsSubMenuOpen = true;
                 try
                 {
                     await Task.Delay(120);
-                    var scroll = menu.GetVisualDescendants().OfType<ScrollViewer>().First();
+                    var languagePopup = languageSettings.GetTemplateDescendants().OfType<Avalonia.Controls.Primitives.Popup>().Single();
+                    var languageSurface = languagePopup.Child ?? throw new InvalidOperationException("Language submenu has no surface");
+                    var scroll = languageSurface.GetVisualDescendants().OfType<ScrollViewer>().First();
                     Assert(scroll.Extent.Height > scroll.Viewport.Height, "Language dropdown has no reachable overflow");
-                    Assert(menu.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ScrollBar>().Any(bar => bar.IsVisible), "Language dropdown has no visible scrollbar");
+                    Assert(languageSurface.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ScrollBar>().Any(bar => bar.IsVisible), "Language dropdown has no visible scrollbar");
                     scroll.Offset = new Vector(0, scroll.Extent.Height); await Task.Delay(80);
                     Assert(scroll.Offset.Y > 0, "Language dropdown cannot scroll");
                     scroll.Offset = default; await Task.Delay(80);
                     if (Program.NativeUiEvidence)
                     {
-                        var popup = TopLevel.GetTopLevel(menu) ?? throw new InvalidOperationException("Native menu root unavailable");
-                        await NativeUiCapture.SaveAsync(popup, Path.Combine(directory, name + "-language-native.png"));
+                        var popupRoot = TopLevel.GetTopLevel(languageSurface) ?? throw new InvalidOperationException("Native menu root unavailable");
+                        await NativeUiCapture.SaveAsync(popupRoot, Path.Combine(directory, name + "-language-native.png"));
                     }
                 }
                 finally { menu.Close(); }

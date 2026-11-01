@@ -74,16 +74,24 @@ internal static class NativeUiEvidence
                 {
                     var name = "en-" + (dark ? "dark" : "light");
                     window.PrepareUiEvidence("en", dark); window.Width = 800; window.Height = 560; window.UpdateLayout();
-                    var language = Descendants<Button>(window).Single(b => b.Name == "LanguageButton");
-                    language.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); await Task.Delay(200);
-                    var menu = openedMenu ?? throw new InvalidOperationException("Language dropdown did not open");
-                    var scroll = Descendants<ScrollViewer>(menu).Single();
+                    var settings = Descendants<Button>(window).Single(b => b.Name == "SettingsButton");
+                    settings.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); await Task.Delay(150);
+                    var menu = settings.ContextMenu ?? throw new InvalidOperationException("Settings dropdown did not open");
+                    Assert(menu.Items.OfType<MenuItem>().Any(item => item.Name == "ModelProvidersMenuItem") && menu.Items.OfType<MenuItem>().Any(item => item.Name == "RestartCodexMenuItem"), "Settings lost model or restart actions");
+                    var firstSetting = menu.Items.OfType<MenuItem>().First();
+                    Assert(firstSetting.Focus() && firstSetting.IsKeyboardFocusWithin, "Settings rows must accept keyboard focus");
+                    var settingsSource = PresentationSource.FromVisual(menu) as HwndSource ?? throw new InvalidOperationException("Settings popup has no native handle");
+                    Capture(settingsSource.Handle, Path.Combine(directory, name + "-settings.png"));
+                    var languages = menu.Items.OfType<MenuItem>().Single(item => item.Name == "LanguageSettingsMenuItem");
+                    languages.IsSubmenuOpen = true; await Task.Delay(200);
+                    var languagePopup = (System.Windows.Controls.Primitives.Popup)languages.Template.FindName("PART_Popup", languages);
+                    var scroll = Descendants<ScrollViewer>(languagePopup.Child).Single();
                     Assert(scroll.ScrollableHeight > 0, "Language dropdown has no reachable overflow");
-                    var bar = Descendants<ScrollBar>(menu).First(b => b.Orientation == Orientation.Vertical && b.IsVisible);
+                    var bar = Descendants<ScrollBar>(languagePopup.Child).First(b => b.Orientation == Orientation.Vertical && b.IsVisible);
                     Assert(ReferenceEquals(bar.Style, menu.FindResource(typeof(ScrollBar))), "Popup scrollbar does not inherit its theme");
                     scroll.ScrollToEnd(); await Task.Delay(80); Assert(scroll.VerticalOffset > 0, "Language dropdown cannot scroll");
                     scroll.ScrollToHome(); await Task.Delay(80);
-                    var source = PresentationSource.FromVisual(menu) as HwndSource ?? throw new InvalidOperationException("Native popup handle unavailable");
+                    var source = PresentationSource.FromVisual(languagePopup.Child) as HwndSource ?? throw new InvalidOperationException("Native popup handle unavailable");
                     Capture(source.Handle, Path.Combine(directory, name + "-language.png")); menu.IsOpen = false;
                     var detail = new AccountDetailWindow(window, _ => { }, () => Task.CompletedTask) { Height = 380, ShowInTaskbar = false };
                     try

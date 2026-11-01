@@ -32,12 +32,19 @@ internal static class CreditEvidence
                 .Invoke(null, new[] { window, Path.Combine(directory, name) }); images.Add(name);
         }
         void Render() { typeof(MainWindow).GetMethod("RenderAccounts", fields)!.Invoke(owner, null); typeof(MainWindow).GetMethod("UpdateControls", fields)!.Invoke(owner, null); owner.UpdateLayout(); }
-        ContextMenu Menu()
+        MenuItem Menu()
         {
-            var button = Descendants<Button>(owner).Single(b => b.Name == "AutomaticSwitchButton");
-            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); return button.ContextMenu!;
+            var button = Descendants<Button>(owner).Single(b => b.Name == "SettingsButton");
+            button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            var automatic = button.ContextMenu!.Items.OfType<MenuItem>().Single(item => item.Name == "AutomaticSwitchMenuItem");
+            automatic.IsSubmenuOpen = true; return automatic;
         }
-        void Popup(ContextMenu menu, string name) => Capture((PresentationSource.FromVisual(menu) as HwndSource ?? throw new InvalidOperationException("Credit menu has no native HWND")).Handle, name);
+        void CloseMenu() { var button = Descendants<Button>(owner).Single(b => b.Name == "SettingsButton"); if (button.ContextMenu != null) button.ContextMenu.IsOpen = false; }
+        void Popup(MenuItem menu, string name)
+        {
+            var surface = ((System.Windows.Controls.Primitives.Popup)menu.Template.FindName("PART_Popup", menu)).Child;
+            Capture((PresentationSource.FromVisual(surface) as HwndSource ?? throw new InvalidOperationException("Credit menu has no native HWND")).Handle, name);
+        }
         var data = service.Vault.Data; var accounts = data.Accounts.ToArray();
         var saved = accounts.Select(p => (p.Usage, p.CreditHistory, p.SubscriptionActiveUntil, p.Error, p.RequiresApply)).ToArray();
         var oldAllow = data.AllowCreditUse; var oldEnabled = data.AutomaticSwitchEnabled; var oldCustom = data.AutomaticSwitchUsePriority;
@@ -68,10 +75,10 @@ internal static class CreditEvidence
                 toggle.IsChecked = false; toggle.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); await Task.Delay(80);
                 Check(!data.AllowCreditUse && !new AccountVault(service.Vault.DirectoryPath).Data.AllowCreditUse, prefix + "actual credit toggle persists Off");
                 Check(AccountAutomation.CreditStopTarget(service, false, now)?.Key == accounts[0].Key, prefix + "disabled automatic switching permits protective stop selection");
-                Popup(menu, prefix + "protected.png"); menu.IsOpen = false;
+                Popup(menu, prefix + "protected.png"); CloseMenu();
                 data.AutomaticSwitchEnabled = true; Render(); menu = Menu(); await Task.Delay(120);
                 Check(AccountAutomation.Next(service, now)?.Key == accounts[1].Key && ((MenuItem)menu.Items[1]).Header as string == Loc.F("auto.next", accounts[1].DisplayName) && ((MenuItem)menu.Items[1]).Opacity == 1, prefix + "past but usable subscription is the visible next account");
-                Popup(menu, prefix + "past-expiry.png"); menu.IsOpen = false;
+                Popup(menu, prefix + "past-expiry.png"); CloseMenu();
                 accounts[0].Usage!.Buckets[0].Primary!.ResetsAt = now.ToUnixTimeSeconds();
                 Render(); menu = Menu(); await Task.Delay(120);
                 Check(AccountAutomation.Next(service, now)?.Key == accounts[1].Key &&
@@ -79,7 +86,7 @@ internal static class CreditEvidence
                     AccountAutomation.CreditStopTarget(service, false, now) == null &&
                     ((MenuItem)menu.Items[1]).Header as string == Loc.F("auto.next", accounts[1].DisplayName),
                     prefix + "fresh zero awaiting reset keeps the visible eligible handoff instead of a credit pause");
-                Popup(menu, prefix + "reset-boundary.png"); menu.IsOpen = false;
+                Popup(menu, prefix + "reset-boundary.png"); CloseMenu();
                 foreach (var account in accounts) account.Usage!.Buckets[0].Primary!.UsedPercent = 100;
                 Check(AccountAutomation.CreditStopTarget(service, false, now)?.Key == accounts[0].Key, prefix + "no eligible quota requests a protected stop");
                 data.PendingSwitch = new() { SourceAccountKey = accounts[0].Key, TargetAccountKey = accounts[0].Key, CreditProtectionPause = true,

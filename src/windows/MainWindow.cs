@@ -34,9 +34,11 @@ internal sealed class MainWindow : Window
     private readonly TextBlock _status = new(), _loginText = new();
     private readonly SessionUsagePanel _sessionCount = new();
     private readonly Button _refresh = new(), _add = new(), _cancelLogin = new(), _cancelSwitch = new();
-    private readonly Button _automaticSwitch = new();
-    private readonly Button _providers = new();
-    private readonly Button _restartCodex = new();
+    private readonly MenuItem _automaticSwitch = new();
+    private readonly MenuItem _providers = new();
+    private readonly TextBlock _automaticState = new();
+    private readonly MenuItem _restartCodex = new();
+    private readonly Button _homeActions = new();
     private bool _providerEditing;
     private MenuItem? _importCurrent;
     private readonly Border _loginPanel = new();
@@ -125,7 +127,7 @@ internal sealed class MainWindow : Window
     }
     private void ApplyTheme()
     {
-        foreach (var element in new FrameworkElement[] { _restartCodex, _providers, _automaticSwitch, _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _loginPanel, _scroll })
+        foreach (var element in new FrameworkElement[] { _homeActions, _automaticState, _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _loginPanel, _scroll })
         {
             if (element.Parent is Panel panel) panel.Children.Remove(element);
             else if (element.Parent is ContentControl control && ReferenceEquals(control.Content, element)) control.Content = null;
@@ -138,6 +140,8 @@ internal sealed class MainWindow : Window
         if (FlowDirection != direction) FlowDirection = direction;
         SetResources();
         ConfigureTitleAction(_add, "계정 추가", "plus"); ConfigureTitleAction(_refresh, "새로 고침", "refresh");
+        ConfigureTitleAction(_homeActions, "설정", "settings"); _homeActions.Name = "SettingsButton";
+        _homeActions.Click -= OpenHomeActions; _homeActions.Click += OpenHomeActions;
         var refreshMenu = DropdownTheme.Create(_refresh, _theme);
         _importCurrent = new MenuItem { Header = Loc.T("현재 계정 가져오기") };
         _importCurrent.Click += async (_, _) => await ImportCurrentAsync();
@@ -169,24 +173,14 @@ internal sealed class MainWindow : Window
         _sessionCount.HorizontalAlignment = HorizontalAlignment.Center;
         Grid.SetColumn(_sessionCount, 1);
         toolbarRow.Children.Add(_sessionCount); body.Children.Add(toolbarRow);
-        ConfigureButton(_providers, "providers.short", null);
-        _providers.MinWidth = 0;
-        _providers.Name = "ModelProvidersButton"; _providers.HorizontalAlignment = HorizontalAlignment.Left;
-        _providers.FontSize = 10; _providers.Padding = new Thickness(6, 2, 6, 2); _providers.ToolTip = Loc.T("providers.title");
+        _providers.Header = Loc.T("providers.title"); _providers.Name = "ModelProvidersMenuItem";
         _providers.Click -= OpenModelProviders; _providers.Click += OpenModelProviders;
-        ConfigureButton(_restartCodex, "restart.title", null); _restartCodex.Name = "RestartCodexButton";
-        _restartCodex.MinWidth = 0;
-        _restartCodex.FontSize = 10; _restartCodex.Padding = new Thickness(6, 2, 6, 2); _restartCodex.Margin = new Thickness(6, 0, 0, 0);
+        _restartCodex.Header = Loc.T("restart.title"); _restartCodex.Name = "RestartCodexMenuItem";
         _restartCodex.ToolTip = Loc.T("restart.help"); _restartCodex.Click -= RestartCodexClicked; _restartCodex.Click += RestartCodexClicked;
-        var modelActions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left };
-        modelActions.Children.Add(_providers); modelActions.Children.Add(_restartCodex); toolbarRow.Children.Add(modelActions);
-        ConfigureButton(_automaticSwitch, "auto.title", null);
-        _automaticSwitch.Name = "AutomaticSwitchButton";
-        _automaticSwitch.HorizontalAlignment = HorizontalAlignment.Right; _automaticSwitch.Margin = new Thickness(6, 0, 0, 0);
-        Grid.SetColumn(_automaticSwitch, 2);
-        _automaticSwitch.FontSize = 10; _automaticSwitch.Padding = new Thickness(6, 2, 6, 2);
-        _automaticSwitch.Click -= OpenAutomaticSwitchMenu; _automaticSwitch.Click += OpenAutomaticSwitchMenu;
-        toolbarRow.Children.Add(_automaticSwitch);
+        _automaticSwitch.Name = "AutomaticSwitchMenuItem";
+        _automaticState.FontSize = 10; _automaticState.Foreground = Color("muted");
+        _automaticState.HorizontalAlignment = HorizontalAlignment.Right; _automaticState.VerticalAlignment = VerticalAlignment.Center;
+        Grid.SetColumn(_automaticState, 2); toolbarRow.Children.Add(_automaticState);
         var login = new DockPanel(); DockPanel.SetDock(_cancelLogin, Dock.Right); login.Children.Add(_cancelLogin); _loginText.TextWrapping = TextWrapping.Wrap; _loginText.VerticalAlignment = VerticalAlignment.Center; _loginText.Margin = new Thickness(0, 0, 12, 0); login.Children.Add(_loginText);
         _loginPanel.Child = login; _loginPanel.Margin = new Thickness(0, 0, 0, 16); Grid.SetRow(_loginPanel, 1); body.Children.Add(_loginPanel);
         _scroll.Content = _rows; Grid.SetRow(_scroll, 2); body.Children.Add(_scroll);
@@ -196,6 +190,38 @@ internal sealed class MainWindow : Window
         _cancelSwitch.HorizontalAlignment = HorizontalAlignment.Left; _cancelSwitch.Margin = new Thickness(0, 10, 0, 0); footer.Children.Add(_cancelSwitch);
         Grid.SetRow(footer, 3); body.Children.Add(footer); Grid.SetRow(body, 1); root.Children.Add(body); return root;
     }
+    internal ContextMenu HomeActionsMenu()
+    {
+        foreach (var item in new[] { _providers, _automaticSwitch, _restartCodex })
+            if (ItemsControl.ItemsControlFromItemContainer(item) is ItemsControl previous) previous.Items.Remove(item);
+        var menu = DropdownTheme.Create(_homeActions, _theme);
+        menu.Items.Add(_providers);
+        _automaticSwitch.Items.Clear();
+        var automatic = BuildAutomaticSwitchMenu();
+        while (automatic.Items.Count > 0) { var item = automatic.Items[0]; automatic.Items.RemoveAt(0); _automaticSwitch.Items.Add(item); }
+        menu.Items.Add(_automaticSwitch); menu.Items.Add(_restartCodex); menu.Items.Add(new Separator());
+        var languages = new MenuItem { Name = "LanguageSettingsMenuItem", Header = Loc.T("언어 설정") + "  " + Loc.LanguageName };
+        if (_options.LanguagePackProblems > 0) languages.ToolTip = Loc.F("pack.invalid_local_packs", _options.LanguagePackProblems);
+        else if (_options.SavedLanguageUnavailable) languages.ToolTip = Loc.T("Saved language pack unavailable. Showing English.");
+        var languageMenu = BuildLanguageMenu();
+        while (languageMenu.Items.Count > 0) { var item = languageMenu.Items[0]; languageMenu.Items.RemoveAt(0); languages.Items.Add(item); }
+        menu.Items.Add(languages);
+        var appearance = new MenuItem { Header = Loc.T("다크") + " / " + Loc.T("라이트"), Name = "ThemeSettingsMenuItem" };
+        foreach (var dark in new[] { true, false })
+        {
+            var choice = new MenuItem { Header = Loc.T(dark ? "다크" : "라이트"), IsCheckable = true, IsChecked = _theme.Dark == dark };
+            choice.Click += (_, _) => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.Theme = dark ? "dark" : "light"; _service.Vault.Save(); } _theme = new Burn0Theme(dark); ApplyTheme(); UpdateTray(); };
+            appearance.Items.Add(choice);
+        }
+        menu.Items.Add(appearance);
+        var import = new MenuItem { Header = Loc.T("현재 계정 가져오기"), IsEnabled = !_closing };
+        import.Click += async (_, _) => await ImportCurrentAsync(); menu.Items.Add(import);
+        var drives = new MenuItem { Header = Loc.T("드라이브 설정") };
+        drives.Click += (_, _) => OpenDriveSettings(); menu.Items.Add(drives);
+        return menu;
+    }
+    private void OpenHomeActions(object? sender, RoutedEventArgs args)
+    { _homeActions.ContextMenu = HomeActionsMenu(); _homeActions.ContextMenu.IsOpen = true; }
     private UIElement BuildTitleBar()
     {
         var bar = new Grid { Background = Color("chrome"), Height = 40 };
@@ -206,18 +232,7 @@ internal sealed class MainWindow : Window
         version.Name = "RunningVersionLabel"; version.Margin = new Thickness(6, 0, 0, 0); version.VerticalAlignment = VerticalAlignment.Center; version.FlowDirection = FlowDirection.LeftToRight;
         identity.Children.Add(version); bar.Children.Add(identity);
         var controls = new StackPanel { Name = "TitleBarActions", Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        controls.Children.Add(_add); controls.Children.Add(_refresh);
-        var language = NewButton(Loc.LanguageCode + " ▾", null, false, true); language.Padding = new Thickness(10, 0, 10, 0); language.Background = Brushes.Transparent; language.ToolTip = Loc.LanguageName + " · " + Loc.T("언어 설정");
-        language.Name = "LanguageButton";
-        System.Windows.Automation.AutomationProperties.SetName(language, Loc.T("언어 설정") + ": " + Loc.LanguageName);
-        if (_options.LanguagePackProblems > 0) language.ToolTip += "\n" + Loc.F("pack.invalid_local_packs", _options.LanguagePackProblems);
-        else if (_options.SavedLanguageUnavailable) language.ToolTip += "\n" + Loc.T("Saved language pack unavailable. Showing English.");
-        language.Click += (_, _) => OpenLanguageMenu(language); WindowChrome.SetIsHitTestVisibleInChrome(language, true); controls.Children.Add(language);
-        var theme = NewButton("", _theme.Dark ? "sun" : "moon", false); theme.Name = "ThemeButton";
-        theme.Style = (Style)Resources["TitleActionButton"]; theme.ToolTip = Loc.T(_theme.Dark ? "라이트" : "다크");
-        System.Windows.Automation.AutomationProperties.SetName(theme, (string)theme.ToolTip);
-        theme.Click += (_, _) => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.Theme = _theme.Dark ? "light" : "dark"; _service.Vault.Save(); } _theme = new Burn0Theme(!_theme.Dark); ApplyTheme(); UpdateTray(); };
-        WindowChrome.SetIsHitTestVisibleInChrome(theme, true); controls.Children.Add(theme);
+        controls.Children.Add(_add); controls.Children.Add(_refresh); controls.Children.Add(_homeActions);
         var minimize = CaptionButton("window-minimize", "최소화", () => SystemCommands.MinimizeWindow(this));
         var maximize = CaptionButton(WindowState == WindowState.Maximized ? "window-restore" : "window-maximize", "최대화 / 복원", () =>
         { if (WindowState == WindowState.Maximized) SystemCommands.RestoreWindow(this); else SystemCommands.MaximizeWindow(this); });
@@ -241,9 +256,9 @@ internal sealed class MainWindow : Window
         System.Windows.Automation.AutomationProperties.SetName(button, Loc.T(label));
         WindowChrome.SetIsHitTestVisibleInChrome(button, true);
     }
-    private void OpenLanguageMenu(Button owner)
+    internal ContextMenu BuildLanguageMenu()
     {
-        var menu = DropdownTheme.Create(owner, _theme);
+        var menu = DropdownTheme.Create(_homeActions, _theme);
         foreach (var option in Loc.Languages)
         {
             var item = new MenuItem { Header = option.NativeName, IsCheckable = true, IsChecked = option.Code == Loc.Language,
@@ -259,7 +274,7 @@ internal sealed class MainWindow : Window
             restore.Click += (_, _) => { try { ChangeLanguage(Loc.RestoreBuiltIn(Path.Combine(_service.Vault.DirectoryPath, "languages"))); SetStatus("Local translations replaced with the built-in pack."); } catch (Exception error) { Confirm(error.Message, Loc.T("Language packs"), "확인", false); } };
             menu.Items.Add(restore);
         }
-        owner.ContextMenu = menu; menu.IsOpen = true;
+        return menu;
     }
     private void OpenModelProviders(object? sender, RoutedEventArgs args)
     {
@@ -451,13 +466,11 @@ internal sealed class MainWindow : Window
         {
             foreach (var language in new[] { originalLanguage == "ko" ? "en" : "ko", originalLanguage })
             {
-                var button = Descendants(this).OfType<Button>().Single(b => b.ToolTip is string tip && tip.EndsWith(Loc.T("언어 설정"), StringComparison.Ordinal));
-                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                var menu = button.ContextMenu;
+                var menu = HomeActionsMenu();
                 try
                 {
-                    menu.UpdateLayout();
-                    var item = menu.Items.OfType<MenuItem>().Single(i => Equals(i.Header, Loc.Languages.Single(l => l.Code == language).NativeName));
+                    var languages = menu.Items.OfType<MenuItem>().Single(i => i.Name == "LanguageSettingsMenuItem");
+                    var item = languages.Items.OfType<MenuItem>().Single(i => Equals(i.Header, Loc.Languages.Single(l => l.Code == language).NativeName));
                     item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
                     UpdateLayout(); actions++;
                     if (Loc.Language != language) throw new InvalidOperationException("Language menu did not apply its selection");
@@ -466,8 +479,9 @@ internal sealed class MainWindow : Window
             }
             for (var toggle = 0; toggle < 2; toggle++)
             {
-                var button = Descendants(this).OfType<Button>().Single(b => Equals(b.ToolTip, Loc.T("Burn0 테마 전환")));
-                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); UpdateLayout(); actions++;
+                var menu = HomeActionsMenu();
+                var appearance = menu.Items.OfType<MenuItem>().Single(i => i.Name == "ThemeSettingsMenuItem");
+                appearance.Items.OfType<MenuItem>().Single(i => i.Header as string == Loc.T(_theme.Dark ? "라이트" : "다크")).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); UpdateLayout(); actions++;
             }
         }
         if (Loc.Language != originalLanguage || _theme.Dark != originalTheme || !identities.SequenceEqual(_service.Accounts.Select(a => a.Key + ":" + a.Alias)))
@@ -615,9 +629,11 @@ internal sealed class MainWindow : Window
     }
     private void LayoutCards()
     {
+        _scroll.VerticalScrollBarVisibility = _tankCards.Count > 4 ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled;
         var available = _scroll.ActualWidth > 0 ? _scroll.ActualWidth : Width - 24;
         _rows.Columns = _tankCards.Count <= 1 ? 1 : _tankCards.Count <= 4 ? 2 : Math.Clamp((int)(available / 240), 2, 4);
         _rows.Rows = Math.Max(1, (int)Math.Ceiling(_tankCards.Count / (double)_rows.Columns));
+        _rows.MinHeight = _tankCards.Count > 4 ? _rows.Rows * 126 : 0;
         foreach (var card in _tankCards) { card.Width = double.NaN; card.Height = double.NaN; card.Margin = new Thickness(4); }
     }
     private void OpenDetails(string key)
@@ -849,14 +865,9 @@ internal sealed class MainWindow : Window
     {
         _switchCancellation?.Cancel();
     }
-    private void OpenAutomaticSwitchMenu(object sender, RoutedEventArgs args)
-    {
-        var menu = BuildAutomaticSwitchMenu();
-        _automaticSwitch.ContextMenu = menu; menu.IsOpen = true;
-    }
     internal ContextMenu BuildAutomaticSwitchMenu()
     {
-        var menu = DropdownTheme.Create(_automaticSwitch, _theme);
+        var menu = DropdownTheme.Create(_homeActions, _theme);
         var enabled = DropdownTheme.Switch(Loc.T("auto.title"), _service.Vault.Data.AutomaticSwitchEnabled, _theme);
         System.Windows.Automation.AutomationProperties.SetName(enabled, Loc.T("auto.enable"));
         var next = new MenuItem { Name = "NextAutomaticAccount", Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow), IsEnabled = false, Opacity = 1, Foreground = _theme.Color("muted") };
@@ -949,13 +960,16 @@ internal sealed class MainWindow : Window
         _providers.IsEnabled = !_closing && !_switching && !_loggingIn;
         _restartCodex.IsEnabled = _ready && !_closing && !_switching && !_loggingIn && !_providerEditing && _service.Accounts.Any(profile => profile.IsCurrent) && PendingSwitch() is not { RestartOnly: false };
         var automaticSwitchLabel = Loc.T(_service.Vault.Data.AutomaticSwitchEnabled ? "auto.on" : "auto.off");
-        _automaticSwitch.Content = new TextBlock { Text = Loc.T("auto.title") + " ▾", TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center };
+        _automaticSwitch.Header = automaticSwitchLabel;
+        _automaticState.Text = _service.Vault.Data.AutomaticSwitchEnabled ? automaticSwitchLabel : "";
+        _automaticState.Visibility = _service.Vault.Data.AutomaticSwitchEnabled ? Visibility.Visible : Visibility.Collapsed;
+        _automaticState.ToolTip = automaticSwitchLabel;
         System.Windows.Automation.AutomationProperties.SetName(_automaticSwitch, automaticSwitchLabel);
         _automaticSwitch.ToolTip = automaticSwitchLabel + "\n" + AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow) + "\n" + Loc.F("auto.help", _service.Vault.Data.AutomaticSwitchThreshold) + "\n" +
             Loc.T(_service.Vault.Data.AutomaticSwitchUsePriority ? "auto.custom" : "auto.optimal") + "\n" + Loc.T("auto.priority_help");
         _automaticSwitch.IsEnabled = _ready && !_closing;
-        if (_automaticSwitch.ContextMenu is { IsOpen: true } openMenu)
-            foreach (var next in openMenu.Items.OfType<MenuItem>().Where(item => item.Name == "NextAutomaticAccount"))
+        if (_homeActions.ContextMenu is { IsOpen: true })
+            foreach (var next in _automaticSwitch.Items.OfType<MenuItem>().Where(item => item.Name == "NextAutomaticAccount"))
                 next.Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow);
         _refresh.IsEnabled = CanRefresh; _add.IsEnabled = _ready && !_loggingIn && !_closing;
         if (_importCurrent != null) _importCurrent.IsEnabled = !_closing;

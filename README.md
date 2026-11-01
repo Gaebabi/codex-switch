@@ -3,17 +3,19 @@
 
 **A desktop account switcher and quota dashboard for OpenAI Codex.** See your accounts together, choose the next one, and recover an interrupted handoff. Optional quota-based switching starts **Off**.
 
-Windows · macOS15+ · Linux preview · MIT open source · **1.43.3**
+Windows · macOS15+ · Linux preview · MIT open source · **1.44.0**
 
 [English](README.md) / [한국어](docs/README.ko.md) / [日本語](docs/README.ja.md) / [简体中文](docs/README.zh-CN.md)
 
-[Download](#download) · [Get started](#get-started) · [What's new](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.3)
+[Download](#download) · [Get started](#get-started) · [What's new](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0)
 
-<p align="center"><img src="docs/media/discovery/en-dark-demo.png" width="500" height="400" alt="Codex Switch UI demo with account quota cards, CPU and memory and GPU usage percentages, and two storage devices" /></p>
+<p align="center"><img src="docs/evidence/home-simplification/native-after-windows.png" width="500" height="350" alt="Codex Switch1.44.0 with quota tanks and one Settings gear" /></p>
 
-Windows UI demo with simulated account and system data. [Demo sources](docs/media/discovery/README.md) / [native verification](docs/evidence/account-automation/README.md). Credentials stay in a local encrypted vault; **switching restarts Codex**. Independent project, not affiliated with OpenAI.
+Actual Windows app with fictional account inputs. [Native screenshots and source verification](docs/evidence/home-simplification/README.md). Credentials stay in a local encrypted vault; **switching restarts Codex**. Independent project, not affiliated with OpenAI.
 
 **Find it useful?** Star this repository or share it with another Codex user.
+
+Release1.44.0 keeps the quota tanks and direct account switching while gathering models, automatic switching, restart, language and appearance in one Settings gear. Image-heavy chats also gain corrected built-in image routes and bounded concurrent request handling. [What's changed and compatibility](docs/development/RELEASE_1_44_0.md).
 
 Release1.42.2 adds account-specific browser sign-in from warnings, default-Off quota-based account switching, optimal/custom priority, durable reopening/recovery, labeled subscription dates and official Pro 100/200/500 tiers. [Behavior and verification scope](docs/development/ACCOUNT_AUTOMATION.md) / [release gates](docs/development/RELEASE_1_42_2.md).
 
@@ -41,25 +43,25 @@ Complete packages include the .NET runtime; no source build or .NET installation
 
 | Platform | Download |
 | --- | --- |
-| Windows x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.3/CodexSwitch-v1.43.3-win-x64.zip) |
-| macOS15+ Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.3/CodexSwitch-v1.43.3-osx-arm64.zip) |
-| macOS15+ Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.3/CodexSwitch-v1.43.3-osx-x64.zip) |
-| Linux x64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.3/CodexSwitch-v1.43.3-preview-linux-x64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.3/CodexSwitch-v1.43.3-preview-linux-x64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.3/CodexSwitch-v1.43.3-preview-linux-x64.tar.gz) |
-| Linux ARM64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.3/CodexSwitch-v1.43.3-preview-linux-arm64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.3/CodexSwitch-v1.43.3-preview-linux-arm64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.3/CodexSwitch-v1.43.3-preview-linux-arm64.tar.gz) |
+| Windows x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-win-x64.zip) |
+| macOS15+ Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-osx-arm64.zip) |
+| macOS15+ Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-osx-x64.zip) |
+| Linux x64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-x64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-x64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-x64.tar.gz) |
+| Linux ARM64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-arm64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-arm64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-arm64.tar.gz) |
 
-[Release notes and SHA256 checksums](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.3). Windows/Linux packages are unsigned. Mac bundles are ad-hoc signed and **not Apple-notarized**; follow [Mac setup](docs/MACOS.md).
+[Release notes and SHA256 checksums](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0). Windows/Linux packages are unsigned. Mac bundles are ad-hoc signed and **not Apple-notarized**; follow [Mac setup](docs/MACOS.md).
 
 Linux is an integration preview. Native storage, installed UI and package tests are distinct from supported account handoff and full desktop acceptance. Desktop integration requires approved OpenAI Linux client26.1007.71326, an existing file credential policy and X11/XWayland; newer clients require review. CLI-only mode needs an explicit executable checksum and does not resume desktop chats. [Requirements and limits](docs/development/LINUX.md) / [Linux installation](docs/development/LINUX_PACKAGES.md)
 
 Warning icons retain full hover details; activate one to sign in again for the selected account. [Actual application evidence](docs/evidence/account-automation/README.md).
 
-**Linux1.43.3 downloads include terminal account switching and saved CLI-session resumption, introduced in source1.41.0.** `CodexSwitch cli` manages the existing encrypted accounts without DISPLAY; `cli switch <account> --resume <CLI-session-UUID>` combines manual switching and official CLI resumption. `--continue` explicitly submits a follow-up; `--exec --continue` selects noninteractive continuation. A verified native CLI and an unlocked supported Secret Service are required. Real two-account contextual CLI resumption is verified on Linux x64; native ARM64/offline tests and full desktop acceptance have separate scopes. [Commands, actual screenshots and exact verification limits](docs/development/LINUX_TERMINAL.md).
+**Linux1.44.0 downloads include terminal account switching and saved CLI-session resumption, introduced in source1.41.0.** `CodexSwitch cli` manages the existing encrypted accounts without DISPLAY; `cli switch <account> --resume <CLI-session-UUID>` combines manual switching and official CLI resumption. `--continue` explicitly submits a follow-up; `--exec --continue` selects noninteractive continuation. A verified native CLI and an unlocked supported Secret Service are required. Real two-account contextual CLI resumption is verified on Linux x64; native ARM64/offline tests and full desktop acceptance have separate scopes. [Commands, actual screenshots and exact verification limits](docs/development/LINUX_TERMINAL.md).
 
 ## Get started
 
 1. Windows: run `CodexSwitch.exe`. Mac: run `Install.command`, then open the installed **Codex Switch.app**. Linux: install a complete preview package and configure a supported Secret Service provider. [Installation](docs/INSTALL.md)
-2. Select **+** for official browser sign-in. If the previous account is automatically selected, use a separate browser profile/private window for the next login. On Windows, right-click **↻** to import the current Codex login.
-3. Compare the cards and select **Switch**. **Account auto-switch is Off by default; enable it explicitly in its toolbar menu.** On Linux, use the app's **Start Codex** action before working.
+2. Select **+** for official browser sign-in. If the previous account is automatically selected, use a separate browser profile/private window for the next login. **Settings > Import current account** imports the current Codex login.
+3. Compare the cards and select **Switch**. **Account auto-switch is Off by default; enable it explicitly in Settings.** On Linux, use **Settings > Start Codex** before working.
 
 ## Features
 

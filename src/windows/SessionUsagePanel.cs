@@ -16,9 +16,9 @@ internal sealed class SessionUsagePanel : Grid
         for (var index = 0; index < 3; index++)
         {
             ColumnDefinitions.Add(new() { Width = GridLength.Auto });
-            _groups[index] = new() { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, index < 2 ? 24 : 0, 0) };
-            _labels[index] = new() { FontSize = 10, LineHeight = 14, LineStackingStrategy = LineStackingStrategy.BlockLineHeight, VerticalAlignment = VerticalAlignment.Center };
-            _values[index] = new() { FontSize = 17, LineHeight = 20, LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
+            _groups[index] = new() { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, index < 2 ? 16 : 0, 0) };
+            _labels[index] = new() { FontSize = 11, LineHeight = 14, LineStackingStrategy = LineStackingStrategy.BlockLineHeight, VerticalAlignment = VerticalAlignment.Center };
+            _values[index] = new() { FontSize = 14, LineHeight = 20, LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
                 FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) };
             _groups[index].Children.Add(_labels[index]); _groups[index].Children.Add(_values[index]);
             SetColumn(_groups[index], index); Children.Add(_groups[index]);

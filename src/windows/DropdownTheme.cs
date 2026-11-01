@@ -136,7 +136,7 @@ internal static class DropdownTheme
         submenuSurface.SetValue(UIElement.EffectProperty, new DropShadowEffect { Color = Colors.Black, BlurRadius = 16, ShadowDepth = 4,
             Opacity = theme.Dark ? 0.32 : 0.12, RenderingBias = RenderingBias.Quality });
         var submenuScroll = new FrameworkElementFactory(typeof(ScrollViewer));
-        submenuScroll.SetValue(FrameworkElement.MaxHeightProperty, 360.0);
+        submenuScroll.SetValue(FrameworkElement.MaxHeightProperty, 300.0);
         submenuScroll.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled);
         submenuScroll.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto);
         submenuScroll.SetValue(ScrollViewer.CanContentScrollProperty, true); submenuScroll.SetValue(Control.FocusableProperty, false);

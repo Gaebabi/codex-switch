@@ -3,15 +3,17 @@
 
 **OpenAI Codexのアカウント切替と使用量を一画面で管理するデスクトップアプリです。** 各アカウントの残量を比較して次のアカウントを選択し、中断した切替は保存された記録から復旧できます。任意の残量基準による自動切替は初期状態で**オフ**です。
 
-Windows · macOS15以降 · Linuxプレビュー · MITオープンソース · **1.43.3**
+Windows · macOS15以降 · Linuxプレビュー · MITオープンソース · **1.44.0**
 
 [English](../README.md) / [한국어](README.ko.md) / 日本語 / [简体中文](README.zh-CN.md)
 
-[ダウンロード](#ダウンロード) · [使い始める](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.3)
+[ダウンロード](#ダウンロード) · [使い始める](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0)
 
-<p align="center"><img src="media/discovery/en-dark-demo.png" width="500" height="400" alt="アカウント残量、CPU・メモリ・GPU使用率と2台のストレージを表示するCodex Switch英語UIデモ" /></p>
+1.44.0では残量タンクと直接のアカウント切替を保ち、モデル、自動切替、再起動、言語と外観を一つの設定メニューにまとめました。画像の多い会話の中継と同時リクエスト処理も改善しています。[変更内容と互換性](development/RELEASE_1_44_0.md)。
 
-アカウントとシステム情報を模擬入力したWindows英語UIデモです。[デモの出典](media/discovery/README.md) / [ネイティブ検証](evidence/account-automation/README.md)。認証情報はローカルで暗号化保存され、**アカウント切替時にCodexが再起動します。** OpenAIとは提携していない独立プロジェクトです。
+<p align="center"><img src="evidence/home-simplification/native-after-windows.png" width="500" height="350" alt="残量タンクと一つの設定メニューを備えたCodex Switch1.44.0" /></p>
+
+架空のアカウントで検証した実際のWindowsアプリ画面です。[元の画面とソース検証](evidence/home-simplification/README.md)。認証情報はローカルで暗号化保存され、**アカウント切替時にCodexが再起動します。** OpenAIとは提携していない独立プロジェクトです。
 
 **役に立ったら、このリポジトリにStarを付けたり、他のCodexユーザーに紹介してください。**
 
@@ -37,9 +39,9 @@ Windows · macOS15以降 · Linuxプレビュー · MITオープンソース · 
 
 ## ダウンロード
 
-- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.3/CodexSwitch-v1.43.3-win-x64.zip)
-- macOS15以降：[Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.3/CodexSwitch-v1.43.3-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.43.3/CodexSwitch-v1.43.3-osx-x64.zip)
-- Linux **プレビュー** x64・ARM64：[DEB・RPM・tar.gzとSHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.3)
+- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-win-x64.zip)
+- macOS15以降：[Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-osx-x64.zip)
+- Linux **プレビュー** x64・ARM64：[DEB・RPM・tar.gzとSHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0)
 
 .NETを同梱しており、ビルドやランタイムのインストールは不要です。フォルダー・アプリ全体を保持してください。Windows/Linuxは未署名、Macはアドホック署名で**Apple未公証**です。[インストール](INSTALL.md) / [Mac初回起動](MACOS.md)
 
@@ -49,11 +51,11 @@ Linuxは統合プレビューです。キーストア・インストール済み
 
 警告にホバーすると原因を表示し、押すと対象アカウントでブラウザーに再ログインできます。[実際のアプリ検証](evidence/account-automation/README.md)。
 
-**Linux1.43.3の配布物には、ソース1.41.0で追加した端末のアカウント切り替えと保存済みCLIセッションの再開が含まれます。** `CodexSwitch cli`で画面サーバーなしに既存の暗号化アカウントを管理し、`cli switch <account> --resume <CLI-session-UUID>`で手動切り替えと公式CLIの再開を実行します。`--continue`は追加メッセージ送信を明示し、`--exec --continue`は非対話実行です。検証済みのネイティブCLI・チェックサムと、ロック解除済みの対応Secret Serviceが必要です。Linux x64で実際の2アカウント切り替え後に元の文脈を保持したCLI再開を確認しました。ARM64・オフライン検証と完全なデスクトップ対応は別の範囲です。[コマンド・実際の画像・検証範囲](development/LINUX_TERMINAL.md)。
+**Linux1.44.0の配布物には、ソース1.41.0で追加した端末のアカウント切り替えと保存済みCLIセッションの再開が含まれます。** `CodexSwitch cli`で画面サーバーなしに既存の暗号化アカウントを管理し、`cli switch <account> --resume <CLI-session-UUID>`で手動切り替えと公式CLIの再開を実行します。`--continue`は追加メッセージ送信を明示し、`--exec --continue`は非対話実行です。検証済みのネイティブCLI・チェックサムと、ロック解除済みの対応Secret Serviceが必要です。Linux x64で実際の2アカウント切り替え後に元の文脈を保持したCLI再開を確認しました。ARM64・オフライン検証と完全なデスクトップ対応は別の範囲です。[コマンド・実際の画像・検証範囲](development/LINUX_TERMINAL.md)。
 
 1. Windowsは`CodexSwitch.exe`、Macは`Install.command`でインストールした**Codex Switch.app**を開きます。Linuxは完全なプレビューパッケージと対応するSecret Serviceが必要です。
-2. **+**で公式ブラウザー画面から各アカウントをログインします。以前のアカウントが自動選択される場合は、別のブラウザープロファイル・プライベートウィンドウを使います。Windowsは**↻**の右クリックで現在のログインを取り込めます。
-3. 残量を比較して**Switch**を押します。**アカウント自動切替は初期状態オフで、上部メニューから有効にできます。** Linuxでは作業前に本アプリの**Start Codex**を使います。
+2. **+**で公式ブラウザー画面から各アカウントをログインします。以前のアカウントが自動選択される場合は、別のブラウザープロファイル・プライベートウィンドウを使います。**設定 > 現在のアカウントを取り込む**で現在のログインを取り込めます。
+3. 残量を比較して**Switch**を押します。**アカウント自動切替は初期状態オフで、設定から有効にできます。** Linuxでは作業前に**設定 > Start Codex**を使います。
 
 - 日付付きチャット名を保存・検証してログインをバックアップし、Codexを正常終了します。同じチャットID・フォルダー・モデル・権限を開いて、再開可能な未完了の待機中チャットに**Continueを一度だけ**送り、自動再開します。実行中・完了済みの作業は重複実行しません。
 - 暗号化された進行状況を**Resume chats**で再開できます。送信結果が不明なら自動再送せず、名前保存・正常終了の失敗時はログイン変更を停止します。Windowsでは子プロセス終了を待ち、一度のSwitchで処理を進めます。[切り替えの詳細](SWITCHING.md)
