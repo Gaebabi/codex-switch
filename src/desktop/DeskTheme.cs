@@ -86,6 +86,13 @@ internal sealed class DeskTheme
         menu.Styles.Add(new Style(selector => selector.OfType<MenuItem>().Class(":pointerover")) { Setters = { new Setter(MenuItem.BackgroundProperty, Brush("hover")) } });
         menu.Styles.Add(new Style(selector => selector.OfType<MenuItem>().Class(":checked")) { Setters = { new Setter(MenuItem.BackgroundProperty, Brush("selected")) } });
         menu.Styles.Add(new Style(selector => selector.OfType<MenuItem>().Class(":disabled")) { Setters = { new Setter(MenuItem.OpacityProperty, 0.45) } });
+        // Submenus use Fluent's own popup template rather than ContextMenu.Template.
+        // Bound their scroll viewport as well as the root menu, including languages.
+        menu.Styles.Add(new Style(selector => selector.OfType<MenuItem>().Template().OfType<ScrollViewer>()) { Setters = {
+            new Setter(ScrollViewer.MaxHeightProperty, 300.0),
+            new Setter(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto),
+            new Setter(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled),
+            new Setter(ScrollViewer.AllowAutoHideProperty, false) } });
         menu.Styles.Add(new Style(selector => selector.OfType<Separator>()) { Setters = {
             new Setter(Separator.BackgroundProperty, Brush("divider")), new Setter(Separator.MarginProperty, new Thickness(8, 5)), new Setter(Separator.HeightProperty, 1.0) } });
         EventHandler<VisualTreeAttachmentEventArgs> detached = (_, _) => menu.Close();

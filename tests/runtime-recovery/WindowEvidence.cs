@@ -89,7 +89,9 @@ internal static class WindowEvidence
                 await Wait(() => !((bool)serviceType.GetProperty("IsBusy")!.GetValue(service)!) &&
                     (int)Field(window, "_operations").GetType().GetProperty("Count")!.GetValue(Field(window, "_operations"))! == 0);
                 await Task.Delay(200);
-                await Wait(() => VisibleState(window, baseline ? "갱신 실패 · 이전 값" : "현재 로그인"));
+                await Wait(() => baseline ? VisibleState(window, "갱신 실패 · 이전 값") :
+                    Successful() && !VisibleState(window, "갱신 실패 · 이전 값") &&
+                    !Visuals(window).OfType<Button>().Any(button => button.IsVisible && button.GetType().Name == "AccountWarningButton"));
                 Check(baseline ? "Baseline retains a visible refresh error after executable removal" : "Actual Refresh button visibly recovers after executable removal", Successful() != baseline);
                 await Capture(baseline ? "before" : "after");
                 if (!baseline)
@@ -98,7 +100,7 @@ internal static class WindowEvidence
                     File.Delete(newCli);
                     Environment.SetEnvironmentVariable("CODEX_ACCOUNT_DESK_DESKTOP", Path.Combine(root, "unavailable-during-update.exe"));
                     await Call(window, "RefreshAsync");
-                    await Wait(() => VisibleState(window, "갱신 실패 · 이전 값"));
+                    await Wait(() => !Successful() && Visuals(window).OfType<Button>().Any(button => button.IsVisible && button.GetType().Name == "AccountWarningButton"));
                     Check("Temporary installation gap is visible on the actual account card", !Successful());
                     await Capture("update-gap");
                     File.WriteAllBytes(newCli, replacementBytes);
@@ -107,7 +109,7 @@ internal static class WindowEvidence
                     timer.Interval = TimeSpan.FromMilliseconds(100); timer.Start();
                     await Wait(Successful); timer.Stop();
                     await Wait(() => !((bool)serviceType.GetProperty("IsBusy")!.GetValue(service)!));
-                    await Wait(() => VisibleState(window, "현재 로그인"));
+                    await Wait(() => Successful() && !Visuals(window).OfType<Button>().Any(button => button.IsVisible && button.GetType().Name == "AccountWarningButton"));
                     Check("Production timer callback recovers without another button click", Successful());
                     await Capture("automatic-recovery");
                 }
