@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Avalonia;
 using Avalonia.Controls;
@@ -12,6 +13,7 @@ using Avalonia.Data;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Avalonia.VisualTree;
 using AButton = Avalonia.Controls.Button;
 
 namespace CodexAccountDesk;
@@ -89,13 +91,27 @@ internal sealed class DeskTheme
         // Submenus use Fluent's own popup template rather than ContextMenu.Template.
         // Bound their scroll viewport as well as the root menu, including languages.
         menu.Styles.Add(new Style(selector => selector.OfType<MenuItem>().Template().OfType<ScrollViewer>()) { Setters = {
-            // Fluent's menu scroller uses arrow buttons instead of a scrollbar.
-            // Use the ordinary scroller so the existing private scrollbar theme applies.
-            new Setter(ScrollViewer.ThemeProperty, null),
             new Setter(ScrollViewer.MaxHeightProperty, 300.0),
             new Setter(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Auto),
             new Setter(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Disabled),
             new Setter(ScrollViewer.AllowAutoHideProperty, false) } });
+        menu.AddHandler(MenuItem.SubmenuOpenedEvent, (_, args) =>
+        {
+            if (args.Source is not MenuItem item) return;
+            foreach (var popup in item.GetTemplateDescendants().OfType<Popup>())
+            {
+                if (popup.Child == null) continue;
+                foreach (var scroll in popup.Child.GetVisualDescendants().OfType<ScrollViewer>())
+                {
+                    // Fluent sets its arrow-only theme as a local template value;
+                    // an ordinary style setter cannot replace that local value.
+                    scroll.Theme = null; scroll.MaxHeight = 300;
+                    scroll.AllowAutoHide = false;
+                    scroll.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+                    scroll.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+                }
+            }
+        });
         menu.Styles.Add(new Style(selector => selector.OfType<Separator>()) { Setters = {
             new Setter(Separator.BackgroundProperty, Brush("divider")), new Setter(Separator.MarginProperty, new Thickness(8, 5)), new Setter(Separator.HeightProperty, 1.0) } });
         EventHandler<VisualTreeAttachmentEventArgs> detached = (_, _) => menu.Close();
