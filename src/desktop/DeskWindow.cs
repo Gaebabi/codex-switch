@@ -162,7 +162,7 @@ internal sealed class DeskWindow : Window
         var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left };
         _stampTitles = _theme.Button(Loc.T("titles.button"), () => _ = StampTitlesAsync());
         _stampTitles.Name = "StampActiveTitlesButton"; _stampTitles.FontSize = 10; _stampTitles.Padding = new Thickness(5, 1); _stampTitles.MinHeight = 20;
-        ToolTip.SetTip(_stampTitles, Loc.T("titles.help")); actions.Children.Add(_stampTitles); actions.Children.Add(_cancel);
+        ToolTip.SetTip(_stampTitles, Loc.T("titles.help")); actions.Children.Add(_cancel); actions.Children.Add(_stampTitles);
         toolbar.Children.Add(actions);
         _sessionValues = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, HorizontalAlignment = HorizontalAlignment.Center };
         Grid.SetColumn(_sessionValues, 1);
