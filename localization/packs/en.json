@@ -6,6 +6,8 @@
   "culture": "en-US",
   "direction": "ltr",
   "strings": {
+    "sessions.errors": "Errors",
+    "sessions.errors_help": "Counts local main chats currently stopped by a system error or failed latest turn. Excludes subagents, active chats, cancellations and past errors after recovery.",
     "providers.reasoning_title": "GPT reasoning in Codex",
     "providers.reasoning_model": "Model",
     "providers.reasoning_override": "Set supported reasoning levels",
@@ -513,7 +515,12 @@
     "history.selected_range": "{0:yyyy/MM/dd} – {1:yyyy/MM/dd} (KST)",
     "history.credit_range": "Credit range",
     "history.credit_reading": "Observed at {0:MM/dd HH:mm:ss} (KST)\nCredit range: {1:0.##}% above quota",
-    "history.retention": "History includes only recorded observations from the last 30 days."
+    "history.retention": "History includes only recorded observations from the last 30 days.",
+    "titles.button": "Date chats",
+    "titles.help": "Add or update the KST date prefix on running main chats.",
+    "titles.working": "Updating chat dates…",
+    "titles.done": "Updated dates on {0} chats.",
+    "titles.failed": "Updated {0} chats before an error: {1}"
   },
   "plurals": {
     "msg.accounts": {

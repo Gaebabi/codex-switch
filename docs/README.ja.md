@@ -1,7 +1,7 @@
 <p align="center"><img src="../assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" /></p>
-<h1 align="center">Codex Switch</h1>
+<h1 align="center">Codex Switch: OpenAI Codexのアカウント切替と使用量確認</h1>
 
-**OpenAI Codexのアカウント切替と使用量を一画面で管理するデスクトップアプリです。** 各アカウントの残量を比較して次のアカウントを選択し、中断した切替は保存された記録から復旧できます。任意の残量基準による自動切替は初期状態で**オフ**です。
+**Codex Switch（`codex-switch`）は、OpenAI Codexのアカウント切替と使用量確認のためのオープンソースのデスクトップアプリです。** 各アカウントの残量を比較して次のアカウントを選択し、中断した切替は保存された記録から復旧できます。任意の残量基準による自動切替は初期状態で**オフ**です。
 
 Windows · macOS15以降 · Linuxプレビュー · MITオープンソース · **1.44.0**
 

@@ -1,7 +1,7 @@
 <p align="center"><img src="assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" /></p>
-<h1 align="center">Codex Switch</h1>
+<h1 align="center">Codex Switch: OpenAI Codex account switcher and quota monitor</h1>
 
-**A desktop account switcher and quota dashboard for OpenAI Codex.** See your accounts together, choose the next one, and recover an interrupted handoff. Optional quota-based switching starts **Off**.
+**Codex Switch (`codex-switch`) is an open-source desktop account switcher and usage quota monitor for OpenAI Codex.** See your accounts together, choose the next one, and recover an interrupted handoff. Optional quota-based switching starts **Off**.
 
 Windows · macOS15+ · Linux preview · MIT open source · **1.44.0**
 

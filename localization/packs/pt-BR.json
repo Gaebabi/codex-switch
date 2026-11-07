@@ -6,6 +6,8 @@
   "culture": "pt-BR",
   "direction": "ltr",
   "strings": {
+    "sessions.errors": "Erros",
+    "sessions.errors_help": "Conta conversas principais locais paradas por erro de sistema ou falha no último turno. Exclui subagentes, conversas ativas, cancelamentos e erros já resolvidos.",
     "providers.reasoning_title": "Raciocínio GPT no Codex",
     "providers.reasoning_model": "Modelo",
     "providers.reasoning_override": "Definir níveis de raciocínio compatíveis",
@@ -513,7 +515,12 @@
     "history.selected_range": "{0:yyyy/MM/dd} – {1:yyyy/MM/dd} (KST)",
     "history.credit_range": "Faixa de créditos",
     "history.credit_reading": "Observado em {0:MM/dd HH:mm:ss} (KST)\nFaixa de créditos: {1:0.##}% acima da cota",
-    "history.retention": "Apenas observações registradas nos últimos 30 dias são exibidas."
+    "history.retention": "Apenas observações registradas nos últimos 30 dias são exibidas.",
+    "titles.button": "Datar chats",
+    "titles.help": "Adiciona ou atualiza a data coreana nos chats principais em execução.",
+    "titles.working": "Atualizando datas dos chats…",
+    "titles.done": "Datas atualizadas em {0} chats.",
+    "titles.failed": "Erro após atualizar {0} chats: {1}"
   },
   "plurals": {
     "msg.accounts": {

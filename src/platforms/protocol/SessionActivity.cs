@@ -6,7 +6,7 @@ using System.Text.Json;
 namespace CodexAccountDesk;
 
 internal sealed record SessionActivity(bool Available, int Running, int Waiting, int Observed, string? Problem = null,
-    int? Queued = null, int? Goals = null, int PausedQueued = 0, int PausedGoals = 0, string? QueueProblem = null);
+    int? Queued = null, int? Goals = null, int PausedQueued = 0, int PausedGoals = 0, string? QueueProblem = null, int? Errors = null);
 
 internal sealed record DesktopThreadState(string Id, string Owner, string Status, bool Waiting, string? Goal, string? Title,
     string? ResumeState, string? LastTurnId, string? LastTurnStatus, string? LastMessageId);
@@ -56,6 +56,15 @@ internal sealed class SessionActivityLedger
             return new DesktopThreadState(pair.Key, e.Owner, e.Status!, e.Waiting, e.Goal, e.Title, e.ResumeState, e.LastTurnId, e.LastTurnStatus, e.LastMessageId);
         }).ToArray();
     }
+    internal int? QueuedFor(string id)
+    {
+        lock (_sync)
+        {
+            if (!_discovered || _queues == null) return null;
+            return DesktopQueueState.Count(_queueOverrides.TryGetValue(id, out var update) ? update.Messages : _queues.Saved.GetValueOrDefault(id) ?? Array.Empty<DesktopQueueMessage>(),
+                _queues.Server.GetValueOrDefault(id) ?? Array.Empty<DesktopQueueMessage>()).Total;
+        }
+    }
     public SessionActivity Read()
     {
         lock (_sync)
@@ -71,7 +80,8 @@ internal sealed class SessionActivityLedger
                 roots.Count(e => e.Status == "active" && e.Waiting), roots.Length, Queued: queues?.Sum(q => q.Total),
                 Goals: available && roots.All(e => e.GoalKnown) ? roots.Count(e => e.Goal == "active") : null,
                 PausedQueued: queues?.Sum(q => q.Paused) ?? 0,
-                PausedGoals: roots.Count(e => e.Goal is "paused" or "blocked" or "usageLimited" or "budgetLimited"), QueueProblem: _queueProblem);
+                PausedGoals: roots.Count(e => e.Goal is "paused" or "blocked" or "usageLimited" or "budgetLimited"), QueueProblem: _queueProblem,
+                Errors: available ? roots.Count(e => e.Status == "systemError" || e.Status == "idle" && e.LastTurnStatus == "failed") : null);
         }
     }
     public bool Apply(string id, string owner, JsonElement change)

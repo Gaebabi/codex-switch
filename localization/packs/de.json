@@ -6,6 +6,8 @@
   "culture": "de-DE",
   "direction": "ltr",
   "strings": {
+    "sessions.errors": "Fehler",
+    "sessions.errors_help": "Zählt lokale Hauptchats, die durch einen Systemfehler oder einen fehlgeschlagenen letzten Schritt angehalten wurden. Unteragenten, aktive Chats, Abbrüche und behobene Fehler sind ausgeschlossen.",
     "providers.reasoning_title": "GPT-Denkintensität in Codex",
     "providers.reasoning_model": "Modell",
     "providers.reasoning_override": "Unterstützte Denkstufen festlegen",
@@ -513,7 +515,12 @@
     "history.selected_range": "{0:yyyy/MM/dd} – {1:yyyy/MM/dd} (KST)",
     "history.credit_range": "Guthabenbereich",
     "history.credit_reading": "Messung {0:MM/dd HH:mm:ss} (KST)\nGuthabenbereich: {1:0.##}% über dem Kontingent",
-    "history.retention": "Nur erfasste Beobachtungen der letzten 30 Tage werden angezeigt."
+    "history.retention": "Nur erfasste Beobachtungen der letzten 30 Tage werden angezeigt.",
+    "titles.button": "Chat-Datum",
+    "titles.help": "Datum nach koreanischer Zeit bei laufenden Hauptchats hinzufügen oder aktualisieren.",
+    "titles.working": "Chat-Daten werden aktualisiert…",
+    "titles.done": "Datum für {0} Chats aktualisiert.",
+    "titles.failed": "Nach {0} aktualisierten Chats ist ein Fehler aufgetreten: {1}"
   },
   "plurals": {
     "msg.accounts": {

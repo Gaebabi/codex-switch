@@ -240,6 +240,9 @@ try:
     check('Ordinary account addition exposes native pending-login cancellation at minimum size', not (ordinary_home / 'auth.json').exists())
     capture(window, pid, 'ordinary-pending-login-500x360')
     run(['xdotool', 'mousemove', '--window', window, '32', '17', 'click', '1'])
+    # The title-update button becomes visible beneath the pointer when Cancel
+    # disappears. Compare the restored toolbar with the same unhovered state.
+    run(['xdotool', 'mousemove', '--window', window, '250', '180'])
     wait_for(lambda: login_controls(False), 20)
     check('Ordinary Cancel restores the ready toolbar without changing existing ciphertext or creating authentication', not (ordinary_home / 'auth.json').exists() and (root / 'share/CodexAccountDesk/accounts.vault').read_bytes() == before_login_vault)
     run(['xdotool', 'windowsize', '--sync', window, '800', '600'])

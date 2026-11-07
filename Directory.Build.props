@@ -6,4 +6,8 @@
     <RuntimeFrameworkVersion>10.0.13</RuntimeFrameworkVersion>
     <TargetLatestRuntimePatch>false</TargetLatestRuntimePatch>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(COMPUTERNAME)' == 'CODEXWORK'">
+    <BaseOutputPath>W:\Builds\CODEXWORK\codex-switch\$(MSBuildProjectName)\bin\</BaseOutputPath>
+    <BaseIntermediateOutputPath>W:\Caches\CODEXWORK\projects\codex-switch\msbuild\$(MSBuildProjectName)\obj\</BaseIntermediateOutputPath>
+  </PropertyGroup>
 </Project>

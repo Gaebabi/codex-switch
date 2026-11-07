@@ -40,6 +40,16 @@ async Task Refuses(string name, Func<Task> action)
 { try { await action(); } catch (Exception e) when (e is ArgumentException or InvalidOperationException or IOException or InvalidDataException) { Check(name, true); return; } throw new Exception(name); }
 var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp", "CodexSwitchModelProviders", Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
+if (args.Contains("--retry-only"))
+{
+    try
+    {
+        await GatewayRetryContracts.Run(root, Check);
+        Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, scope = "Isolated HTTP 507 recovery; no external inference or owner home." }));
+    }
+    finally { Directory.Delete(root, true); }
+    return;
+}
 if (args.Contains("--stress"))
 {
     try
@@ -332,6 +342,7 @@ try
     try { await saving; } catch (OperationCanceledException) { cancelled = true; }
     Check("Shutdown cancels and drains discovery before disposing state without saving a partial key", cancelled && !File.Exists(Path.Combine(cancelPath, "model-providers.vault")));
     await GatewayLoadContracts.Run(root, Check, args.Contains("--stress"));
+    await GatewayRetryContracts.Run(root, Check);
     Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, nativeClient = args.Contains("--codex"), framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription, scope = "Disposable encrypted storage, loopback gateway and fictional upstreams; no owner home, account or desktop." }, new JsonSerializerOptions { WriteIndented = true }));
 }
 finally
@@ -349,6 +360,8 @@ internal sealed class Upstreams : HttpMessageHandler
     internal bool BlockDiscovery;
     internal bool MatchingReasoning;
     internal bool ImageFailure;
+    internal int StorageFailures;
+    internal int StreamFailures;
     internal TaskCompletionSource DiscoveryEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     internal GatedStream? Slow;
     internal string? BlockedKey;
@@ -382,6 +395,12 @@ internal sealed class Upstreams : HttpMessageHandler
         if (BlockNext)
         { BlockNext = false; BlockedKey = request.Headers.Authorization?.Parameter; Entered.TrySetResult(); await Release.Task.WaitAsync(cancellation); }
         if (FailNext) { FailNext = false; return new(HttpStatusCode.TooManyRequests) { Content = new StringContent("fictional-key-a-new") }; }
+        if (StorageFailures > 0) { StorageFailures--; return new((HttpStatusCode)507) { Content = new StringContent("fictional-key-must-not-be-echoed") }; }
+        if (StreamFailures > 0)
+        {
+            StreamFailures--;
+            return new(HttpStatusCode.OK) { Content = new StringContent("data: {\"type\":\"response.failed\",\"response\":{\"id\":\"fixture-stream-error\",\"status\":\"failed\",\"error\":{\"code\":\"fixture_stream_failure\",\"message\":\"An error occurred while processing your request. Request ID fixture-stream.\"}}}\n\n", Encoding.UTF8, "text/event-stream") };
+        }
         if (StreamNext)
         {
             StreamNext = false; var content = new StreamContent(Slow!); content.Headers.ContentType = new MediaTypeHeaderValue("text/event-stream");
@@ -419,7 +438,7 @@ internal static class NativeClient
         await using var rpc = new CodexRpc(executable, home, preserveProvider: true);
         var diagnostics = new ConcurrentQueue<string>();
         rpc.DiagnosticMessage += line => { if (line.Contains("models", StringComparison.OrdinalIgnoreCase) && diagnostics.Count < 20) diagnostics.Enqueue(line); };
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(90)); var cancellation = timeout.Token;
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(150)); var cancellation = timeout.Token;
         await rpc.InitializeAsync(cancellation);
         var listed = await rpc.RequestAsync("model/list", new { includeHidden = true }, cancellation);
         var models = listed.GetProperty("data").EnumerateArray().Select(m => m.GetProperty("model").GetString()).ToArray();
@@ -435,7 +454,7 @@ internal static class NativeClient
         check("Actual Codex retains the original OpenAI display name", listed.GetProperty("data").EnumerateArray().Single(m => m.GetProperty("model").GetString() == "fixture-openai").GetProperty("displayName").GetString() == "fixture-openai");
         var thread = await rpc.RequestAsync("thread/start", new { model = "fixture-openai", cwd = home, ephemeral = true, approvalPolicy = "never", sandbox = "read-only", config = new Dictionary<string, object> { ["mcp_servers"] = new Dictionary<string, object>() } }, cancellation);
         var threadId = thread.GetProperty("thread").GetProperty("id").GetString()!;
-        async Task Turn(string target, string? model, string name, string? effort = null)
+        async Task<JsonElement> Turn(string target, string? model, string name, string? effort = null, bool expectedFailure = false)
         {
             var complete = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
             void Notification(string method, JsonElement value) { if (method == "turn/completed" && value.GetProperty("threadId").GetString() == target) complete.TrySetResult(value.Clone()); }
@@ -444,8 +463,10 @@ internal static class NativeClient
             {
                 await rpc.RequestAsync("turn/start", new { threadId = target, model, effort, input = new[] { new { type = "text", text = "Reply with fixture-ok." } } }, cancellation);
                 var result = await complete.Task.WaitAsync(cancellation);
-                if (result.GetProperty("turn").GetProperty("status").GetString() != "completed") Console.WriteLine(JsonSerializer.Serialize(new { nativeFixtureTurn = result, gatewayError = manager.LastError, lastRoute = upstreams.Requests.Last().Host }));
-                check(name, result.GetProperty("turn").GetProperty("status").GetString() == "completed");
+                var expected = expectedFailure ? "failed" : "completed";
+                if (result.GetProperty("turn").GetProperty("status").GetString() != expected) Console.WriteLine(JsonSerializer.Serialize(new { nativeFixtureTurn = result, gatewayError = manager.LastError, lastRoute = upstreams.Requests.Last().Host }));
+                check(name, result.GetProperty("turn").GetProperty("status").GetString() == expected);
+                return result;
             }
             finally { rpc.Notification -= Notification; }
         }
@@ -463,6 +484,17 @@ internal static class NativeClient
         check("Upstream response model names cannot redirect the next turn to OpenAI", upstreams.Requests.Last().Host == "a.example.invalid");
         await Turn(threadId, "fixture-openai", "Changing another chat leaves the original chat on OpenAI");
         check("Actual native follow-up requests reach all three upstream routes", upstreams.Requests.Any(r => r.Method == "POST" && r.Host == "a.example.invalid") && upstreams.Requests.Any(r => r.Method == "POST" && r.Host == "b.example.invalid"));
+        upstreams.StorageFailures = 3; var beforeRecovery = upstreams.Requests.Count(r => r.Method == "POST");
+        await Turn(threadId, "fixture-openai", "Actual Codex completes the same turn after three gateway HTTP 507 retries");
+        check("Actual Codex does not create another turn or duplicate gateway requests after recovery", upstreams.Requests.Count(r => r.Method == "POST") - beforeRecovery == 4);
+        upstreams.StorageFailures = 10; var beforeExhaustion = upstreams.Requests.Count(r => r.Method == "POST");
+        await Turn(threadId, "fixture-openai", "Actual Codex receives terminal failure after gateway recovery is exhausted", expectedFailure: true);
+        check("Actual Codex cannot multiply the exhausted three-retry budget", upstreams.Requests.Count(r => r.Method == "POST") - beforeExhaustion == 4);
+        upstreams.StorageFailures = 0;
+        upstreams.StreamFailures = 1;
+        var streamFailed = await Turn(threadId, "fixture-openai", "Actual Codex persists an explicit post-response stream failure", expectedFailure: true);
+        check("Actual post-response failure is eligible for guarded same-chat continuation", StreamRecoveryPolicy.Failed(CodexAccountDesk.JsonValue.String(streamFailed.GetProperty("turn"), "status")!));
+        await Turn(threadId, null, "Actual Codex completes a following turn in the same chat after stream failure");
         var config = await File.ReadAllTextAsync(Path.Combine(home, "config.toml"));
         check("Connection preserves unrelated TOML comments and settings", config.Contains("# Fictional isolated native client") && config.Contains("shell_tool = false"));
         var outsideEdit = config.Replace("name = \"Codex Switch\"", "name = \"Owner edited provider\"");

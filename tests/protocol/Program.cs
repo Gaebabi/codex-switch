@@ -24,6 +24,47 @@ Check("Native SQLite is isolated from UI/domain/protocol projects", () =>
     Assert(assembly.GetName().Name == "CodexSwitch.Sqlite" && !assembly.GetReferencedAssemblies().Any(a =>
         a.Name is "CodexSwitch" or "CodexSwitch.Core" or "CodexSwitch.Protocol" or "PresentationFramework" or "Avalonia" or "Avalonia.Controls"));
 });
+JsonElement Session(string status, string? turn = null, bool child = false, long revision = 1) => JsonSerializer.SerializeToElement(new {
+    type = "snapshot", revision, conversationState = new { parentThreadId = child ? "main" : null, sideConversation = false,
+        threadRuntimeStatus = new { type = status, activeFlags = Array.Empty<string>() }, threadGoal = (object?)null,
+        turns = turn == null ? Array.Empty<object>() : new object[] { new { turnId = "fixture-turn", status = turn } } } });
+Check("Error count stays unknown until all discovered chats are observed", () =>
+{
+    var ledger = new SessionActivityLedger(); Assert(ledger.Read().Errors == null);
+    ledger.Discover("unread", "owner"); ledger.CompleteDiscovery(); Assert(ledger.Read().Errors == null);
+    ledger.Apply("unread", "owner", Session("idle")); Assert(ledger.Read().Errors == 0);
+    ledger.Reset(); Assert(ledger.Read().Errors == null);
+    ledger.CompleteDiscovery(); Assert(ledger.Read().Errors == 0);
+});
+Check("Only currently failed main chats count, without duplicates or interruptions", () =>
+{
+    var ledger = new SessionActivityLedger();
+    foreach (var id in new[] { "system", "failed", "active", "cancelled", "completed", "child", "unloaded" }) ledger.Discover(id, "owner");
+    ledger.Apply("system", "owner", Session("systemError", "failed"));
+    ledger.Apply("system", "owner", Session("systemError", "failed"));
+    ledger.Apply("failed", "owner", Session("idle", "failed"));
+    ledger.Apply("active", "owner", Session("active", "failed"));
+    ledger.Apply("cancelled", "owner", Session("idle", "interrupted"));
+    ledger.Apply("completed", "owner", Session("idle", "completed"));
+    ledger.Apply("child", "owner", Session("systemError", "failed", true));
+    ledger.Apply("unloaded", "owner", Session("notLoaded", "failed"));
+    ledger.CompleteDiscovery(); Assert(ledger.Read().Errors == 2);
+    ledger.Apply("failed", "other-owner", Session("idle", "completed", revision: 2)); Assert(ledger.Read().Errors == 2);
+    ledger.Apply("system", "owner", Session("active", "inProgress", revision: 2)); Assert(ledger.Read().Errors == 1);
+    ledger.Apply("failed", "owner", Session("idle", "completed", revision: 2)); Assert(ledger.Read().Errors == 0);
+});
+Check("Latest failure and recovery patches update the count without rescanning history", () =>
+{
+    var ledger = new SessionActivityLedger(); ledger.Discover("main", "owner"); ledger.Apply("main", "owner", Session("active", "inProgress")); ledger.CompleteDiscovery();
+    ledger.Apply("main", "owner", JsonSerializer.SerializeToElement(new { type = "patches", baseRevision = 1, revision = 2, patches = new object[] {
+        new { op = "replace", path = new object[] { "threadRuntimeStatus", "type" }, value = "idle" },
+        new { op = "replace", path = new object[] { "turns", 0, "status" }, value = "failed" } } }));
+    Assert(ledger.Read().Errors == 1);
+    ledger.Apply("main", "owner", JsonSerializer.SerializeToElement(new { type = "patches", baseRevision = 2, revision = 3, patches = new object[] {
+        new { op = "replace", path = new object[] { "threadRuntimeStatus", "type" }, value = "active" } } }));
+    Assert(ledger.Read().Errors == 0);
+    ledger.Remove("main"); Assert(ledger.Read().Errors == 0);
+});
 var absent = Path.Combine(Path.GetTempPath(), "codex-protocol-contract-" + Guid.NewGuid().ToString("N"));
 var monitor = new DesktopSessionMonitor(absent);
 try

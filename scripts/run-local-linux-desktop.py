@@ -116,3 +116,5 @@ finally:
     if item['Name'] != '/' + name or item['Config']['Labels'].get('codex-switch-desktop-session') != head or item['Mounts']:
         raise RuntimeError('Refuse cleanup of an unexpected container')
     run(['docker', 'rm', '--force', identifier], capture_output=True)
+    run([sys.executable, str(repository / 'scripts/retain-desktop-images.py'), '--keep', '3'],
+        cwd=repository)

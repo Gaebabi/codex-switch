@@ -23,6 +23,7 @@ internal sealed class MainWindow : Window
 {
     private readonly AccountService _service;
     private readonly DesktopSessionMonitor _sessions;
+    private readonly DesktopStreamRecoveryMonitor _streamRecovery;
     private readonly HardwareResourceMonitor _hardware = new();
     private readonly HardwareUsagePanel _hardwarePanel = new();
     private readonly DriveMonitor _drives = new(WindowsDiskTemperature.Read);
@@ -40,6 +41,7 @@ internal sealed class MainWindow : Window
     private readonly MenuItem _restartCodex = new();
     private readonly Button _homeActions = new();
     private bool _providerEditing;
+    private readonly Button _stampTitles = new();
     private MenuItem? _importCurrent;
     private readonly Border _loginPanel = new();
     private readonly List<AccountTankCard> _tankCards = new();
@@ -53,7 +55,7 @@ internal sealed class MainWindow : Window
     private readonly DispatcherTimer _clockTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private Forms.NotifyIcon? _tray;
     private bool _ready, _loggingIn, _switching, _closing, _exit;
-    private bool _started;
+    private bool _started, _stampingTitles;
     private bool _cpuTemperatureChanging;
     private bool CanRefresh => !_closing && (_ready || _initialization?.IsCompleted != false);
     private string? _queuedKey;
@@ -72,6 +74,8 @@ internal sealed class MainWindow : Window
         _service = service; _options = options;
         _drivePanel = new(OpenDriveSettings);
         _sessions = new DesktopSessionMonitor(options.CodexHome);
+        _streamRecovery = new DesktopStreamRecoveryMonitor(service, _sessions, () => _ready && !_closing && !_switching && !_loggingIn && !_providerEditing &&
+            !_service.IsBusy && _service.Vault.Data.ActivePendingSwitch == null);
         _theme = new Burn0Theme(service.Vault.Data.Theme != "light");
         Title = "Codex Switch"; Icon = AppIdentity.WindowIcon; Width = 600; Height = 400; MinWidth = 500; MinHeight = 360;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -86,6 +90,7 @@ internal sealed class MainWindow : Window
         _add.Click += async (_, _) => await AddAsync();
         _cancelLogin.Click += (_, _) => _loginCancellation?.Cancel();
         _cancelSwitch.Click += (_, _) => CancelSwitch();
+        _stampTitles.Click += async (_, _) => await StampTitlesAsync();
         _service.Changed += ServiceChanged;
         _sessions.Changed += SessionChanged;
         _hardware.Changed += HardwareChanged;
@@ -127,7 +132,7 @@ internal sealed class MainWindow : Window
     }
     private void ApplyTheme()
     {
-        foreach (var element in new FrameworkElement[] { _homeActions, _automaticState, _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _loginPanel, _scroll })
+        foreach (var element in new FrameworkElement[] { _stampTitles, _homeActions, _automaticState, _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _loginPanel, _scroll })
         {
             if (element.Parent is Panel panel) panel.Children.Remove(element);
             else if (element.Parent is ContentControl control && ReferenceEquals(control.Content, element)) control.Content = null;
@@ -170,6 +175,10 @@ internal sealed class MainWindow : Window
         toolbarRow.ColumnDefinitions.Add(new ColumnDefinition());
         toolbarRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         toolbarRow.ColumnDefinitions.Add(new ColumnDefinition());
+        ConfigureButton(_stampTitles, "titles.button", null);
+        _stampTitles.Name = "StampActiveTitlesButton"; _stampTitles.HorizontalAlignment = HorizontalAlignment.Left;
+        _stampTitles.FontSize = 10; _stampTitles.Padding = new Thickness(5, 2, 5, 2);
+        _stampTitles.ToolTip = Loc.T("titles.help"); toolbarRow.Children.Add(_stampTitles);
         _sessionCount.HorizontalAlignment = HorizontalAlignment.Center;
         Grid.SetColumn(_sessionCount, 1);
         toolbarRow.Children.Add(_sessionCount); body.Children.Add(toolbarRow);
@@ -373,6 +382,7 @@ internal sealed class MainWindow : Window
         _started = true;
         if (_options.UiEvidenceDirectory != null) return;
         _sessions.Start();
+        if (_options.ReportPath == null) _streamRecovery.Start();
         _hardware.Start();
         _drives.Configure(_service.Vault.Data.Drives.ToArray()); _drives.Start();
         if (_options.ReportPath == null) { CreateTray(); _refreshTimer.Start(); _clockTimer.Start(); }
@@ -514,8 +524,30 @@ internal sealed class MainWindow : Window
         await RecoverAutomaticSwitchAsync();
         await TryAutomaticSwitchAsync();
     }
+    private async Task StampTitlesAsync()
+    {
+        if (!_ready || _closing || _switching || _loggingIn || _stampingTitles || PendingSwitch() != null) return;
+        _stampingTitles = true; UpdateControls(); RenderAccounts();
+        var saved = 0;
+        try
+        {
+            await RunAsync("titles.working", async token =>
+            {
+                try
+                {
+                    await using var backend = new DesktopSwitchBackend(_service, _sessions);
+                    await ActiveChatTitleUpdate.RunAsync(backend, DateTimeOffset.UtcNow, count => saved = count, token);
+                    SetStatus("titles.done", false, saved);
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception error) { SetStatus("titles.failed", true, saved, Loc.Error(UserErrors.Describe(error))); }
+            });
+        }
+        finally { _stampingTitles = false; UpdateControls(); RenderAccounts(); }
+    }
     private Task ImportCurrentAsync() => RunAsync("현재 로그인 가져오는 중…", async token =>
     {
+        if (_stampingTitles) return;
         await EnsureInitializedAsync(token);
         var profile = await Task.Run(() => { var p = _service.SynchronizeCurrent(); _service.Vault.Save(); return p; }, token);
         if (profile == null) throw new InvalidOperationException("Codex에서 먼저 로그인하거나 계정 추가를 선택해 주세요.");
@@ -529,7 +561,7 @@ internal sealed class MainWindow : Window
     }
     private async Task AddAsync(string? expectedAccountKey = null)
     {
-        if (!_ready || _loggingIn || _closing || _switching) return;
+        if (!_ready || _loggingIn || _closing || _switching || _stampingTitles) return;
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         _loginCancellation = cancellation; _loggingIn = true; _loginText.Text = Loc.T("브라우저에서 추가할 계정으로 로그인해 주세요."); UpdateControls();
         await RunAsync("계정 로그인 중…", async _ =>
@@ -584,7 +616,7 @@ internal sealed class MainWindow : Window
         _sessionCount.ToolTip = activity.Available ? Loc.T("이 PC의 로컬 Codex 주 채팅\n하위 에이전트 제외\n계정별 구분 없음") + "\n" +
             Loc.F("승인/입력 대기 {0}", activity.Waiting) + "\n" +
             (activity.Queued.HasValue ? Loc.F("큐는 예약 메시지 수\n보류된 큐 {0}", activity.PausedQueued) : Loc.T(activity.QueueProblem ?? "큐 상태 확인 중…")) + "\n" +
-            (activity.Goals.HasValue ? Loc.F("목표는 진행 중인 Goal 수\n멈춘 목표 {0}", activity.PausedGoals) : Loc.T("목표 상태 확인 중…")) : Loc.T(activity.Problem ?? "채팅 상태 확인 중…");
+            (activity.Goals.HasValue ? Loc.F("목표는 진행 중인 Goal 수\n멈춘 목표 {0}", activity.PausedGoals) : Loc.T("목표 상태 확인 중…")) + "\n" + Loc.T("sessions.errors_help") : Loc.T(activity.Problem ?? "채팅 상태 확인 중…");
     }
     private void RenderAccounts()
     {
@@ -603,7 +635,7 @@ internal sealed class MainWindow : Window
             switchButton.Tag = "account-switch-action";
             if (pendingResume) switchButton.ToolTip = PendingSwitch()?.Error;
             switchButton.Margin = new Thickness(0); switchButton.FontSize = 12; switchButton.Padding = new Thickness(8, 5, 8, 5);
-            switchButton.IsEnabled = _ready && !_switching && !_loggingIn && !_closing && (!profile.IsCurrent || profile.RequiresApply || pendingResume);
+            switchButton.IsEnabled = _ready && !_switching && !_stampingTitles && !_loggingIn && !_closing && (!profile.IsCurrent || profile.RequiresApply || pendingResume);
             switchButton.Click += async (_, _) => await QueueSwitchAsync(profile); actions.Children.Add(switchButton);
             var more = NewButton("", "more"); more.Padding = new Thickness(6); more.Margin = new Thickness(4, 0, 0, 0); more.ToolTip = Loc.T("계정 메뉴"); more.Click += (_, _) => OpenAccountMenu(more, profile); actions.Children.Add(more);
             var details = profile.RequiresApply ? Loc.T("새 로그인 적용 대기") : "";
@@ -728,7 +760,7 @@ internal sealed class MainWindow : Window
         }
         var rename = new MenuItem { Header = Loc.T("표시 이름 변경") }; rename.Click += (_, _) => { var alias = PromptForAlias(profile); if (alias != null) _service.Rename(profile.Key, alias); };
         var remove = new MenuItem { Header = Loc.T("등록 제거"), IsEnabled = !profile.IsCurrent && profile.Key != _queuedKey };
-        remove.Click += async (_, _) => { if (Confirm(Loc.F("{0}의 등록 정보를 제거할까요?", profile.DisplayName), Loc.T("계정 등록 제거"), "등록 제거")) await RunAsync("등록 제거 중…", async _ => { await _service.RemoveAsync(profile.Key); SetStatus("등록 정보를 제거했습니다."); }); };
+        remove.Click += async (_, _) => { if (!_stampingTitles && Confirm(Loc.F("{0}의 등록 정보를 제거할까요?", profile.DisplayName), Loc.T("계정 등록 제거"), "등록 제거")) await RunAsync("등록 제거 중…", async _ => { await _service.RemoveAsync(profile.Key); SetStatus("등록 정보를 제거했습니다."); }); };
         menu.Items.Add(rename); menu.Items.Add(remove); owner.ContextMenu = menu; menu.IsOpen = true;
     }
     private string? PromptForAlias(AccountProfile profile)
@@ -811,7 +843,7 @@ internal sealed class MainWindow : Window
     {
         var pending = PendingSwitch();
         restart |= pending?.RestartOnly == true;
-        if (_closing || _switching || _loggingIn || !restart && !creditPause && profile.IsCurrent && !profile.RequiresApply && pending?.TargetAccountKey != profile.Key) return;
+        if (_closing || _switching || _stampingTitles || _loggingIn || !restart && !creditPause && profile.IsCurrent && !profile.RequiresApply && pending?.TargetAccountKey != profile.Key) return;
         if (restart && pending != null && !pending.RestartOnly) { SetStatus("남은 채팅 재개 작업을 먼저 처리해 주세요.", true); return; }
         if (pending != null && !pending.CreditProtectionPause && pending.TargetAccountKey != profile.Key) { SetStatus("남은 채팅 재개 작업을 먼저 처리해 주세요.", true); return; }
         creditPause |= pending is { CreditProtectionPause: true, Phase: not SwitchPhase.CreditPaused } && pending.TargetAccountKey == profile.Key && !AccountAutomation.CanUse(_service, profile, DateTimeOffset.UtcNow);
@@ -902,7 +934,7 @@ internal sealed class MainWindow : Window
     }
     private async Task TryAutomaticSwitchAsync()
     {
-        if (_options.ReportPath != null || _options.UiEvidenceDirectory != null || !_ready || _closing || _switching || _loggingIn || _providerEditing) return;
+        if (_options.ReportPath != null || _options.UiEvidenceDirectory != null || !_ready || _closing || _switching || _loggingIn || _providerEditing || _stampingTitles) return;
         if (!_sessions.Current.Available && PendingSwitch()?.CreditProtectionPause != true)
         {
             if (!_service.Vault.Data.AllowCreditUse && _service.Accounts.Any(p => p.IsCurrent && AutomaticSwitchPolicy.Exhausted(p, DateTimeOffset.UtcNow)) && RuntimeLocator.IsDesktopRunning(_service.Installation.DesktopPath))
@@ -928,7 +960,7 @@ internal sealed class MainWindow : Window
     }
     private async Task RecoverAutomaticSwitchAsync()
     {
-        if (_options.ReportPath != null || _options.UiEvidenceDirectory != null || !_ready || _closing || _switching || _loggingIn || _service.IsBusy) return;
+        if (_options.ReportPath != null || _options.UiEvidenceDirectory != null || !_ready || _closing || _switching || _loggingIn || _stampingTitles || _service.IsBusy) return;
         var pending = PendingSwitch();
         if (pending is not { Automatic: true, AutomaticRecoveryAttempts: 0, CreditProtectionPause: false }) return;
         var target = _service.Accounts.FirstOrDefault(p => p.Key == pending.TargetAccountKey);
@@ -950,7 +982,7 @@ internal sealed class MainWindow : Window
         _status.ToolTip = _status.Text;
         _status.Foreground = Color(_statusWarning ? "warning" : "muted");
         var empty = _service.Vault.Data.Drives.Count == 0;
-        _status.Visibility = _status.Text.Length > 0 && (_statusWarning || empty) ? Visibility.Visible : Visibility.Collapsed;
+        _status.Visibility = _status.Text.Length > 0 && (_statusWarning || empty || _statusSource == "titles.done") ? Visibility.Visible : Visibility.Collapsed;
         _drivePanel.Visibility = Visibility.Visible;
         _drivePanel.HorizontalAlignment = empty ? HorizontalAlignment.Right : HorizontalAlignment.Stretch;
         _drivePanel.Width = empty ? 22 : double.NaN;
@@ -968,11 +1000,12 @@ internal sealed class MainWindow : Window
         _automaticSwitch.ToolTip = automaticSwitchLabel + "\n" + AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow) + "\n" + Loc.F("auto.help", _service.Vault.Data.AutomaticSwitchThreshold) + "\n" +
             Loc.T(_service.Vault.Data.AutomaticSwitchUsePriority ? "auto.custom" : "auto.optimal") + "\n" + Loc.T("auto.priority_help");
         _automaticSwitch.IsEnabled = _ready && !_closing;
+        _stampTitles.IsEnabled = _ready && !_closing && !_switching && !_loggingIn && !_providerEditing && !_stampingTitles && PendingSwitch() == null;
         if (_homeActions.ContextMenu is { IsOpen: true })
             foreach (var next in _automaticSwitch.Items.OfType<MenuItem>().Where(item => item.Name == "NextAutomaticAccount"))
                 next.Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow);
-        _refresh.IsEnabled = CanRefresh; _add.IsEnabled = _ready && !_loggingIn && !_closing;
-        if (_importCurrent != null) _importCurrent.IsEnabled = !_closing;
+        _refresh.IsEnabled = CanRefresh; _add.IsEnabled = _ready && !_loggingIn && !_closing && !_stampingTitles;
+        if (_importCurrent != null) _importCurrent.IsEnabled = !_closing && !_stampingTitles;
         _loginPanel.Visibility = _loggingIn ? Visibility.Visible : Visibility.Collapsed;
         _cancelSwitch.Visibility = Visibility.Collapsed;
     }
@@ -1021,6 +1054,7 @@ internal sealed class MainWindow : Window
         await Task.WhenAll(_operations.ToArray());
         WriteRunningState("stopping-drives"); await _drives.DisposeAsync();
         WriteRunningState("stopping-hardware"); await _hardware.DisposeAsync();
+        WriteRunningState("stopping-stream-recovery"); await _streamRecovery.DisposeAsync();
         WriteRunningState("stopping-sessions"); await _sessions.DisposeAsync();
         WriteRunningState("stopping-service"); await _service.StopAsync();
         _exit = true; _tray?.Dispose(); WriteRunningState("stopped"); Application.Current.Shutdown();

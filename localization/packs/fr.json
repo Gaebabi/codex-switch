@@ -6,6 +6,8 @@
   "culture": "fr-FR",
   "direction": "ltr",
   "strings": {
+    "sessions.errors": "Erreurs",
+    "sessions.errors_help": "Nombre de chats principaux locaux arrêtés par une erreur système ou un échec du dernier tour. Exclut les sous-agents, les chats actifs, les annulations et les erreurs résolues.",
     "providers.reasoning_title": "Raisonnement GPT dans Codex",
     "providers.reasoning_model": "Modèle",
     "providers.reasoning_override": "Définir les niveaux de raisonnement pris en charge",
@@ -513,7 +515,12 @@
     "history.selected_range": "{0:yyyy/MM/dd} – {1:yyyy/MM/dd} (KST)",
     "history.credit_range": "Zone de crédits",
     "history.credit_reading": "Relevé {0:MM/dd HH:mm:ss} (KST)\nZone de crédits : {1:0.##}% au-delà du quota",
-    "history.retention": "Seules les observations enregistrées au cours des 30 derniers jours sont affichées."
+    "history.retention": "Seules les observations enregistrées au cours des 30 derniers jours sont affichées.",
+    "titles.button": "Dater les chats",
+    "titles.help": "Ajouter ou actualiser la date coréenne des conversations principales en cours.",
+    "titles.working": "Mise à jour des dates…",
+    "titles.done": "Dates mises à jour pour {0} conversations.",
+    "titles.failed": "Erreur après la mise à jour de {0} conversations : {1}"
   },
   "plurals": {
     "msg.accounts": {
