@@ -324,7 +324,7 @@ internal sealed class DeskWindow : Window
                 await _service!.CheckCredentialBackendAsync(profile, _switch.Token);
                 await using var backend = new DesktopSwitchBackend(_service, _sessions, profile.Key, includeUnfinished: restart);
                 var coordinator = new AccountSwitchCoordinator(backend,
-                    plan => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.ActivePendingSwitch = plan; _service.Vault.Save(); } },
+                    plan => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.PendingSwitch = plan; _service.Vault.Save(); } },
                     plan => OnUi(() => { _phase = plan.Phase; RenderAccounts(); }), UserErrors.Describe);
                 var pending = _service.Vault.Data.ActivePendingSwitch;
                 if (pending != null && !pending.CreditProtectionPause && pending.TargetAccountKey != profile.Key) throw new InvalidOperationException(Loc.T("남은 채팅 재개 작업을 먼저 처리해 주세요."));
@@ -339,7 +339,7 @@ internal sealed class DeskWindow : Window
                 plan.PreventDepletedSourceRelaunch = !_service.Vault.Data.AllowCreditUse &&
                     !_service.Accounts.Any(p => p.IsCurrent && p.Key == plan.SourceAccountKey && AutomaticSwitchPolicy.OrdinaryAvailable(p, DateTimeOffset.UtcNow));
                 if (!automatic) plan.AutomaticRecoveryAttempts = 0;
-                lock (_service.Vault.SyncRoot) { _service.Vault.Data.ActivePendingSwitch = plan; _service.Vault.Save(); }
+                lock (_service.Vault.SyncRoot) { _service.Vault.Data.PendingSwitch = plan; _service.Vault.Save(); }
                 if (await coordinator.RunAsync(plan, _switch.Token))
                 { if (plan.RestartOnly) _statusMessage = Loc.T("restart.done"); }
                 else

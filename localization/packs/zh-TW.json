@@ -515,7 +515,12 @@
     "history.selected_range": "{0:yyyy/MM/dd} – {1:yyyy/MM/dd}（韓國時間）",
     "history.credit_range": "額度用盡後的點數區間",
     "history.credit_reading": "實測 {0:MM/dd HH:mm:ss}（韓國時間）\n點數區間：超出額度 {1:0.##}%",
-    "history.retention": "僅顯示最近30天實際收集的紀錄。"
+    "history.retention": "僅顯示最近30天實際收集的紀錄。",
+    "titles.button": "更新日期",
+    "titles.help": "為執行中的主聊天新增或更新韓國時間日期。",
+    "titles.working": "正在更新聊天日期…",
+    "titles.done": "已更新 {0} 個聊天的日期。",
+    "titles.failed": "更新 {0} 個聊天後發生錯誤：{1}"
   },
   "plurals": {
     "msg.accounts": {

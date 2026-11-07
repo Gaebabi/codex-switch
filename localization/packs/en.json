@@ -515,7 +515,12 @@
     "history.selected_range": "{0:yyyy/MM/dd} – {1:yyyy/MM/dd} (KST)",
     "history.credit_range": "Credit range",
     "history.credit_reading": "Observed at {0:MM/dd HH:mm:ss} (KST)\nCredit range: {1:0.##}% above quota",
-    "history.retention": "History includes only recorded observations from the last 30 days."
+    "history.retention": "History includes only recorded observations from the last 30 days.",
+    "titles.button": "Date chats",
+    "titles.help": "Add or update the KST date prefix on running main chats.",
+    "titles.working": "Updating chat dates…",
+    "titles.done": "Updated dates on {0} chats.",
+    "titles.failed": "Updated {0} chats before an error: {1}"
   },
   "plurals": {
     "msg.accounts": {

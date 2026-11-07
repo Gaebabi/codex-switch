@@ -515,7 +515,12 @@
     "history.selected_range": "{0:yyyy/MM/dd} ~ {1:yyyy/MM/dd} (한국 시간)",
     "history.credit_range": "크레딧 구간",
     "history.credit_reading": "실측 {0:MM/dd HH:mm:ss} (한국 시간)\n크레딧 구간: 한도 대비 {1:0.##}% 초과",
-    "history.retention": "최근 30일 동안 실제로 수집된 기록만 표시합니다."
+    "history.retention": "최근 30일 동안 실제로 수집된 기록만 표시합니다.",
+    "titles.button": "채팅 날짜",
+    "titles.help": "실행 중인 주 채팅 제목에 한국 시간 날짜를 추가하거나 갱신합니다.",
+    "titles.working": "채팅 날짜 갱신 중…",
+    "titles.done": "채팅 {0}개의 날짜를 갱신했습니다.",
+    "titles.failed": "채팅 {0}개를 갱신한 뒤 오류가 발생했습니다: {1}"
   },
   "plurals": {
     "msg.accounts": {

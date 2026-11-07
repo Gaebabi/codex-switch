@@ -515,7 +515,12 @@
     "history.selected_range": "{0:yyyy/MM/dd} – {1:yyyy/MM/dd}（韩国时间）",
     "history.credit_range": "额度用尽后的点数区间",
     "history.credit_reading": "实测 {0:MM/dd HH:mm:ss}（韩国时间）\n点数区间：超出额度 {1:0.##}%",
-    "history.retention": "仅显示最近30天实际收集的记录。"
+    "history.retention": "仅显示最近30天实际收集的记录。",
+    "titles.button": "更新日期",
+    "titles.help": "为运行中的主聊天添加或更新韩国时间日期。",
+    "titles.working": "正在更新聊天日期…",
+    "titles.done": "已更新 {0} 个聊天的日期。",
+    "titles.failed": "更新 {0} 个聊天后出错：{1}"
   },
   "plurals": {
     "msg.accounts": {
