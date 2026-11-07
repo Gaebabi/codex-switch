@@ -1,5 +1,7 @@
 # Current status
 
+Unreleased: the chat date button independently updates active root chat titles with the existing KST prefix and verified metadata path. It does not switch accounts or restart Codex. Errors stop the operation and report the number already verified. Native UI screenshots and real-user acceptance remain pending.
+
 [Native application continuity and Windows file-lock regression](../evidence/runtime-cleanup/README.md) preserve original pixels and exact source/receipt hashes. Windows220 account/history/recovery checks pass; shared/native Mac/Linux acceptance remains distinct. Final review/public1.43.2 delivery is tracked in [PR140](https://github.com/Gaebabi/codex-switch/pull/140).
 
 Issue139/source1.43.2 waits asynchronously for transient Windows runtime-file sharing locks for at most two seconds, preserving login cancellation after release. Every attempt revalidates the private GUID path/link boundary; nonsharing and persistent failures still surface. No process termination, permission widening, account setting or background worker is added. [Release gates](RELEASE_1_43_2.md).

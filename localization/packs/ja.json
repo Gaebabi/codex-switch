@@ -6,6 +6,11 @@
   "culture": "ja-JP",
   "direction": "ltr",
   "strings": {
+    "titles.button": "日付更新",
+    "titles.help": "実行中のメインチャットの先頭に韓国時間の日付を追加または更新します。",
+    "titles.working": "チャットの日付を更新中…",
+    "titles.done": "{0}件のチャットの日付を更新しました。",
+    "titles.failed": "{0}件を更新した後にエラーが発生しました: {1}",
     "credits.history": "クレジット",
     "credits.balance": "残高",
     "credits.observed": "観測した残高減少",

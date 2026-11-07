@@ -8,6 +8,21 @@ var now = DateTimeOffset.UtcNow;
 CreditHistoryContracts.Run(Check);
 await RuntimeCleanupContracts.Run(Check);
 await CreditProtectionContracts.Run(Check);
+{
+    var backend = new FakeBackend(); var saved = 0;
+    var count = await ActiveChatTitleUpdate.RunAsync(backend, DateTimeOffset.UtcNow, value => saved = value, CancellationToken.None);
+    Check("Manual title update only captures and verifies names", count == 1 && saved == 1 && backend.Names == 1 && backend.Closes == 0 && backend.Applies == 0 && backend.Resumes == 0);
+    backend = new FakeBackend { NameFailures = 1 }; saved = 0; var failed = false;
+    try { await ActiveChatTitleUpdate.RunAsync(backend, DateTimeOffset.UtcNow, value => saved = value, CancellationToken.None); }
+    catch (IOException) { failed = true; }
+    Check("Manual title update reports a naming failure without claiming success", failed && saved == 0 && backend.Closes == 0 && backend.Applies == 0);
+    backend = new FakeBackend { CapturedChats = new[] { new SwitchChat { Id = "one" }, new SwitchChat { Id = "two" } }, FailNameAt = 2 }; saved = 0; failed = false;
+    try { await ActiveChatTitleUpdate.RunAsync(backend, DateTimeOffset.UtcNow, value => saved = value, CancellationToken.None); }
+    catch (IOException) { failed = true; }
+    Check("Partial title update reports only names verified before failure", failed && saved == 1 && backend.Names == 2);
+    var at = DateTimeOffset.Parse("2026-10-31T15:00:00Z");
+    Check("Date prefix is replaced at the KST day boundary", SwitchTitle.Stamp("[261031] 채팅", at) == "[261101] 채팅");
+}
 JsonElement Hello(string version, string home = "/fictional/home", string os = "linux", string family = "unix", string prefix = "codex_account_desk/") =>
     JsonSerializer.SerializeToElement(new { codexHome = home, platformOs = os, platformFamily = family, userAgent = prefix + version + " (fixture)" });
 foreach (var version in new[] { "0.162.0-alpha.17.2", "0.162.1", "0.163.0", "0.164.0" })
@@ -330,13 +345,15 @@ sealed class FakeBackend : IAccountSwitchBackend
     public CancellationTokenSource? Cancel;
     public int Launches, Applies, Resumes, Closes, Names, LaunchFailures, ResumeFailures, ResumeCalls, CloseFailures, NameFailures, ApplyFailures, ApplyCalls;
     public Exception? LaunchError;
+    public SwitchChat[]? CapturedChats;
+    public int FailNameAt;
     public bool AmbiguousContinue;
     public string? LastMarker;
     public Task<string?> CurrentAccountAsync(CancellationToken cancellation) => Task.FromResult<string?>(Current);
-    public Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation) => Task.FromResult(new[] { new SwitchChat { Id = "chat", OriginalTitle = "Fictional work" } });
+    public Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation) => Task.FromResult(CapturedChats ?? new[] { new SwitchChat { Id = "chat", OriginalTitle = "Fictional work" } });
     public int TargetValidations;
     public Task ValidateChatsForTargetAsync(SwitchChat[] chats, string target, CancellationToken cancellation) { TargetValidations++; if (Failure == "target-refused") throw new InvalidDataException("Synthetic workspace refusal"); return Task.CompletedTask; }
-    public Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken cancellation) { Names++; if (Names <= NameFailures) throw new IOException("Synthetic name failure"); return Task.CompletedTask; }
+    public Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken cancellation) { Names++; if (Names <= NameFailures || Names == FailNameAt) throw new IOException("Synthetic name failure"); return Task.CompletedTask; }
     public Task CloseDesktopAsync(CancellationToken cancellation) { Closes++; if (Failure == "close" || Closes <= CloseFailures) throw new IOException("Synthetic shutdown remains incomplete"); if (Failure == "cancel-after-close") Cancel!.Cancel(); return Task.CompletedTask; }
     public Task ApplyAccountAsync(string key, string? source, CancellationToken cancellation) { ApplyCalls++; if (Failure == "apply" || ApplyCalls <= ApplyFailures) throw new IOException("Synthetic apply failure"); Current = key; Applies++; if (Failure == "apply-after-write" && ApplyCalls == 1) throw new IOException("Synthetic failure after writing credentials"); return Task.CompletedTask; }
     public Task LaunchDesktopAsync(CancellationToken cancellation) { Launches++; if (Failure == "launch-always" || Launches <= LaunchFailures) throw LaunchError ?? new IOException("Synthetic launch failure"); return Task.CompletedTask; }

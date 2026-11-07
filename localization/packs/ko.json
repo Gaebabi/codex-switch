@@ -6,6 +6,11 @@
   "culture": "ko-KR",
   "direction": "ltr",
   "strings": {
+    "titles.button": "채팅 날짜",
+    "titles.help": "실행 중인 주 채팅 제목에 한국 시간 날짜를 추가하거나 갱신합니다.",
+    "titles.working": "채팅 날짜 갱신 중…",
+    "titles.done": "채팅 {0}개의 날짜를 갱신했습니다.",
+    "titles.failed": "채팅 {0}개를 갱신한 뒤 오류가 발생했습니다: {1}",
     "credits.history": "크레딧",
     "credits.balance": "잔액",
     "credits.observed": "관측된 잔액 감소",

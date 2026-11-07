@@ -6,6 +6,11 @@
   "culture": "de-DE",
   "direction": "ltr",
   "strings": {
+    "titles.button": "Chat-Datum",
+    "titles.help": "Datum nach koreanischer Zeit bei laufenden Hauptchats hinzufügen oder aktualisieren.",
+    "titles.working": "Chat-Daten werden aktualisiert…",
+    "titles.done": "Datum für {0} Chats aktualisiert.",
+    "titles.failed": "Nach {0} aktualisierten Chats ist ein Fehler aufgetreten: {1}",
     "credits.history": "Credits",
     "credits.balance": "Guthaben",
     "credits.observed": "Beobachteter Rückgang",

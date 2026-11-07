@@ -6,6 +6,11 @@
   "culture": "pt-BR",
   "direction": "ltr",
   "strings": {
+    "titles.button": "Datar chats",
+    "titles.help": "Adiciona ou atualiza a data coreana nos chats principais em execução.",
+    "titles.working": "Atualizando datas dos chats…",
+    "titles.done": "Datas atualizadas em {0} chats.",
+    "titles.failed": "Erro após atualizar {0} chats: {1}",
     "credits.history": "Créditos",
     "credits.balance": "Saldo",
     "credits.observed": "Redução observada",

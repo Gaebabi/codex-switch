@@ -6,6 +6,11 @@
   "culture": "zh-CN",
   "direction": "ltr",
   "strings": {
+    "titles.button": "更新日期",
+    "titles.help": "为运行中的主聊天添加或更新韩国时间日期。",
+    "titles.working": "正在更新聊天日期…",
+    "titles.done": "已更新 {0} 个聊天的日期。",
+    "titles.failed": "更新 {0} 个聊天后出错：{1}",
     "credits.history": "点数",
     "credits.balance": "余额",
     "credits.observed": "观测到的余额减少",

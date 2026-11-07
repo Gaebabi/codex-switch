@@ -6,6 +6,11 @@
   "culture": "en-US",
   "direction": "ltr",
   "strings": {
+    "titles.button": "Date chats",
+    "titles.help": "Add or update the KST date prefix on running main chats.",
+    "titles.working": "Updating chat dates…",
+    "titles.done": "Updated dates on {0} chats.",
+    "titles.failed": "Updated {0} chats before an error: {1}",
     "credits.history": "Credits",
     "credits.balance": "Balance",
     "credits.observed": "Observed decrease",

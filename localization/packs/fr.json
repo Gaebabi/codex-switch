@@ -6,6 +6,11 @@
   "culture": "fr-FR",
   "direction": "ltr",
   "strings": {
+    "titles.button": "Dater les chats",
+    "titles.help": "Ajouter ou actualiser la date coréenne des conversations principales en cours.",
+    "titles.working": "Mise à jour des dates…",
+    "titles.done": "Dates mises à jour pour {0} conversations.",
+    "titles.failed": "Erreur après la mise à jour de {0} conversations : {1}",
     "credits.history": "Crédits",
     "credits.balance": "Solde",
     "credits.observed": "Baisse observée",

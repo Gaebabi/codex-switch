@@ -64,6 +64,21 @@ internal interface IAccountSwitchBackend : IAsyncDisposable
     Task<ChatResumeState> ResumeAsync(SwitchChat chat, Action sending, CancellationToken cancellation);
 }
 
+internal static class ActiveChatTitleUpdate
+{
+    public static async Task<int> RunAsync(IAccountSwitchBackend backend, DateTimeOffset at, Action<int> progress, CancellationToken cancellation)
+    {
+        var chats = await backend.CaptureAsync(cancellation);
+        var saved = 0;
+        foreach (var chat in chats)
+        {
+            await backend.BackupNameAsync(chat, at, cancellation);
+            progress(++saved);
+        }
+        return saved;
+    }
+}
+
 internal sealed class AccountSwitchCoordinator
 {
     public const int MaximumRecoveryAttempts = 2;

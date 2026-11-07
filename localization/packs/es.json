@@ -6,6 +6,11 @@
   "culture": "es-ES",
   "direction": "ltr",
   "strings": {
+    "titles.button": "Fechar chats",
+    "titles.help": "Añade o actualiza la fecha coreana en los chats principales activos.",
+    "titles.working": "Actualizando fechas de chats…",
+    "titles.done": "Fechas actualizadas en {0} chats.",
+    "titles.failed": "Error tras actualizar {0} chats: {1}",
     "credits.history": "Créditos",
     "credits.balance": "Saldo",
     "credits.observed": "Disminución observada",
