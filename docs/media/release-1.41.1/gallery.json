@@ -1,0 +1,306 @@
+{
+  "schema": 1,
+  "appVersion": "1.41.1",
+  "captureRevision": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+  "runtime": ".NET 10.0.13",
+  "canvas": [
+    1000,
+    800
+  ],
+  "background": "#18202b",
+  "images": [
+    {
+      "file": "windows.png",
+      "captureRevision": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+      "captureFile": "en-dark-cpu-setup.png",
+      "captureSha256": "52e2a05388f6ed21f7d7411027a8581b72b22cd7b0fe1cab6d1fdaa45c7b062a",
+      "sha256": "b7d20eb428535fc4c90cb2b2f0ccae8ecba755f43620bd27625078c167ec9fbf",
+      "originalSize": [
+        800,
+        560
+      ],
+      "offset": [
+        100,
+        120
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Windows x64 native WPF",
+      "fictionalInputsOnly": true,
+      "nativeCapture": {
+        "file": "en-dark-cpu-setup.png",
+        "width": 800,
+        "height": 560,
+        "sha256": "52e2a05388f6ed21f7d7411027a8581b72b22cd7b0fe1cab6d1fdaa45c7b062a",
+        "capture": "Native own window or popup"
+      }
+    },
+    {
+      "file": "windows-light.png",
+      "captureRevision": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+      "captureFile": "en-light-cpu-setup.png",
+      "captureSha256": "a8d9c518d3784fbee26e8fb0c554d6e653c835a225f30e900efaf02ea7439c41",
+      "sha256": "426bd51106f3605103ad95e14c4c5240ffb92ab12d74c757459f686aff28afb8",
+      "originalSize": [
+        800,
+        560
+      ],
+      "offset": [
+        100,
+        120
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Windows x64 native WPF",
+      "fictionalInputsOnly": true,
+      "nativeCapture": {
+        "file": "en-light-cpu-setup.png",
+        "width": 800,
+        "height": 560,
+        "sha256": "a8d9c518d3784fbee26e8fb0c554d6e653c835a225f30e900efaf02ea7439c41",
+        "capture": "Native own window or popup"
+      }
+    },
+    {
+      "file": "linux-x64-dark.png",
+      "captureRevision": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+      "captureFile": "en-dark-800x600-native-wm.png",
+      "captureSha256": "7b0319c1d49d5cceba6ebb7efa5f97af873f92df683ebc5f4f740321fb977406",
+      "sha256": "55f781146e7dea7cd832b0c4d1d532b2176e8c3d55d8778d3ba9ef68013356ac",
+      "originalSize": [
+        810,
+        634
+      ],
+      "offset": [
+        95,
+        83
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Linux x64 native X11/Xfwm4",
+      "fictionalInputsOnly": true,
+      "nativeCapture": {
+        "File": "en-dark-800x600-native-wm.png",
+        "WindowManager": "Xfwm4",
+        "OriginalAppPidVerified": true,
+        "DirectParentFrameVerified": true,
+        "DesktopRootExcluded": true,
+        "DemoAccounts": 4,
+        "file": "en-dark-800x600-native-wm.png",
+        "sha256": "7b0319c1d49d5cceba6ebb7efa5f97af873f92df683ebc5f4f740321fb977406",
+        "width": 810,
+        "height": 634
+      }
+    },
+    {
+      "file": "linux-x64-light.png",
+      "captureRevision": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+      "captureFile": "en-light-800x600-native-wm.png",
+      "captureSha256": "ed88c9456f7d711b0b9c40d647bc214a2d2fece3ae89475147f5f8fbfa6206ed",
+      "sha256": "8ec9b811afdda1549d713ebd0054f9ba087fc7d897b117b487122eba9fabf987",
+      "originalSize": [
+        810,
+        634
+      ],
+      "offset": [
+        95,
+        83
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Linux x64 native X11/Xfwm4",
+      "fictionalInputsOnly": true,
+      "nativeCapture": {
+        "File": "en-light-800x600-native-wm.png",
+        "WindowManager": "Xfwm4",
+        "OriginalAppPidVerified": true,
+        "DirectParentFrameVerified": true,
+        "DesktopRootExcluded": true,
+        "DemoAccounts": 4,
+        "file": "en-light-800x600-native-wm.png",
+        "sha256": "ed88c9456f7d711b0b9c40d647bc214a2d2fece3ae89475147f5f8fbfa6206ed",
+        "width": 810,
+        "height": 634
+      }
+    },
+    {
+      "file": "linux-x64-terminal.png",
+      "captureRevision": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+      "captureFile": "terminal-accounts-native-frame.png",
+      "captureSha256": "ec01caa128286956ad3e5ef56f01474f34e85b931b4b2182b48c3784165b3d7a",
+      "sha256": "ada0148d0526197c02bec7deb7c3ce6293b0d24c5991109dc0502d47908b7989",
+      "originalSize": [
+        1134,
+        678
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Linux x64 actual terminal/Xfwm4",
+      "fictionalInputsOnly": true,
+      "nativeCapture": {
+        "file": "terminal-accounts-native-frame.png",
+        "sha256": "ec01caa128286956ad3e5ef56f01474f34e85b931b4b2182b48c3784165b3d7a",
+        "width": 1134,
+        "height": 678,
+        "originalTerminalPidVerified": true,
+        "directParentFrameVerified": true,
+        "desktopRootExcluded": true,
+        "actualCommandsWithoutDisplay": true,
+        "fictionalAccounts": 2,
+        "titlebarComposition": false
+      }
+    },
+    {
+      "file": "linux-arm64-dark.png",
+      "captureRevision": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+      "captureFile": "en-dark-800x600-native-wm.png",
+      "captureSha256": "44471d5d95539539362e3b32dffde773ef6d73ac0e7718b9128b62c2fafebcbe",
+      "sha256": "1c97bf0b751407396cba9e831630003b037f1df6e58a7254993806e50408ef3c",
+      "originalSize": [
+        810,
+        634
+      ],
+      "offset": [
+        95,
+        83
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Linux arm64 native X11/Xfwm4",
+      "fictionalInputsOnly": true,
+      "nativeCapture": {
+        "File": "en-dark-800x600-native-wm.png",
+        "WindowManager": "Xfwm4",
+        "OriginalAppPidVerified": true,
+        "DirectParentFrameVerified": true,
+        "DesktopRootExcluded": true,
+        "DemoAccounts": 4,
+        "file": "en-dark-800x600-native-wm.png",
+        "sha256": "44471d5d95539539362e3b32dffde773ef6d73ac0e7718b9128b62c2fafebcbe",
+        "width": 810,
+        "height": 634
+      }
+    },
+    {
+      "file": "linux-arm64-light.png",
+      "captureRevision": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+      "captureFile": "en-light-800x600-native-wm.png",
+      "captureSha256": "3674eedcc83d29538628674485556f9375b6f72e5ae6e51a08d9dffe03818715",
+      "sha256": "a71b5f0e2e97a114d13de5521a895d254811595ff5799c757320b9ef1882c0b7",
+      "originalSize": [
+        810,
+        634
+      ],
+      "offset": [
+        95,
+        83
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Linux arm64 native X11/Xfwm4",
+      "fictionalInputsOnly": true,
+      "nativeCapture": {
+        "File": "en-light-800x600-native-wm.png",
+        "WindowManager": "Xfwm4",
+        "OriginalAppPidVerified": true,
+        "DirectParentFrameVerified": true,
+        "DesktopRootExcluded": true,
+        "DemoAccounts": 4,
+        "file": "en-light-800x600-native-wm.png",
+        "sha256": "3674eedcc83d29538628674485556f9375b6f72e5ae6e51a08d9dffe03818715",
+        "width": 810,
+        "height": 634
+      }
+    },
+    {
+      "file": "linux-arm64-terminal.png",
+      "captureRevision": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+      "captureFile": "terminal-accounts-native-frame.png",
+      "captureSha256": "ec01caa128286956ad3e5ef56f01474f34e85b931b4b2182b48c3784165b3d7a",
+      "sha256": "ada0148d0526197c02bec7deb7c3ce6293b0d24c5991109dc0502d47908b7989",
+      "originalSize": [
+        1134,
+        678
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Linux arm64 actual terminal/Xfwm4",
+      "fictionalInputsOnly": true,
+      "nativeCapture": {
+        "file": "terminal-accounts-native-frame.png",
+        "sha256": "ec01caa128286956ad3e5ef56f01474f34e85b931b4b2182b48c3784165b3d7a",
+        "width": 1134,
+        "height": 678,
+        "originalTerminalPidVerified": true,
+        "directParentFrameVerified": true,
+        "desktopRootExcluded": true,
+        "actualCommandsWithoutDisplay": true,
+        "fictionalAccounts": 2,
+        "titlebarComposition": false
+      }
+    },
+    {
+      "file": "windows-warning-500x360.png",
+      "captureRevision": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+      "captureFile": "en-dark-account-warning-500x360.png",
+      "captureSha256": "7bc4563a8afcd5c33122b9aba1bffd11221da8d29f59da36d5e669532585d58d",
+      "sha256": "7bc4563a8afcd5c33122b9aba1bffd11221da8d29f59da36d5e669532585d58d",
+      "originalSize": [
+        500,
+        360
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Windows x64 actual app/popup",
+      "fictionalInputsOnly": true,
+      "nativeCapture": {
+        "file": "en-dark-account-warning-500x360.png",
+        "sha256": "7bc4563a8afcd5c33122b9aba1bffd11221da8d29f59da36d5e669532585d58d",
+        "width": 500,
+        "height": 360,
+        "capture": "Actual owned app/popup HWND",
+        "originalPixelsUnchanged": true
+      }
+    },
+    {
+      "file": "windows-warning-tooltip.png",
+      "captureRevision": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+      "captureFile": "en-dark-account-warning-tooltip.png",
+      "captureSha256": "f77d56e6f08f23397122da51de5039ec79415b0f2a4ff36f34d050b0a6e15d7b",
+      "sha256": "f77d56e6f08f23397122da51de5039ec79415b0f2a4ff36f34d050b0a6e15d7b",
+      "originalSize": [
+        329,
+        252
+      ],
+      "offset": [
+        0,
+        0
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Windows x64 actual app/popup",
+      "fictionalInputsOnly": true,
+      "nativeCapture": {
+        "file": "en-dark-account-warning-tooltip.png",
+        "sha256": "f77d56e6f08f23397122da51de5039ec79415b0f2a4ff36f34d050b0a6e15d7b",
+        "width": 329,
+        "height": 252,
+        "capture": "Actual owned app/popup HWND",
+        "originalPixelsUnchanged": true
+      }
+    }
+  ],
+  "ci": {
+    "windows": "https://github.com/Gaebabi/codex-switch/actions/runs/39565558695",
+    "linux": "https://github.com/Gaebabi/codex-switch/actions/runs/39565558833"
+  },
+  "privacy": {
+    "personalDataUsed": false,
+    "originalPixelsUnchanged": true,
+    "metadataRemoved": true,
+    "desktopRootCaptured": false
+  },
+  "scope": "Native actual apps on isolated hosted runners with fictional inputs. Original OS frame is captured together on Linux; only a solid surrounding canvas is added. GUI/terminal rendering is separate from real-account inference and full desktop support."
+}

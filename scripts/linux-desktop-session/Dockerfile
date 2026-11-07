@@ -5,15 +5,16 @@ COPY candidate.tar.gz /tmp/candidate.tar.gz
 RUN tar -xf /tmp/source.tar && mkdir /candidate && tar -xzf /tmp/candidate.tar.gz --strip-components=1 -C /candidate
 RUN dotnet publish tests/linux-desktop/CodexSwitch.LinuxDesktop.Tests.csproj -c Release -r linux-x64 --self-contained true -p:UseSharedCompilation=false -p:CodexSecretDir=/candidate -o /contracts/desktop && dotnet publish tests/linux-vault/CodexSwitch.LinuxVault.Tests.csproj -c Release -r linux-x64 --self-contained true -p:UseSharedCompilation=false -p:CodexSecretDir=/candidate -o /contracts/vault
 RUN dotnet publish tests/linux-handoff/CodexSwitch.LinuxHandoff.Tests.csproj -c Release -r linux-x64 --self-contained true -p:UseSharedCompilation=false -p:CodexSecretDir=/candidate -o /contracts/handoff
+RUN dotnet publish tests/linux-terminal/CodexSwitch.LinuxTerminal.Tests.csproj -c Release -r linux-x64 --self-contained true -p:UseSharedCompilation=false -p:CodexSecretDir=/candidate -o /contracts/terminal
 
 FROM debian@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5
 ENV DEBIAN_FRONTEND=noninteractive
 COPY upstream.deb /input/
-RUN apt-get update -qq && apt-get install --no-install-recommends -y /input/upstream.deb xfce4-session xfwm4 xfce4-panel xfdesktop4 xfce4-settings thunar dbus-x11 libglib2.0-bin gnome-keyring xvfb xauth x11-apps x11-utils x11-xkb-utils xdotool imagemagick python3 python3-pil fonts-dejavu-core fonts-noto-cjk desktop-file-utils procps ca-certificates tzdata libgssapi-krb5-2 libssl3t64 libicu76 libgcrypt20 libsqlite3-0 libx11-6 libxcb1 libice6 libsm6 libfontconfig1 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -qq && apt-get install --no-install-recommends -y /input/upstream.deb xfce4-session xfwm4 xfce4-panel xfdesktop4 xfce4-settings thunar dbus-x11 libglib2.0-bin gnome-keyring xvfb xauth x11-apps x11-utils x11-xkb-utils xdotool imagemagick python3 python3-pil fonts-dejavu-core fonts-noto-cjk desktop-file-utils procps git ca-certificates tzdata libgssapi-krb5-2 libssl3t64 libicu76 libgcrypt20 libsqlite3-0 libx11-6 libxcb1 libice6 libsm6 libfontconfig1 && rm -rf /var/lib/apt/lists/*
 COPY candidate.deb /input/
 RUN dpkg -i /input/candidate.deb
 COPY --from=contracts /contracts /contracts
-COPY verify-session.py expected.json /work/
+COPY verify-session.py verify-linux-terminal-lifecycle.py expected.json /work/
 RUN useradd --uid 1000 --create-home verifier && chmod 0700 /home/verifier && install -d -m 0700 -o 1000 -g 1000 /results
 USER 1000:1000
 WORKDIR /work

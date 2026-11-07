@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "version": "1.42.7",
+  "expectedVersion": "1.42.7",
+  "passed": 3,
+  "failed": 0,
+  "checks": [
+    "Actual report identifies the declared application build",
+    "Diagnostic leaves absent account/home directories untouched",
+    "Original all-counter availability and exit status agree with actual samples"
+  ],
+  "sampleCount": 9,
+  "allCounterFamiliesAvailable": false,
+  "diagnosticExitCode": 1,
+  "scope": "Actual Windows published-app resource command; read-only native counters, no UI/account/client actions. Missing GPU/VRAM may retain diagnostic exit1. Raw hardware samples are not exported."
+}

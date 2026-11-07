@@ -1,0 +1,13 @@
+Codex generic fallback model instructions
+
+Copyright OpenAI. Licensed under the Apache License, Version 2.0.
+See OpenAI-Codex.LICENSE.txt.
+
+resources/CodexFallbackInstructions.md is a copy, with trailing line whitespace normalized, of
+codex-rs/models-manager/prompt.md from OpenAI Codex rust-v0.163.0,
+commit 83086188ae0614bd882818ff1aa23f3194962012:
+https://github.com/openai/codex/blob/83086188ae0614bd882818ff1aa23f3194962012/codex-rs/models-manager/prompt.md
+
+Used only for Responses models whose provider supplies a plain model list
+without a native Codex model catalog. Provider-supplied native instructions
+remain unchanged. This fallback does not grant model capabilities or access.

@@ -1,8 +1,22 @@
 # Application screenshots and verification
 
+- [Windows runtime cleanup](runtime-cleanup/README.md): original native application continuity frames and an independent actual Windows file-lock/cancellation regression, with explicit non-owner scope.
+
+- [Reset-boundary automatic switching](reset-boundary/README.md): original native Windows/Mac menus with a fresh zero source after reset time, independent original-policy regression and explicit fictional-account scope.
+
 ## Current source evidence
 
-Source1.40.0 is the current app; published downloads remain1.27.6. Each entry retains its capture-time scope; earlier pending states are historical. Declared storage/client/peer and ordinary integration have separate native evidence; authenticated Linux handoff/full desktop acceptance remains in5/6/7. The dashboard layout gallery retains its original1.30.2 checkpoint. Choose the evidence for the capability being reviewed:
+- [Observed credit history and quota protection](credits/README.md): actual Windows/Mac credit graphs and permission/paused/past-date menus with fictional inputs, strict native checks and source/image receipts. Local client protection is distinct from billing enforcement or owner-account acceptance.
+
+- [Diagnostic report build versions](resource-report/README.md): actual resource, queue, Windows protocol and Mac native report checks; original Windows/Mac dashboard before/after captures with fictional accounts. Metadata correctness is separate from physical sensor and installed-client discovery acceptance. Source/PR delivery only.
+
+- [Eight dependency updates and paired Avalonia12 migration, source1.40.4](dependency-updates/README.md):146 inspected exports, unmodified current-main Mac ARM64/Intel before/after, both-theme repeated resource-tooltip lifecycle, Windows/Linux confirmation and ordinary installed Xfce native frame. All six capture-head jobs pass; final exact-head review/merge belongs to PR84. Official Actions pins/signatures and scoped Python/NuGet feed audits are recorded. No owner environment or local GUI is used; published binaries remain1.40.2.
+
+- [Usage history axes and layout, source1.40.3](usage-history/README.md):32 fresh actual Mac ARM64/Intel own-window images compare current main1.40.2 with the corrected renderer on each native worker. Both themes and all declared states are inspected;66 corrected native checks per architecture. Original renderer/fixture/source and PNG hashes are recorded. Current binaries remain1.40.2; authenticated Linux continuation and the owner MacBook gallery remain separate.
+
+Source1.40.2 includes automatic startup recovery; [binary release status and verification](../RELEASES.md) is separate from historical capture versions. Each entry retains its capture-time scope; earlier pending states are historical. Declared storage/client/peer and ordinary integration have separate native evidence; authenticated active-chat continuation/full desktop acceptance remains in5/6/7. Choose the evidence for the capability being reviewed:
+
+- [Automatic initialization after native keyring unlock](automatic-startup-recovery/README.md): actual locked/unlocked ordinary Linux windows, old85-second failure and same-window60-second recovery without app input. Three inspected native program frames contain no accounts. Separate identifier-free15/16-check owner receipt confirms automatic loading of both preserved accounts and a single-click real account change/managed launch; no active-chat continuation claim.
 
 - [Ordinary Linux account and managed desktop integration](linux-account-handoff/README.md): source1.40.0, actual installed account/CLI-only UI and Start Codex input,42 local checks/36 overlapping native assertions including eight production contracts. Eight inspected actual program images and before/after receipts; fictional local credentials/offline native client are distinct from pending real authenticated Switch/Continue.
 

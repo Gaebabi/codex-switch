@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "passed": 16,
+  "failed": 0,
+  "checks": [
+    "Existing vault retains CADL1 authenticated encryption",
+    "Owner completed ordinary Linux login for two distinct accounts",
+    "Canonical active identity remains one of the two encrypted accounts",
+    "One ordinary Switch click applied the other real account",
+    "Actual switch retained an exact backup of the former canonical login",
+    "Original approved desktop process exited",
+    "The same utility automatically launched one approved desktop",
+    "Completed no-chat handoff cleared its encrypted checkpoint",
+    "Approved native context permits the registered account without a policy rewrite",
+    "Native account/read matches this encrypted account",
+    "Authenticated usage response parses for this account",
+    "Approved native context permits the registered account without a policy rewrite",
+    "Native account/read matches this encrypted account",
+    "Authenticated usage response parses for this account",
+    "Original keyring key reopens both encrypted accounts",
+    "Read-only account verification preserves canonical credential bytes"
+  ],
+  "realAccounts": 2,
+  "twoAccountSwitchVerified": true,
+  "automaticContinuationVerified": false,
+  "credentialsExported": false,
+  "scope": "Second owner-triggered ordinary no-chat Switch: original managed native desktop exited, the other real account was applied with exact previous-login backup, and one approved replacement launched automatically. Original encrypted accounts/keyring retained. No active-chat inference or Continue submitted.",
+  "applicationSource": "2d9940ab3a324fdaabe0aeb6d48b94117c9e1501",
+  "ownerConfirmedSingleClickShutdownAndRelaunch": true,
+  "manualSwitchInput": "Owner clicked the other account once while the approved managed desktop was running. No automated UI input."
+}

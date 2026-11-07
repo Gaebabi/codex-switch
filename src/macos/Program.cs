@@ -17,6 +17,7 @@ internal static class Program
     public static string? PreviewDirectory { get; private set; }
     public static string? WindowProbePath { get; private set; }
     public static bool NativeUiEvidence { get; private set; }
+    private static bool HistoryEvidence { get; set; }
     public static int DiagnosticExitCode { get; set; }
     [STAThread]
     public static int Main(string[] args)
@@ -24,13 +25,14 @@ internal static class Program
         string? nativeReport = null, queueReport = null;
         for (var i = 0; i < args.Length; i++)
         {
-            if (args[i] == "--help") { Console.WriteLine("CodexSwitch [--data-dir <directory>] [--codex-home <directory>] [--verify-macos <report> | --verify-queues <report> | --preview-macos <directory> | --probe-window <report>]"); return 0; }
+            if (args[i] == "--help") { Console.WriteLine("CodexSwitch [--data-dir <directory>] [--codex-home <directory>] [--verify-macos <report> | --verify-queues <report> | --preview-macos <directory> | --verify-ui <directory> | --verify-history <directory> | --probe-window <report>]"); return 0; }
             if (i + 1 >= args.Length) throw new ArgumentException("Command-line option needs a value.");
             var value = Path.GetFullPath(args[++i]);
             switch (args[i - 1]) { case "--data-dir": DataDirectory = value; break; case "--codex-home": CodexHome = value; break;
                 case "--verify-macos": nativeReport = value; break; case "--verify-queues": queueReport = value; break; case "--preview-macos": PreviewDirectory = value; break;
                 case "--probe-window": WindowProbePath = value; break;
                 case "--verify-ui": PreviewDirectory = value; NativeUiEvidence = true; break;
+                case "--verify-history": PreviewDirectory = value; NativeUiEvidence = true; HistoryEvidence = true; break;
                 default: throw new ArgumentException("Unknown command-line option."); }
         }
         if (!OperatingSystem.IsMacOS()) { Console.Error.WriteLine("Use the Windows WPF project on Windows. This application is the macOS edition."); return 1; }
@@ -46,7 +48,7 @@ internal static class Program
                 new MacResourceMonitor(), () => new MacMenuBar(), KeyModifiers.Meta, "Macintosh HD",
                 new DesktopAppearance("Helvetica Neue", MacAppearance.ReducedMotion), () => DiagnosticExitCode);
             Func<DeskWindow, Task>? diagnostic = WindowProbePath != null ? window => { MacDiagnostics.StartWindowProbe(window, WindowProbePath); return Task.CompletedTask; } :
-                PreviewDirectory != null ? window => MacDiagnostics.RenderAsync(window, PreviewDirectory) : null;
+                PreviewDirectory != null ? window => HistoryEvidence ? HistoryDiagnostics.VerifyAsync(window, PreviewDirectory) : MacDiagnostics.RenderAsync(window, PreviewDirectory) : null;
             var preview = PreviewDirectory == null && WindowProbePath == null ? null : MacDiagnostics.Profiles(4);
             var builder = AppBuilder.Configure(() => new DeskApp(host, preview, diagnostic)).UsePlatformDetect().LogToTrace();
             if (NativeUiEvidence) builder.With(new AvaloniaNativePlatformOptions { RenderingMode = new[] { AvaloniaNativeRenderingMode.Software } });

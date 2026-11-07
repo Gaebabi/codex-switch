@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "revision": "d376f0cd3751e5f0f11c2c05691fd52f72f0fcb2",
+  "applicationSource": "9d7b8ec57c1a1008e5dafff527ad76ffa29fd19f",
+  "os": "Windows",
+  "architecture": "X64",
+  "appVersion": "1.41.0",
+  "baseline": true,
+  "passed": 8,
+  "failed": 0,
+  "checks": [
+    "Original cards have no dedicated warning action",
+    "Original warning replaces the disk monitor",
+    "Original cards have no dedicated warning action",
+    "Original warning replaces the disk monitor",
+    "Original cards have no dedicated warning action",
+    "Original warning replaces the disk monitor",
+    "Original cards have no dedicated warning action",
+    "Original warning replaces the disk monitor"
+  ],
+  "images": [
+    {
+      "file": "en-dark-account-warning-500x360.png",
+      "sha256": "e6e2ab890675db72a2320fac6718fa3e882e0ac0e69a2bfbc34105097bf8d19b",
+      "width": 500,
+      "height": 360,
+      "capture": "Actual owned app/popup HWND",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-dark-account-warning-600x440.png",
+      "sha256": "ed306356f49651a32878bff42ebf989f2c10ffc9d657c7d0073f5650757aa9b0",
+      "width": 600,
+      "height": 440,
+      "capture": "Actual owned app/popup HWND",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-light-account-warning-500x360.png",
+      "sha256": "927326a81fb286f9e53762377303aa67d8480be753fa63d2c1f44d65cdba3e13",
+      "width": 500,
+      "height": 360,
+      "capture": "Actual owned app/popup HWND",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-light-account-warning-600x440.png",
+      "sha256": "e72b4094bfab3c7152656f3c76d2dd52c1d29076eaa2caaff6023058a4e7d24a",
+      "width": 600,
+      "height": 440,
+      "capture": "Actual owned app/popup HWND",
+      "originalPixelsUnchanged": true
+    }
+  ],
+  "personalDataUsed": false,
+  "scope": "Actual own Windows app/popup HWNDs, fictional failed/cached/healthy account and disk inputs only. No owner account, desktop, authentication, network or hardware action.",
+  "originalProductionSourceSha256": {
+    "src/windows/MainWindow.cs": "e3b367ecfe60e555c55d43fda82d8cdd17afb1d267776ead68efc49001d220de",
+    "src/windows/AccountCardHeader.cs": "9b3a01a66c58ce0a267c4417d9962163fa08787f1604a7963d11a8c386337da7",
+    "src/windows/AccountTankCard.cs": "3b7872dc27de179ec3d8e7d343155a63c776e8c1d71847b71da1a839a0df503b",
+    "src/windows/DriveUsagePanel.cs": "69768a375d0998405e568b8bd3fad76e21abf03bb6533e9fab5edb3e2d1c37fc",
+    "src/windows/ToolTipTheme.cs": "7dd00e6acf089b1c4daa3bb33cfda88b7d4dded863a5d31a9e336e1234a16e33"
+  },
+  "diagnosticHostingInstrumented": true,
+  "sourceArchiveSha256": "c08f0b1f6f621d53ed7cdecd76eeb80d69be684aaac9abfbd678752348adfa01",
+  "captureRun": "https://github.com/Gaebabi/codex-switch/actions/runs/39044029251"
+}

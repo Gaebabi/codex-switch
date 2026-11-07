@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-31",
+  "scope": "Production Windows main window rendered offscreen with a fictional account; no native window shown or restart action invoked.",
+  "checks": [
+    "en/dark: actual offscreen WPF provider editor, empty key and four reachable actions",
+    "en/light: actual offscreen WPF provider editor, empty key and four reachable actions",
+    "ko/dark: actual offscreen WPF provider editor, empty key and four reachable actions",
+    "ko/light: actual offscreen WPF provider editor, empty key and four reachable actions",
+    "en: enabled Restart Codex in minimum-width main layout, separate from Models and counters; action not invoked",
+    "en: duplicate restart action disabled while busy",
+    "ko: enabled Restart Codex in minimum-width main layout, separate from Models and counters; action not invoked",
+    "ko: duplicate restart action disabled while busy"
+  ],
+  "images": {
+    "main-restart-en.png": "c5d08dcb913ec3170289f510439eec8732463c89fd567e5e80447437902d5394",
+    "main-restart-ko.png": "82f4fcc338c6d1d135a9899ef7ccc6e5e2e45a6e443fe697698961e4718172d9"
+  },
+  "sourceSha256": {
+    "src/windows/MainWindow.cs": "50723a0d1b2d6e91403f590f05d96228ae1ae27608b9a74334b9eec7dc7bb69e",
+    "src/desktop/DeskWindow.cs": "4c4b258e3bcb8504836b0b6b6f681d45baccd9a41a920c70ff02ec9864172c6c",
+    "src/core/AccountSwitchCoordinator.cs": "a206afce559cf8faf9737a24cb27205b82e7418fac5a63a6b94f0fd217dddd97",
+    "src/application/DesktopSwitchBackend.cs": "ad96dffd03e673e27cf721aebf9cebe90ca2f4fedb95fe456d67c155cb5c8ea8",
+    "tests/account-automation/RestartContracts.cs": "a85ac8728f8499d79b2d68141dc99bc1a0691616357ffa4a5b7070790cfa9ab3",
+    "tests/model-providers-ui/Program.cs": "e6e925e4ee317dd360eb28ba3c7e4d7bfdb31247dc21fd782887c32f2389c910"
+  },
+  "providerContracts": 60,
+  "accountHistoryRestartChecks": 264,
+  "packagedSelfTests": 99,
+  "packageFiles": 494,
+  "applicationRuntime": "10.0.13",
+  "reviewedTestCli": "0.163.0",
+  "realCodexRestartInvoked": false,
+  "publicRelease": false
+}

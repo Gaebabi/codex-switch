@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "sourceRevision": "d89fc0455ceae74e123ec98a3cadbf6fd5f959ed",
+  "baselineSource": "2d933bd6d2ebb43f799e2e78ee8b89266ced5f75",
+  "nativeRun": 40742235657,
+  "nativeTerminalContractsPerArchitecture": 16,
+  "portableContracts": 136,
+  "standaloneCliVersion": "0.164.0",
+  "declaredExpectedVersion": "0.164.0",
+  "images": [
+    {
+      "file": "linux-x64-terminal-native.png",
+      "rid": "linux-x64",
+      "sha256": "074fdc2058932b61ce1c1790a2e1d9e8746c6d9a2c0c83a8de16593c5fce6f0e",
+      "width": 1134,
+      "height": 678,
+      "originalExportBytesUnchanged": true,
+      "ownTerminalPidAndDirectParentVerified": true,
+      "desktopRootExcluded": true,
+      "actualVersionCommand": "codex-cli 0.164.0",
+      "nativeTerminalContracts": 16,
+      "nativeCliSha256": "b93f6811d3f653f0fb83be4050d857fb9abbb111dfa2ce160563327daff7f306"
+    },
+    {
+      "file": "linux-arm64-terminal-native.png",
+      "rid": "linux-arm64",
+      "sha256": "074fdc2058932b61ce1c1790a2e1d9e8746c6d9a2c0c83a8de16593c5fce6f0e",
+      "width": 1134,
+      "height": 678,
+      "originalExportBytesUnchanged": true,
+      "ownTerminalPidAndDirectParentVerified": true,
+      "desktopRootExcluded": true,
+      "actualVersionCommand": "codex-cli 0.164.0",
+      "nativeTerminalContracts": 16,
+      "nativeCliSha256": "8813c8d8a4cea2eeba271b72ab22f49628b184b24ab18dbef06b4ce41e9a8d39"
+    },
+    {
+      "file": "windows-before.png",
+      "sha256": "ca15f30968d5cb6ec19a85fd1bf1cc5f6ccf82b0dc97022fac8a77870942ddee",
+      "width": 500,
+      "height": 360,
+      "sourceRevision": "fd112ddd14f7ee845f97a7702e138202b6cd2e42",
+      "appVersion": "1.42.6",
+      "runtime": ".NET 10.0.13",
+      "originalExportBytesUnchanged": true,
+      "nativeOwnWindow": true,
+      "scope": "Actual published WPF window with fictional account/resource inputs; visual regression evidence, not physical WMI sensor acceptance."
+    },
+    {
+      "file": "windows-after.png",
+      "sha256": "6cad15dfd8c2e9118e9bce42d7d6e99feb60478930ec9e0d03cb1d95680e6c5a",
+      "width": 500,
+      "height": 360,
+      "sourceRevision": "d89fc0455ceae74e123ec98a3cadbf6fd5f959ed",
+      "appVersion": "1.42.7",
+      "runtime": ".NET 10.0.13",
+      "originalExportBytesUnchanged": true,
+      "nativeOwnWindow": true,
+      "scope": "Actual published WPF window with fictional account/resource inputs; visual regression evidence, not physical WMI sensor acceptance."
+    }
+  ],
+  "sourceHashes": {
+    "Directory.Build.props": "d9992437fb7559b96289bf7ea9f00130d344821721ac114798f831f7c0222ef0",
+    "src/macos/Info.plist": "9f5f41d6c8c3d03305b641e3614bcf9b129acbd960b920e21eab68b9ac664c64",
+    "src/application/LinuxClientSession.cs": "0f53cc6061a87c51a3c3615cc63d962f924fcb9c8c8bb30d9261f4738c730974",
+    "src/application/LinuxTerminalCommands.cs": "47c3644c8be88a09b6d0b532ed5d19d25f71fdf36aceac6ffaac5799dd7122a7",
+    "src/platforms/protocol/ClientCredentialPolicy.cs": "ae63580e82f981bde2700f28d02b93a8cd4f92b258d8c8888f5cf94cad667e23",
+    "src/platforms/client/LinuxClients.json": "869a503ba3da82bc18843fcc1b36734bb656782d96ecbbad7adad37466d762d7",
+    "src/core/AutomaticSwitchPolicy.cs": "e5d3db0a9336adb98297f156bfd5f0d2753dfcdd0fe4f57ffc84e8582ac5b150",
+    "src/platforms/resources/CodexSwitch.Hardware.csproj": "8587520e3eb7e0cf2d1f0296b129a3a0901966ca0653acee6f66e84dec539149",
+    "tests/linux-terminal/Program.cs": "5bd6ba31f4b0b48ff4d1b50428b1563fd8684c5bd6846266525175798d7d28bb",
+    "tests/account-automation/Program.cs": "3b77df6bf98d266fdeb2a9fa070f65884c8b7817dfc1e0f75a9a3a5ac54c7dee",
+    "scripts/verify-linux-keyring.py": "813bb691e14d4c5fb31545e622d507edd5744601b220165aacf40831f45dc73a",
+    "scripts/capture-linux-terminal.py": "94e62bfd06bf1c37a9146ead06efa50f9db88a98f89a4b989e1c242cb0642c78"
+  },
+  "preservedProductionFiles": [
+    "src/application/LinuxTerminalCommands.cs",
+    "src/platforms/protocol/ClientCredentialPolicy.cs",
+    "src/platforms/client/LinuxClients.json",
+    "src/core/AutomaticSwitchPolicy.cs"
+  ],
+  "upstreamReview": {
+    "previous": "0.163.0",
+    "reviewed": "0.164.0",
+    "initializationSchemaUnchanged": true,
+    "selectedCredentialSchemaFieldsUnchanged": true,
+    "credentialStoreAdditionalPropertiesNeedsNativePolicyCheck": true,
+    "npmIntegrityEntries": 7,
+    "adjacentVersionsStillRefused": [
+      "0.163.1",
+      "0.164.1",
+      "0.165.0"
+    ]
+  },
+  "scope": "Actual native x64/ARM64 official CLI initialization/file policy, encrypted account command fixture and own Xfwm4 terminal frames. Fictional accounts only; no personal login, inference, active-chat Continue or full-desktop acceptance. Full final-head six-job checks and publication have separate receipts.",
+  "windowsNativeVerificationRun": 40742235708
+}

@@ -11,6 +11,11 @@ task_app="$task_output/Codex Switch.app"
 mkdir -p "$task_app/Contents/MacOS" "$task_app/Contents/Resources"
 dotnet publish "$task_root/src/macos/CodexSwitch.Mac.csproj" -c Release -r "$task_rid" --self-contained true \
   -p:UseSharedCompilation=false -p:UseAppHost=true -o "$task_app/Contents/MacOS"
+if [[ -d "$task_app/Contents/MacOS/licenses" ]]; then
+  mv "$task_app/Contents/MacOS/licenses" "$task_app/Contents/Resources/licenses"
+fi
+cmp "$task_root/licenses/OpenAI-Codex.LICENSE.txt" "$task_app/Contents/Resources/licenses/OpenAI-Codex.LICENSE.txt"
+cmp "$task_root/licenses/OpenAI-Codex.NOTICE.txt" "$task_app/Contents/Resources/licenses/OpenAI-Codex.NOTICE.txt"
 cp "$task_root/src/macos/Info.plist" "$task_app/Contents/Info.plist"
 cp "$task_root/assets/macos/app-icon.icns" "$task_app/Contents/Resources/app-icon.icns"
 cp "$task_root/licenses/Burn0Assets.LICENSE.txt" "$task_app/Contents/Resources/Burn0Assets.LICENSE.txt"

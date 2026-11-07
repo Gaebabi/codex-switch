@@ -29,6 +29,7 @@ internal sealed class LinuxClientSession : IAsyncDisposable
     public string Provenance => _installation.Provenance;
     public string? PackageVersion => _installation.PackageVersion;
     public bool DesktopBinaryApproved => _installation.Desktop != null;
+    internal int InspectionProcessId => _rpc.OwnedProcessId;
     private LinuxClientSession(LinuxClientInstallation installation, CodexRpc rpc, string home, string context, string version)
     { _installation = installation; _rpc = rpc; Home = home; Context = context; CliVersion = version; }
     public static string DirectoryPath(string path)
@@ -62,14 +63,15 @@ internal sealed class LinuxClientSession : IAsyncDisposable
         }
     }
     internal static string ValidateInitialization(CodexRpc rpc, string home)
+        => ValidateInitialization(rpc.Initialization ?? throw Unsupported(), home);
+    internal static string ValidateInitialization(JsonElement hello, string home)
     {
-        var hello = rpc.Initialization ?? throw Unsupported();
         if (hello.ValueKind != JsonValueKind.Object || Text(hello, "platformOs") != "linux" || Text(hello, "platformFamily") != "unix" || Text(hello, "codexHome") != home) throw Unsupported();
         const string prefix = "codex_account_desk/"; var agent = Text(hello, "userAgent");
         if (!agent.StartsWith(prefix, StringComparison.Ordinal)) throw Unsupported();
         var end = agent.IndexOf(' ', prefix.Length); if (end < 0) throw Unsupported();
         var version = agent[prefix.Length..end];
-        if (version is not ("0.162.0-alpha.17.2" or "0.162.1")) throw Unsupported();
+        if (version is not ("0.162.0-alpha.17.2" or "0.162.1" or "0.163.0" or "0.164.0")) throw Unsupported();
         return version;
     }
     private static string Text(JsonElement source, string name) => source.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()! : throw Unsupported();
@@ -92,7 +94,7 @@ internal sealed class LinuxClientSession : IAsyncDisposable
     }
     internal async Task<JsonElement> MetadataAsync(string method, object parameters, CancellationToken cancellation)
     {
-        if (method is not ("thread/read" or "thread/name/set")) throw new ArgumentException("Unsupported metadata operation.");
+        if (method is not ("thread/read" or "thread/list" or "thread/name/set")) throw new ArgumentException("Unsupported metadata operation.");
         await RequireFileAsync(cancellation).ConfigureAwait(false);
         return await _rpc.RequestAsync(method, parameters, cancellation).ConfigureAwait(false);
     }

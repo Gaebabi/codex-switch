@@ -1,0 +1,11 @@
+# Release1.42.4: complete compact Linux header captions
+
+[Issue115](https://github.com/Gaebabi/codex-switch/issues/115) addresses the existing minimum-width Linux automatic-switch caption clip. The native header uses content-sized cancel/automatic columns and a flexible counter area with smaller gaps. The500×360 minimum,34px header, account viewport, visible actions and state remain intact. Mac/Windows layout and all account/credential behavior are unchanged; no dependency or background task is added.
+
+[Original application baseline](../evidence/compact-header/README.md) is retained without pixel changes. Actual Linux x64/ARM64 language/theme/size checks must require full text-layout bounds and no action/counter overlap, alongside existing four-card/no-scroll/native-frame assertions. Fresh before/after confirmation and all six final-head protected jobs precede author review and expected-head merge/tree comparison.
+
+The framed CI harness also stops the verified owned Xfconf writer before deleting its temporary HOME. Identity must match the owned D-Bus sender, current UID, executable and exact temporary HOME; a pidfd binds shutdown to the original process. Cleanup/timeout failures still fail CI. Isolated desktop child failures now expose their retained fixture diagnostics instead of hiding the cause. Neither change weakens production trust or skips native tests. A previous x64 handoff abort is not considered fixed merely by adding diagnostics.
+
+Daily delivery authorizes nine native packages: Windows x64/macOS15+ ARM64·Intel ZIPs and Linux x64/ARM64 DEB/RPM/tar.gz previews, runtime10.0.13. Verify exact reviewed source, packages/inventory/licensing/signatures and sanitized native evidence; stage draft v1.42.4 with VERIFICATION.json, SHA256SUMS.txt and a verification ZIP. Confirm every uploaded size/SHA before publication and verify anonymous public downloads afterward. Preserve previous releases, installed owner apps/accounts and active Codex sessions.
+
+Windows/Linux remain unsigned; macOS is native ad-hoc signed without Apple notarization. Linux remains an integration preview with unsupported authenticated desktop handoff. Synthetic own-window evidence does not establish real account switching, full desktop/accessibility or active-chat continuation. Other Linux support and historical-privacy criteria remain open.

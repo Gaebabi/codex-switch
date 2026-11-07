@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
+    <AssemblyName>CodexSwitch.Sensors</AssemblyName><RootNamespace>CodexSwitch.Sensors</RootNamespace>
+    <Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings><DebugType>none</DebugType>
+    <PublishAot>true</PublishAot><InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../platforms/resources/CpuSensorProtocol.cs" Link="CpuSensorProtocol.cs" />
+    <EmbeddedResource Include="modules/*.bin" />
+  </ItemGroup>
+</Project>

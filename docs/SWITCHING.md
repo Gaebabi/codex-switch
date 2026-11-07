@@ -1,5 +1,7 @@
 # Account switching
 
+Account auto-switch is **Off by default**. Enable its toolbar menu only when you want successful fresh usage refreshes to select an eligible account below the chosen threshold. The same handoff/recovery pipeline runs for manual and automatic selection. Choose optimal remaining quota or saved custom account priority. [Threshold, cooldown, failure/restart guards and verification scope](development/ACCOUNT_AUTOMATION.md).
+
 1. Add an account through **+**, or import the current login from the Windows **↻** right-click menu.
 2. Compare the cards and select **Switch**.
 3. The button shows **Backing up** while active local chat names are saved with an updated date.
@@ -8,7 +10,9 @@
 
 If chat naming or normal shutdown fails, the login change stops. Unclear message-send results are not automatically repeated. A pending handoff can continue through **Resume chats**; cancellation is available from the account menu/tray.
 
-One manual **Switch** starts the normal close/apply/reopen/resume sequence. A successful Windows shutdown request has a cancellable 30-second exit deadline; refusal or timeout leaves credentials unchanged. It does not force-kill Codex or retry an uncertain continuation. [Isolated reproduction and application evidence](evidence/single-click-handoff/README.md). Current 1.27.6 downloads do not contain this correction.
+From 1.43.3, a confirmed finished receipt does not block another switch; incomplete, ambiguous or restart-required records still do. Windows validates shutdown targets and excludes the Switch process from its Restart Manager session. A reported controller exit has not yet been reproduced, so this protection alone does not establish its cause.
+
+One manual **Switch** starts the normal close/apply/reopen/resume sequence. A successful Windows shutdown request has a cancellable 30-second exit deadline; refusal or timeout leaves credentials unchanged. It does not force-kill Codex or retry an uncertain continuation. [Isolated reproduction and application evidence](evidence/single-click-handoff/README.md).
 
 Switching intentionally restarts Codex and affects other clients sharing the same login. Activity counts cover this machine's local desktop root chats, not individual accounts, remote/cloud work or standalone CLI turns.
 

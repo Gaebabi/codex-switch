@@ -18,11 +18,14 @@ internal sealed class UsageTrendChart : FrameworkElement
     private readonly List<(Point Position, UsageObservation Observation)> _hits = new();
     private DateTimeOffset _now;
     private UsageForecast _forecast;
+    public HistoryRange? Range { get; set; }
+    public CreditTrack? Credits { get; set; }
+    private UsageChartSeries _series = new(Array.Empty<UsageObservation>(), new Dictionary<UsageObservation, ChartCreditUse>());
     public UsageTrendChart(UsageWindow window, UsageObservation[] history, Burn0Theme theme, int hours, DateTimeOffset now, bool simple = false)
     {
         _window = window; _history = history; _theme = theme; _hours = hours; _now = now;
         _forecast = UsagePredictor.Evaluate(window, history, now); _simple = simple;
-        Height = simple ? 116 : 156; MinWidth = 120; ClipToBounds = true;
+        Height = simple ? 156 : 180; MinWidth = 120; ClipToBounds = true;
     }
     public void Update(DateTimeOffset now, UsageForecast forecast)
     {
@@ -35,57 +38,57 @@ internal sealed class UsageTrendChart : FrameworkElement
         base.OnRender(drawing);
         drawing.DrawRectangle(Brushes.Transparent, null, new Rect(0, 0, ActualWidth, ActualHeight));
         _hits.Clear();
-        var left = 33.0; var right = ActualWidth - 8; var top = 25.0; var bottom = 91.0;
+        var left = 88.0; var right = ActualWidth - 8; var top = 38.0; var bottom = 127.0;
         if (right <= left) return;
-        if (!_simple) { DrawText(drawing, Loc.T("사용량 추이"), 0, 0, "muted", 11); DrawText(drawing, Loc.T("실측"), right, 0, "accent", 11, true); }
-        foreach (var value in _simple ? new[] { 0, 100 } : new[] { 0, 50, 100 })
+        var range = HistoryRange.Resolve(_hours, Range, _now); var start = range.Start; var end = range.End;
+        _series = UsageChartPresentation.Build(_history, Credits);
+        var visible = _series.Points.Where(p => range.Contains(p.At)).ToArray();
+        var maximum = UsageChartPresentation.Maximum(visible);
+        if (maximum > 100)
         {
-            var y = bottom - (bottom - top) * value / 100;
-            drawing.DrawLine(new Pen(_theme.Color("divider"), 1), new Point(left, y), new Point(right, y));
-            DrawText(drawing, value + "%", left - 7, y - 7, "muted", 10, true);
+            var fill = _theme.Color("credit").Clone(); fill.Opacity = 0.08;
+            drawing.DrawRectangle(fill, null, new Rect(left, top, right - left, (bottom - top) * (1 - UsageChartPresentation.Fraction(100, maximum))));
+            DrawText(drawing, UsageChartPresentation.Legend(visible.LastOrDefault(), _series), right, 0, "credit", 11, true);
+            if (visible.Any(p => _series.Credits.ContainsKey(p))) DrawText(drawing, Loc.T(visible.Any(p => _series.Credits.TryGetValue(p, out var c) && c.Estimated > 0) ? "history.credit_estimate_help" : "history.credit_amount_help"), right, 17, "muted", 10, true);
         }
-        var visible = _history.Where(p => p.At >= _now.AddHours(-_hours) && p.At <= _now).ToArray();
-        var start = visible.Length == 0 ? _now.AddHours(-_hours) : visible[0].At.AddMinutes(-1);
-        if (_now - start < TimeSpan.FromMinutes(5)) start = _now.AddMinutes(-5);
-        if (start < _now.AddHours(-_hours)) start = _now.AddHours(-_hours);
-        var seconds = (_now - start).TotalSeconds;
+        else if (_series.MissingCreditAmounts?.Any(range.Contains) == true) DrawText(drawing, Loc.T("history.credit_amount_unavailable"), right, 0, "credit", 11, true);
+        if (!_simple) { DrawText(drawing, Loc.T("사용량 추이"), 0, 0, "muted", 11); if (maximum <= 100) DrawText(drawing, Loc.T("실측"), right, 0, "accent", 11, true); }
+        var ticks = (_simple ? new[] { 0.0, 100 } : new[] { 0.0, 50, 100 }).AsEnumerable();
+        if (maximum > 100) ticks = ticks.Concat(new[] { 100 + (maximum - 100) / 2, maximum });
+        foreach (var value in ticks.Distinct())
+        {
+            var y = bottom - (bottom - top) * UsageChartPresentation.Fraction(value, maximum);
+            drawing.DrawLine(new Pen(_theme.Color("divider"), 1), new Point(left, y), new Point(right, y));
+            DrawText(drawing, UsageChartPresentation.Tick(value), left - 7, y - 7, value > 100 ? "credit" : "muted", 10, true);
+        }
+        var seconds = Math.Max(1, (end - start).TotalSeconds);
         Point Position(UsageObservation point) => new(left + (right - left) * (point.At - start).TotalSeconds / seconds,
-            bottom - (bottom - top) * Math.Clamp(point.UsedPercent, 0, 100) / 100);
-        var segment = new List<Point>();
+            bottom - (bottom - top) * UsageChartPresentation.Fraction(point.UsedPercent, maximum));
         UsageObservation? previous = null;
         foreach (var observation in visible)
         {
-            if (previous != null && (previous.Segment != observation.Segment || observation.At - previous.At > TimeSpan.FromMinutes(30)))
-            { DrawSegment(drawing, segment, bottom); segment.Clear(); }
-            var point = Position(observation); segment.Add(point); _hits.Add((point, observation)); previous = observation;
+            if (previous != null && previous.Segment == observation.Segment && (observation.At - previous.At <= TimeSpan.FromMinutes(30) ||
+                _series.Credits.TryGetValue(observation, out var estimate) && estimate.EstimatedInterval))
+                foreach (var span in UsageChartPresentation.Split(previous, observation))
+                {
+                    var pen = new Pen(_theme.Color(span.Credits ? "credit" : "accent"), 2);
+                    if (_series.Credits.TryGetValue(observation, out var credit) && credit.EstimatedInterval) pen.DashStyle = DashStyles.Dash;
+                    drawing.DrawLine(pen, Position(span.Start), Position(span.End));
+                }
+            else drawing.DrawEllipse(_theme.Color(observation.UsedPercent > 100 ? "credit" : "accent"), null, Position(observation), 2, 2);
+            _hits.Add((Position(observation), observation)); previous = observation;
         }
-        DrawSegment(drawing, segment, bottom);
         if (visible.Length < 2)
             DrawText(drawing, Loc.T("조회 기록이 쌓이면 추이를 볼 수 있습니다."), (left + right) / 2, 53, "muted", 11, centered: true);
         if (visible.Length > 0)
         {
             var last = Position(visible[^1]);
-            drawing.DrawEllipse(_theme.Color("accent"), new Pen(_theme.Color("surface"), 2), last, 4, 4);
+            drawing.DrawEllipse(_theme.Color(visible[^1].UsedPercent > 100 ? "credit" : "accent"), new Pen(_theme.Color("surface"), 2), last, 4, 4);
         }
-        var format = _now - start >= TimeSpan.FromHours(12) ? "MM/dd HH:mm" : "HH:mm";
+        var format = end - start >= TimeSpan.FromHours(12) ? "MM/dd HH:mm" : "HH:mm";
         DrawText(drawing, UsagePresentation.KoreanTime(start).ToString(format, Loc.Culture), left, bottom + 6, "muted", 10);
-        DrawText(drawing, UsagePresentation.KoreanTime(_now).ToString(format, Loc.Culture), right, bottom + 6, "muted", 10, true);
-        if (!_simple) DrawTimeline(drawing, left, right, 127);
-    }
-    private void DrawSegment(DrawingContext drawing, List<Point> points, double bottom)
-    {
-        if (points.Count == 0) return;
-        if (points.Count == 1) { drawing.DrawEllipse(_theme.Color("accent"), null, points[0], 2, 2); return; }
-        var area = new StreamGeometry();
-        using (var path = area.Open())
-        {
-            path.BeginFigure(new Point(points[0].X, bottom), true, true);
-            path.PolyLineTo(points, true, false); path.LineTo(new Point(points[^1].X, bottom), true, false);
-        }
-        var fill = _theme.Color("accent").Clone(); fill.Opacity = 0.10; drawing.DrawGeometry(fill, null, area);
-        var line = new StreamGeometry();
-        using (var path = line.Open()) { path.BeginFigure(points[0], false, false); path.PolyLineTo(points.Skip(1).ToArray(), true, false); }
-        drawing.DrawGeometry(null, new Pen(_theme.Color("accent"), 2) { LineJoin = PenLineJoin.Round }, line);
+        DrawText(drawing, UsagePresentation.KoreanTime(end).ToString(format, Loc.Culture), right, bottom + 6, "muted", 10, true);
+        if (!_simple) DrawTimeline(drawing, left, right, 159);
     }
     private void DrawTimeline(DrawingContext drawing, double left, double right, double y)
     {
@@ -126,9 +129,9 @@ internal sealed class UsageTrendChart : FrameworkElement
     {
         base.OnMouseMove(arguments);
         var position = arguments.GetPosition(this);
-        if (position.Y < 20 || position.Y > 96 || _hits.Count == 0) { ToolTip = null; return; }
+        if (position.Y < 35 || position.Y > 132 || _hits.Count == 0) { ToolTip = null; return; }
         var nearest = _hits.MinBy(p => Math.Abs(p.Position.X - position.X));
-        ToolTip = Loc.F("실측 · {0:MM/dd HH:mm:ss} (한국 시간)\n사용 {1:0.##}%", UsagePresentation.KoreanTime(nearest.Observation.At), nearest.Observation.UsedPercent);
+        ToolTip = UsageChartPresentation.Details(nearest.Observation, _series);
     }
     protected override void OnMouseLeave(MouseEventArgs arguments) { base.OnMouseLeave(arguments); ToolTip = null; }
 }

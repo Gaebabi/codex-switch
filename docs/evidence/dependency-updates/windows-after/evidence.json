@@ -1,0 +1,110 @@
+{
+  "schema": 1,
+  "revision": "f1e6acb897be2a4f038af016d91a8d4e401c074f",
+  "os": "Windows",
+  "architecture": "X64",
+  "runtime": ".NET 10.0.13",
+  "appVersion": "1.40.4",
+  "images": [
+    {
+      "file": "en-dark-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "a971efaa58d5157170a76d66cdb5a406b0dd39f1ac5f54b1edae1f0107446d1b",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "ca0f5662e328f5cdae186e255f279964db23c09014961e4023c0396c9e60c8d9",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-history.png",
+      "width": 620,
+      "height": 380,
+      "sha256": "3750816f18b095503f72c87d76343c23ac9137a376ee84959881100eea362579",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-language.png",
+      "width": 227,
+      "height": 360,
+      "sha256": "06d8a8fc525af0fdd986e689cc2213a06070809b51d991330e17df8581837eec",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-tooltip.png",
+      "width": 135,
+      "height": 54,
+      "sha256": "11aff2470f0fc48fd2ad5063c732564c4005c15fbf5c3b23e22c76416cd0ae45",
+      "capture": "WPF tooltip component at detached-owner boundary"
+    },
+    {
+      "file": "en-light-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "46d2245dd3095b0af492cff6ba139eb862187b53e2425eeb7104010fb480f3a3",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "4553384ce4181d984ecc397e6db0021c8d39102b2b3fdf0dfc3c4b62c0acfdee",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-history.png",
+      "width": 620,
+      "height": 380,
+      "sha256": "65fa46e5b363b44b61e9e789ed0d4680896b0d0fca2eb8937840de08ed871fbf",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-language.png",
+      "width": 227,
+      "height": 360,
+      "sha256": "6138ec8b04080439352edb30501607505081e2c1b261e0c8e4b3b9d7ab976430",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-tooltip.png",
+      "width": 135,
+      "height": 54,
+      "sha256": "6af68b1b5d550178fcb4783c621b8ee25217fe4ed989b93aabbea5cc48fdac87",
+      "capture": "WPF tooltip component at detached-owner boundary"
+    },
+    {
+      "file": "ko-dark-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "007822c6be05b14a0a24a5ce51f06173898c1569775ecb7257500f8566628ee6",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-dark-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "fa1d4f7ef494f1524ef4607581b27d4e97b63b0c725dafeef67c2d724fc95580",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-light-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "1579aa4b18a77e1be31fdb5dffed6a04685e7f356c7e5e22adf955940c6bf53f",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-light-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "131987420c218137aa89826774e2b670b1a4b5926f09ab5fa4981b924218af92",
+      "capture": "Native own window or popup"
+    }
+  ],
+  "rendering": "Windows native WPF",
+  "scope": "Published app on the stated OS; native own windows/popups and explicitly labeled WPF tooltip component renders, synthetic accounts only. No personal desktop/credentials/Codex action or account-switch/resume acceptance."
+}

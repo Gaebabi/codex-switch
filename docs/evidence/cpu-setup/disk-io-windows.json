@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "revision": "26789afbee5330c0638e41f77ad65a9a1d2b3bc0",
+  "os": "Windows",
+  "hardwareChecks": 22,
+  "nativeCounterState": "Available",
+  "profile": "Unknown",
+  "readAvailable": true,
+  "writeAvailable": true,
+  "busyAvailable": true,
+  "scope": "Actual read-only volume counters on disposable hosted Windows. No generated disk load, filesystem contents, device names/serials, benchmark, personal data or account actions. Unknown capabilities never imply a manufacturer rating."
+}

@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "revision": "ecbe30fdb4b6d36b7f1ef3035ceb4a6fe02a7adc",
+  "os": "Windows",
+  "appIntegrationChecks": 1,
+  "normalWorkerChecks": 5,
+  "driverWorkerChecks": 7,
+  "beforeDriverState": "PlatformUnsupported",
+  "afterDriverState": "PlatformUnsupported",
+  "nativeErrorAfterDriver": null,
+  "nativeSensorValueAccepted": false,
+  "driverVersion": "2.2.0",
+  "authenticodeValid": true,
+  "driverRunning": true,
+  "signedModuleAccepted": true,
+  "tamperedModuleRefused": true,
+  "scope": "Disposable hosted Windows VM: actual NativeAOT worker and published-app digest/pipe/lifecycle plus signed driver/module checks. No personal data, local GUI, owner hardware temperature or account actions."
+}

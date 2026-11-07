@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "revision": "f1e6acb897be2a4f038af016d91a8d4e401c074f",
+  "os": "Linux",
+  "architecture": "X64",
+  "runtime": ".NET 10.0.13",
+  "appVersion": "1.40.4",
+  "images": [
+    {
+      "file": "en-dark-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "1c3169a19d2301338c9b99611aaf11d562be4bbff5db636354df12e991c73dc9",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-600x420-native.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "c174cf81874b27f7f7ed3969cc0e0faa8f83d7b9305ddf859f8cc94100a6f027",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "5caca395a8161b157f9bdc9d2dbe322cd6b2e78ef3ee39d3df94f3edc13cbf6d",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "2960ee16fd25783d1db9bad2da6cf2a5a6f56c86cbae9cd49643cf522f756cae",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-600x420-native.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "262952b1fd45dea03aa8842ab9d7ac4b77d3ebf6be6af73475a4c15bb46891b3",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "fa1f3313ff42ff56350d031c0e4362646a9b493b42c15033d68f30e6729927a4",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-dark-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "5ea1c2bf7c2fb7c5d5ae7e2f32f7a7f166f298c802b9de6529372962168ad918",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-dark-600x420-native.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "e681606f04f019b7ffa880cc7a92c4c98b574d4d9af1da3b35298b16ade2a397",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-dark-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "617fbf65b380f9fda5dce0de6c753f6675cee560b23a671576112ea983fed772",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-light-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "ae414125c7ccce84cb9af6341bdc0daa76eeafa6cb25bbe206d5deb797701fa6",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-light-600x420-native.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "9c423f1725f74e249b53ce42279298c83b1b35ca5f16272911c2f883254ca7c4",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-light-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "bb6975af21caadb1098ce20fbed1a49bf922cd3ecb913e1b3e5b8e081f2d705f",
+      "capture": "Native own window or popup"
+    }
+  ],
+  "rendering": "Software (X11 native window)",
+  "scope": "Published app on the stated OS; native own windows/popups and explicitly labeled WPF tooltip component renders, synthetic accounts only. No personal desktop/credentials/Codex action or account-switch/resume acceptance."
+}

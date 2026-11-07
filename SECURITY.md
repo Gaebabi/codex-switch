@@ -1,5 +1,7 @@
 # Security and privacy
 
+The optional Windows CPU sensor is an account-free NativeAOT worker with an output-only current-user, process-bound pipe. The account app stays unprivileged. Driver setup and per-session worker elevation require explicit CPU-menu consent; no automatic UAC, driver download or service setup occurs. Only pinned signed modules/fixed read registers are used. Do not disable code integrity, antivirus or driver policies to enable it. [Sensor trust boundaries and limitations](docs/TEMPERATURES.md#built-in-windows-cpu-sensor).
+
 Codex Switch stores credentials locally: current-user DPAPI on Windows, AES-GCM with a Keychain-held key and private permissions on Mac. Inactive-account reads use isolated local Codex homes. There is no project-operated account server or analytics endpoint.
 
 A switch changes the shared Codex login and normally restarts the desktop. Clients using the same home can see the new login. [Switching details](docs/SWITCHING.md)

@@ -107,5 +107,51 @@ Check("Multi-device color reflects the worst actual device relative to its own l
     var aggregate=WindowsDiskTemperature.Aggregate(new[]{TemperatureReading.From(71,"disk 1","",now) with {Limits=TemperatureLimits.Device(80,90)},TemperatureReading.From(65,"disk 2","",now) with {Limits=TemperatureLimits.Device(55,60)}});
     Assert(aggregate.Celsius==71&&TemperatureColors.Pressure(aggregate,TemperatureKind.Disk,ResourcePressure.Normal,now)==ResourcePressure.Critical);
 });
+Check("Native AMD register decoding preserves eighth-degrees and the 49-degree range flag",()=>{
+    Assert(CodexSwitch.Sensors.CpuRegisters.Amd(600u<<21)==75);
+    Assert(CodexSwitch.Sensors.CpuRegisters.Amd((992u<<21)|(1u<<19))==75);
+    Assert(CodexSwitch.Sensors.CpuRegisters.Amd(601u<<21)==75.125);
+    Assert(CodexSwitch.Sensors.CpuRegisters.Amd(0)==null&&CodexSwitch.Sensors.CpuRegisters.Amd(uint.MaxValue)==null);
+});
+Check("Intel DTS requires a real target and valid-status bit, without guessed TjMax",()=>{
+    Assert(CodexSwitch.Sensors.CpuRegisters.Intel(100ul<<16,(1ul<<31)|(25ul<<16))==75);
+    Assert(CodexSwitch.Sensors.CpuRegisters.Intel(0,1ul<<31)==null);
+    Assert(CodexSwitch.Sensors.CpuRegisters.Intel(100ul<<16,25ul<<16)==null);
+});
+Check("CPUID extended families identify AMD Zen without brand-name matching",()=>{
+    Assert(CodexSwitch.Sensors.CpuRegisters.Family(0x00a60f12)==0x19);
+    Assert(CodexSwitch.Sensors.CpuRegisters.Family(0x000906a3)==6);
+});
+Check("CPU packet accepts bounded fresh real readings and explicit unavailable",()=>{
+    var packet=new CodexSwitch.Sensors.CpuSample(1,"Available",75.125,now.ToUnixTimeMilliseconds(),"AMD CPU (Tctl)");
+    Assert(CodexSwitch.Sensors.CpuSensorProtocol.Validate(packet,now)==packet);
+    Assert(CodexSwitch.Sensors.CpuSensorProtocol.Validate(packet with {State="AccessDenied",Celsius=null,Sensor=""},now).Celsius==null);
+});
+Check("CPU packets reject stale, future, unsupported protocol and fabricated unknown values",()=>{
+    var good=new CodexSwitch.Sensors.CpuSample(1,"Available",75,now.ToUnixTimeMilliseconds(),"AMD CPU (Tctl)");
+    foreach(var packet in new[]{good with {Version=2},good with {At=now.AddMinutes(-1).ToUnixTimeMilliseconds()},good with {At=now.AddMinutes(1).ToUnixTimeMilliseconds()},
+        good with {State="AccessDenied"},good with {Sensor="Untrusted detail"},good with {Celsius=double.NaN},good with {State="InvalidEnum"}})
+    {var rejected=false;try{CodexSwitch.Sensors.CpuSensorProtocol.Validate(packet,now);}catch(System.IO.InvalidDataException){rejected=true;}Assert(rejected);}
+});
+Check("CPU framing refuses oversized payloads and truncated reads before deserialization",()=>{
+    foreach(var bytes in new[]{BitConverter.GetBytes(1025),BitConverter.GetBytes(-1),new byte[]{4,0,0,0,123}})
+    {using var stream=new System.IO.MemoryStream(bytes);var rejected=false;try{CodexSwitch.Sensors.CpuSensorProtocol.ReadAsync(stream,default).GetAwaiter().GetResult();}catch(Exception error) when(error is System.IO.IOException or System.IO.InvalidDataException){rejected=true;}Assert(rejected);}
+});
+Check("CPU framing round-trips source-generated packets without arbitrary commands",()=>{
+    using var stream=new System.IO.MemoryStream();var packet=CodexSwitch.Sensors.CpuSensorProtocol.Missing("ProviderMissing");
+    CodexSwitch.Sensors.CpuSensorProtocol.WriteAsync(stream,packet,default).GetAwaiter().GetResult();stream.Position=0;
+    Assert(CodexSwitch.Sensors.CpuSensorProtocol.ReadAsync(stream,default).GetAwaiter().GetResult()==packet);
+});
+Check("A replaced worker is refused before any privileged launch",()=>{
+    var bytes=new byte[]{1,2,3,4}; var digest=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
+    using(var stream=new System.IO.MemoryStream(bytes)) WindowsCpuTemperature.VerifyWorker(stream,digest);
+    foreach(var wrong in new[]{"",new string('0',64),new string('x',64)})
+    {using var stream=new System.IO.MemoryStream(bytes);var rejected=false;try{WindowsCpuTemperature.VerifyWorker(stream,wrong);}catch(System.IO.InvalidDataException){rejected=true;}Assert(rejected);}
+});
+Check("Built-in CPU setup never incorrectly requires an external WMI monitor",()=>{
+    Loc.SetLanguage("en"); var text=TemperaturePresentation.Tooltip(TemperatureReading.Missing(TemperatureState.ProviderMissing,
+        CodexSwitch.Sensors.CpuSensorProtocol.Source,code:"thermal.cpu_setup_required",at:now),now);
+    Assert(text.Contains("PawnIO")&&!text.Contains("WMI"));
+});
 Loc.SetLanguage("en");
 Console.WriteLine(JsonSerializer.Serialize(new {passed=checks.Count,failed=0,checks,scope="Production storage parsing, identity/channel selection and presentation contracts; synthetic bytes/metadata only, no native device queries, accounts or process actions."},new JsonSerializerOptions {WriteIndented=true}));

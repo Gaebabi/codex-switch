@@ -96,7 +96,7 @@ internal sealed class MacMenuBar : IDesktopMenuBar
         var icon = new MenuBarSymbol { Width = 20, Height = 20 };
         icon.Measure(new Size(20, 20)); icon.Arrange(new Rect(0, 0, 20, 20));
         using var bitmap = new RenderTargetBitmap(new PixelSize(40, 40), new Vector(192, 192)); bitmap.Render(icon);
-        using var stream = new MemoryStream(); bitmap.Save(stream); var bytes = stream.ToArray();
+        using var stream = new MemoryStream(); bitmap.Save(stream, PngBitmapEncoderOptions.Default); var bytes = stream.ToArray();
         var memory = Marshal.AllocHGlobal(bytes.Length);
         try
         {

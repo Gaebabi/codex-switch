@@ -28,6 +28,7 @@
   --burn0-danger: #c73535;
   --burn0-success: #16804a;
   --burn0-warning: #996312;
+  --burn0-credit: #c5530a;
   --burn0-shadow: 0 8px 32px rgb(0 0 0 / 0.12);
   --burn0-rail-width: 52px;
   --burn0-sidebar-width: 260px;
@@ -76,6 +77,7 @@
   --burn0-danger: #ff9292;
   --burn0-success: #72d4a1;
   --burn0-warning: #edc179;
+  --burn0-credit: #fb923c;
   --burn0-shadow: 0 8px 32px rgb(0 0 0 / 0.32);
 }
 

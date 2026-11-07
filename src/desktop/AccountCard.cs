@@ -21,7 +21,7 @@ internal sealed class MacAccountCard : Grid
         bucket.Secondary == null ? null : new QuotaChoice(bucket.Id, "secondary", bucket.Secondary, bucket.Label) }).OfType<QuotaChoice>().ToArray() ?? Array.Empty<QuotaChoice>();
     public static QuotaChoice? Select(AccountProfile profile, string? selection) => Choices(profile).FirstOrDefault(q => q.BucketId + ":" + q.Slot == selection)
         ?? Choices(profile).OrderBy(q => q.Window.Remaining).FirstOrDefault();
-    public MacAccountCard(AccountProfile profile, QuotaChoice? quota, DeskTheme theme, Button switchButton, Button more, Action<string> select)
+    public MacAccountCard(AccountProfile profile, QuotaChoice? quota, DeskTheme theme, Button switchButton, Button more, Action<string> select, Action? relogin = null)
     {
         _profile = profile; _theme = theme; _quota = quota; _trend = quota == null ? new(ForecastState.Collecting) : UsagePredictor.Learn(quota.Window, UsageHistory.ForWindow(profile, quota.BucketId, quota.Slot, quota.Window));
         ClipToBounds = true; Margin = new Thickness(4);
@@ -29,7 +29,17 @@ internal sealed class MacAccountCard : Grid
         var layout = new Grid { RowDefinitions = new RowDefinitions("28,*,42"), Margin = new Thickness(8, 5) };
         var header = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto") };
         var title = theme.Text(profile.DisplayName, 13); title.FlowDirection = FlowDirection.LeftToRight; title.VerticalAlignment = VerticalAlignment.Center; ToolTip.SetTip(title, profile.DisplayName);
-        header.Children.Add(title); Grid.SetColumn(switchButton, 1); header.Children.Add(switchButton); Grid.SetColumn(more, 2); header.Children.Add(more); layout.Children.Add(header);
+        var identity = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*") };
+        if (profile.Error != null)
+        {
+            var warning = theme.Button("⚠", relogin ?? (() => { })); warning.Name = "AccountWarningButton";
+            warning.Foreground = theme.Brush("warning"); warning.Padding = new Thickness(2); warning.Margin = new Thickness(0, 0, 4, 0);
+            ToolTip.SetTip(warning, Loc.Error(profile.Error) + "\n" + Loc.T("account.relogin"));
+            Avalonia.Automation.AutomationProperties.SetName(warning, profile.DisplayName + ": " + Loc.T("account.relogin"));
+            identity.Children.Add(warning);
+        }
+        Grid.SetColumn(title, 1); identity.Children.Add(title); header.Children.Add(identity);
+        Grid.SetColumn(switchButton, 1); header.Children.Add(switchButton); Grid.SetColumn(more, 2); header.Children.Add(more); layout.Children.Add(header);
         var metric = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Spacing = 0 };
         var period = theme.Text(profile.Error != null ? Loc.T("갱신 필요") : profile.IsRefreshing ? Loc.T("사용량 조회 중…") :
             quota == null ? Loc.T("잔여량") : Loc.F("{0} 잔여", quota.Window.PeriodLabel), 11, profile.Error == null ? "muted" : "warning");
@@ -50,13 +60,13 @@ internal sealed class MacAccountCard : Grid
         Put(theme.Text(Loc.T("소진"), 10, "muted"), 0, 0); Put(theme.Text(Loc.T("리셋"), 10, "muted"), 1, 0);
         _depletion = theme.Text("", 11); _depletion.Margin = new Thickness(6, 0); Put(_depletion, 0, 1);
         _reset = theme.Text("", 11); _reset.Margin = new Thickness(6, 0); Put(_reset, 1, 1);
-        var plan = theme.Text(profile.Plan is "unknown" or "" ? Loc.T("요금제 —") : CultureInfo.InvariantCulture.TextInfo.ToTitleCase(profile.Plan.Replace('_', ' ')), 11);
+        var plan = theme.Text(SubscriptionPresentation.Plan(profile.Plan), 11, "muted");
         plan.FlowDirection = FlowDirection.LeftToRight; plan.HorizontalAlignment = HorizontalAlignment.Right; Put(plan, 0, 2);
-        var resets = theme.Text(profile.Usage?.AvailableResets is int count ? Loc.F("초기화권 {0}장", count) : Loc.T("초기화권 —"), 11);
+        var resets = theme.Text(profile.Usage?.AvailableResets is int count ? Loc.F("초기화권 {0}장", count) : Loc.T("초기화권 —"), 11, "muted");
         resets.FlowDirection = FlowDirection.LeftToRight; resets.HorizontalAlignment = HorizontalAlignment.Right; Put(resets, 1, 2);
         _subscription = theme.Text(Subscription(profile.SubscriptionActiveUntil, DateTimeOffset.UtcNow), 10, "muted"); Grid.SetColumnSpan(_subscription, 2); Put(_subscription, 2, 0);
         var bucket = profile.Usage?.Buckets.FirstOrDefault(b => b.Id == quota?.BucketId) ?? profile.Usage?.Buckets.FirstOrDefault();
-        var credit = theme.Text(Credits(bucket), 10); credit.FlowDirection = FlowDirection.LeftToRight; credit.HorizontalAlignment = HorizontalAlignment.Right; Put(credit, 2, 2);
+        var credit = theme.Text(Credits(bucket), 10, "muted"); credit.FlowDirection = FlowDirection.LeftToRight; credit.HorizontalAlignment = HorizontalAlignment.Right; Put(credit, 2, 2);
         ToolTip.SetTip(credit, bucket?.CreditBalance ?? (bucket?.UnlimitedCredits == true ? Loc.T("크레딧 제한 없음") : Loc.T("크레딧 정보 없음")));
         ToolTip.SetTip(this, profile.Error == null ? null : Loc.F("갱신 실패 · 이전 조회값\n{0}", Loc.Error(profile.Error))); Grid.SetRow(footer, 2); layout.Children.Add(footer); Children.Add(layout); Update(DateTimeOffset.UtcNow);
     }
@@ -64,13 +74,17 @@ internal sealed class MacAccountCard : Grid
     {
         _depletion.FlowDirection = FlowDirection.LeftToRight; _reset.FlowDirection = FlowDirection.LeftToRight; _subscription.FlowDirection = FlowDirection.LeftToRight;
         _subscription.Text = Subscription(_profile.SubscriptionActiveUntil, now);
+        _subscription.IsVisible = _profile.SubscriptionActiveUntil.HasValue;
+        ToolTip.SetTip(_subscription, _profile.SubscriptionActiveUntil.HasValue ? _subscription.Text : Loc.T("구독 종료일 정보 없음"));
         _subscription.Foreground = _theme.Brush(AccountDateWarnings.Subscription(_profile.SubscriptionActiveUntil, now) ? "warning" : "muted");
         _reset.Foreground = _theme.Brush(AccountDateWarnings.Reset(_quota?.Window.ResetsAt, now) ? "warning" : "text");
         if (_quota == null) { _depletion.Text = Loc.T(_profile.IsRefreshing ? "측정중" : "정보 없음"); _reset.Text = "—"; return; }
         var forecast = UsagePredictor.Evaluate(_quota.Window, _trend, now);
         _depletion.Text = forecast.State == ForecastState.ResetsFirst ? Loc.T("리셋 먼저") : forecast.ExhaustsAt is DateTimeOffset end ? Compact(end, now) : Loc.T(forecast.State switch {
             ForecastState.Collecting or ForecastState.InsufficientChange => "측정중", ForecastState.NoGrowth => "증가 없음", ForecastState.Stale => "갱신 필요", ForecastState.Exhausted => "한도 도달", _ => "갱신 대기" });
-        if (_profile.Usage?.OrdinaryUsageAllowed == false || _profile.Usage?.Buckets.Any(b => b.LimitState != null || b.SpendControlReached == true) == true) _depletion.Text = Loc.T("사용 제한");
+        _depletion.Foreground = _theme.Brush(forecast.State is ForecastState.Exhausted or ForecastState.Stale ? "warning" : "muted");
+        if (_profile.Usage?.OrdinaryUsageAllowed == false || _profile.Usage?.Buckets.Any(b => b.LimitState != null || b.SpendControlReached == true) == true)
+        { _depletion.Text = Loc.T("사용 제한"); _depletion.Foreground = _theme.Brush("warning"); }
         ToolTip.SetTip(_depletion, UsagePresentation.Outlook(forecast) + "\n" + UsagePresentation.Basis(forecast));
         _reset.Text = _quota.Window.ResetsAt is long time ? Compact(DateTimeOffset.FromUnixTimeSeconds(time), now) : "—";
         ToolTip.SetTip(_reset, _quota.Window.ResetLabel + "\n" + _quota.Window.TimeUntilReset(now));
@@ -83,9 +97,8 @@ internal sealed class MacAccountCard : Grid
     }
     private static string Subscription(DateTimeOffset? until, DateTimeOffset at)
     {
-        if (until == null) return "—";
-        var end = UsagePresentation.KoreanTime(until.Value); var now = UsagePresentation.KoreanTime(at); var days = (end.Date - now.Date).Days;
-        return end.ToString("MM/dd", Loc.Culture) + "  " + (days == 0 ? Loc.T("오늘") : days > 0 ? "D-" + days : "D+" + -days);
+        var date = until == null ? "—" : UsagePresentation.KoreanTime(until.Value).ToString("MM/dd", CultureInfo.InvariantCulture);
+        return Loc.T("subscription.ends") + " " + date + "  " + Loc.T("subscription.left") + " " + SubscriptionPresentation.Days(until, at);
     }
     private static string Credits(UsageBucket? bucket)
     {

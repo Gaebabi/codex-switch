@@ -1,0 +1,20 @@
+{
+  "width": 1280,
+  "height": 640,
+  "bytes": 92496,
+  "sha256": "d60346a34f7d0db50c4d4ce0bb12822ea9d50ae92b49993b1989aed06b7b36c3",
+  "sourceRender": "en-dark-demo.png",
+  "sourceRevision": "98b516c2ed75bdb3aac4953dc105299017564b00",
+  "sourceSha256": "8ea4ea4b3e073bd593ec8da8eccbf236bddc144430fe466754afd24b3a2d36e6",
+  "renderRegion": {
+    "x": 736,
+    "y": 130,
+    "width": 500,
+    "height": 400
+  },
+  "renderPixelsUnchanged": true,
+  "simulatedAccountAndResourceData": true,
+  "nativeWindowCapture": false,
+  "metadataRemoved": true,
+  "scope": "Sharing graphic with offscreen UI and simulated account/resource/storage values. Separate native acceptance and GitHub setting verification apply."
+}

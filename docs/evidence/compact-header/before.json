@@ -1,0 +1,22 @@
+{
+  "images": [
+    {
+      "file": "before-en-dark.png",
+      "originalFile": "en-dark-500x360-native-wm.png",
+      "sha256": "024385a23b7c4366b55caf56359ab2dd74b21ea7f806975c077091a46d28760f",
+      "sourceRevision": "0932dc373790a81a385e11e04f445b72d951a173",
+      "nativeWindowCapture": true,
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "before-ko-light.png",
+      "originalFile": "ko-light-500x360-native-wm.png",
+      "sha256": "b43eea0ef80514355105674c315befa8e227dbe31070315fb87a1d21fe334216",
+      "sourceRevision": "0932dc373790a81a385e11e04f445b72d951a173",
+      "nativeWindowCapture": true,
+      "originalPixelsUnchanged": true
+    }
+  ],
+  "personalDataUsed": false,
+  "scope": "Original1.42.3 native app/Xfwm4 frames from verified public CI; fictional accounts only, no pixel changes."
+}

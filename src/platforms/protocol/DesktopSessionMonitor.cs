@@ -35,6 +35,7 @@ internal sealed class DesktopSessionMonitor : IAsyncDisposable
         _run ??= Task.Run(RunAsync);
     }
     public DesktopThreadState[] Threads => _ledger.Threads();
+    internal int? QueuedFor(string id) => _ledger.QueuedFor(id);
     public void RestartDiscovery()
     {
         _ledger.Reset(); Publish(_ledger.Read());
@@ -96,6 +97,9 @@ internal sealed class DesktopSessionMonitor : IAsyncDisposable
     }
     private async Task ObserveAsync(CancellationToken cancellation)
     {
+        // A fresh/unavailable home must remain a retryable unavailable state. FileSystemWatcher
+        // otherwise throws ArgumentException after IPC connects, faulting the monitor and exit.
+        if (!Directory.Exists(_home)) throw new DirectoryNotFoundException("Codex data directory is unavailable.");
         await using var pipe = await ConnectAsync(cancellation);
         using var connection = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
         lock (_connectionSync) _connection = connection;

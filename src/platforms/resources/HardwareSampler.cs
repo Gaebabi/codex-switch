@@ -14,16 +14,20 @@ internal sealed class HardwareResourceMonitor : IAsyncDisposable
     private readonly HardwareHistory _history = new();
     private Task? _run;
     private HardwareUsage _current = HardwareUsage.Pending;
+    private readonly WindowsCpuTemperature _cpuTemperature = new();
+    public TemperatureReading CpuTemperatureStatus => _cpuTemperature.Current;
+    public Task EnableCpuTemperatureAsync(CancellationToken cancellation) => _cpuTemperature.EnableAsync(cancellation);
+    public Task<TemperatureReading> ProbeCpuTemperatureAsync(CancellationToken cancellation) => _cpuTemperature.ProbeAsync(cancellation);
     public HardwareUsage Current => Volatile.Read(ref _current);
     public event Action<HardwareUsage>? Changed;
     public void Start()
     {
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Windows resource monitoring requires Windows.");
-        _run ??= Task.Run(RunAsync);
+        _cpuTemperature.Start(); _run ??= Task.Run(RunAsync);
     }
     private async Task RunAsync()
     {
-        using var sampler = new HardwareSampler();
+        using var sampler = new HardwareSampler(_cpuTemperature);
         try
         {
             while (!_stop.IsCancellationRequested)
@@ -34,7 +38,7 @@ internal sealed class HardwareResourceMonitor : IAsyncDisposable
         }
         catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
     }
-    public async ValueTask DisposeAsync() { _stop.Cancel(); if (_run != null) await _run; _stop.Dispose(); }
+    public async ValueTask DisposeAsync() { _stop.Cancel(); if (_run != null) await _run; await _cpuTemperature.DisposeAsync(); _stop.Dispose(); }
 }
 
 internal sealed class HardwareSampler : IDisposable
@@ -47,9 +51,11 @@ internal sealed class HardwareSampler : IDisposable
     private (string Id, string Name, ulong Capacity, uint Vendor)[] _adapters = Array.Empty<(string, string, ulong, uint)>();
     private readonly WindowsGpuTemperature _gpuTemperature = new();
     private readonly WindowsWmiTemperature _wmiTemperature = new();
-    public HardwareSampler()
+    private readonly WindowsCpuTemperature? _cpuTemperature;
+    public HardwareSampler(WindowsCpuTemperature? cpuTemperature = null)
     {
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Windows resource sampling requires Windows.");
+        _cpuTemperature = cpuTemperature;
         _openStatus = PdhOpenQueryW(null, IntPtr.Zero, out _query);
         if (_openStatus == 0)
         {
@@ -81,7 +87,9 @@ internal sealed class HardwareSampler : IDisposable
         }
         _wmiTemperature.Refresh(now);
         var wmi = _wmiTemperature;
-        cpu = cpu with { Temperature = wmi.Sensors.Length == 0 ? wmi.Status : TemperatureSensors.Resource(wmi.Sensors, "Cpu", wmi.Source, wmi.CheckedAt) };
+        var externalCpu = wmi.Sensors.Length == 0 ? wmi.Status : TemperatureSensors.Resource(wmi.Sensors, "Cpu", wmi.Source, wmi.CheckedAt);
+        var nativeCpu = _cpuTemperature?.Current;
+        cpu = cpu with { Temperature = TemperaturePresentation.Fresh(nativeCpu, now) || externalCpu.State != TemperatureState.Available ? nativeCpu ?? externalCpu : externalCpu };
         ram = ram with { Temperature = wmi.Sensors.Length == 0 ? wmi.Status : TemperatureSensors.Resource(wmi.Sensors, "Memory", wmi.Source, wmi.CheckedAt) };
         var adapters = _adapters.Select(a => new GpuResource(a.Id, a.Name, a.Capacity,
             engineUsage.TryGetValue(a.Id, out var busy) ? busy : null, memoryUsage.TryGetValue(a.Id, out var bytes) ? bytes : null)).ToArray();

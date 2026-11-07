@@ -24,10 +24,19 @@ p.add_argument('--provider',choices=['gnome','kwallet5','kwallet6','ksecrets','k
 p.add_argument('--owned-xvfb',action='store_true',help=argparse.SUPPRESS)
 p.add_argument('--storage-only',action='store_true',help='Exclude the separate installed-client account-policy contracts')
 p.add_argument('--inside',action='store_true')
+p.add_argument('--terminal-assembly',type=Path,help='Run the dedicated headless terminal contracts in the owned GNOME session')
+p.add_argument('--terminal-app',type=Path)
+p.add_argument('--terminal-capture',action='store_true')
+p.add_argument('--terminal-lifecycle',action='store_true',help='Additional real CLI exec/resume verification; requires an actually network-disabled owned container')
 a=p.parse_args()
 if sys.platform!='linux':raise SystemExit('Native Linux is required')
 assembly=a.assembly.resolve();report=a.report.resolve()
 if not assembly.is_file():raise SystemExit('Build the native test assembly first')
+if (a.terminal_assembly is None)!=(a.terminal_app is None) or a.terminal_assembly is not None and a.provider!='gnome':
+    raise SystemExit('Terminal contracts require both the built assembly/app and the owned GNOME provider')
+if a.terminal_assembly is not None:
+    a.terminal_assembly=a.terminal_assembly.resolve(strict=True);a.terminal_app=a.terminal_app.resolve(strict=True)
+elif a.terminal_capture or a.terminal_lifecycle:raise SystemExit('Terminal lifecycle/capture requires the complete headless contract selection')
 
 if a.provider=='ksecrets-current' and not a.inside and not a.owned_xvfb:
     env=dict(os.environ)
@@ -58,6 +67,9 @@ if not a.inside:
         for key in ('G_DBUS_DEBUG','G_MESSAGES_DEBUG','GNOME_KEYRING_DEBUG','GNOME_KEYRING_TEST_PATH','LIBSECRET_DEBUG'):env.pop(key,None)
         command=['dbus-run-session','--config-file',str(config),'--',sys.executable,str(Path(__file__).resolve()),'--inside','--assembly',str(assembly),'--architecture',a.architecture,'--report',str(report),'--provider',a.provider]
         if a.storage_only:command.append('--storage-only')
+        if a.terminal_assembly is not None:command+=['--terminal-assembly',str(a.terminal_assembly),'--terminal-app',str(a.terminal_app)]
+        if a.terminal_capture:command.append('--terminal-capture')
+        if a.terminal_lifecycle:command.append('--terminal-lifecycle')
         subprocess.run(command,env=env,check=True,timeout=240)
     finally:
         if root.parent!=Path(tempfile.gettempdir()).resolve() or not root.name.startswith('codex-linux-keyring-test-') or root.is_symlink() or root.stat().st_uid!=os.geteuid():raise SystemExit('Unexpected diagnostic cleanup root')
@@ -69,7 +81,7 @@ address=os.environ.get('DBUS_SESSION_BUS_ADDRESS','')
 if not root.name.startswith('codex-linux-keyring-test-') or root.is_symlink() or root.stat().st_uid!=os.geteuid() or stat.S_IMODE(root.stat().st_mode)!=0o700 or not address.startswith('unix:path='+str(root/'bus')+'/'):
     raise SystemExit('Only the owned diagnostic D-Bus is allowed')
 dotnet=shutil.which('dotnet')
-if not dotnet:raise SystemExit('The reviewed .NET SDK/runtime is required')
+if not dotnet and (a.terminal_assembly is None or a.terminal_assembly.suffix=='.dll'):raise SystemExit('The reviewed .NET SDK/runtime is required')
 results=[];daemon=None;password=secrets.token_urlsafe(32).encode()
 kwallet_hash=bytearray(secrets.token_bytes(56))
 private_log=(root/'keyring-private.log').open('wb')
@@ -210,7 +222,36 @@ def run_contracts():
     finally:os.kill(daemon.pid,signal.SIGCONT)
     phase('read-after-timeout');phase('missing');stop();phase('offline')
 try:
-    run_contracts()
+    terminal=None
+    if a.terminal_assembly is not None:
+        start();verify_owner()
+        terminal_environment=dict(os.environ)
+        for name in ('DISPLAY','WAYLAND_DISPLAY','XAUTHORITY'):terminal_environment.pop(name,None)
+        native=Path(terminal_environment['CODEX_SWITCH_STANDALONE_CLI']).resolve(strict=True)
+        import hashlib
+        terminal_environment['CODEX_SWITCH_STANDALONE_CLI']=str(native)
+        terminal_environment['CODEX_SWITCH_STANDALONE_CLI_SHA']=hashlib.sha256(native.read_bytes()).hexdigest()
+        terminal_environment['CODEX_SWITCH_TERMINAL_EXPECTED_CLI_VERSION']='0.164.0'
+        command=(['dotnet',str(a.terminal_assembly)] if a.terminal_assembly.suffix=='.dll' else [str(a.terminal_assembly)])
+        task=subprocess.run([*command,str(root/'codex-linux-terminal-test-contracts'),str(a.terminal_app)],env=terminal_environment,capture_output=True,timeout=240)
+        if task.returncode:
+            private_log.write(task.stdout);private_log.write(task.stderr);private_log.flush()
+            # This executable enforces an owned disposable home and fictional credentials.
+            # Keep stdout private; expose only bounded stderr after its credential-output guard.
+            diagnostic=task.stderr.decode('utf-8',errors='replace')
+            if any(marker in diagnostic for marker in ('synthetic-access','synthetic-refresh','e30.')):raise RuntimeError('Terminal fixture refused unsafe credential diagnostics')
+            print('Disposable headless terminal diagnostics:\n'+diagnostic[-4000:],file=sys.stderr)
+            raise RuntimeError('Native headless terminal contracts failed; inspect private diagnostics')
+        terminal=json.loads(task.stdout)
+        if terminal['failed'] or terminal['passed']!=16 or terminal['architecture']!=a.architecture or terminal['standaloneCliVersion']!='0.164.0' or terminal['declaredExpectedCliVersion']!='0.164.0':raise RuntimeError('Complete native headless terminal and exact standalone0.164.0 verification is required')
+        verify_owner()
+        if a.terminal_lifecycle:
+            sandbox=root/'codex-linux-terminal-test-contracts';report.parent.mkdir(parents=True,exist_ok=True)
+            subprocess.run([sys.executable,str(Path(__file__).with_name('verify-linux-terminal-lifecycle.py')),'--app',str(a.terminal_app),'--home',str(sandbox/'home'),'--data',str(sandbox/'vault'),'--cli',str(native),'--report',str(report.parent/'terminal-lifecycle.json'),'--revision',os.environ['EVIDENCE_REVISION']],env=terminal_environment,check=True,timeout=150)
+        if a.terminal_capture:
+            sandbox=root/'codex-linux-terminal-test-contracts'
+            subprocess.run([sys.executable,str(Path(__file__).with_name('capture-linux-terminal.py')),'--app',str(a.terminal_app),'--home',str(sandbox/'home'),'--data',str(sandbox/'vault'),'--client',str(native),'--sha',terminal_environment['CODEX_SWITCH_STANDALONE_CLI_SHA'],'--output',str(report.parent),'--revision',os.environ['EVIDENCE_REVISION']],env=terminal_environment,check=True,timeout=120)
+    else:run_contracts()
     package='gnome-keyring' if a.provider=='gnome' else 'libkf5wallet-bin' if a.provider=='kwallet5' else 'kwallet6'
     provider_version=subprocess.run(['dpkg-query','-W','-f=${Version}',package],capture_output=True,text=True,check=True,timeout=10).stdout.strip()
     environment={}
@@ -220,6 +261,9 @@ try:
     value={'schema':1,'provider':a.provider,'providerVersion':provider_version,'providerCompatibility':'verified-storage','architecture':a.architecture,'passed':sum(v['passed'] for v in results),'failed':0,'phases':results,'nativePackages':environment,'accountPolicyIncluded':not a.storage_only,
         'display':'Qt/X11 on owned Xvfb; actual password dialog' if a.provider=='ksecrets-current' else 'Qt offscreen' if a.provider!='gnome' else 'Headless GNOME Keyring',
         'scope':'Actual declared Secret Service/Linux private-file contracts on a disposable file-socket D-Bus/HOME/XDG session; no full KDE/Wayland or authenticated Codex handoff acceptance. No personal bus, accounts, Codex, key material or private paths exported.'}
+    if terminal is not None:
+        value.update(revision=os.environ['EVIDENCE_REVISION'],terminal=terminal,standaloneCliSha256=terminal_environment['CODEX_SWITCH_STANDALONE_CLI_SHA'],headless=True)
+        value['passed']=terminal['passed'];value['accountPolicyIncluded']=False
     report.parent.mkdir(parents=True,exist_ok=True);report.write_text(json.dumps(value,indent=2)+'\n',encoding='utf-8')
     print(json.dumps({key:value[key] for key in ('provider','providerVersion','providerCompatibility','architecture','passed','failed')} | {'phaseCount':len(results)}),flush=True)
 finally:

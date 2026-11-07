@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Automation;
 
 namespace CodexAccountDesk;
 
@@ -13,6 +14,11 @@ internal sealed class HardwareUsagePanel : Grid
     private readonly ResourceTrendSurface[] _graphs = new ResourceTrendSurface[4];
     private readonly ResourcePressure[] _pressures = new ResourcePressure[4];
     private readonly ResourcePressure[] _temperaturePressures = new ResourcePressure[4];
+    private readonly Button _cpuSetup = new() { Name = "CpuTemperatureSetupButton", Width = 32, Height = 16, MinWidth = 0, MinHeight = 0,
+        Padding = new Thickness(0), Margin = new Thickness(3, 0, 0, 0), Visibility = Visibility.Collapsed, VerticalAlignment = VerticalAlignment.Center,
+        BorderThickness = new Thickness(0), Cursor = System.Windows.Input.Cursors.Hand };
+    private bool _cpuBusy;
+    public event Action? CpuTemperatureRequested;
     public HardwareUsagePanel()
     {
         Height = 18; VerticalAlignment = VerticalAlignment.Center; HorizontalAlignment = HorizontalAlignment.Stretch;
@@ -23,6 +29,7 @@ internal sealed class HardwareUsagePanel : Grid
             var cell = new Grid { Margin = new Thickness(0, 0, index < 3 ? 4 : 0, 0) };
             var content = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(5, 0, 4, 0) };
             content.ColumnDefinitions.Add(new()); content.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
+            if (index == 0) content.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
             var primary = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
             _graphs[index] = new(); cell.Children.Add(_graphs[index]); cell.Children.Add(content);
             _labels[index] = new() { Text = names[index], FontSize = 10, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -30,8 +37,21 @@ internal sealed class HardwareUsagePanel : Grid
             _temperatures[index] = new() { FontSize = 10, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) };
             primary.Children.Add(_labels[index]); primary.Children.Add(_values[index]); content.Children.Add(primary); SetColumn(_temperatures[index], 1); content.Children.Add(_temperatures[index]); _cells[index] = cell;
             SetColumn(cell, index); Children.Add(cell);
+            if (index == 0)
+            {
+                SetColumn(_cpuSetup, 2); content.Children.Add(_cpuSetup);
+                _cpuSetup.Click += (_, _) => CpuTemperatureRequested?.Invoke();
+                var menu = new ContextMenu();
+                menu.Opened += (_, _) =>
+                {
+                    menu.Items.Clear(); var enable = new MenuItem { Header = Loc.T("thermal.cpu_enable") };
+                    enable.Click += (_, _) => CpuTemperatureRequested?.Invoke(); menu.Items.Add(enable);
+                };
+                cell.ContextMenu = menu;
+            }
         }
     }
+    public void SetCpuTemperatureBusy(bool busy) { _cpuBusy = busy; _cpuSetup.IsEnabled = !busy; }
     public void Refresh(HardwareUsage usage, Burn0Theme theme)
     {
         SetValue(System.Windows.Documents.TextElement.FontFamilyProperty, theme.Font);
@@ -51,8 +71,24 @@ internal sealed class HardwareUsagePanel : Grid
             var temperatureKind = (TemperatureKind)index;
             _temperaturePressures[index] = TemperatureColors.Pressure(reading.Temperature, temperatureKind, _temperaturePressures[index], now);
             _temperatures[index].Foreground = theme.Color(TemperatureColors.Color(_temperaturePressures[index]));
+            if (index == 0)
+            {
+                var needsSetup = reading.Temperature?.State is TemperatureState.ProviderMissing or TemperatureState.AccessDenied;
+                _cpuSetup.Visibility = needsSetup ? Visibility.Visible : Visibility.Collapsed;
+                _temperatures[index].Visibility = needsSetup ? Visibility.Collapsed : Visibility.Visible;
+                _cpuSetup.IsEnabled = !_cpuBusy;
+                var action = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+                var icon = reading.Temperature?.Code == "thermal.cpu_bundle_missing" ? "help" : reading.Temperature?.State == TemperatureState.AccessDenied ? "lock" : "download";
+                action.Children.Add(Burn0Theme.Icon(icon, theme.Color("action"), 10));
+                action.Children.Add(new TextBlock { Text = "°C", FontSize = 9, FontWeight = FontWeights.SemiBold, Margin = new Thickness(3, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
+                _cpuSetup.Content = action;
+                _cpuSetup.Background = theme.Color("hover"); _cpuSetup.Foreground = theme.Color("action");
+                AutomationProperties.SetName(_cpuSetup, Loc.T("thermal.cpu_enable"));
+                ToolTipTheme.Resource(_cpuSetup, "CPU", Loc.T("thermal.cpu_enable"), Loc.T("thermal.cpu_menu_hint"), theme, "action");
+            }
             var tooltip = Loc.T(scopes[index]);
             if (pressure == ResourcePressure.Unknown) tooltip += "\n" + Loc.T(reading.Problem ?? "사용률 측정 중…");
+            if (index == 0) tooltip += "\n" + Loc.T("thermal.cpu_menu_hint");
             else
             {
                 if (reading.Device != null) tooltip += "\n" + reading.Device;
@@ -76,5 +112,5 @@ internal sealed class HardwareUsagePanel : Grid
         readings = _values.Select((value, index) => new { label = _labels[index].Text, text = value.Text, temperature = _temperatures[index].Text, temperaturePressure = _temperaturePressures[index].ToString(), temperatureColor = _temperatures[index].Foreground.ToString(), pressure = _pressures[index].ToString(), color = value.Foreground.ToString(),
             graphPercent = _graphs[index].Percent, graphSamples = _graphs[index].SampleCount, graphSegments = _graphs[index].SegmentCount,
             graphSeconds = _graphs[index].DurationSeconds, graphWidth = _graphs[index].ActualWidth,
-            fits = value.DesiredSize.Width + _labels[index].DesiredSize.Width + _temperatures[index].DesiredSize.Width + 9 <= _cells[index].ActualWidth + 0.5 }).ToArray() };
+            fits = value.DesiredSize.Width + _labels[index].DesiredSize.Width + (_temperatures[index].IsVisible ? _temperatures[index].DesiredSize.Width : 0) + 9 + (index == 0 && _cpuSetup.IsVisible ? 35 : 0) <= _cells[index].ActualWidth + 0.5 }).ToArray() };
 }

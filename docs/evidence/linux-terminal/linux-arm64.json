@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "revision": "6c40f175d34cf07e5c64bab5aa77f954689eca24",
+  "sourceVersion": "1.41.0",
+  "os": "Linux",
+  "architecture": "Arm64",
+  "headless": true,
+  "provider": "gnome",
+  "providerVersion": "46.1-2ubuntu0.2",
+  "standaloneCliSha256": "071cbe8d821cf1b02b6d8ba6c8b7991b228fcb8519dcb68a37d31222bb8cabe5",
+  "passed": 15,
+  "failed": 0,
+  "checks": [
+    "Published headless command lists two encrypted accounts without token/email output or data writes",
+    "Actual headless import preserves existing accounts, encrypted format and user preferences",
+    "Production headless switch applies the selected fictional login and preserves the exact previous login",
+    "Switching the already-current account does not replace previous-login backup or ciphertext",
+    "Unknown account selection fails before login or encrypted-data mutation",
+    "A nonexistent saved session never changes the selected login or fabricates a new session",
+    "An actual external native app-server blocks switching without stopping it or altering credentials",
+    "The native CLI session list does not misrepresent an empty app-server metadata thread as saved CLI work",
+    "A non-CLI metadata thread is refused before changing the login or encrypted data",
+    "Interactive resume without a TTY fails before changing the login",
+    "Resume launch binds the original descriptor, UUID and folder with one explicit follow-up and no permission override",
+    "Noninteractive resume exposes real upstream JSON events without a permission or session-selection override",
+    "Ambiguous/implicit session targets and incomplete/duplicate options are refused",
+    "Duplicate account aliases require the explicit stable account ID",
+    "Original Codex configuration remains byte-identical"
+  ],
+  "images": [
+    {
+      "file": "linux-arm64-terminal.png",
+      "sha256": "ec01caa128286956ad3e5ef56f01474f34e85b931b4b2182b48c3784165b3d7a",
+      "width": 1134,
+      "height": 678,
+      "originalTerminalPidVerified": true,
+      "directParentFrameVerified": true,
+      "desktopRootExcluded": true,
+      "actualCommandsWithoutDisplay": true,
+      "fictionalAccounts": 2,
+      "titlebarComposition": false,
+      "originalBytesUnchanged": true
+    }
+  ],
+  "personalDataUsed": false,
+  "authenticatedInference": false,
+  "scope": "Actual native terminal executing the real published headless commands with fictional local account data. No personal account, real authentication, inference or active-task continuation."
+}

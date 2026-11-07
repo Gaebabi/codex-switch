@@ -1,0 +1,127 @@
+{
+  "schema": 1,
+  "revision": "f1e6acb897be2a4f038af016d91a8d4e401c074f",
+  "os": "macOS",
+  "architecture": "Arm64",
+  "runtime": ".NET 10.0.13",
+  "appVersion": "1.40.3",
+  "images": [
+    {
+      "file": "en-dark-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "d27f4d0d07e4222c948da50bbfdfa588aa3b8a9d44f04430e5b859e19975999f",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-600x420-native.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "929c3abbfd0cfe452978ce35fb682c4fea4ebf08dfb52ea51b6fa18065962e7e",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "90de85b92579c92c89b953e62d03ecb66caf22a38584b0caa54e2f47cf8e5840",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-history-native.png",
+      "width": 500,
+      "height": 328,
+      "sha256": "75c910ca86b03c7b44502b7afe5feef79bdece28966569b68dc382057b747175",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-language-native.png",
+      "width": 205,
+      "height": 336,
+      "sha256": "5ac79a4af943992a6894501f7ac7416aa9f5c718f964bc09079a712ffe641e34",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "538006e12b17d0d8d2bb972f09c59e80cad0d4bc7cf15d8fc70f56763a278afb",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-600x420-native.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "083260c7c453a142764669d687de9bd14b68bb2052a8c8feb399bcedae6d2da5",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "a4bcc53fb0cf4edbfa529cc035e6400f5c536055a0b58d49e46bb1b70a93aa74",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-history-native.png",
+      "width": 500,
+      "height": 328,
+      "sha256": "d33e6d4814a6f081b5337afff5d4612ebc76bb1f10cdf2832d4ce740410f303b",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-language-native.png",
+      "width": 205,
+      "height": 336,
+      "sha256": "f92e19e2f7391b3964c71b8b2e22836c8ada77ce05af29f205b087fac3ae0811",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-dark-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "4fb512c2670d038601acbdc676be338fb1dca437dc20eee0a83aeb879385de7f",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-dark-600x420-native.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "6e9aafbfe8c77fb73c6fa48078ea165f742f6be8383984c85180105adc941764",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-dark-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "e64d772af5d8345dc016edd3a103deae24464990f10e96ddcc9e9121b24cc3c4",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-light-500x360-native.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "7b6b8460a3eef7b38965d7827fb59b583a27ce2e18230dfe4ae5dc70be206e12",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-light-600x420-native.png",
+      "width": 600,
+      "height": 420,
+      "sha256": "d069925009507a39d6c4b94965f35a7a50eace1c8d62ac3fd1dabe8e99e75172",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-light-800x600-native.png",
+      "width": 800,
+      "height": 600,
+      "sha256": "d9f606479a7c923d73c4ce3ec5093505ca76676fcfe6152c09a3ce220297e16a",
+      "capture": "Native own window or popup"
+    }
+  ],
+  "rendering": "Software (CI native window)",
+  "scope": "Unmodified pre-upgrade published Mac app, existing isolated native UI diagnostics and fictional inputs. Actual own NSWindows only; no personal home, credentials or Codex actions.",
+  "applicationSource": "083e283609242aa6b071e7f64e126e5de8668bf4",
+  "originalTree": "60727e87caa709e673a8ae4b65ea0a38c1d722b0",
+  "sourceArchiveSha256": "d77ad47faae74253c0d9ad9e99f4b4d89e78cd3b67f924f1799fcec03e03ca25"
+}

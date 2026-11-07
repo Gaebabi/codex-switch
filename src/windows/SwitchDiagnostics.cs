@@ -20,6 +20,7 @@ internal static class SwitchDiagnostics
         public Func<SwitchChat, Action, ChatResumeState>? Resuming;
         public Task<string?> CurrentAccountAsync(CancellationToken cancellation) => Task.FromResult(Account);
         public Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation) { Calls.Add("capture"); return Task.FromResult(Chats); }
+        public Task ValidateChatsForTargetAsync(SwitchChat[] chats, string target, CancellationToken cancellation) { Calls.Add("validate-target"); return Task.CompletedTask; }
         public Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken cancellation) { Calls.Add("name:" + chat.Id); Naming?.Invoke(chat); return Task.CompletedTask; }
         public Task CloseDesktopAsync(CancellationToken cancellation) { Calls.Add("close"); return Task.CompletedTask; }
         public Task ApplyAccountAsync(string key, string? source, CancellationToken cancellation) { Calls.Add("apply"); if (Account != source) throw new InvalidOperationException("source changed"); Account = key; Applying?.Invoke(); return Task.CompletedTask; }
@@ -86,9 +87,8 @@ internal static class SwitchDiagnostics
             var backend = new Backend { Applying = () => throw new IOException("synthetic checkpoint failure after apply") };
             var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, UserErrors.Describe);
             var plan = coordinator.PrepareAsync("target", at, CancellationToken.None).GetAwaiter().GetResult();
-            try { coordinator.RunAsync(plan, CancellationToken.None).GetAwaiter().GetResult(); } catch (IOException) { }
-            assert(plan.Phase == SwitchPhase.Applying && backend.Account == "target" && !plan.AccountApplied, "Apply failure checkpoint was lost");
-            backend.Applying = null; assert(coordinator.RunAsync(plan, CancellationToken.None).GetAwaiter().GetResult(), "Applied account did not recover");
+            assert(coordinator.RunAsync(plan, CancellationToken.None).GetAwaiter().GetResult(), "Applied account did not recover in the original invocation");
+            assert(plan.Phase == SwitchPhase.Finished && backend.Account == "target" && plan.AccountApplied && plan.AutomaticRecoveryAttempts == 1, "Automatic reconciliation lost its checkpoint or retry budget");
             assert(backend.Calls.Count(call => call == "apply") == 1 && backend.Calls.Count(call => call == "name:a") == 1, "Recovery repeated apply/name writes");
         });
         test("Resume failure preserves an unconfirmed send, resumes other chats, and skips finished work on retry", () =>

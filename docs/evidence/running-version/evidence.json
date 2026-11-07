@@ -1,0 +1,141 @@
+{
+  "schema": 1,
+  "os": "Windows",
+  "architecture": "X64",
+  "scope": "Hosted native app HWND captures with fictional accounts only. No personal desktop or authenticated account handoff. No pixel substitution or titlebar synthesis.",
+  "beforeRun": 39566727145,
+  "afterRun": 39616707274,
+  "afterArtifactDigest": "sha256:52b228e94ea68384750fac21f94463e1e97e2e8f20a2ce4fcc30e2c5688acb95",
+  "images": [
+    {
+      "file": "before-dark-500x360.png",
+      "sourceFile": "en-dark-500x360.png",
+      "phase": "before",
+      "revision": "98af9e4687d26bcc14198d8adc71922f0ca46d89",
+      "version": "1.41.1",
+      "sha256": "a971efaa58d5157170a76d66cdb5a406b0dd39f1ac5f54b1edae1f0107446d1b",
+      "pixels": "Unchanged original native own-window capture",
+      "personalDataUsed": false
+    },
+    {
+      "file": "before-dark-800x560.png",
+      "sourceFile": "en-dark-800x560.png",
+      "phase": "before",
+      "revision": "98af9e4687d26bcc14198d8adc71922f0ca46d89",
+      "version": "1.41.1",
+      "sha256": "ca0f5662e328f5cdae186e255f279964db23c09014961e4023c0396c9e60c8d9",
+      "pixels": "Unchanged original native own-window capture",
+      "personalDataUsed": false
+    },
+    {
+      "file": "before-light-500x360.png",
+      "sourceFile": "en-light-500x360.png",
+      "phase": "before",
+      "revision": "98af9e4687d26bcc14198d8adc71922f0ca46d89",
+      "version": "1.41.1",
+      "sha256": "46d2245dd3095b0af492cff6ba139eb862187b53e2425eeb7104010fb480f3a3",
+      "pixels": "Unchanged original native own-window capture",
+      "personalDataUsed": false
+    },
+    {
+      "file": "before-light-800x560.png",
+      "sourceFile": "en-light-800x560.png",
+      "phase": "before",
+      "revision": "98af9e4687d26bcc14198d8adc71922f0ca46d89",
+      "version": "1.41.1",
+      "sha256": "4553384ce4181d984ecc397e6db0021c8d39102b2b3fdf0dfc3c4b62c0acfdee",
+      "pixels": "Unchanged original native own-window capture",
+      "personalDataUsed": false
+    },
+    {
+      "file": "after-dark-500x360.png",
+      "sourceFile": "en-dark-500x360.png",
+      "phase": "after",
+      "revision": "ddfb44f176c02f81a60b412b56b0724ac5d5c8a0",
+      "version": "1.41.2",
+      "sha256": "a2f94ad4a0bc450314647b53dc58a114ae73468171d2cac7d89a52b08806b7e3",
+      "pixels": "Unchanged original native own-window capture",
+      "personalDataUsed": false
+    },
+    {
+      "file": "after-dark-800x560.png",
+      "sourceFile": "en-dark-800x560.png",
+      "phase": "after",
+      "revision": "ddfb44f176c02f81a60b412b56b0724ac5d5c8a0",
+      "version": "1.41.2",
+      "sha256": "a8f41bc7bec9c260f7c7973ea3dce198556dc666e12adb2f53f56e826981717a",
+      "pixels": "Unchanged original native own-window capture",
+      "personalDataUsed": false
+    },
+    {
+      "file": "after-light-500x360.png",
+      "sourceFile": "en-light-500x360.png",
+      "phase": "after",
+      "revision": "ddfb44f176c02f81a60b412b56b0724ac5d5c8a0",
+      "version": "1.41.2",
+      "sha256": "7dba634f7e1c568fa28ff6029382baf53c925a28bb8ca8251a72ea9169a5355e",
+      "pixels": "Unchanged original native own-window capture",
+      "personalDataUsed": false
+    },
+    {
+      "file": "after-light-800x560.png",
+      "sourceFile": "en-light-800x560.png",
+      "phase": "after",
+      "revision": "ddfb44f176c02f81a60b412b56b0724ac5d5c8a0",
+      "version": "1.41.2",
+      "sha256": "d3be097ded9ebeb9405e07086aa5cbabc4b5e2cb6d5fbccd8c4f9e6ce5635006",
+      "pixels": "Unchanged original native own-window capture",
+      "personalDataUsed": false
+    }
+  ],
+  "runningVersionChecks": [
+    {
+      "case": "en-dark-800x560",
+      "runningVersion": "v1.41.2",
+      "versionWithinTitlebar": true,
+      "titlebarActionsSeparate": true
+    },
+    {
+      "case": "en-dark-500x360",
+      "runningVersion": "v1.41.2",
+      "versionWithinTitlebar": true,
+      "titlebarActionsSeparate": true
+    },
+    {
+      "case": "ko-dark-800x560",
+      "runningVersion": "v1.41.2",
+      "versionWithinTitlebar": true,
+      "titlebarActionsSeparate": true
+    },
+    {
+      "case": "ko-dark-500x360",
+      "runningVersion": "v1.41.2",
+      "versionWithinTitlebar": true,
+      "titlebarActionsSeparate": true
+    },
+    {
+      "case": "en-light-800x560",
+      "runningVersion": "v1.41.2",
+      "versionWithinTitlebar": true,
+      "titlebarActionsSeparate": true
+    },
+    {
+      "case": "en-light-500x360",
+      "runningVersion": "v1.41.2",
+      "versionWithinTitlebar": true,
+      "titlebarActionsSeparate": true
+    },
+    {
+      "case": "ko-light-800x560",
+      "runningVersion": "v1.41.2",
+      "versionWithinTitlebar": true,
+      "titlebarActionsSeparate": true
+    },
+    {
+      "case": "ko-light-500x360",
+      "runningVersion": "v1.41.2",
+      "versionWithinTitlebar": true,
+      "titlebarActionsSeparate": true
+    }
+  ]
+}

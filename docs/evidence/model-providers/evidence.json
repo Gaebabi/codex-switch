@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "date": "2026-10-30",
+  "baseCommit": "1331c46da65c07bc869f3f5d545a3fb5a1ee8995",
+  "branch": "codex/unified-model-providers",
+  "captureFromUncommittedWorkingTree": true,
+  "sourceSha256": {
+    ".github/workflows/verify.yml": "8c3ec48d4e15313f2c54f3f1dd5ab079319c1b60134dd1ab7ec53f8b9dd807e1",
+    "licenses/OpenAI-Codex.LICENSE.txt": "d17f227e4df5da1600391338865ce0f3055211760a36688f816941d58232d8dc",
+    "licenses/OpenAI-Codex.NOTICE.txt": "8bec16601b19d67d990ba40a7e80c07f99be79b221778eff725f126353c8ad94",
+    "localization/packs/de.json": "538091429edfdf1ea90068d7f58b70f2907003417444592d54c40f6b298e785d",
+    "localization/packs/en.json": "7d948d7074dd605e6c17d5b2a9b2a7bca0db5b6a850b49518690587f0b60498c",
+    "localization/packs/es.json": "a4bc34f6fa04a981bea6846f804503c0229e39b263056ca6a7e544e7b5ce7a12",
+    "localization/packs/fr.json": "1d26e53ba6e570a4620ab4e3db62722fe175dc19191d24afd57769a778f28b62",
+    "localization/packs/ja.json": "00dbb68a382c7df5e15508a5f92a610f60eb7338f2fc19ed6e830007a3df0cf0",
+    "localization/packs/ko.json": "20419ca54993c83418f038c0c30f3607535688c17216135a8eab654620e4f4db",
+    "localization/packs/pt-BR.json": "3af308746053d3afe2b15198c5b1db867fec46b5ab72c6dace611349d662d265",
+    "localization/packs/zh-CN.json": "44d92731e9e2604ddfbef5066179a9b05f1a1f8e87e923a1fc2c1d1fba085e6c",
+    "localization/packs/zh-TW.json": "33fb7f0c69765f778a11a6bce8310fbf2148e6e4d71158f5f6137909fa3bb0a6",
+    "resources/CodexFallbackInstructions.md": "294602e3502bb0ff840a82cd1d08ac526125a6cdf763e1f883e8d74f47cc2a8d",
+    "src/application/AccountService.cs": "b1bd479f62fc6a5adc9de068ba61ca914c442309fbb65dc5684f36054e03a6ff",
+    "src/application/CodexSwitch.Application.csproj": "1b1741c094ff631710b59e5c3b7bf570120f8ae72387655bf70404b63af83927",
+    "src/application/ModelGateway.cs": "c1f7b1a9b56a0d820171dc10f722e458ba90c1e7f97916aaa48a2b286f81f504",
+    "src/application/ModelProviderManager.cs": "2267517fd2433f527de91ee97c605166d53950491b062fd07e0044fd141f9ba9",
+    "src/application/ModelProviders.cs": "1f86db856872a09822376f69c601ecaa7a717e487c6487290c4888cad8bd707d",
+    "src/core/CodexSwitch.Core.csproj": "5596860869998e3bc01b9e5a76f5506772b6bd502154d9238f794775339ec495",
+    "src/desktop/DeskProvidersWindow.cs": "2374ff8597e589d546f2d7f31282211a3c9ca81ed0ceb2d8769cade63f21ec17",
+    "src/desktop/DeskWindow.cs": "92103c1500f7ff6760a7e8c6befab938b21bdf031a9432292c671cd39f9aa1ad",
+    "src/platforms/protocol/CodexRpc.cs": "41522689585ab305b72b7c35b313f57b4451dbdc4b8e8fe105c1852302f18e60",
+    "src/platforms/protocol/CodexSwitch.Protocol.csproj": "b49cb4e9466d73576208e74ecefde0f418d9a0beec82d48c4ce90b97065055c5",
+    "src/windows/CodexSwitch.Windows.csproj": "8564e67d78152b5423e627988e31e24b8876053e6d2ec80fb4ca7dddb4ed2a49",
+    "src/windows/MainWindow.cs": "e8a1efea7490ef76347e6f83e75e76376aa49cdda49e837d1d9ea9724eace824",
+    "src/windows/ModelProvidersWindow.cs": "4adbaa62e6beb4199da9e5cbde74ebb0d2c871f8ec1ec02008923715629cd51e",
+    "tests/model-providers-ui/ModelProviders.Ui.Tests.csproj": "411e85ced07633268cc9707b0f234d18b856a7ed5bb74a802cbb686ab9c1f66d",
+    "tests/model-providers-ui/Program.cs": "811c6e5104fecbc50f9c0dff4fff6d2005b0aa3d15987a72f402e7567cba2c89",
+    "tests/model-providers/CodexSwitch.ModelProviders.Tests.csproj": "22872f11df6f2b9bfcd5af69854ac1e7e900a68645ab244288fd03ae9debb6e9",
+    "tests/model-providers/GatedStream.cs": "72d6e13471140f009e0c7627a84d56f6a082edce3167a54ccd1cab0c11daf8c8",
+    "tests/model-providers/Program.cs": "ac365bcf65f6ca302fbf5aff78a7dad08c3b58633705c3eb4c490b531204b7ac",
+    "tests/model-providers/WorkspaceFixture.cs": "105bb717f0f745fe1cd61ab695fa66713086bfa63e2551900fd2c4cdf9fc2381"
+  },
+  "routing": {
+    "0163": {
+      "passed": 58,
+      "framework": ".NET 10.0.11",
+      "scope": "Disposable encrypted storage, loopback gateway and fictional upstreams; no owner home, account or desktop."
+    },
+    "0164": {
+      "passed": 58,
+      "framework": ".NET 10.0.11",
+      "scope": "Disposable encrypted storage, loopback gateway and fictional upstreams; no owner home, account or desktop."
+    }
+  },
+  "editorChecks": 4,
+  "imageScope": "Production WPF component rendered offscreen with empty disposable storage, not a native window or actual Codex picker.",
+  "images": {
+    "providers-en-dark.png": {
+      "sha256": "68a435d1c045bf0fe19e29f56b678e4ddd3ae60ed02509eee3fa6b3524475f40",
+      "pixelsSha256": "14ae7652ed216db2c04f2a7c6b6106f5c1d4e86eeebb6823b1f91b9635763ca8",
+      "size": [
+        540,
+        700
+      ]
+    },
+    "providers-en-light.png": {
+      "sha256": "9f9a7e157dfbc33a564389db520e407ab2c70d76910e0144eb6be3671f2e9c2e",
+      "pixelsSha256": "ea42d84cfeeb2ffc6efc26fd2ee582cbfd4a51f69a31a064ce515f67865387db",
+      "size": [
+        540,
+        700
+      ]
+    },
+    "providers-ko-dark.png": {
+      "sha256": "a6b34f2494a0a8c98ae2afab110557ed5db56c65ac8ac59daa0d7f8a047c74f3",
+      "pixelsSha256": "9b663f3dc9a27adb1f8024dc2568026c7cbe48211da3c290d290a5544efe3d00",
+      "size": [
+        540,
+        700
+      ]
+    },
+    "providers-ko-light.png": {
+      "sha256": "ac5ef1e3fb00b2f88de90d0a0d60ed4c168b5579c9c7533a94c968174a40225e",
+      "pixelsSha256": "034b07b90195eba2b16e577e4f2c09e464e7449d37bf379ecaddde7bc29447f1",
+      "size": [
+        540,
+        700
+      ]
+    }
+  },
+  "otherRegressions": {
+    "accountAutomation": 215,
+    "platformSecurity": 10,
+    "desktopClient": 5,
+    "protocol": 9,
+    "composition": 6,
+    "localization": 42
+  },
+  "remaining": [
+    "Actual isolated native Codex picker",
+    "Real external provider compatibility",
+    "Native Mac/Linux provider management",
+    "Protected remote CI, native Windows handoff and complete package checks",
+    "Owner installation acceptance"
+  ],
+  "ownerActions": "No live Codex restart, real account switch, installed-app replacement or production config edit."
+}

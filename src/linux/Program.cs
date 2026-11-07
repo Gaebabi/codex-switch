@@ -20,6 +20,12 @@ internal static class Program
     {
         if (!OperatingSystem.IsLinux() || RuntimeInformation.ProcessArchitecture is not (Architecture.X64 or Architecture.Arm64))
         { Console.Error.WriteLine("This source preview requires Linux x64 or ARM64."); return 1; }
+        if (args.Length > 0 && args[0] == "cli")
+        {
+            using var output = new StreamWriter(new FileStream(new SafeFileHandle((IntPtr)1, false), FileAccess.Write), new UTF8Encoding(false)) { AutoFlush = true };
+            using var error = new StreamWriter(new FileStream(new SafeFileHandle((IntPtr)2, false), FileAccess.Write), new UTF8Encoding(false)) { AutoFlush = true };
+            return LinuxTerminalCommands.Execute(args[1..], output, error);
+        }
         if (args.Length == 1 && args[0] is "--install-package" or "--uninstall-package")
         {
             using var output = new StreamWriter(new FileStream(new SafeFileHandle((IntPtr)1, false), FileAccess.Write), new UTF8Encoding(false)) { AutoFlush = true };

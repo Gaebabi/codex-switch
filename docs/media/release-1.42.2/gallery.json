@@ -1,0 +1,150 @@
+{
+  "schema": 1,
+  "applicationVersion": "1.42.2",
+  "captureRevision": "d1f483833b1c57aee6bbd923e7f5be3c9067039f",
+  "verifyRun": "40086423732",
+  "linuxRun": "40086423631",
+  "metadataRemoved": true,
+  "images": [
+    {
+      "file": "windows.png",
+      "sha256": "fb67e25b2fdfc93bc9dc6d544e9458fc8480e2025a7bcd02bd0812e716b34417",
+      "sourceFile": "en-dark-account-automation-enabled.png",
+      "sourceSha256": "dc7e396a201f5f3b3c9c27af3bc6f8588e8f7e1c145695925da5f654bf9449e4",
+      "revision": "d1f483833b1c57aee6bbd923e7f5be3c9067039f",
+      "os": "Windows",
+      "architecture": "X64",
+      "windowRegion": {
+        "x": 200,
+        "y": 180,
+        "width": 600,
+        "height": 440
+      },
+      "originalPixelsUnchanged": true,
+      "scope": "Actual own WPF HWND, fictional accounts, On enabled only in intercepted evidence mode; no live account or client operation."
+    },
+    {
+      "file": "windows-light.png",
+      "sha256": "3a80981114c1996aa4ee7ee54db7df1334ac4e5575c26ae35717f152ef07e70e",
+      "sourceFile": "en-light-account-automation-enabled.png",
+      "sourceSha256": "8f43de4bb565d58373a5dfefc23f9c498567056c7fed8e2590e373582617a7f5",
+      "revision": "d1f483833b1c57aee6bbd923e7f5be3c9067039f",
+      "os": "Windows",
+      "architecture": "X64",
+      "windowRegion": {
+        "x": 200,
+        "y": 180,
+        "width": 600,
+        "height": 440
+      },
+      "originalPixelsUnchanged": true,
+      "scope": "Actual own WPF HWND, fictional accounts, On enabled only in intercepted evidence mode; no live account or client operation."
+    },
+    {
+      "file": "mac-osx-arm64.png",
+      "sha256": "9e34c0e0bb69dadfb4db57c4220e7e7df776fe0355104e901d68236baf561f8f",
+      "sourceFile": "en-dark-800x600-native.png",
+      "sourceSha256": "717c244c37ee92ea7e39433ea5846523a5a6f44fa273e2b590c653cda4506e38",
+      "revision": "d1f483833b1c57aee6bbd923e7f5be3c9067039f",
+      "os": "macOS",
+      "architecture": "Arm64",
+      "windowRegion": {
+        "x": 100,
+        "y": 100,
+        "width": 800,
+        "height": 600
+      },
+      "originalPixelsUnchanged": true,
+      "scope": "Actual hosted native CI window with fictional accounts; not a maintainer MacBook or authenticated account operation."
+    },
+    {
+      "file": "mac-osx-x64.png",
+      "sha256": "90ca311cec2509681411667805dfde5b10c0f2654296b0456aab3643060514aa",
+      "sourceFile": "en-dark-800x600-native.png",
+      "sourceSha256": "1bc0407309beb9c3b0885f833eabe200f87db4bcb5a48c579af413ac6be7f9a1",
+      "revision": "d1f483833b1c57aee6bbd923e7f5be3c9067039f",
+      "os": "macOS",
+      "architecture": "X64",
+      "windowRegion": {
+        "x": 100,
+        "y": 100,
+        "width": 800,
+        "height": 600
+      },
+      "originalPixelsUnchanged": true,
+      "scope": "Actual hosted native CI window with fictional accounts; not a maintainer MacBook or authenticated account operation."
+    },
+    {
+      "file": "linux-x64-dark.png",
+      "sha256": "ded81d11b85ce07eda7b45f3f54e730816657aabbf7338c07c10db41c57e0552",
+      "sourceFile": "en-dark-800x600-native-wm.png",
+      "sourceSha256": "e4dfcb67c2b77af0d64d8eda843e1853a677805c17cb4ac79ce4504a4395c94b",
+      "revision": "d1f483833b1c57aee6bbd923e7f5be3c9067039f",
+      "os": "Linux",
+      "architecture": "X64",
+      "windowRegion": {
+        "x": 95,
+        "y": 83,
+        "width": 810,
+        "height": 634
+      },
+      "originalPixelsUnchanged": true,
+      "scope": "Actual native app, four fictional cards and verified original direct-parent Xfwm4 frame; no synthesized titlebar, owner login or full-desktop/handoff claim."
+    },
+    {
+      "file": "linux-x64-light.png",
+      "sha256": "ab40b9da16f7b7aa322d465ac09d42e75457b38a09d7a0b7af16fd6655b81f31",
+      "sourceFile": "en-light-800x600-native-wm.png",
+      "sourceSha256": "81900e5522a8a948a496d52cea0ab79974e2ba76279f16a2a167509886b1cff8",
+      "revision": "d1f483833b1c57aee6bbd923e7f5be3c9067039f",
+      "os": "Linux",
+      "architecture": "X64",
+      "windowRegion": {
+        "x": 95,
+        "y": 83,
+        "width": 810,
+        "height": 634
+      },
+      "originalPixelsUnchanged": true,
+      "scope": "Actual native app, four fictional cards and verified original direct-parent Xfwm4 frame; no synthesized titlebar, owner login or full-desktop/handoff claim."
+    },
+    {
+      "file": "linux-arm64-dark.png",
+      "sha256": "23d42856491fc16e6eb5641ea6912726f58352de0506216488d078a3f77a5dc5",
+      "sourceFile": "en-dark-800x600-native-wm.png",
+      "sourceSha256": "867915b2d4c221ef74b7eee66a8aca98466fb58cb78c0b0339fa9760aee2a160",
+      "revision": "d1f483833b1c57aee6bbd923e7f5be3c9067039f",
+      "os": "Linux",
+      "architecture": "Arm64",
+      "windowRegion": {
+        "x": 95,
+        "y": 83,
+        "width": 810,
+        "height": 634
+      },
+      "originalPixelsUnchanged": true,
+      "scope": "Actual native app, four fictional cards and verified original direct-parent Xfwm4 frame; no synthesized titlebar, owner login or full-desktop/handoff claim."
+    },
+    {
+      "file": "linux-arm64-light.png",
+      "sha256": "3e1973af35f224d4d6ce1756d54dd730ce028ab86ac505506be6506b3fec1040",
+      "sourceFile": "en-light-800x600-native-wm.png",
+      "sourceSha256": "4f21767c66bd7856004e1aad639bb452c8a0899649874550d69763bf3e0ba9c0",
+      "revision": "d1f483833b1c57aee6bbd923e7f5be3c9067039f",
+      "os": "Linux",
+      "architecture": "Arm64",
+      "windowRegion": {
+        "x": 95,
+        "y": 83,
+        "width": 810,
+        "height": 634
+      },
+      "originalPixelsUnchanged": true,
+      "scope": "Actual native app, four fictional cards and verified original direct-parent Xfwm4 frame; no synthesized titlebar, owner login or full-desktop/handoff claim."
+    }
+  ],
+  "macbook": {
+    "pending": true,
+    "slot": "macbook.png"
+  }
+}

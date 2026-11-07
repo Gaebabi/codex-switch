@@ -74,7 +74,7 @@ internal static class WindowsDiskTemperature
     private static TemperatureReading Failure(int error, string source, DateTimeOffset at) => TemperatureReading.Missing(
         error == 5 ? TemperatureState.AccessDenied : error is 1 or 50 or 87 ? TemperatureState.SensorUnavailable : TemperatureState.ReadFailed,
         source, code: "Win32 " + error, at: at);
-    private static byte[]? Query(string path, uint code, byte[] input, out int error)
+    internal static byte[]? Query(string path, uint code, byte[] input, out int error)
     {
         using var handle = CreateFileW(path, 0, 3, IntPtr.Zero, 3, 0, IntPtr.Zero);
         if (handle.IsInvalid) { error = Marshal.GetLastWin32Error(); return null; }

@@ -1,0 +1,240 @@
+{
+  "captureRevision": "f1e6acb897be2a4f038af016d91a8d4e401c074f",
+  "baselineSource": "083e283609242aa6b071e7f64e126e5de8668bf4",
+  "artifacts": [
+    {
+      "artifact": "dependency-before-osx-arm64",
+      "directory": "mac-arm64-before",
+      "images": 16,
+      "os": "macOS",
+      "architecture": "Arm64"
+    },
+    {
+      "artifact": "native-ui-osx-arm64",
+      "directory": "mac-arm64-after",
+      "images": 18,
+      "os": "macOS",
+      "architecture": "Arm64"
+    },
+    {
+      "artifact": "dependency-before-osx-x64",
+      "directory": "mac-intel-before",
+      "images": 16,
+      "os": "macOS",
+      "architecture": "X64"
+    },
+    {
+      "artifact": "native-ui-osx-x64",
+      "directory": "mac-intel-after",
+      "images": 18,
+      "os": "macOS",
+      "architecture": "X64"
+    },
+    {
+      "artifact": "native-ui-windows",
+      "directory": "windows-after",
+      "images": 14,
+      "os": "Windows",
+      "architecture": "X64"
+    },
+    {
+      "artifact": "native-ui-linux-x64",
+      "directory": "linux-x64-after",
+      "images": 12,
+      "os": "Linux",
+      "architecture": "X64"
+    },
+    {
+      "artifact": "native-ui-linux-arm64",
+      "directory": "linux-arm64-after",
+      "images": 12,
+      "os": "Linux",
+      "architecture": "Arm64"
+    },
+    {
+      "artifact": "native-history-osx-arm64",
+      "directory": "mac-arm64-history",
+      "images": 14,
+      "os": "macOS",
+      "architecture": "Arm64"
+    },
+    {
+      "artifact": "native-history-osx-x64",
+      "directory": "mac-intel-history",
+      "images": 14,
+      "os": "macOS",
+      "architecture": "X64"
+    },
+    {
+      "artifact": "desktop-session-linux-x64",
+      "directory": "linux-desktop",
+      "images": 12,
+      "os": "Linux",
+      "architecture": "X64"
+    }
+  ],
+  "images": 146,
+  "beforeAfterPixelComparisons": [
+    {
+      "architecture": "mac-arm64",
+      "image": "en-dark-500x360-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "en-dark-600x420-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "en-dark-800x600-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "en-dark-history-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "en-dark-language-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "en-light-500x360-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "en-light-600x420-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "en-light-800x600-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "en-light-history-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "en-light-language-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "ko-dark-500x360-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "ko-dark-600x420-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "ko-dark-800x600-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "ko-light-500x360-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "ko-light-600x420-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-arm64",
+      "image": "ko-light-800x600-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "en-dark-500x360-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "en-dark-600x420-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "en-dark-800x600-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "en-dark-history-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "en-dark-language-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "en-light-500x360-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "en-light-600x420-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "en-light-800x600-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "en-light-history-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "en-light-language-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "ko-dark-500x360-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "ko-dark-600x420-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "ko-dark-800x600-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "ko-light-500x360-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "ko-light-600x420-native.png",
+      "identicalPixels": false
+    },
+    {
+      "architecture": "mac-intel",
+      "image": "ko-light-800x600-native.png",
+      "identicalPixels": false
+    }
+  ],
+  "scope": "Native isolated app-owned UI with fictional/Unicode fixtures. Windows tooltip entries explicitly labeled component renders; no physical MacBook, personal accounts or full Linux desktop claim."
+}

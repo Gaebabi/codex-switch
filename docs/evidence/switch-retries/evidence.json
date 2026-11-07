@@ -1,0 +1,168 @@
+{
+  "schema": 1,
+  "sourceRevision": "4da56af7d506aea37a34a02bbae430a5fee039d6",
+  "baselineSource": "b626e787493ab20ccdcc583a54b3b2eef092a6b9",
+  "ciRun": 40377891971,
+  "nativeRetryBefore": 12,
+  "nativeRetryAfter": 30,
+  "nativeMenuAssertions": 36,
+  "policyContracts": 115,
+  "images": [
+    {
+      "file": "en-before.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "03bee4b4a67a572fd2025c9b689f27a75da4c79195e6f6419aa29fdc2a329f56",
+      "originalPixelsUnchanged": true,
+      "artifact": "switch-retries-windows",
+      "compiledSource": "b626e787493ab20ccdcc583a54b3b2eef092a6b9"
+    },
+    {
+      "file": "ko-before.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "f5d7694d2616eb25fc9cb96be7239a26a83cee4fbc9b5e23f2a0cc16dd9a7e50",
+      "originalPixelsUnchanged": true,
+      "artifact": "switch-retries-windows",
+      "compiledSource": "b626e787493ab20ccdcc583a54b3b2eef092a6b9"
+    },
+    {
+      "file": "en-retry-1.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "aa77bd9c32e44d72088d6739d15027798c322da1b387850a8297901b54b9a2d3",
+      "originalPixelsUnchanged": true,
+      "artifact": "switch-retries-windows",
+      "compiledSource": "4da56af7d506aea37a34a02bbae430a5fee039d6"
+    },
+    {
+      "file": "en-retry-2.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "fac6e0a367441e533feb3404bf82072d277ec1b1d25ca7878b4e95f61d1356d6",
+      "originalPixelsUnchanged": true,
+      "artifact": "switch-retries-windows",
+      "compiledSource": "4da56af7d506aea37a34a02bbae430a5fee039d6"
+    },
+    {
+      "file": "en-after.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "51436e6b349366365ea185ebc14e9fab30307ebd776174fbe206cc3e3dcc0b2a",
+      "originalPixelsUnchanged": true,
+      "artifact": "switch-retries-windows",
+      "compiledSource": "4da56af7d506aea37a34a02bbae430a5fee039d6"
+    },
+    {
+      "file": "en-exhausted.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "f96a6d96ab61608567d4a1637cd0d098fcb12b0c0f20945b025c8435722e28eb",
+      "originalPixelsUnchanged": true,
+      "artifact": "switch-retries-windows",
+      "compiledSource": "4da56af7d506aea37a34a02bbae430a5fee039d6"
+    },
+    {
+      "file": "ko-retry-1.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "ec83e292ffdac613ab506c1224425bb3d63ae0409f888afe9ef3cb663df677b6",
+      "originalPixelsUnchanged": true,
+      "artifact": "switch-retries-windows",
+      "compiledSource": "4da56af7d506aea37a34a02bbae430a5fee039d6"
+    },
+    {
+      "file": "ko-retry-2.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "481b21e4bb73cf9eadb6a4b93207d664ec87e8fb54d9d3d9a04b42f9a4e4c7eb",
+      "originalPixelsUnchanged": true,
+      "artifact": "switch-retries-windows",
+      "compiledSource": "4da56af7d506aea37a34a02bbae430a5fee039d6"
+    },
+    {
+      "file": "ko-after.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "436180883485079c2690f22f9823947ad9500d4576ce63edcd8f32235170f7e9",
+      "originalPixelsUnchanged": true,
+      "artifact": "switch-retries-windows",
+      "compiledSource": "4da56af7d506aea37a34a02bbae430a5fee039d6"
+    },
+    {
+      "file": "ko-exhausted.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "baa918a2d7780ebc13a6e07a40338765a0c9edacf01406c252a36301fa317571",
+      "originalPixelsUnchanged": true,
+      "artifact": "switch-retries-windows",
+      "compiledSource": "4da56af7d506aea37a34a02bbae430a5fee039d6"
+    },
+    {
+      "file": "en-auto-switch-next-off.png",
+      "sha256": "a0225660ae5a92fc00b333fe8e28aa67b18b3f2360fb733792f2d64648a52a3c",
+      "width": 207,
+      "height": 346,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true,
+      "artifact": "account-automation-windows",
+      "compiledSource": "4da56af7d506aea37a34a02bbae430a5fee039d6"
+    },
+    {
+      "file": "en-auto-switch-next-on.png",
+      "sha256": "17122ae56c1eb1d6434ca8a31fe52e069f749d639158c7b743815d22bd8bb4ad",
+      "width": 207,
+      "height": 346,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true,
+      "artifact": "account-automation-windows",
+      "compiledSource": "4da56af7d506aea37a34a02bbae430a5fee039d6"
+    },
+    {
+      "file": "ko-auto-switch-next-off.png",
+      "sha256": "ff3b403cefd622d12b59a252be13f782e1e3bc42b802533b8e83af96a8332d62",
+      "width": 236,
+      "height": 346,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true,
+      "artifact": "account-automation-windows",
+      "compiledSource": "4da56af7d506aea37a34a02bbae430a5fee039d6"
+    },
+    {
+      "file": "ko-auto-switch-next-on.png",
+      "sha256": "104393fcb6798ef6e2366efcfcad5359b9d4943ffcb57bdaeeee41366cc37db9",
+      "width": 236,
+      "height": 346,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true,
+      "artifact": "account-automation-windows",
+      "compiledSource": "4da56af7d506aea37a34a02bbae430a5fee039d6"
+    }
+  ],
+  "sourceHashes": {
+    "Directory.Build.props": "b5a952430883b48951736a2b413b0527fafe2b88eea4da1479855bcfb404ba37",
+    "src/core/AccountSwitchCoordinator.cs": "97bbe2d88c5b6e4cb8ee0c2635a3a44bf158dabe59ab6f8e22d88c994bc00d8b",
+    "src/core/AutomaticSwitchPolicy.cs": "309187c086cda4a6523dd88697e01cd5891443738b00dff355930704a74b226e",
+    "src/application/AccountAutomation.cs": "06b44afbac40ea89251ce28e66e29151534a01c35a9e1da3b829bc4dd2138abb",
+    "src/windows/MainWindow.cs": "6e4b1266c8534da3f180186b85bd8ae170d3f4d93bddb86b880eba695f4824eb",
+    "src/windows/DropdownTheme.cs": "b31842a71913dc9c53547fe3b42a23eb24dac1b706f5fe6df3e6d004cd6dd101",
+    "src/windows/AccountAutomationEvidence.cs": "a521b4ba68b7017739b748a53f0d15680248518111c301a2cec9f4924e2492eb",
+    "src/desktop/DeskWindow.cs": "797ea507ff8c78f3ad7cff1efad8fd0ba802cbbfc1e35ff18125c465882c52d3",
+    "src/linux/LinuxUiEvidence.cs": "65df66078fe637d0c5fcbd57e86ba5c806e9d69c39a774cd0c3f06edb2e05a04",
+    "tests/switch-retries/Program.cs": "a7d55308f573b6021a225e9433157281315aeb7fcbdf6bfcfa113ba270994e20",
+    "scripts/verify-switch-retries.py": "ec54985dd2ef211f0916dab898eae3da5cd1eeebcfb39239614542da6583b69d",
+    "scripts/verify-account-automation-evidence.py": "95d6ddfe94222affc17c3d54d569a40ecd73a4266b0b3414e4717e9272b4fccc",
+    "localization/packs/en.json": "bb8218ede0b7ad52af8de96f886b580a161592d660149403aaddd9b59d7f4380",
+    "localization/packs/ko.json": "626daac7003a42e2260778d3f892ae037273a30ffecd7517b59dde2db9e6338c",
+    "localization/packs/ja.json": "593f49ba1396f91dd4f4074e72b8d5561992c31f5a94d6b44353d60868f0fc21",
+    "localization/packs/zh-CN.json": "e3a241085877879a2f8c1c2afaf853c3ab117a216811a09ea9c4978dcbe7db67",
+    "localization/packs/zh-TW.json": "31b3e462061cbc6869750a25f47b6ee025bc2a62d4b866a8188cf12f07c53eb2",
+    "localization/packs/es.json": "eea6b0be2ce7402e199bd6de3196302310acb23e096f7ae7edc52a2b3cd67c3f",
+    "localization/packs/fr.json": "cd9327708f519d1379cdd5f5bc2f3a197779253a8c5555d0e0761da75815a5e3",
+    "localization/packs/de.json": "755506285e9f7d3030f0ea4a9fd4ace452db02422e7c8aba2417696b4fa34dd7",
+    "localization/packs/pt-BR.json": "71e3692321948f1fa175e2a48448bfb11727aa6dcd17c120ad5b4d4d2f47978e"
+  },
+  "personalDataUsed": false,
+  "originalExportBytesUnchanged": true,
+  "scope": "Hosted native own-HWND Windows windows/popups with fictional accounts and controlled offline lifecycle backend. Retry fixture sets busy context and uses production coordinator/progress/save; it is not an actual Switch click, authenticated account/client or live Continue. Shared native window title/geometry and compilation have separate CI scope."
+}

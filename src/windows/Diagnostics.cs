@@ -347,11 +347,11 @@ internal static class Diagnostics
         {
             var now = DateTimeOffset.Parse("2026-10-11T23:59:00+09:00");
             var until = DateTimeOffset.Parse("2026-10-13T00:30:00+09:00");
-            Assert(AccountTankCard.SubscriptionCountdown(until, now) == "D-2", "Countdown used the wrong calendar day");
-            Assert(AccountTankCard.SubscriptionCountdown(until, now.AddMinutes(2)) == "D-1", "Countdown did not change at Korean midnight");
-            Assert(AccountTankCard.SubscriptionCountdown(now.AddSeconds(1), now) == "오늘", "Same-day end was not shown");
-            Assert(AccountTankCard.SubscriptionCountdown(now.AddDays(-1), now) == "D+1", "Elapsed date was shown as future");
-            Assert(AccountTankCard.SubscriptionCountdown(null, now) == "", "Missing date became an invented countdown");
+            Assert(SubscriptionPresentation.Days(until, now) == "2", "Countdown used the wrong calendar day");
+            Assert(SubscriptionPresentation.Days(until, now.AddMinutes(2)) == "1", "Countdown did not change at Korean midnight");
+            Assert(SubscriptionPresentation.Days(now.AddSeconds(1), now) == "오늘", "Same-day end was not shown");
+            Assert(SubscriptionPresentation.Days(now.AddDays(-1), now) == Loc.F("subscription.expired_days", 1), "Elapsed date was shown as future");
+            Assert(SubscriptionPresentation.Days(null, now) == "—", "Missing date became an invented countdown");
         });
         Test("Subscription dates come from subscription claims rather than JWT expiration", () =>
         {
@@ -465,6 +465,21 @@ internal static class Diagnostics
         });
         Test("Runtime cleanup refuses paths outside the owned directory", () =>
         { var blocked = false; try { SecureFiles.DeleteOwnedRuntime(Path.Combine(directory, "runtime"), directory); } catch (IOException) { blocked = true; } Assert(blocked, "Unsafe recursive cleanup accepted"); });
+        Test("Runtime ownership records bind the actual process and preserve strict malformed-record refusal", () =>
+        {
+            var data = Path.Combine(directory, "ownership-records");
+            using var process = System.Diagnostics.Process.GetCurrentProcess();
+            var home = new RuntimeHome(data, null);
+            using (var record = JsonDocument.Parse(File.ReadAllText(Path.Combine(home.Path, "owner.json"))))
+                Assert(JsonValue.Int(record.RootElement, "pid") == process.Id && JsonValue.Long(record.RootElement, "startedAt") == process.StartTime.ToUniversalTime().Ticks, "Runtime ownership identity changed");
+            Assert(!Directory.GetFiles(home.Path, ".account-desk-*.tmp").Any(), "Ownership staging file survived");
+            home.DisposeAsync().GetAwaiter().GetResult();
+            var corrupt = Path.Combine(data, "runtime", Guid.NewGuid().ToString("N"));
+            SecureFiles.CreatePrivateDirectory(corrupt);
+            var bytes = new byte[44]; File.WriteAllBytes(Path.Combine(corrupt, "owner.json"), bytes);
+            var rejected = false; try { RuntimeHome.CleanupStale(data); } catch (JsonException) { rejected = true; }
+            Assert(rejected && File.ReadAllBytes(Path.Combine(corrupt, "owner.json")).SequenceEqual(bytes), "Malformed ownership was ignored, overwritten or deleted");
+        });
         Test("Owned child processes terminate when their Windows job closes", () =>
         {
             using var child = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "ping.exe"))
@@ -787,6 +802,7 @@ internal static class Diagnostics
             profile.Usage.Buckets[0].Primary!.UsedPercent = 100; Assert(AccountTankCard.SelectQuota(profile)!.Window.Remaining == 0, "Known zero quota was hidden");
         });
         SwitchDiagnostics.AddTests(Test, Assert, directory);
+        AccountAutomationUiDiagnostics.AddTests(Test, Assert, directory);
         File.WriteAllText(reportPath, JsonSerializer.Serialize(new { version = typeof(Program).Assembly.GetName().Version!.ToString(3), passed = tests.Count - failureCount, failed = failureCount,
             scope = "Local encryption, parsing, and isolated authentication-file switching; no live desktop was closed or switched.", tests }, new JsonSerializerOptions { WriteIndented = true }));
         Directory.Delete(directory, true);
@@ -821,7 +837,7 @@ internal static class Diagnostics
             new JsonSerializerOptions { WriteIndented = true }));
         return available ? 0 : 1;
     }
-    private static string FakeAuth(string subject, string email, string account, DateTimeOffset? subscriptionUntil = null, DateTimeOffset? subscriptionChecked = null)
+    internal static string FakeAuth(string subject, string email, string account, DateTimeOffset? subscriptionUntil = null, DateTimeOffset? subscriptionChecked = null)
     {
         string Encode(string value) => Convert.ToBase64String(Encoding.UTF8.GetBytes(value)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
         var token = Encode("{\"alg\":\"none\"}") + "." + Encode(JsonSerializer.Serialize(new Dictionary<string, object> { ["sub"] = subject, ["email"] = email, ["exp"] = 2050000000,

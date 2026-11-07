@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "captureRevision": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+  "baselineMain": "bc53916a4a7d7289a5db2908260a5220c068ca80",
+  "gitObjects": {
+    "src": "f6887e80193946cb166ff3cf08e4fc6a129a45dd",
+    "assets": "4ba3a385e02f53b713329182f838853230828d59",
+    "resources": "7ee4f943f72df3fa0d7d4b145ab90694d51e2975",
+    "localization": "3d295df5034ced24c2ae2e729be149e4110609de",
+    "tests": "41c9db150aca858f02165e49573ef9e978e4300b",
+    "scripts": "9d584f7412bc0da3892c89f1497a330fc023fe72",
+    "tools": "55f1b9af5a27ae0625045f0fda90ca55953d36e9",
+    ".github": "0c6799a1288d92f012c32d94d8c76db8b7f66d43",
+    "Directory.Build.props": "353c42f7c70436a33762133a532880c9ae0fa8fc",
+    "global.json": "3dbe096286877ae684694ac9d90a36b94d6943cf",
+    "requirements-dev.txt": "47e05f0779a156ecf6f3b04c8bf16eab2aa3d21e"
+  },
+  "identicalCapturedImplementationAndBuildInputs": true,
+  "scope": "Release-branch changes are documentation and inspected evidence only; final candidate and merged source revisions are recorded separately in the published verification receipt."
+}

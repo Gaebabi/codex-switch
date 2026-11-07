@@ -47,6 +47,27 @@ internal static class Program
             var dark = new DeskTheme(true, appearance); var light = new DeskTheme(false, appearance);
             Assert(!called && dark.Appearance == appearance && light.Appearance == appearance && dark.Brush("canvas").Color != light.Brush("canvas").Color);
         });
+        Check("Usage history places growing quota and credit overflow upward on the selected scale", () =>
+        {
+            var start = DateTimeOffset.Parse("2026-10-15T00:00:00Z"); var end = start.AddHours(24);
+            var plot = new Rect(40, 34, 412, 110);
+            var low = HistoryChart.Project(new(start, 0, null, 0), plot, start, end);
+            var high = HistoryChart.Project(new(end, 100, null, 0), plot, start, end);
+            Assert(low == plot.BottomLeft && high == plot.TopRight && high.Y < low.Y);
+            Assert(HistoryChart.Project(new(start.AddHours(-1), -10, null, 0), plot, start, end) == plot.BottomLeft &&
+                HistoryChart.Project(new(end.AddHours(1), 120, null, 0), plot, start, end, 120) == plot.TopRight);
+            var boundary = HistoryChart.Project(new(end, 100, null, 0), plot, start, end, 150);
+            var credit = HistoryChart.Project(new(end, 130, null, 0), plot, start, end, 150);
+            Assert(credit.Y < boundary.Y && credit.Y > plot.Top && boundary.Y > plot.Top);
+        });
+        Check("History retains real reset and observation-gap discontinuities", () =>
+        {
+            var first = new UsageObservation(DateTimeOffset.UtcNow, 10, null, 0);
+            Assert(HistoryChart.Connects(first, first with { At = first.At.AddMinutes(20), UsedPercent = 12 }));
+            Assert(!HistoryChart.Connects(first, first with { At = first.At.AddMinutes(21) }) &&
+                !HistoryChart.Connects(first, first with { At = first.At.AddMinutes(1), Segment = 1 }) &&
+                !HistoryChart.Connects(first, first with { At = first.At.AddSeconds(-1) }));
+        });
         if (args.Length > 0)
         {
             if (args.Length != 1 || args[0] != "--native-ui" || !OperatingSystem.IsMacOS() && !OperatingSystem.IsWindows()) throw new ArgumentException("Native composition mode requires a declared Windows or Mac runner.");
@@ -72,7 +93,7 @@ internal static class Program
             else builder.With(new Win32PlatformOptions { RenderingMode = new[] { Win32RenderingMode.Software } });
             var exit = builder.StartWithClassicDesktopLifetime(Array.Empty<string>(), ShutdownMode.OnExplicitShutdown);
             if (failure != null) throw new InvalidOperationException("Native trayless composition failed.", failure);
-            Assert(exit == 0 && checks.Count == 7);
+            Assert(exit == 0 && checks.Count == 9);
         }
         else CheckAppearance();
         Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, failed = 0, checks,

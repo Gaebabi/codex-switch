@@ -1,0 +1,123 @@
+{
+  "schema": 1,
+  "os": "Windows",
+  "architecture": "X64",
+  "appVersion": "1.42.2",
+  "passed": 28,
+  "failed": 0,
+  "checks": [
+    "en-dark-account-automation-numbered tiers and metadata fit",
+    "en-dark-account-automation-subscription date and days have headings",
+    "en-dark-account-automation-explicit Off label remains separate from counters",
+    "en-dark-account-automation-warning requests only the selected fictional login",
+    "ko-dark-account-automation-numbered tiers and metadata fit",
+    "ko-dark-account-automation-subscription date and days have headings",
+    "ko-dark-account-automation-explicit Off label remains separate from counters",
+    "ko-dark-account-automation-warning requests only the selected fictional login",
+    "en-dark-account-automation-automatic switching starts Off",
+    "en-dark-account-automation-On persists through the actual menu action",
+    "en-dark-account-automation-account menu persists custom first priority",
+    "en-dark-account-automation-threshold selection persists",
+    "en-dark-account-automation-reopened menu reflects On custom mode and threshold",
+    "en-dark-account-automation-ranked account submenu reflects the chosen order",
+    "en-light-account-automation-numbered tiers and metadata fit",
+    "en-light-account-automation-subscription date and days have headings",
+    "en-light-account-automation-explicit Off label remains separate from counters",
+    "en-light-account-automation-warning requests only the selected fictional login",
+    "ko-light-account-automation-numbered tiers and metadata fit",
+    "ko-light-account-automation-subscription date and days have headings",
+    "ko-light-account-automation-explicit Off label remains separate from counters",
+    "ko-light-account-automation-warning requests only the selected fictional login",
+    "en-light-account-automation-automatic switching starts Off",
+    "en-light-account-automation-On persists through the actual menu action",
+    "en-light-account-automation-account menu persists custom first priority",
+    "en-light-account-automation-threshold selection persists",
+    "en-light-account-automation-reopened menu reflects On custom mode and threshold",
+    "en-light-account-automation-ranked account submenu reflects the chosen order"
+  ],
+  "images": [
+    {
+      "file": "en-dark-account-automation-500x360.png",
+      "sha256": "7f7cfdd9b90ffc150fa9ec15a056d136da4f5c480d977eb3ce3b8a51d1586de0",
+      "width": 500,
+      "height": 360,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-dark-account-automation-enabled.png",
+      "sha256": "dc7e396a201f5f3b3c9c27af3bc6f8588e8f7e1c145695925da5f654bf9449e4",
+      "width": 600,
+      "height": 440,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-dark-account-automation-menu.png",
+      "sha256": "7636d3798ab08c29d646f6239e3f0234e626f4f9abf17f1ccdd85bf5cd1bb19c",
+      "width": 246,
+      "height": 314,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-dark-account-automation-order.png",
+      "sha256": "deca04a9ec5c7343e6fa205d638e16fa96cd8c092d5f7f0cd2212ddd62a5e2bd",
+      "width": 208,
+      "height": 164,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-light-account-automation-500x360.png",
+      "sha256": "9da3923ad12c2200902e1121cd04b32d2e356d01d353078cae97cd5e4f1c4842",
+      "width": 500,
+      "height": 360,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-light-account-automation-enabled.png",
+      "sha256": "8f43de4bb565d58373a5dfefc23f9c498567056c7fed8e2590e373582617a7f5",
+      "width": 600,
+      "height": 440,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-light-account-automation-menu.png",
+      "sha256": "e58de1595e1ad36c58d046054246a348bca75f49f6b32312545ba3948ea240ee",
+      "width": 246,
+      "height": 314,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-light-account-automation-order.png",
+      "sha256": "b83c9d7c6d9044c208f69425364723b1498c59ff5f5eb38707472ee64b56efb5",
+      "width": 208,
+      "height": 164,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "ko-dark-account-automation-500x360.png",
+      "sha256": "7ac2466f7f1b1bc23222e87c2fcf6ed1f11a4f43c51ce454d9e92feeedbf2f2b",
+      "width": 500,
+      "height": 360,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "ko-light-account-automation-500x360.png",
+      "sha256": "ffa0bc2b24873ddfdded97995199c903d5ce2943e6396f0407d870ecd78a4224",
+      "width": 500,
+      "height": 360,
+      "capture": "Actual app-owned Windows HWND or native menu popup",
+      "originalPixelsUnchanged": true
+    }
+  ],
+  "scope": "Actual own Windows app and menu HWNDs. Fictional account/quota/subscription inputs; browser intent intercepted by the existing evidence mode. No live login, Codex shutdown, Continue, personal screen or account access.",
+  "revision": "d1f483833b1c57aee6bbd923e7f5be3c9067039f",
+  "personalDataUsed": false
+}

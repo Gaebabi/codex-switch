@@ -1,6 +1,6 @@
 # Build and install
 
-Use an existing complete package, or build from this repository. Codex desktop/CLI must already be installed. Current source1.35.0 requires .NET10.0.4xx SDK and packages runtime10.0.13; published1.27.6 binaries remain unchanged.
+Download complete [1.43.3 Windows/macOS packages and Linux previews](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.3), or build from this repository. Packages include .NET10.0.13; a global .NET installation is unnecessary. Building requires .NET10.0.4xx SDK. Codex desktop/CLI must be installed separately.
 
 ## Windows
 
@@ -13,9 +13,11 @@ Run these commands from the repository root:
 
 `artifacts/win-x64` is the complete self-contained package. Keep the entire folder; an EXE alone is insufficient. An existing installed copy can be opened using its Codex Switch shortcut.
 
+Source1.40.5 builds additionally require the Windows NativeAOT prerequisites (Visual Studio C++ desktop build tools and Windows SDK); hosted Windows CI supplies them. Use `scripts/build.ps1` so the worker is published first and its exact hash is embedded in the account app. A direct account-project publish does not create a complete CPU-capable package. Keep `sensors/` with its executable and source/license files. The visible CPU download/authorization button is optional and requires explicit driver/worker approval; no separate monitor app is needed. [CPU setup and limits](TEMPERATURES.md#built-in-windows-cpu-sensor).
+
 ## Mac
 
-Current source packages declare macOS15 or later, matching the reviewed .NET10 support baseline. Published1.27.6 bundles have the older12.0 minimum; that metadata is not a current support guarantee for an unsupported OS. Choose your processor:
+Current packages require macOS15 or later. Choose Apple Silicon or Intel to match your Mac. For a source build:
 
 ```bash
 bash scripts/build-macos.sh osx-arm64 # Apple Silicon
@@ -30,10 +32,16 @@ The output is beneath `artifacts/macos/<rid>/`.
 
 The installer validates the new app and preserves the previous installation. Local builds use ad-hoc signing unless a Developer ID identity is configured. macOS may require its normal opening or Keychain authorization flow. [Mac details](MACOS.md)
 
-## First use
+## Linux preview
 
-Linux source1.39.1 provides complete unsigned native x64/ARM64 tar.gz/deb/rpm installation/UI preview candidates, with their runtime, menu/icon integration and data-preserving per-user lifecycle. [Candidate download/use/build/native verification](development/LINUX_PACKAGES.md). [Local desktop-session verification](development/LINUX_DESKTOP_SESSION.md) includes installed self-uninstall reporting. Contributors can also run `bash scripts/build-linux.sh` after installing the declared native dependencies. Ordinary account/handoff actions remain gated; these are not supported Linux account-switching releases. [Native environment and pending gates](development/LINUX.md).
+Release1.43.3 includes complete unsigned x64/ARM64 tar.gz/deb/rpm integration previews. [Download/use/build/native verification](development/LINUX_PACKAGES.md). DEB/RPM install system dependencies through the package manager; tar packages include a per-user installer. An existing supported Secret Service provider is required and is never replaced automatically. Full desktop/authenticated handoff acceptance remains separate from UI/package checks. [Requirements and pending gates](development/LINUX.md)
+
+Desktop integration pins official OpenAI Linux client26.1007.71326; newer versions require compatibility review. The selected context must already use file credentials. Start Codex through the utility before working. Explicit-checksum CLI-only mode provides account/usage actions without desktop resumption. [Local desktop-session scope](development/LINUX_DESKTOP_SESSION.md)
+
+## First use
 
 Select **+**, complete browser sign-in, compare the cards and choose **Switch**. In Windows, right-click **↻** to import the current Codex login.
 
-Download current [Windows x64, Mac Apple Silicon or Intel packages](https://github.com/Gaebabi/codex-switch/releases/tag/v1.27.6). They include the .NET runtime; keep the complete folder/bundle intact. SHA256SUMS.txt lists the ZIP checksums. No automatic updater is configured. Mac packages are not notarized; use the normal macOS first-launch approval flow described in [Mac setup](MACOS.md).
+If sign-in automatically reuses the previous browser account, open the new authorization request in a separate browser profile/private window. Never paste authorization URLs, tokens or login codes into an issue.
+
+Release1.43.3's SHA256SUMS.txt covers its nine native-built Windows/macOS/Linux packages and verification attachments. No automatic updater is configured. Mac packages are not notarized; use the normal first-launch approval flow in [Mac setup](MACOS.md). Existing releases remain available; current documentation describes current requirements.

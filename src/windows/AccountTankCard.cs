@@ -19,6 +19,7 @@ internal sealed class AccountTankCard : Grid
     private readonly TextBlock _depletion = new(), _reset = new();
     private readonly TextBlock _plan, _resetCredits, _subscriptionDate, _subscriptionDays, _credits;
     private readonly StackPanel _subscriptionLine;
+    private readonly TextBlock _endsLabel, _daysLabel;
     private readonly TextBlock _depletionLabel, _resetLabel;
     private readonly AccountCardHeader _header;
     private readonly Grid _layout, _metricHost;
@@ -86,10 +87,10 @@ internal sealed class AccountTankCard : Grid
         foreach (var label in new[] { _depletionLabel, _resetLabel }) { label.HorizontalAlignment = HorizontalAlignment.Left; label.Margin = new Thickness(0, 0, 10, 0); label.LineHeight = 14; }
         ConfigureSummary(_depletion); ConfigureSummary(_reset); footer.Children.Add(_depletionLabel); Grid.SetRow(_resetLabel, 1); footer.Children.Add(_resetLabel);
         Grid.SetColumn(_depletion, 1); footer.Children.Add(_depletion); Grid.SetRow(_reset, 1); Grid.SetColumn(_reset, 1); footer.Children.Add(_reset);
-        _plan = Text(PlanLabel(profile.Plan), 12, "text", FontWeights.SemiBold);
+        _plan = Text(SubscriptionPresentation.Plan(profile.Plan), 11, "muted", FontWeights.Medium);
         _plan.ToolTip = Loc.T("요금제") + " · " + (profile.Plan == "unknown" ? Loc.T("요금제 정보 없음") : _plan.Text);
         _subscriptionDate = Text(profile.SubscriptionActiveUntil is DateTimeOffset end
-            ? UsagePresentation.KoreanTime(end).ToString("MM'/'dd", System.Globalization.CultureInfo.InvariantCulture) : "—", 11, "muted", FontWeights.Medium);
+            ? UsagePresentation.KoreanTime(end).ToString("MM'/'dd", System.Globalization.CultureInfo.InvariantCulture) : "—", 11, "text", FontWeights.SemiBold);
         _subscriptionDate.ToolTip = profile.SubscriptionActiveUntil is DateTimeOffset until
             ? Loc.F("구독 종료 {0:yyyy/MM/dd HH:mm} (한국 시간)", UsagePresentation.KoreanTime(until)) : Loc.T("구독 종료일 정보 없음");
         _subscriptionDate.ToolTip += "\n" + Loc.T("로그인 정보의 구독 기간 기준");
@@ -99,18 +100,21 @@ internal sealed class AccountTankCard : Grid
         _plan.HorizontalAlignment = HorizontalAlignment.Right; _plan.Margin = new Thickness(8, 0, 0, 0); Grid.SetColumn(_plan, 2); footer.Children.Add(_plan);
         _subscriptionDays = Text("", 12, "text", FontWeights.SemiBold);
         _subscriptionDays.LineHeight = 14; _subscriptionDays.Margin = new Thickness(6, 0, 0, 0);
-        _subscriptionDays.Visibility = profile.SubscriptionActiveUntil.HasValue ? Visibility.Visible : Visibility.Collapsed;
+        _subscriptionDays.Visibility = Visibility.Visible;
         _subscriptionLine = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, ToolTip = _subscriptionDate.ToolTip };
-        _subscriptionLine.Children.Add(_subscriptionDate); _subscriptionLine.Children.Add(_subscriptionDays);
+        _endsLabel = Text(Loc.T("subscription.ends"), 11, "muted"); _endsLabel.Margin = new Thickness(0, 0, 6, 0);
+        _daysLabel = Text(Loc.T("subscription.left"), 11, "muted"); _daysLabel.Margin = new Thickness(8, 0, 0, 0);
+        _subscriptionLine.Children.Add(_endsLabel); _subscriptionLine.Children.Add(_subscriptionDate);
+        _subscriptionLine.Children.Add(_daysLabel); _subscriptionLine.Children.Add(_subscriptionDays);
         var resetCredits = profile.Usage?.AvailableResets;
-        _resetCredits = Text(resetCredits is int count ? Loc.F("초기화권 {0}장", count) : Loc.T("초기화권 —"), 12, "text", FontWeights.SemiBold);
+        _resetCredits = Text(resetCredits is int count ? Loc.F("초기화권 {0}장", count) : Loc.T("초기화권 —"), 11, "muted");
         _resetCredits.ToolTip = resetCredits is int available ? Loc.Count("초기화권 {0}개", available) : Loc.T("초기화권 정보 없음");
         if (profile.Error != null) _resetCredits.ToolTip += "\n" + Loc.T("갱신 실패 · 이전 값");
         _resetCredits.HorizontalAlignment = HorizontalAlignment.Right; _resetCredits.LineHeight = 14; _resetCredits.Margin = new Thickness(8, 0, 0, 0);
         Grid.SetColumn(_resetCredits, 2); Grid.SetRow(_resetCredits, 1); footer.Children.Add(_resetCredits);
         _last = new DockPanel { Margin = new Thickness(0, 6, 0, 0) };
         var creditBucket = profile.Usage?.Buckets.FirstOrDefault(b => b.Id == choice?.BucketId) ?? profile.Usage?.Buckets.FirstOrDefault(b => b.Id == "codex") ?? profile.Usage?.Buckets.FirstOrDefault();
-        _credits = Text(CreditLabel(creditBucket), 11, "text", FontWeights.SemiBold);
+        _credits = Text(CreditLabel(creditBucket), 11, "muted", FontWeights.Medium);
         _credits.LineHeight = 14; _credits.VerticalAlignment = VerticalAlignment.Center; _credits.Margin = new Thickness(8, 0, 0, 0);
         _credits.ToolTip = creditBucket?.UnlimitedCredits == true ? Loc.T("크레딧 제한 없음") : creditBucket?.CreditBalance is string balance ? Loc.F("크레딧 {0}", balance) : Loc.T("크레딧 정보 없음");
         DockPanel.SetDock(_credits, Dock.Right); _last.Children.Add(_credits);
@@ -128,11 +132,11 @@ internal sealed class AccountTankCard : Grid
         if (_compact != compact)
         {
             _compact = compact; _header.SetCompact(compact);
-            _state.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+            _state.Visibility = !compact && (_profile.Error != null || _profile.IsRefreshing) ? Visibility.Visible : Visibility.Collapsed;
         }
         _layout.Margin = compact ? new Thickness(8, 4, 8, 4) : new Thickness(14, 12, 14, 10);
         _last.Margin = new Thickness(0, compact ? 0 : 6, 0, 0); _reset.Margin = new Thickness(0);
-        _depletion.FontSize = _reset.FontSize = 12;
+        _depletion.FontSize = _reset.FontSize = 11;
         _depletion.Visibility = Visibility.Visible;
         _reset.Visibility = Visibility.Visible;
         _depletionLabel.Visibility = _depletion.Visibility; _resetLabel.Visibility = _reset.Visibility;
@@ -156,7 +160,7 @@ internal sealed class AccountTankCard : Grid
         var number = _numberRow.TransformToAncestor(this).TransformBounds(new Rect(_numberRow.RenderSize));
         var actions = _last.TransformToAncestor(this).TransformBounds(new Rect(_last.RenderSize));
         var headerActions = _header.Actions.TransformToAncestor(this).TransformBounds(new Rect(_header.Actions.RenderSize));
-        var metadata = new[] { _plan, _resetCredits, _subscriptionDate, _credits }.Concat(_profile.SubscriptionActiveUntil.HasValue ? new[] { _subscriptionDays } : Array.Empty<TextBlock>());
+        var metadata = new[] { _plan, _resetCredits, _credits }.Concat(_profile.SubscriptionActiveUntil.HasValue ? new[] { _subscriptionDate, _subscriptionDays } : Array.Empty<TextBlock>());
         var metadataFits = metadata.All(text =>
         {
             var bounds = text.TransformToAncestor(this).TransformBounds(new Rect(text.RenderSize));
@@ -179,27 +183,19 @@ internal sealed class AccountTankCard : Grid
         var value = Math.Abs(amount) >= 10000 ? (amount / 1000).ToString("0.#", Loc.Culture) + "K" : amount.ToString("#,0.##", Loc.Culture);
         return Loc.F("크레딧 {0}", value);
     }
-    private static string PlanLabel(string plan) => plan.Trim().ToLowerInvariant() switch
-    {
-        "" or "unknown" => Loc.T("요금제 —"),
-        "prolite" or "pro_lite" => "Pro Lite",
-        var value => System.Globalization.CultureInfo.InvariantCulture.TextInfo.ToTitleCase(value.Replace('_', ' '))
-    };
-    internal static string SubscriptionCountdown(DateTimeOffset? until, DateTimeOffset now)
-    {
-        if (until is not DateTimeOffset end) return "";
-        var days = (UsagePresentation.KoreanTime(end).Date - UsagePresentation.KoreanTime(now).Date).Days;
-        return days == 0 ? Loc.T("오늘") : days > 0 ? "D-" + days : "D+" + -days;
-    }
     private TextBlock Text(string text, double size, string color, FontWeight? weight = null) => new()
     { Text = text, FontSize = size, Foreground = _theme.Color(color), FontFamily = _theme.Font, FontWeight = weight ?? FontWeights.Normal, HorizontalAlignment = HorizontalAlignment.Center };
-    private void ConfigureSummary(TextBlock text) { text.FontSize = 12; text.LineHeight = 14; text.FontWeight = FontWeights.SemiBold; text.Foreground = _theme.Color("text"); text.TextAlignment = TextAlignment.Left; text.VerticalAlignment = VerticalAlignment.Center; text.TextTrimming = TextTrimming.CharacterEllipsis; }
+    private void ConfigureSummary(TextBlock text) { text.FontSize = 11; text.LineHeight = 14; text.FontWeight = FontWeights.Normal; text.Foreground = _theme.Color("muted"); text.TextAlignment = TextAlignment.Left; text.VerticalAlignment = VerticalAlignment.Center; text.TextTrimming = TextTrimming.CharacterEllipsis; }
     public void Update(DateTimeOffset now)
     {
-        _subscriptionDays.Text = SubscriptionCountdown(_profile.SubscriptionActiveUntil, now);
+        _subscriptionDays.Text = SubscriptionPresentation.Days(_profile.SubscriptionActiveUntil, now);
         var subscriptionWarning = AccountDateWarnings.Subscription(_profile.SubscriptionActiveUntil, now);
+        foreach (var label in new[] { _endsLabel, _subscriptionDate, _daysLabel, _subscriptionDays })
+            label.Visibility = _profile.SubscriptionActiveUntil.HasValue ? Visibility.Visible : Visibility.Collapsed;
         _subscriptionDate.Foreground = _theme.Color(subscriptionWarning ? "warning" : "muted");
-        _subscriptionDays.Foreground = _theme.Color(subscriptionWarning ? "warning" : "text");
+        _subscriptionDays.Foreground = _theme.Color(subscriptionWarning ? "warning" : "muted");
+        _state.Visibility = _compact != true && (_profile.Error != null || _profile.IsRefreshing) ? Visibility.Visible : Visibility.Collapsed;
+        _state.Margin = new Thickness(_profile.SubscriptionActiveUntil.HasValue ? 10 : 0, 0, 0, 0);
         _reset.Foreground = _theme.Color(AccountDateWarnings.Reset(_choice?.Window.ResetsAt, now) ? "warning" : "text");
         if (_choice == null)
         {
@@ -209,9 +205,9 @@ internal sealed class AccountTankCard : Grid
         _depletion.Text = forecast.State == ForecastState.ResetsFirst ? Loc.T("리셋 먼저")
             : forecast.ExhaustsAt is DateTimeOffset target ? CompactTime(target, now)
             : Loc.T(forecast.State switch { ForecastState.Collecting or ForecastState.InsufficientChange => "측정중", ForecastState.NoGrowth => "증가 없음", ForecastState.Stale => "갱신 필요", ForecastState.Exhausted => "한도 도달", _ => "갱신 대기" });
-        _depletion.Foreground = _theme.Color("text");
+        _depletion.Foreground = _theme.Color(forecast.State is ForecastState.Exhausted or ForecastState.Stale ? "warning" : "muted");
         if (_profile.Usage!.OrdinaryUsageAllowed == false || _profile.Usage.Buckets.Any(b => b.LimitState != null || b.SpendControlReached == true))
-        { _depletion.Text = Loc.T("사용 제한"); }
+        { _depletion.Text = Loc.T("사용 제한"); _depletion.Foreground = _theme.Color("warning"); }
         _depletion.ToolTip = UsagePresentation.Outlook(forecast) + "\n" + UsagePresentation.Basis(forecast)
             + (forecast.ExhaustsAt is DateTimeOffset time ? "\n" + UsagePresentation.KoreanTime(time).ToString("MM'/'dd HH:mm", Loc.Culture) + " · " + UsagePresentation.TimeLeft(time, now) : "");
         _reset.Text = window.ResetsAt is long reset ? CompactTime(DateTimeOffset.FromUnixTimeSeconds(reset), now) : "—";

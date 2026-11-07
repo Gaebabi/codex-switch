@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-17",
+  "nuget": [
+    {
+      "project": "src/macos/CodexSwitch.Mac.csproj",
+      "directAndTransitive": true,
+      "knownVulnerabilities": 0,
+      "sources": [
+        "https://api.nuget.org/v3/index.json"
+      ]
+    },
+    {
+      "project": "src/linux/CodexSwitch.Linux.csproj",
+      "directAndTransitive": true,
+      "knownVulnerabilities": 0,
+      "sources": [
+        "https://api.nuget.org/v3/index.json"
+      ]
+    },
+    {
+      "project": "src/windows/CodexSwitch.Windows.csproj",
+      "directAndTransitive": true,
+      "knownVulnerabilities": 0,
+      "sources": [
+        "https://api.nuget.org/v3/index.json"
+      ]
+    }
+  ],
+  "python": [
+    {
+      "name": "pillow",
+      "version": "12.3.0",
+      "vulns": []
+    },
+    {
+      "name": "pyyaml",
+      "version": "6.0.3",
+      "vulns": []
+    }
+  ],
+  "scope": "Known-vulnerability feed queries for the actual pinned packages, not a guarantee against unknown vulnerabilities or a full source security audit."
+}

@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "revision": "ec26e9fa9ee008b880ec8717a1e5b04f23781fe5",
+  "os": "macOS",
+  "architecture": "Arm64",
+  "appVersion": "1.37.0",
+  "rendering": "Software (native window)",
+  "images": [
+    {
+      "file": "en-dark-history-native.png",
+      "width": 1280,
+      "height": 816,
+      "sha256": "3f8f79e185bb0434194df5478b6ec43e1a081c127a56f89e0f659cc5cbebfc82",
+      "capture": "Native own NSWindow, English UI, fictional account and usage pattern"
+    },
+    {
+      "file": "en-light-history-native.png",
+      "width": 1280,
+      "height": 816,
+      "sha256": "9901ad6052c171deff77d967a666606df237440823fcd16a76d6271108b9ccea",
+      "capture": "Native own NSWindow, English UI, fictional account and usage pattern"
+    }
+  ],
+  "scope": "Actual unmodified production history window from an external source archive. Capture-only host instrumentation supplies a fictional Demo account and 24 hours of synthetic usage. No real account, Codex home, client lifecycle or network access. PNG metadata stripped."
+}

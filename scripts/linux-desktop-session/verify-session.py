@@ -97,11 +97,22 @@ def windows(pid):
     value = subprocess.run(['xdotool', 'search', '--onlyvisible', '--pid', str(pid)], capture_output=True, text=True, timeout=5)
     return value.stdout.splitlines() if value.returncode == 0 else []
 
-def capture(window, pid, name):
+def capture(window, pid, name, include_frame=False):
     check('Capture is bound to original application PID: ' + name, run(['xdotool', 'getwindowpid', window], capture_output=True, text=True).stdout.strip() == str(pid))
+    target = window
+    if include_frame:
+        tree = run(['xwininfo', '-id', window, '-tree'], capture_output=True, text=True).stdout
+        parent = re.search(r'Parent window id: (0x[0-9a-f]+)', tree)
+        desktop_root = re.search(r'Root window id: (0x[0-9a-f]+)', tree)
+        if not parent or not desktop_root or parent[1] == desktop_root[1]:
+            raise RuntimeError('Expected the original application native WM frame')
+        children = run(['xwininfo', '-id', parent[1], '-children'], capture_output=True, text=True).stdout
+        if not re.search(r'^\s+' + re.escape(hex(int(window))) + r'\s', children, re.MULTILINE):
+            raise RuntimeError('Native frame is not the original application parent')
+        target = parent[1]
     raw = root / 'capture.xwd'
     file = results / (name + '.png')
-    run(['xwd', '-silent', '-id', window, '-out', str(raw)])
+    run(['xwd', '-silent', '-id', target, '-out', str(raw)])
     run(['convert', str(raw), '-strip', str(file)])
     with Image.open(file) as source:
         rgb = source.convert('RGB')
@@ -110,10 +121,10 @@ def capture(window, pid, name):
         image = Image.new('RGB', rgb.size)
         image.paste(rgb)
         image.save(file)
-        images.append({'file': file.name, 'width': image.width, 'height': image.height, 'sha256': hashlib.sha256(file.read_bytes()).hexdigest(), 'capture': 'Actual ordinary installed application own XID; no --verify-ui or synthetic account injection'})
+        images.append({'file': file.name, 'width': image.width, 'height': image.height, 'sha256': hashlib.sha256(file.read_bytes()).hexdigest(), 'capture': 'Actual ordinary installed application own XID' + (' with verified direct-parent native WM frame' if include_frame else '') + '; no --verify-ui or synthetic account injection'})
 
 
-def wait_for_initialized_ui(window):
+def wait_for_initialized_ui(window, timeout=40):
     def observed():
         native = root / 'initialization-private.xwd'
         png = root / 'initialization-private.png'
@@ -125,7 +136,7 @@ def wait_for_initialized_ui(window):
             def ink(box):
                 return max(max(abs(pixel[channel] - background[channel]) for channel in range(3)) for pixel in frame.crop(box).getdata())
             return ink((9, frame.height - 24, 140, frame.height - 5)) > 20 and ink((frame.width - 149, frame.height - 24, frame.width - 9, frame.height - 5)) > 30
-    wait_for(observed, 40)
+    wait_for(observed, timeout)
 
 daemon = keyring()
 desktop = subprocess.Popen(['xfce4-session'], stdout=private_log, stderr=private_log)
@@ -161,6 +172,14 @@ try:
     handoff = json.loads(run(['/contracts/handoff/CodexSwitch.LinuxHandoff.Tests', str(root / 'codex-linux-handoff-test-integration')], capture_output=True, timeout=200).stdout)
     check('Production Linux account/coordinator/metadata/managed desktop integration passes offline', handoff['failed'] == 0 and handoff['passed'] == 8)
     phases.append(handoff)
+    terminal_root = root / 'codex-linux-terminal-test-integration'
+    terminal_env = dict(os.environ, CODEX_SWITCH_STANDALONE_CLI='/usr/lib/chatgpt/resources/codex', CODEX_SWITCH_STANDALONE_CLI_SHA=hashlib.sha256(Path('/usr/lib/chatgpt/resources/codex').read_bytes()).hexdigest(), CODEX_SWITCH_TERMINAL_EXPECTED_CLI_VERSION=expected['upstreamCliVersion'])
+    for variable in ('DISPLAY', 'WAYLAND_DISPLAY', 'XAUTHORITY'): terminal_env.pop(variable, None)
+    terminal = json.loads(run(['/contracts/terminal/CodexSwitch.LinuxTerminal.Tests', str(terminal_root), '/opt/codex-switch/CodexSwitch'], env=terminal_env, capture_output=True, timeout=180).stdout)
+    check('Actual installed headless terminal account contracts pass without DISPLAY', terminal['passed'] == 16 and terminal['failed'] == 0 and terminal['standaloneCliVersion'] == expected['upstreamCliVersion'] and terminal['declaredExpectedCliVersion'] == expected['upstreamCliVersion'])
+    phases.append(terminal)
+    lifecycle = json.loads(run([sys.executable, '/work/verify-linux-terminal-lifecycle.py', '--app', '/opt/codex-switch/CodexSwitch', '--home', str(terminal_root / 'home'), '--data', str(terminal_root / 'vault'), '--cli', '/usr/lib/chatgpt/resources/codex', '--report', str(results / 'terminal-lifecycle.json'), '--revision', expected['testRevision']], env=terminal_env, capture_output=True, timeout=150).stdout)
+    check('Official CLI exact-session resume persists one Continue after headless switching and returns normal interruption honestly', lifecycle['passed'] == 1 and lifecycle['failed'] == 0 and not lifecycle['authenticatedInference'])
     ordinary_home = root / 'ordinary-codex'
     ordinary_home.mkdir(mode=0o700)
     (ordinary_home / 'config.toml').write_text('cli_auth_credentials_store = "file"\nanalytics.enabled = false\n')
@@ -172,6 +191,10 @@ try:
     run([app, '--install-package'], stdout=private_log, stderr=private_log)
     entry = root / 'share/applications/codex-switch.desktop'
     run(['desktop-file-validate', str(entry)])
+    ordinary_vault = root / 'share/CodexAccountDesk/accounts.vault'
+    check('Locked-startup case begins without an application vault or canonical login', not ordinary_vault.exists() and not (ordinary_home / 'auth.json').exists())
+    gdbus('org.freedesktop.secrets', '/org/freedesktop/secrets', 'org.freedesktop.Secret.Service.Lock', "['" + collection + "']")
+    phase('locked')
     run(['gio', 'launch', str(entry)], stdout=private_log, stderr=private_log)
     executable = (root / 'share/codex-switch/current/CodexSwitch').resolve()
     def find_app():
@@ -186,16 +209,25 @@ try:
         return None
     pid, window = wait_for(find_app, 30)
     check('Ordinary desktop entry launches the actual per-user installed program', Path('/proc/' + str(pid) + '/exe').resolve() == executable)
+    time.sleep(3)
+    check('An initially locked keyring prevents ordinary application vault creation', not ordinary_vault.exists())
+    capture(window, pid, 'ordinary-locked-startup', include_frame=True)
+    phase('unlock', password)
+    wait_for(lambda: ordinary_vault.is_file(), 85)
     wait_for_initialized_ui(window)
+    check('Same ordinary window automatically recovers after keyring unlock without app input', Path('/proc/' + str(pid) + '/exe').resolve() == executable and window in windows(pid) and ordinary_vault.read_bytes().startswith(b'CADL1') and not (ordinary_home / 'auth.json').exists())
+    capture(window, pid, 'ordinary-unlocked-recovery', include_frame=True)
     check('Ordinary account initialization visibly completes with configured volume and capability status', (root / 'share/CodexAccountDesk/accounts.vault').read_bytes().startswith(b'CADL1') and not (ordinary_home / 'auth.json').exists())
     run(['xdotool', 'windowactivate', '--sync', window])
     for width, height in ((500, 360), (600, 420), (800, 600)):
         run(['xdotool', 'windowsize', '--sync', window, str(width), str(height)])
         time.sleep(0.6)
         capture(window, pid, f'ordinary-dark-{width}x{height}')
+    capture(window, pid, 'ordinary-native-frame', include_frame=True)
     run(['xdotool', 'windowsize', '--sync', window, '500', '360'])
     before_login_vault = (root / 'share/CodexAccountDesk/accounts.vault').read_bytes()
-    run(['xdotool', 'mousemove', '--window', window, '359', '17', 'click', '1'])
+    # Add/Refresh/Settings are the final three 28px titlebar actions.
+    run(['xdotool', 'mousemove', '--window', window, '430', '17', 'click', '1'])
     def login_controls(pending):
         raw = root / 'login-controls-private.xwd'
         png = root / 'login-controls-private.png'
@@ -211,7 +243,9 @@ try:
     wait_for(lambda: login_controls(False), 20)
     check('Ordinary Cancel restores the ready toolbar without changing existing ciphertext or creating authentication', not (ordinary_home / 'auth.json').exists() and (root / 'share/CodexAccountDesk/accounts.vault').read_bytes() == before_login_vault)
     run(['xdotool', 'windowsize', '--sync', window, '800', '600'])
-    run(['xdotool', 'mousemove', '--window', window, '631', '17', 'click', '1'])
+    run(['xdotool', 'mousemove', '--window', window, '786', '17', 'click', '1'])
+    # Settings ends with Start Codex and Quit; use its real keyboard path.
+    run(['xdotool', 'key', '--delay', '100', 'End', 'Up', 'Return'])
     def managed_client():
         for process in Path('/proc').glob('[0-9]*'):
             try:
@@ -224,7 +258,7 @@ try:
                 continue
         return None
     client_pid, client_window = wait_for(managed_client, 40)
-    check('Ordinary Start Codex button launches its own actual approved desktop child', Path('/proc/' + str(client_pid) + '/exe').resolve() == Path('/usr/lib/chatgpt/ChatGPT'))
+    check('Ordinary Settings > Start Codex launches its own actual approved desktop child', Path('/proc/' + str(client_pid) + '/exe').resolve() == Path('/usr/lib/chatgpt/ChatGPT'))
     run(['xdotool', 'windowactivate', '--sync', client_window])
     active = run(['xdotool', 'getactivewindow'], capture_output=True, text=True).stdout.strip()
     if active != client_window:
@@ -235,15 +269,18 @@ try:
     wait_for(lambda: not Path('/proc/' + str(client_pid)).exists(), 40)
     check('Ordinary managed start keeps authentication empty and allows normal application Quit', not (ordinary_home / 'auth.json').exists())
     run(['xdotool', 'windowactivate', '--sync', window])
-    run(['xdotool', 'mousemove', '--window', window, '758', '17', 'click', '1'])
+    run(['xdotool', 'mousemove', '--window', window, '786', '17', 'click', '1'])
+    # From Quit: Start, import, drives, appearance; then choose Light.
+    run(['xdotool', 'key', '--delay', '100', 'End', 'Up', 'Up', 'Up', 'Up', 'Right', 'End', 'Return'])
     run(['xdotool', 'mousemove', '--window', window, '20', '80'])
     time.sleep(0.5)
     capture(window, pid, 'ordinary-light-800x600')
     with Image.open(results / 'ordinary-dark-800x600.png') as before, Image.open(results / 'ordinary-light-800x600.png') as after:
-        check('Ordinary theme button changes the rendered application theme', sum(after.convert('RGB').getpixel((5, 80))) > sum(before.convert('RGB').getpixel((5, 80))) + 200)
+        check('Ordinary Settings > appearance changes the rendered application theme', sum(after.convert('RGB').getpixel((5, 80))) > sum(before.convert('RGB').getpixel((5, 80))) + 200)
     run(['xdotool', 'key', '--window', window, 'F5'])
     check('Ordinary refresh keeps the installed program alive', Path('/proc/' + str(pid)).exists())
-    run(['xdotool', 'key', '--window', window, 'ctrl+w'])
+    run(['xdotool', 'windowactivate', '--sync', window])
+    run(['xdotool', 'key', 'ctrl+w'])
     wait_for(lambda: not Path('/proc/' + str(pid)).exists())
     check('Ordinary trayless close exits the installed process', not Path('/proc/' + str(pid)).exists())
     run(['gio', 'launch', str(entry)], stdout=private_log, stderr=private_log)
@@ -251,8 +288,32 @@ try:
     wait_for_initialized_ui(window)
     capture(window, pid, 'ordinary-reopened')
     run(['xdotool', 'windowactivate', '--sync', window])
-    run(['xdotool', 'key', '--window', window, 'ctrl+w'])
+    run(['xdotool', 'key', 'ctrl+w'])
     wait_for(lambda: not Path('/proc/' + str(pid)).exists())
+    framed_directory = results / 'framed-demo'
+    before_framed_vault = ordinary_vault.read_bytes()
+    framed_environment = dict(os.environ, CODEX_SWITCH_CAPTURE_WM_FRAMES='1')
+    run([str(executable), '--verify-ui', str(framed_directory)], env=framed_environment, stdout=private_log, stderr=private_log, timeout=120)
+    framed_render = json.loads((framed_directory / 'render-report.json').read_text())
+    framed_report = json.loads((framed_directory / 'wm-report.json').read_text())
+    check('Actual installed Linux app renders four fictional cards inside twelve original Xfce frames', framed_render['failures'] == 0 and len(framed_render['checks']) == 12 and framed_report['failures'] == 0 and len(framed_report['frames']) == 12)
+    frame_records = []
+    for frame in framed_report['frames']:
+        check('Native frame capture binds app PID/direct parent and excludes desktop: ' + frame['File'], frame['WindowManager'] == 'Xfwm4' and frame['OriginalAppPidVerified'] and frame['DirectParentFrameVerified'] and frame['DesktopRootExcluded'] and frame['DemoAccounts'] == 4)
+        if frame['File'] not in ('en-dark-800x600-native-wm.png', 'en-light-800x600-native-wm.png'):
+            continue
+        name = 'accounts-' + ('dark' if '-dark-' in frame['File'] else 'light') + '-native-frame.png'
+        with Image.open(framed_directory / frame['File']) as source:
+            source.load()
+            check('Actual account overview includes the original WM border and titlebar: ' + name, source.width > 800 and source.height > 600 and source.width < 900 and source.height < 700)
+            clean = Image.new('RGB', source.size)
+            clean.paste(source.convert('RGB'))
+            clean.save(results / name)
+        record = dict(frame, file=name, sha256=hashlib.sha256((results / name).read_bytes()).hexdigest(), width=clean.width, height=clean.height)
+        frame_records.append(record)
+        images.append({'file': name, 'width': clean.width, 'height': clean.height, 'sha256': record['sha256'], 'capture': 'Actual installed application in isolated UI demo mode, four fictional accounts and verified original direct-parent Xfce frame; no composited titlebar or real login'})
+    check('Both native dark/light account overviews preserve the ordinary vault bytes and empty auth home', len(frame_records) == 2 and ordinary_vault.read_bytes() == before_framed_vault and not (ordinary_home / 'auth.json').exists())
+    (results / 'framed-accounts.json').write_text(json.dumps({'schema': 1, 'expected': expected, 'renderChecks': len(framed_render['checks']), 'nativeFramesVerified': len(framed_report['frames']), 'frames': frame_records, 'scope': framed_report['scope']}, indent=2) + '\n')
     cli_home = root / 'ordinary-cli-only'
     cli_home.mkdir(mode=0o700)
     (cli_home / 'config.toml').write_text('cli_auth_credentials_store = "file"\nanalytics.enabled = false\n')
@@ -266,7 +327,8 @@ try:
     time.sleep(1)
     capture(window, pid, 'ordinary-cli-only-800x600')
     run(['xdotool', 'windowactivate', '--sync', window])
-    run(['xdotool', 'key', '--window', window, 'ctrl+w'])
+    run(['xdotool', 'windowactivate', '--sync', window])
+    run(['xdotool', 'key', 'ctrl+w'])
     cli_ui.wait(timeout=30)
     check('Ordinary CLI-only trayless close preserves its empty auth home', cli_ui.returncode == 0 and not (cli_home / 'auth.json').exists())
     removed = json.loads(run([str(executable), '--uninstall-package'], capture_output=True).stdout)

@@ -1,0 +1,236 @@
+{
+  "schema": 1,
+  "revision": "b6ed2ba7b422c3193d8445bc5e87fa60f2ef82e5",
+  "os": "Windows",
+  "architecture": "X64",
+  "runtime": ".NET 10.0.13",
+  "appVersion": "1.40.6",
+  "images": [
+    {
+      "file": "en-dark-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "a971efaa58d5157170a76d66cdb5a406b0dd39f1ac5f54b1edae1f0107446d1b",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "ca0f5662e328f5cdae186e255f279964db23c09014961e4023c0396c9e60c8d9",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-cpu-available.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "82a3195b26a27c7bf060594c9db85aef30ada488a1b0869aa3b2dbaf42d646e1",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-cpu-denied.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "f12d6d4172448e6cd29d0c7b6a546476a47e1b552d5eef76ec59c05f3e228b71",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-cpu-menu.png",
+      "width": 275,
+      "height": 68,
+      "sha256": "84345ac536d1a66ae79e0539343862372c4f148973450d4f087534ecc01d18e8",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-cpu-setup.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "f12d6d4172448e6cd29d0c7b6a546476a47e1b552d5eef76ec59c05f3e228b71",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-disk-compact.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "93b733e4ae059dafcd87f19b67356614b2c308024024ff915b4481dfecee394c",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-disk-normal.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "d63a870653172804335dd5d694caf59990d64eb3c0b383098d63f10b948e81f1",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-disk-pressure.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "6772791ff3253010bb8173eeb07ce666fa1411a31af9c22af5c8db498b429ae1",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-disk-tooltip.png",
+      "width": 320,
+      "height": 426,
+      "sha256": "bf7bcb43e14ab6c4a91754419da74d3365ce11c0c542057e147b614c859c0a9f",
+      "capture": "WPF tooltip component at detached-owner boundary"
+    },
+    {
+      "file": "en-dark-disk-unknown.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "e76c5a4beb41baa9dfab7c597d18f9f6ed6b40183390df1fd9d316ca5bd07623",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-history.png",
+      "width": 620,
+      "height": 380,
+      "sha256": "6ccd190f93f3dc4098267facbb154002af558e673893c8d96d144fb246e678ec",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-language.png",
+      "width": 227,
+      "height": 360,
+      "sha256": "d024c5ceec328527b3d5100eccc58323af32b48e860d6521f6a3277b2c23d757",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-tooltip.png",
+      "width": 135,
+      "height": 54,
+      "sha256": "11aff2470f0fc48fd2ad5063c732564c4005c15fbf5c3b23e22c76416cd0ae45",
+      "capture": "WPF tooltip component at detached-owner boundary"
+    },
+    {
+      "file": "en-light-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "46d2245dd3095b0af492cff6ba139eb862187b53e2425eeb7104010fb480f3a3",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "4553384ce4181d984ecc397e6db0021c8d39102b2b3fdf0dfc3c4b62c0acfdee",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-cpu-available.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "bad6111973eaa095277ff581bda9e52083e7fdc6fca4cbb8b6cb421e49687f26",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-cpu-denied.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "4608afeba73a1f1c83750bb56f670d73e393cbb610eb4cabc0de9c4c6451aae6",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-cpu-menu.png",
+      "width": 275,
+      "height": 68,
+      "sha256": "3660815c376ffcd49e3de90c53b320fe4baa0fc63f6e2c4a4f7a8e50f8ce85a1",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-cpu-setup.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "4608afeba73a1f1c83750bb56f670d73e393cbb610eb4cabc0de9c4c6451aae6",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-disk-compact.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "278a761c980c4ee17a020f4074344b161e9ea6a298265ae8e48465cb10a433af",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-disk-normal.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "43f78c65c81dc96d831699ae2e94c3cdf1394daf7d41f90fb56b3732f46123d6",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-disk-pressure.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "f8af959e9e974afe23e62ddff8b031729859bf15af841028022eccfceccdfd87",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-disk-tooltip.png",
+      "width": 320,
+      "height": 426,
+      "sha256": "bb721ecd2033863ed9532ae0e07570b01f2a4f308db759b401229f036ba26196",
+      "capture": "WPF tooltip component at detached-owner boundary"
+    },
+    {
+      "file": "en-light-disk-unknown.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "7c8468339e21bbae99557d0cd2c55a1f750be3a9c4f6fabfb6c3ef439f6a1563",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-history.png",
+      "width": 620,
+      "height": 380,
+      "sha256": "b924e93a0a5c928bb68d1a7c2e85d1d30aee18df8ba09965f151cd6ee643bf1a",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-language.png",
+      "width": 227,
+      "height": 360,
+      "sha256": "6138ec8b04080439352edb30501607505081e2c1b261e0c8e4b3b9d7ab976430",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-tooltip.png",
+      "width": 135,
+      "height": 54,
+      "sha256": "6af68b1b5d550178fcb4783c621b8ee25217fe4ed989b93aabbea5cc48fdac87",
+      "capture": "WPF tooltip component at detached-owner boundary"
+    },
+    {
+      "file": "ko-dark-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "007822c6be05b14a0a24a5ce51f06173898c1569775ecb7257500f8566628ee6",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-dark-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "fa1d4f7ef494f1524ef4607581b27d4e97b63b0c725dafeef67c2d724fc95580",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-light-500x360.png",
+      "width": 500,
+      "height": 360,
+      "sha256": "1579aa4b18a77e1be31fdb5dffed6a04685e7f356c7e5e22adf955940c6bf53f",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "ko-light-800x560.png",
+      "width": 800,
+      "height": 560,
+      "sha256": "131987420c218137aa89826774e2b670b1a4b5926f09ab5fa4981b924218af92",
+      "capture": "Native own window or popup"
+    }
+  ],
+  "rendering": "Windows native WPF",
+  "scope": "Published app on the stated OS; native own windows/popups and explicitly labeled WPF tooltip component renders, synthetic accounts only. No personal desktop/credentials/Codex action or account-switch/resume acceptance."
+}

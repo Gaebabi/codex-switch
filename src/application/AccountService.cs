@@ -24,11 +24,32 @@ internal sealed class AccountService
     public event Action? Changed;
     private readonly RefreshCoordinator _queries;
     private readonly SemaphoreSlim _querySlots = new(3, 3);
+    private readonly SemaphoreSlim _installationGate = new(1, 1);
     private readonly SemaphoreSlim _loginGate = new(1, 1);
     private readonly SemaphoreSlim _switchGate = new(1, 1);
     private readonly CancellationTokenSource _shutdown = new();
     private readonly LinuxClientSelection? _linuxClient;
     private readonly string _contextDirectory;
+    private ModelProviderManager? _modelProviders;
+    private readonly object _modelProvidersGate = new();
+    internal ModelProviderManager ModelProviders
+    {
+        get
+        {
+            lock (_modelProvidersGate)
+            {
+                if (_shutdown.IsCancellationRequested) throw new ObjectDisposedException(nameof(AccountService));
+                return _modelProviders ??= CreateModelProviders();
+            }
+        }
+    }
+    private ModelProviderManager CreateModelProviders() => new ModelProviderManager(Vault.DirectoryPath,
+        (authorization, account) => GatewayIdentity.Authenticate(authorization, account, () =>
+        {
+            if (!File.Exists(AuthPath)) return null;
+            if ((File.GetAttributes(AuthPath) & FileAttributes.ReparsePoint) != 0) throw new IOException("The Codex sign-in file is a linked path.");
+            return Encoding.UTF8.GetString(SecureFiles.ReadPrivateBytes(AuthPath));
+        }));
     internal LinuxDesktopRuntime? LinuxDesktop { get; }
     internal bool HasLinuxDesktop => LinuxDesktop != null;
     private HashSet<string> _switchTargets = new();
@@ -51,7 +72,9 @@ internal sealed class AccountService
                 Key = p.Key, Alias = p.Alias, Email = p.Email, AccountId = p.AccountId, Plan = p.Plan,
                 SubscriptionActiveUntil = p.SubscriptionActiveUntil, SubscriptionLastChecked = p.SubscriptionLastChecked,
                 IsCurrent = p.Key == CurrentKey, RequiresApply = p.RequiresApply, Usage = p.Usage, Error = p.Error,
-                IsRefreshing = _queries.IsRunning(p.Key), History = p.History.Select(t => t.Copy()).ToList()
+                IsRefreshing = _queries.IsRunning(p.Key), History = p.History.Select(t => t.Copy()).ToList(),
+                CreditHistory = p.CreditHistory.Select(t => t.Copy()).ToList(),
+                RecoveredCreditHistory = p.RecoveredCreditHistory.ToList()
             }).ToArray();
         }
     }
@@ -64,6 +87,7 @@ internal sealed class AccountService
         if (policy != null && CanonicalAuthExists()) LinuxClientSession.RequireFile(policy, AuthDocument.Parse(ReadCanonicalAuth()).AccountId);
         await Task.Run(() => RuntimeHome.CleanupStale(Vault.DirectoryPath), cancellation).ConfigureAwait(false);
         lock (Vault.SyncRoot) { Installation = installation; SynchronizeCurrentCore(policy); Vault.Save(); }
+        if (File.Exists(Path.Combine(Vault.DirectoryPath, "model-providers.vault"))) ModelProviders.StartConfigured();
         Changed?.Invoke();
     }
     public AccountProfile? SynchronizeCurrent()
@@ -191,7 +215,7 @@ internal sealed class AccountService
         finally { _querySlots.Release(); Changed?.Invoke(); }
     }
     private bool IsCurrentRevision(AccountProfile profile, long revision) => Vault.Data.Accounts.Contains(profile) && profile.CredentialRevision == revision;
-    public async Task<AccountRegistration> AddAccountAsync(Action<Uri> openBrowser, CancellationToken cancellation)
+    public async Task<AccountRegistration> AddAccountAsync(Action<Uri> openBrowser, CancellationToken cancellation, string? expectedAccountKey = null)
     {
         if (!await _loginGate.WaitAsync(0, cancellation).ConfigureAwait(false)) throw new InvalidOperationException("이미 로그인 창이 열려 있습니다.");
         try
@@ -247,19 +271,22 @@ internal sealed class AccountService
             }
             var auth = home.ReadAuth();
             if (client != null) await client.RequireFileAsync(cancellation, AuthDocument.Parse(auth).AccountId).ConfigureAwait(false);
-            return CompleteRegistrationCore(auth);
+            return CompleteRegistrationCore(auth, expectedAccountKey);
         }
         finally { _loginGate.Release(); Changed?.Invoke(); }
     }
-    internal AccountRegistration CompleteRegistration(string authJson)
+    internal AccountRegistration CompleteRegistration(string authJson, string? expectedAccountKey = null)
     {
-        RequireLegacySync(); return CompleteRegistrationCore(authJson);
+        RequireLegacySync(); return CompleteRegistrationCore(authJson, expectedAccountKey);
     }
-    private AccountRegistration CompleteRegistrationCore(string authJson)
+    private AccountRegistration CompleteRegistrationCore(string authJson, string? expectedAccountKey = null)
     {
         string key;
         lock (Vault.SyncRoot)
         {
+            if (expectedAccountKey != null && (AuthDocument.Parse(authJson).Key != expectedAccountKey ||
+                !Vault.Data.Accounts.Any(p => p.Key == expectedAccountKey)))
+                throw new InvalidOperationException(Loc.T("account.relogin_mismatch"));
             var profile = Vault.Upsert(authJson);
             var active = CanonicalAuthExists() ? ReadCanonicalAuth() : null;
             profile.RequiresApply = active != null && AuthDocument.Parse(active).Key == profile.Key && active != profile.AuthJson;
@@ -270,7 +297,7 @@ internal sealed class AccountService
         return new AccountRegistration(Accounts.Single(a => a.Key == key), refresh);
     }
     public async Task ApplySwitchAsync(string key, Func<bool>? desktopRunning, bool launch, CancellationToken cancellation,
-        string? expectedSource = null, bool verifySource = false)
+        string? expectedSource = null, bool verifySource = false, bool requireCliQuiescence = false)
     {
         await _switchGate.WaitAsync(cancellation).ConfigureAwait(false);
         TaskCompletionSource<bool>? finished = null;
@@ -280,7 +307,8 @@ internal sealed class AccountService
             lock (Vault.SyncRoot) workspace = Vault.Data.Accounts.Find(a => a.Key == key)?.AccountId;
             await using var client = await OpenLinuxAsync(cancellation, workspace).ConfigureAwait(false);
             var installation = client?.Installation ?? await RuntimeLocator.FindAsync(cancellation).ConfigureAwait(false);
-            bool Running() => OperatingSystem.IsLinux() ? LinuxDesktopRuntime.Running(cancellation).Length != 0 :
+            bool Running() => OperatingSystem.IsLinux() ? LinuxDesktopRuntime.Running(cancellation).Length != 0 ||
+                requireCliQuiescence && LinuxTerminalProcesses.AnyRunning(client!.InspectionProcessId, installation.CliPath, cancellation) :
                 desktopRunning?.Invoke() ?? RuntimeLocator.IsDesktopRunning(installation.DesktopPath);
             if (Running()) throw new InvalidOperationException("Codex가 아직 실행 중입니다. 앱 메뉴에서 완전히 종료해 주세요.");
             lock (Vault.SyncRoot)
@@ -332,12 +360,33 @@ internal sealed class AccountService
         lock (Vault.SyncRoot)
         {
             if (key == CurrentKey) throw new InvalidOperationException("현재 로그인 계정은 제거할 수 없습니다.");
-            Vault.Data.Accounts.RemoveAll(a => a.Key == key); Vault.Save();
+            if (Vault.Data.ActivePendingSwitch?.TargetAccountKey == key || Vault.Data.ActivePendingSwitch?.SourceAccountKey == key)
+                throw new InvalidOperationException("남은 채팅 재개 작업을 먼저 처리해 주세요.");
+            Vault.Data.Accounts.RemoveAll(a => a.Key == key); Vault.Data.AutomaticSwitchPriority.RemoveAll(k => k == key); Vault.Save();
         }
         Changed?.Invoke();
     }
-    public Task StopAsync() { _shutdown.Cancel(); return _queries.CancelAndDrainAsync(); }
+    public async Task StopAsync()
+    {
+        _shutdown.Cancel(); await _queries.CancelAndDrainAsync().ConfigureAwait(false);
+        ModelProviderManager? providers;
+        lock (_modelProvidersGate) { providers = _modelProviders; _modelProviders = null; }
+        if (providers != null) await providers.DisposeAsync().ConfigureAwait(false);
+    }
     internal void ReleaseDesktop() => LinuxDesktop?.Dispose();
+    internal Task ConnectModelProvidersAsync(CancellationToken cancellation)
+    {
+        if (string.IsNullOrEmpty(Installation.CliPath)) throw new InvalidOperationException("The Codex runtime is not ready. Refresh the dashboard before connecting.");
+        return ModelProviders.ConnectAsync(Installation.CliPath, CodexHome, cancellation);
+    }
+    internal Task DisconnectModelProvidersAsync(CancellationToken cancellation)
+    {
+        if (string.IsNullOrEmpty(Installation.CliPath)) throw new InvalidOperationException("The Codex runtime is not ready. Refresh the dashboard before restoring.");
+        return ModelProviders.DisconnectAsync(Installation.CliPath, CodexHome, cancellation);
+    }
+    // Keep read-only native provider types out of the shared UI assembly.
+    internal bool DesktopRunning(CancellationToken cancellation) => OperatingSystem.IsLinux() ?
+        LinuxDesktopRuntime.Running(cancellation).Length != 0 : RuntimeLocator.IsDesktopRunning(Installation.DesktopPath);
     internal Task StartDesktopAsync(CancellationToken cancellation) => LinuxDesktop?.StartAsync(cancellation) ??
         throw new PlatformNotSupportedException("This client selection has no managed Linux desktop.");
     internal Task<LinuxClientSession> OpenMetadataSessionAsync(CancellationToken cancellation) =>
@@ -396,9 +445,31 @@ internal sealed class AccountService
     private async Task<CodexRpc> OpenAccountRpcAsync(string home, LinuxClientSession? client, string? workspace, CancellationToken cancellation)
     {
         if (client != null) return await client.OpenIsolatedRpcAsync(home, workspace, cancellation).ConfigureAwait(false);
-        var rpc = new CodexRpc(Installation.CliPath, home);
+        var installation = OperatingSystem.IsWindows() ? await WindowsInstallationAsync(cancellation).ConfigureAwait(false) : Installation;
+        var rpc = new CodexRpc(installation.CliPath, home);
         try { await rpc.InitializeAsync(cancellation).ConfigureAwait(false); return rpc; }
         catch { await rpc.DisposeAsync().ConfigureAwait(false); throw; }
+    }
+
+    private async Task<CodexInstallation> WindowsInstallationAsync(CancellationToken cancellation)
+    {
+        cancellation.ThrowIfCancellationRequested();
+        CodexInstallation Read() { lock (Vault.SyncRoot) return Installation; }
+        static bool Available(CodexInstallation value) => File.Exists(value.CliPath) &&
+            (value.DesktopPath.Length == 0 || File.Exists(value.DesktopPath));
+        var installation = Read();
+        if (Available(installation)) return installation;
+        // Most refreshes only check the cached files. Parallel accounts share one rediscovery.
+        await _installationGate.WaitAsync(cancellation).ConfigureAwait(false);
+        try
+        {
+            installation = Read();
+            if (Available(installation)) return installation;
+            installation = await RuntimeLocator.FindAsync(cancellation).ConfigureAwait(false);
+            lock (Vault.SyncRoot) Installation = installation;
+            return installation;
+        }
+        finally { _installationGate.Release(); }
     }
 }
 

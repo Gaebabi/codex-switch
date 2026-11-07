@@ -1,0 +1,123 @@
+{
+  "schema": 1,
+  "revision": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+  "applicationSource": "b8b283d4d6613252108f6d676e16b8de3dfd69ca",
+  "os": "Windows",
+  "architecture": "X64",
+  "appVersion": "1.41.1",
+  "baseline": false,
+  "passed": 42,
+  "failed": 0,
+  "checks": [
+    "Only the two failed accounts expose a warning control",
+    "Account refresh failures do not replace the disk monitor",
+    "Hardware and disk rows fit without overlap at minimum size",
+    "Each warning is a reachable compact control beside its account name",
+    "Warning name and full explanation are available to assistive technology",
+    "Each warning is a reachable compact control beside its account name",
+    "Warning name and full explanation are available to assistive technology",
+    "Only the two failed accounts expose a warning control",
+    "Account refresh failures do not replace the disk monitor",
+    "Hardware and disk rows fit without overlap at minimum size",
+    "Each warning is a reachable compact control beside its account name",
+    "Warning name and full explanation are available to assistive technology",
+    "Each warning is a reachable compact control beside its account name",
+    "Warning name and full explanation are available to assistive technology",
+    "Hover opens the single account tooltip without a second system tooltip owner",
+    "Leaving a hover-only warning closes its explanation",
+    "Click pins the same themed wrapped full explanation after pointer exit",
+    "Escape dismisses the account explanation",
+    "Successful refresh removes only that warning and closes its old popup",
+    "Healthy accounts restore without stale warnings or hidden disks",
+    "Global operation warnings fit below visible disks at normal and minimum size",
+    "Only the two failed accounts expose a warning control",
+    "Account refresh failures do not replace the disk monitor",
+    "Hardware and disk rows fit without overlap at minimum size",
+    "Each warning is a reachable compact control beside its account name",
+    "Warning name and full explanation are available to assistive technology",
+    "Each warning is a reachable compact control beside its account name",
+    "Warning name and full explanation are available to assistive technology",
+    "Only the two failed accounts expose a warning control",
+    "Account refresh failures do not replace the disk monitor",
+    "Hardware and disk rows fit without overlap at minimum size",
+    "Each warning is a reachable compact control beside its account name",
+    "Warning name and full explanation are available to assistive technology",
+    "Each warning is a reachable compact control beside its account name",
+    "Warning name and full explanation are available to assistive technology",
+    "Hover opens the single account tooltip without a second system tooltip owner",
+    "Leaving a hover-only warning closes its explanation",
+    "Click pins the same themed wrapped full explanation after pointer exit",
+    "Escape dismisses the account explanation",
+    "Successful refresh removes only that warning and closes its old popup",
+    "Healthy accounts restore without stale warnings or hidden disks",
+    "Global operation warnings fit below visible disks at normal and minimum size"
+  ],
+  "images": [
+    {
+      "file": "en-dark-account-warning-500x360.png",
+      "sha256": "7bc4563a8afcd5c33122b9aba1bffd11221da8d29f59da36d5e669532585d58d",
+      "width": 500,
+      "height": 360,
+      "capture": "Actual owned app/popup HWND",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-dark-account-warning-600x440.png",
+      "sha256": "ccd72b4f7329105fba766887b205733a2f35f81746dce6b89f159c1455b3ac9a",
+      "width": 600,
+      "height": 440,
+      "capture": "Actual owned app/popup HWND",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-dark-account-warning-global.png",
+      "sha256": "25403805857363a90e53af2b9233b60d18e9be89436d269ede66a36b0457a12e",
+      "width": 600,
+      "height": 440,
+      "capture": "Actual owned app/popup HWND",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-dark-account-warning-tooltip.png",
+      "sha256": "f77d56e6f08f23397122da51de5039ec79415b0f2a4ff36f34d050b0a6e15d7b",
+      "width": 329,
+      "height": 252,
+      "capture": "Actual owned app/popup HWND",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-light-account-warning-500x360.png",
+      "sha256": "4e9beea6610e5ba6082478539cf82d65a08034fcf4aa782841878c7c4e1fb717",
+      "width": 500,
+      "height": 360,
+      "capture": "Actual owned app/popup HWND",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-light-account-warning-600x440.png",
+      "sha256": "7962d560517fbd8b80756472d2ce71ce7d64fc9ab1224974d3a05c3224acb4e0",
+      "width": 600,
+      "height": 440,
+      "capture": "Actual owned app/popup HWND",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-light-account-warning-global.png",
+      "sha256": "55b629222a8453c702ca1b17b00814039c662bae3c568c63876d718fb6cec9f3",
+      "width": 600,
+      "height": 440,
+      "capture": "Actual owned app/popup HWND",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "en-light-account-warning-tooltip.png",
+      "sha256": "a3045a67301285a4276f5e0b307308ecb6fc818e592ceec44e3bab27f873337a",
+      "width": 329,
+      "height": 252,
+      "capture": "Actual owned app/popup HWND",
+      "originalPixelsUnchanged": true
+    }
+  ],
+  "personalDataUsed": false,
+  "scope": "Actual own Windows app/popup HWNDs, fictional failed/cached/healthy account and disk inputs only. No owner account, desktop, authentication, network or hardware action."
+}

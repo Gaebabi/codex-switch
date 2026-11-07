@@ -10,9 +10,11 @@ import subprocess
 import sys
 import tempfile
 import uuid
+import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[1]
+VERSION = ET.parse(ROOT / 'Directory.Build.props').findtext('./PropertyGroup/Version')
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--executable", type=Path, default=ROOT / "artifacts/win-x64/CodexSwitch.exe")
 EXE = parser.parse_args().executable.resolve()
@@ -34,6 +36,7 @@ def probe(home, name, expected=None):
     process = subprocess.run([str(EXE), "--codex-home", str(home), "--verify-queues", str(report)], timeout=10,
                              capture_output=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     data = json.loads(report.read_text(encoding="utf-8"))
+    check(name + " identifies the declared application build", data.get("version") == VERSION)
     after = {p: hashlib.sha256(p.read_bytes()).digest() for p in watched if p.exists()}
     check(name + " leaves database and WAL presence/bytes unchanged", after == before)
     if expected is None:

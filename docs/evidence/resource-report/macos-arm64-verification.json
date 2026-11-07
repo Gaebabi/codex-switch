@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "version": "1.42.7",
+  "expectedVersion": "1.42.7",
+  "mode": "macos",
+  "diagnosticExitCode": 1,
+  "nativeChecksPassed": 10,
+  "nativeChecksFailed": 1,
+  "installedClientDiscoveryAvailable": false,
+  "metadataVerified": true,
+  "scope": "Actual published native diagnostic with disposable fixtures. No owner account, inference, desktop launch/shutdown or switch. Mac installed-client discovery can remain an explicit failed native check on a runner without Codex; metadata verification is separate from complete installed-client acceptance. No raw errors or paths exported."
+}

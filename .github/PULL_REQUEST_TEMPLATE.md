@@ -2,6 +2,8 @@
 
 Describe the concrete problem and resulting behavior. Link the issue; use `Closes #...` only for acceptance criteria this PR completes.
 
+Use an English title (printable ASCII) and English subjects for new commits. Translations are welcome in this body. Preserve original contributor authorship and published history.
+
 ## Verification
 
 List commands and results, OS/architecture, and any checks left unrun. Distinguish source/build/isolated checks from native account switching and chat resumption. Use disposable storage; never stop another person's Codex to validate a PR.

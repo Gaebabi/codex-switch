@@ -4,7 +4,6 @@ using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Animation.Easings;
 using Avalonia.Controls;
-using Avalonia.Controls.Diagnostics;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
@@ -34,13 +33,12 @@ internal static class MacToolTipTheme
             content.Bind(ContentPresenter.ContentProperty, new Binding("Content") { RelativeSource = new RelativeSource(RelativeSourceMode.TemplatedParent) });
             var surface = new Border { Name = "tipSurface", Margin = new Thickness(8), Padding = new Thickness(12, 10), CornerRadius = new CornerRadius(8),
                 Background = palette.Brush("elevated"), BoxShadow = new BoxShadows(new BoxShadow { Blur = 12, OffsetY = 2, Color = Color.FromArgb(palette.Dark ? (byte)82 : (byte)31, 0, 0, 0) }), Child = content };
-            ((IPopupHostProvider)tip).PopupHostChanged += host =>
+            tip.Classes.CollectionChanged += (_, _) =>
             {
-                if (host == null) { surface.Transitions = null; surface.Opacity = palette.Appearance.ReducedMotion() ? 1 : 0; return; }
                 surface.Transitions = null; surface.Opacity = palette.Appearance.ReducedMotion() ? 1 : 0;
-                if (surface.Opacity == 1) return;
+                if (!tip.Classes.Contains(":open") || surface.Opacity == 1) return;
                 surface.Transitions = new Transitions { new DoubleTransition { Property = Visual.OpacityProperty, Duration = TimeSpan.FromMilliseconds(120), Easing = new QuadraticEaseOut() } };
-                Dispatcher.UIThread.Post(() => surface.Opacity = 1, DispatcherPriority.Render);
+                Dispatcher.UIThread.Post(() => { if (tip.Classes.Contains(":open")) surface.Opacity = 1; }, DispatcherPriority.Render);
             };
             return surface;
         })));

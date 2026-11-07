@@ -1,0 +1,82 @@
+{
+  "baselineSource": "dd7fe742d01a15740784c13c953165b8f2999137",
+  "sourceRevision": "a99f49687328a0f29c50a0b9d81641fc3d922c1d",
+  "service": {
+    "passed": 9,
+    "checks": [
+      "Initial isolated usage read succeeds",
+      "Valid cached executables remain usable without repeated installation discovery",
+      "Same service recovers after the old executable is removed without restart",
+      "Recovery produces a new usage observation rather than retaining cached success",
+      "Recovered service uses the new executable",
+      "Temporary update gap remains an explicit error with previous usage preserved",
+      "Next refresh recovers after installation becomes available again",
+      "Canonical fixture credentials remain unchanged",
+      "Cancellation is preserved"
+    ],
+    "scope": "One live AccountService across disposable CLI removal/replacement and update gap; no personal accounts, network, desktop restart or account switch."
+  },
+  "before": {
+    "passed": 4,
+    "checks": [
+      "Native ordinary refresh reads the fictional account",
+      "Baseline retains a visible refresh error after executable removal",
+      "The same native window and service remain alive",
+      "Canonical fixture credentials remain unchanged"
+    ],
+    "baseline": true,
+    "scope": "Actual Windows WPF window/button/timer and AccountService with fictional authentication and disposable offline JSON-RPC; no personal account, installed client shutdown or live update acceptance."
+  },
+  "after": {
+    "passed": 6,
+    "checks": [
+      "Native ordinary refresh reads the fictional account",
+      "Actual Refresh button visibly recovers after executable removal",
+      "Temporary installation gap is visible on the actual account card",
+      "Production timer callback recovers without another button click",
+      "The same native window and service remain alive",
+      "Canonical fixture credentials remain unchanged"
+    ],
+    "baseline": false,
+    "scope": "Actual Windows WPF window/button/timer and AccountService with fictional authentication and disposable offline JSON-RPC; no personal account, installed client shutdown or live update acceptance."
+  },
+  "baselineProductionFilesUnchanged": true,
+  "personalDataUsed": false,
+  "images": [
+    {
+      "file": "before.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "5b131318c89983fe3f8bc0620f4cfc805edad1fb7ca11402cc646ecf5a9f4bf7",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "after.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "71811b4f533a09342404a004b620f8a0e02bc98ff0eb344feb9001ede479bf29",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "update-gap.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "4ba54018b825d3bcb449873f0fae3c7317c2f45662f7659a8c47b92372a2d751",
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "automatic-recovery.png",
+      "width": 600,
+      "height": 440,
+      "sha256": "d8b93597bbb83c05b8228eaed7e39969688ff9de70cf5d0085ec1036c8d647b8",
+      "originalPixelsUnchanged": true
+    }
+  ],
+  "sourceHashes": {
+    "src/application/AccountService.cs": "15ed9fcac232dfdaba19ee0311a3a173c182efe2b849582b22c797fe233f87e2",
+    "tests/runtime-recovery/Program.cs": "babcfbea103c8ea5f33b42ec3d1aedc6a6b9899da118545b76201eb798b950ce",
+    "tests/runtime-recovery/WindowEvidence.cs": "414e2231f124def7eb4e61946a9fed26bd76ddd0fca0c7f635155bc74628d140",
+    "scripts/verify-runtime-recovery.py": "f4b0fe2448f9d9cfc2787b15ce226491837479de74d6781cb01efe476f4b3b44"
+  },
+  "scope": "Actual hosted Windows WPF button/timer and unchanged baseline with fictional authentication and offline disposable RPC. No live Store update, authenticated refresh, real account/client or owner input."
+}

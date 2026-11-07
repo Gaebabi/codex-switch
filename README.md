@@ -1,65 +1,99 @@
-<p align="center">
-  <img src="assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" />
-</p>
-<h1 align="center">Codex Switch</h1>
+<p align="center"><img src="assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" /></p>
+<h1 align="center">Codex Switch: OpenAI Codex account switcher and quota monitor</h1>
 
-Switch Codex accounts, automatically resume eligible unfinished local chats, and see what is left before you choose the next account. **Windows and macOS / 1.27.6**
+**Codex Switch (`codex-switch`) is an open-source desktop account switcher and usage quota monitor for OpenAI Codex.** See your accounts together, choose the next one, and recover an interrupted handoff. Optional quota-based switching starts **Off**.
+
+Windows · macOS15+ · Linux preview · MIT open source · **1.44.0**
 
 [English](README.md) / [한국어](docs/README.ko.md) / [日本語](docs/README.ja.md) / [简体中文](docs/README.zh-CN.md)
 
-![Fictional everyday demo: varied balances, stable resources and status colors](docs/media/demo.png)
+[Download](#download) · [Get started](#get-started) · [What's new](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0)
 
-*Source 1.30.2 Windows UI with fictional accounts and resources; published downloads remain 1.27.6. [Current screenshots and native Windows/Mac gallery](docs/media/README.md#native-platform-gallery).*
+<p align="center"><img src="docs/evidence/home-simplification/native-after-windows.png" width="500" height="350" alt="Codex Switch1.44.0 with quota tanks and one Settings gear" /></p>
+
+Actual Windows app with fictional account inputs. [Native screenshots and source verification](docs/evidence/home-simplification/README.md). Credentials stay in a local encrypted vault; **switching restarts Codex**. Independent project, not affiliated with OpenAI.
+
+**Find it useful?** Star this repository or share it with another Codex user.
+
+Release1.44.0 keeps the quota tanks and direct account switching while gathering models, automatic switching, restart, language and appearance in one Settings gear. Image-heavy chats also gain corrected built-in image routes and bounded concurrent request handling. [What's changed and compatibility](docs/development/RELEASE_1_44_0.md).
+
+Release1.42.2 adds account-specific browser sign-in from warnings, default-Off quota-based account switching, optimal/custom priority, durable reopening/recovery, labeled subscription dates and official Pro 100/200/500 tiers. [Behavior and verification scope](docs/development/ACCOUNT_AUTOMATION.md) / [release gates](docs/development/RELEASE_1_42_2.md).
+
+Release1.42.3 recovers Windows usage refresh after Codex replaces its executable, without restarting Switch. Valid paths stay cached; installation gaps keep an explicit warning and requests are never replayed. [Recovery and verification](docs/development/RELEASE_1_42_3.md).
+
+Release1.42.4 keeps the complete Linux account-auto-switch caption visible in the minimum window, without taking space from quota cards or adding dependencies. [Native verification and delivery](docs/development/RELEASE_1_42_4.md).
+
+Release1.42.5 prioritizes eligible subscriptions expiring soon and adds an **Auto Switch** toggle with the next account. It retries a transient handoff up to two additional times while keeping controls busy. The persisted budget and original Continue identities prevent unbounded recovery and duplicate sends. [Behavior and verification](docs/development/RELEASE_1_42_5.md).
+
+Release1.42.6 keeps Auto Switch usable when quota identifiers are duplicated or missing: ambiguous candidates are skipped and ambiguous source observations cannot trigger switching. Original data and valid expiry/custom ordering remain intact. [Behavior and verification](docs/development/RELEASE_1_42_6.md).
+
+Release1.42.7 lets Linux terminal accounts work with the reviewed standalone Codex CLI0.164.0. Exact executable integrity and credential/workspace checks still apply. [Compatibility and verification](docs/development/RELEASE_1_42_7.md).
+
+Release1.43.0 adds separate credit-balance decrease graphs in History and optional safe pause/recovery at zero ordinary quota. Credit use stays allowed by default. Usable past-date subscriptions retain priority, and diagnostic reports identify the actual running version. [Verification](https://github.com/Gaebabi/codex-switch/issues/132).
+
+Release1.43.1 keeps Auto Switch available when a fresh report still shows 0% after its reset time. The next eligible account remains visible, and an available handoff takes priority over a local credit-protection pause. [Verification](https://github.com/Gaebabi/codex-switch/issues/136).
+
+Release1.43.2 preserves browser-login cancellation when a temporary Windows database file stays briefly locked. Cleanup waits asynchronously for up to two seconds; persistent locks and permission failures remain explicit. [Verification](https://github.com/Gaebabi/codex-switch/issues/139).
+
+Release1.43.3 lets you add Responses-compatible model providers and choose their models alongside eligible OpenAI models. It also improves interrupted-switch recovery and adds clearer credit history ranges. The combined desktop picker and individual external providers still need separate compatibility confirmation. [Setup, limits and verification](docs/MODEL_PROVIDERS.md).
+
+## Download
+
+Complete packages include the .NET runtime; no source build or .NET installation is needed. Keep the entire extracted folder or app bundle.
+
+| Platform | Download |
+| --- | --- |
+| Windows x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-win-x64.zip) |
+| macOS15+ Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-osx-arm64.zip) |
+| macOS15+ Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-osx-x64.zip) |
+| Linux x64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-x64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-x64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-x64.tar.gz) |
+| Linux ARM64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-arm64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-arm64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-arm64.tar.gz) |
+
+[Release notes and SHA256 checksums](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0). Windows/Linux packages are unsigned. Mac bundles are ad-hoc signed and **not Apple-notarized**; follow [Mac setup](docs/MACOS.md).
+
+Linux is an integration preview. Native storage, installed UI and package tests are distinct from supported account handoff and full desktop acceptance. Desktop integration requires approved OpenAI Linux client26.1007.71326, an existing file credential policy and X11/XWayland; newer clients require review. CLI-only mode needs an explicit executable checksum and does not resume desktop chats. [Requirements and limits](docs/development/LINUX.md) / [Linux installation](docs/development/LINUX_PACKAGES.md)
+
+Warning icons retain full hover details; activate one to sign in again for the selected account. [Actual application evidence](docs/evidence/account-automation/README.md).
+
+**Linux1.44.0 downloads include terminal account switching and saved CLI-session resumption, introduced in source1.41.0.** `CodexSwitch cli` manages the existing encrypted accounts without DISPLAY; `cli switch <account> --resume <CLI-session-UUID>` combines manual switching and official CLI resumption. `--continue` explicitly submits a follow-up; `--exec --continue` selects noninteractive continuation. A verified native CLI and an unlocked supported Secret Service are required. Real two-account contextual CLI resumption is verified on Linux x64; native ARM64/offline tests and full desktop acceptance have separate scopes. [Commands, actual screenshots and exact verification limits](docs/development/LINUX_TERMINAL.md).
 
 ## Get started
 
-**Download:** [Windows x64](https://github.com/Gaebabi/codex-switch/releases/download/v1.27.6/CodexSwitch-v1.27.6-win-x64.zip) / [Mac Apple Silicon](https://github.com/Gaebabi/codex-switch/releases/download/v1.27.6/CodexSwitch-v1.27.6-osx-arm64.zip) / [Mac Intel](https://github.com/Gaebabi/codex-switch/releases/download/v1.27.6/CodexSwitch-v1.27.6-osx-x64.zip)
+1. Windows: run `CodexSwitch.exe`. Mac: run `Install.command`, then open the installed **Codex Switch.app**. Linux: install a complete preview package and configure a supported Secret Service provider. [Installation](docs/INSTALL.md)
+2. Select **+** for official browser sign-in. If the previous account is automatically selected, use a separate browser profile/private window for the next login. **Settings > Import current account** imports the current Codex login.
+3. Compare the cards and select **Switch**. **Account auto-switch is Off by default; enable it explicitly in Settings.** On Linux, use **Settings > Start Codex** before working.
 
-[Release notes and checksums](https://github.com/Gaebabi/codex-switch/releases/tag/v1.27.6). No source build or .NET installation is needed. Mac packages are not notarized; see [Mac setup](docs/MACOS.md).
+## Features
 
-**Linux:** [unsigned installation/UI preview candidates](docs/development/LINUX_PACKAGES.md) are verified separately from supported account switching. Follow the [support roadmap](docs/PLATFORM_SUPPORT_PLAN.md) and [issue #1](https://github.com/Gaebabi/codex-switch/issues/1); authenticated switching/continuation and full desktop acceptance remain in progress. Contributions across languages, distributions and accessibility needs are welcome.
+- **Models from your providers:** save a compatible provider and key, connect Codex, and choose a model for each chat. Keep Switch running while connected. [Provider setup and compatibility](docs/MODEL_PROVIDERS.md)
+- **Manual switch, automatic continuation:** back up the current login and verify date-prefixed chat names, normally close Codex, apply the selected account, reopen the same chat IDs/folders/models/permissions, and send one **Continue** to eligible idle unfinished chats. Running or completed work is left alone.
+- **Recover interrupted handoffs:** encrypted checkpoints retain progress. **Resume chats** continues pending work; uncertain sends are never automatically repeated. Naming/shutdown failures stop the login change. Windows waits for child processes so one Switch click can finish the flow. [Switching details](docs/SWITCHING.md)
+- **Quota and history:** remaining usage, resets, plans, subscription expiry, reset allowances, credits and consumption forecasts. Open **History** in an account's **...** menu. Card dates use your local time zone; the shared history view explicitly labels its KST axes. Expiry within72hours and reset within48hours use warning colors.
+- **Local status and resources:** running/queued/goal counts, resource history and disk space. Windows shows independently colored resource/disk temperatures when supported sensors exist; missing values stay unknown. Linux resource telemetry is currently unavailable. [Sensor support](docs/TEMPERATURES.md)
+- **Windows disk I/O (source1.40.6):** thin read/write bars beside disk temperature, exact rates on hover and sustained latency-pressure colors selected from actual backing-device characteristics. Observed scale is explicit; missing capabilities never invent a rated speed or health warning. [How it works](docs/DISK_IO.md)
+- **Built-in Windows CPU temperature:** select the visible **download + °C** or **lock + °C** button to install the optional signed driver or authorize the sensor for this session. No separate hardware monitor; the account app keeps normal privileges. No automatic driver/UAC/reboot. [Setup and limits](docs/TEMPERATURES.md#built-in-windows-cpu-sensor) / [actual app before/after](docs/evidence/cpu-setup/README.md).
+- **Always-on refresh:** account reads every60seconds, with **↻** or **F5** for an immediate refresh. If startup fails while the keyring/client is unavailable, the same schedule retries initialization automatically after it becomes available.
+- **Nine UI languages and local JSON language packs:** English, Korean, Japanese, Simplified/Traditional Chinese, Spanish, French, German and Brazilian Portuguese, with English fallback. Icon theme actions, dark/light themes and shared scrollbars keep compact windows usable. [Translation guide](docs/LOCALIZATION.md)
 
-Source1.40.0 connects the [Linux account and managed desktop integration preview](docs/development/LINUX.md) to the existing encrypted switch/recovery/eligible-Continue flow. Start Codex from the app before working; switching remains manual. An existing file credential policy and the approved installed client are required. Explicit checksum CLI-only mode provides account/usage actions without desktop resumption. [Complete unsigned candidates](docs/development/LINUX_PACKAGES.md) remain previews: authenticated two-account handoff and broader desktop acceptance are still pending.
+**Switching restarts Codex** and may affect CLI/IDE clients sharing the login. Remaining Linux authenticated cross-account/continuation and broader desktop/accessibility criteria are tracked in [the support roadmap](docs/PLATFORM_SUPPORT_PLAN.md).
 
-[Actual ordinary Linux app before/after, CLI-only confirmation and42 offline Docker checks](docs/evidence/linux-account-handoff/README.md). Empty account homes and fictional local credential contracts are distinct from authenticated switching/Continue acceptance.
+## Actual app screenshots
 
-Source1.40.1 adds a single native Linux titlebar and [owner-operated desktop verification](docs/evidence/linux-interactive-desktop/README.md). One real Linux account passes encrypted storage, active identity and authenticated usage checks. Two-account switching/automatic continuation and broader desktop acceptance remain pending; complete Linux packages are still unsigned integration previews.
+Actual application titlebars/controls are preserved on a solid background. Captions and source/runtime/hash receipts distinguish fictional UI inputs, ordinary Linux execution and authenticated acceptance. [Current gallery](docs/media/release-1.42.2/README.md)
 
-Source1.36.0 verifies encrypted KWallet5 storage on native Ubuntu24.04 x64/ARM64 while preserving existing keys and vault data. [Native storage verification and actual app screenshots](docs/evidence/linux-kwallet-storage/README.md). Linux desktop switching and packages remain separate support gates.
+![Codex Switch running on Windows](docs/media/release-1.42.2/windows.png)
 
-Source 1.37.0 adds [verified KWallet6/KSecrets storage](docs/evidence/linux-kde6/README.md) for declared Debian 6.13.0/6.26.0/6.30.0 builds on native x64/ARM64, preserving original keys and vault data. [Package and security contracts](docs/development/KDE_SECRET_SERVICE.md) require the original provider PID and exact native executable checksum; service/version names alone are insufficient.
+**Windows x64:** actual WPF app with fictional accounts, numbered Pro tiers and explicit account-auto-switch wording. On is selected only in the demo; the default is Off. No personal account or desktop.
 
-1. Use a complete Windows or Mac package. Windows: run `CodexSwitch.exe`. Mac: run `Install.command`, then open **Codex Switch.app**. [Build and install](docs/INSTALL.md)
-2. Select **+** in the title bar to add accounts. On Windows, right-click **↻** to import the current Codex login.
-3. Compare the cards and select **Switch**. Reads refresh every 60 seconds; **↻** or **F5** refreshes immediately.
+![Linux app demo accounts and actual Xfce OS titlebar in the same capture](docs/media/release-1.42.2/linux-x64-dark.png)
 
-**Source1.29.3:** automatic refresh is always enabled at60seconds. Its Windows footer switch/caption and Mac settings toggle are removed; an older disabled preference no longer stops reads. [Application comparison and scope](docs/evidence/always-refresh/README.md)
+**Linux x64 · X11/Xfwm4:** the actual OS titlebar and four fictional demo account cards were captured together. No titlebar composition or personal login. [Light theme, source/hash receipts and verification scope](docs/media/release-1.42.2/README.md).
 
-Keep the full package together. Packaged apps need no .NET installation; building current source requires .NET10.0.4xx and installed Codex desktop/CLI. Source1.37.0 uses .NET10 LTS/runtime10.0.13; its current supported Mac baseline is macOS15+. Published1.27.6 downloads remain unchanged until separately released.
+**MacBook screenshot:** reserved for the maintainer's real-device capture.
+<!-- MacBook screenshot slot: add docs/media/release-1.42.2/macbook.png and its privacy/provenance receipt, then embed here. Never substitute a different OS image or mockup. -->
 
-## What you can see
+## Contribute
 
-- Remaining quota, reset countdown, plan, subscription end date, reset credits and credit balance.
-- **Source 1.29.2:** subscription expiry date/D-day within three days and quota reset within two days use the theme warning color, refreshed every second. [Date warning scope and application evidence](docs/evidence/date-warnings/README.md)
-- Recent usage and a depletion estimate based on usage history. Open **History** from an account's **...** menu.
-- Local running/queued/goal counts, resource trends and configurable drive free space. Hover a gauge for details.
-- **Source 1.29.0:** right-aligned resource/disk temperatures with independent normal/caution/high colors when supported sensors are available; missing values show `—°C`. Device-reported limits take precedence over documented display defaults. CPU/RAM may require an existing compatible sensor provider. [Temperature support and scope](docs/TEMPERATURES.md)
+[Contributing](CONTRIBUTING.md) / [Security](SECURITY.md) / [Architecture](docs/ARCHITECTURE.md) / [CI](docs/CI.md) / [Operations](docs/development/OPERATIONS.md) / [Evidence](docs/evidence/README.md) / [Forecasts](docs/FORECAST.md)
 
-The title bar has language and light/dark settings. **Source 1.28.0** adds nine UI languages (English, Korean, Japanese, Simplified/Traditional Chinese, Spanish, French, German and Brazilian Portuguese) and validated local JSON language packs. Current **1.27.6 downloads** still have English/Korean. [Language packs and translation contributions](docs/LOCALIZATION.md)
-
-## Switch and resume
-
-- **Back up before switching:** save active local chat names with a date prefix and verify them, then back up the current login before applying the selected account. Naming or normal-shutdown failures stop the login change.
-- **Automatically resume unfinished work:** restart Codex, reopen the same chat IDs with their existing folders/models/permissions, and send one **Continue** to eligible idle chats. Already running or completed work is left alone.
-- **Source 1.29.1:** after normal Windows shutdown, wait for child processes to finish before applying the account and reopening Codex in the same manual Switch invocation. Current downloads do not contain this correction.
-- **Recover an interrupted handoff:** progress is checkpointed in the encrypted vault. Use **Resume chats** when a handoff remains pending; cancellation is available from the account menu/tray. Unclear sends are not automatically repeated.
-
-**Switching restarts Codex** and can also affect CLI/IDE clients sharing the login. [Switching details](docs/SWITCHING.md)
-
-## More
-
-[Mac setup](docs/MACOS.md) / [Forecast](docs/FORECAST.md) / [Security](SECURITY.md) / [Contributing](CONTRIBUTING.md) / [Roadmap](docs/PLATFORM_SUPPORT_PLAN.md)
-
-Developer reference: [Architecture](docs/ARCHITECTURE.md) / [CI](docs/CI.md) / [Operations](docs/development/OPERATIONS.md) / [Current application comparison](docs/evidence/scrollbars-theme-icons/README.md) / [Evidence index](docs/evidence/README.md).
-
-This is independent open-source software, not an official OpenAI product. Credentials stay in a local encrypted vault. [MIT](LICENSE) / [Asset notices](licenses/Burn0Assets.LICENSE.txt)
+Independent open-source software, not an official OpenAI product. Credentials stay in a local encrypted vault. [MIT](LICENSE) / [Asset notices](licenses/Burn0Assets.LICENSE.txt)

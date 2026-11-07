@@ -1,0 +1,179 @@
+{
+  "schema": 1,
+  "revision": "f1e6acb897be2a4f038af016d91a8d4e401c074f",
+  "os": "macOS",
+  "architecture": "Arm64",
+  "runtime": ".NET 10.0.13",
+  "appVersion": "1.40.4",
+  "language": "en",
+  "rendering": "Software (native window)",
+  "checks": [
+    "dark/overview/English native window",
+    "dark/overview/selected range",
+    "dark/overview/no horizontal overflow",
+    "dark/overview/no default overflow",
+    "dark/overview/reset first explanation",
+    "dark/overview/selected range contrast",
+    "dark/overview/range change persists through normal vault save",
+    "dark/overview/data availability",
+    "dark/minimum/English native window",
+    "dark/minimum/selected range",
+    "dark/minimum/no horizontal overflow",
+    "dark/minimum/vertical overflow",
+    "dark/minimum/footer remains reachable",
+    "dark/minimum/data availability",
+    "dark/empty/English native window",
+    "dark/empty/selected range",
+    "dark/empty/no horizontal overflow",
+    "dark/empty/data availability",
+    "dark/single/English native window",
+    "dark/single/selected range",
+    "dark/single/no horizontal overflow",
+    "dark/single/data availability",
+    "dark/multiple/English native window",
+    "dark/multiple/selected range",
+    "dark/multiple/no horizontal overflow",
+    "dark/multiple/selected quota menu",
+    "dark/multiple/quota selection updates chart",
+    "dark/multiple/data availability",
+    "dark/unavailable/English native window",
+    "dark/unavailable/selected range",
+    "dark/unavailable/no horizontal overflow",
+    "dark/unavailable/data availability",
+    "dark/isolated home remains absent",
+    "light/overview/English native window",
+    "light/overview/selected range",
+    "light/overview/no horizontal overflow",
+    "light/overview/no default overflow",
+    "light/overview/reset first explanation",
+    "light/overview/selected range contrast",
+    "light/overview/range change persists through normal vault save",
+    "light/overview/data availability",
+    "light/minimum/English native window",
+    "light/minimum/selected range",
+    "light/minimum/no horizontal overflow",
+    "light/minimum/vertical overflow",
+    "light/minimum/footer remains reachable",
+    "light/minimum/data availability",
+    "light/empty/English native window",
+    "light/empty/selected range",
+    "light/empty/no horizontal overflow",
+    "light/empty/data availability",
+    "light/single/English native window",
+    "light/single/selected range",
+    "light/single/no horizontal overflow",
+    "light/single/data availability",
+    "light/multiple/English native window",
+    "light/multiple/selected range",
+    "light/multiple/no horizontal overflow",
+    "light/multiple/selected quota menu",
+    "light/multiple/quota selection updates chart",
+    "light/multiple/data availability",
+    "light/unavailable/English native window",
+    "light/unavailable/selected range",
+    "light/unavailable/no horizontal overflow",
+    "light/unavailable/data availability",
+    "light/isolated home remains absent"
+  ],
+  "images": [
+    {
+      "file": "en-dark-history-empty-native.png",
+      "width": 640,
+      "height": 468,
+      "sha256": "8a12e1bec2bc835a3e189324b060c89b4562958d86659f4bf941726c71a9c038",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-history-minimum-native.png",
+      "width": 500,
+      "height": 328,
+      "sha256": "f78edebefefed282eff4c1e0bf053e18a119e53ca1f3361b5406f2a39be95af6",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-history-multiple-native.png",
+      "width": 640,
+      "height": 468,
+      "sha256": "bd7525eed057132731f84dfb8b71ef0d6555b6230cafd78938f77f99a52d1111",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-history-overview-native.png",
+      "width": 640,
+      "height": 468,
+      "sha256": "1535ddde0ed0287dfc6b92d52dd5744d209443d0c956978748adf10b8b5564bb",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-history-quota-native.png",
+      "width": 174,
+      "height": 76,
+      "sha256": "216c08f0b35178517448856eb784d86f136b021575782de4ef82ac5d129d4416",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-history-single-native.png",
+      "width": 640,
+      "height": 468,
+      "sha256": "eeb3f23d593da3a7ccbf2c80ee0a9ce8a9fd60c45869e7d5634c16a565ddf91d",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-dark-history-unavailable-native.png",
+      "width": 640,
+      "height": 468,
+      "sha256": "492b8416f1e937ec5bbe1eacb050d4513edb29a544657006ae67528b42d4f919",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-history-empty-native.png",
+      "width": 640,
+      "height": 468,
+      "sha256": "9a5ab75d8b444ffaa08fc4acd47ad93d1f258442af01c11e67c2fb49c10e957a",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-history-minimum-native.png",
+      "width": 500,
+      "height": 328,
+      "sha256": "b0f32d25472b135677c265bc4ae67b7f654e35b52a05f09f30bcc754dfb81c2d",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-history-multiple-native.png",
+      "width": 640,
+      "height": 468,
+      "sha256": "5fc316fd1cd4d7865f48e0b29a38714d350f76d21ba981dc25ac08f6ad21365b",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-history-overview-native.png",
+      "width": 640,
+      "height": 468,
+      "sha256": "6a16dfa79549b2cd07f50536cb6b99144e79420d0f356a362d3f8417910bb66f",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-history-quota-native.png",
+      "width": 174,
+      "height": 76,
+      "sha256": "575fd9f337ea434a3dd05b9ca1656c0839956e966c0fdeba29c3bfd74549ec90",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-history-single-native.png",
+      "width": 640,
+      "height": 468,
+      "sha256": "d649053d6e44157a925dbca8cb0d1b9600dae425cfbab1e681374b344b2b4b2d",
+      "capture": "Native own window or popup"
+    },
+    {
+      "file": "en-light-history-unavailable-native.png",
+      "width": 640,
+      "height": 468,
+      "sha256": "87d6e7c6950a63564892d0ee976db4094c01815f48433aec14677914628b9e46",
+      "capture": "Native own window or popup"
+    }
+  ],
+  "scope": "Actual app-owned history windows and quota popups, fictional accounts/history, disposable encrypted vault and cleaned diagnostic Keychain key. No real account/home, network or Codex lifecycle action."
+}

@@ -2,6 +2,7 @@ name: Verify
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
   push:
     branches: [main]
   workflow_dispatch:
@@ -23,20 +24,24 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
       - run: python -m pip install -r requirements-dev.txt
+      - run: python scripts/test-pr-title.py
+      - name: Check English PR subject from event data
+        run: python scripts/verify-pr-title.py "$GITHUB_EVENT_PATH"
       - run: python scripts/verify-repository.py
       - run: python scripts/test-document-links.py
+      - run: python scripts/verify-cpu-assets.py
       - run: python scripts/test-audit-public.py
       - run: python scripts/test-linux-keyring-harness.py
       - run: python scripts/verify-localization.py
-      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: '10.0.4xx'
       - run: dotnet run --project tests/localization/CodexSwitch.Localization.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
@@ -54,18 +59,18 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: '10.0.4xx'
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
       - name: Set up CLI prerequisite runtime
-        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
       - name: Install pinned official CLI prerequisite
@@ -81,8 +86,75 @@ jobs:
       - name: Publish and run disposable internal checks
         shell: pwsh
         run: ./scripts/build.ps1 -Verify
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Verify actual resource report version and unchanged availability status
+        run: python scripts/verify-resource-report.py artifacts/win-x64/CodexSwitch.exe --output artifacts/resource-report/verification.json
+      - name: Verify actual disposable switch protocol report version
+        run: python scripts/verify-diagnostic-versions.py artifacts/win-x64/CodexSwitch.exe --mode switch-protocol --output artifacts/diagnostic-versions/windows.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: diagnostic-versions-windows
+          path: artifacts/diagnostic-versions/windows.json
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: resource-report-windows
+          path: artifacts/resource-report/verification.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify runtime replacement in the same window and unchanged main baseline
+        env:
+          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/verify-runtime-recovery.py
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: runtime-recovery-windows
+          path: artifacts/runtime-recovery/public
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify bounded switch retries against unchanged native baseline
+        env:
+          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/verify-switch-retries.py
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: switch-retries-windows
+          path: artifacts/switch-retries/public
+          if-no-files-found: error
+          retention-days: 14
       - name: Inspect complete Windows runtime package
         run: python scripts/verify-runtime-package.py artifacts/win-x64 --rid win-x64 --output artifacts/runtime-win-x64.json
+      - name: Verify native account-free CPU worker lifecycle without elevation
+        run: dotnet run --project tests/sensors/CodexSwitch.Sensors.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- artifacts/win-x64/sensors/CodexSwitch.Sensors.exe
+      - name: Verify automatic switching and restart recovery with fictional accounts
+        run: dotnet run --project tests/account-automation/CodexSwitch.AccountAutomation.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
+      - name: Verify encrypted model providers and account-free loopback routing
+        shell: pwsh
+        run: dotnet run --project tests/model-providers/CodexSwitch.ModelProviders.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- --codex "$env:CODEX_ACCOUNT_DESK_CLI"
+      - name: Verify bounded concurrent gateway load with generated near-limit inputs
+        shell: pwsh
+        run: dotnet run --project tests/model-providers/CodexSwitch.ModelProviders.Tests.csproj -c Release --no-build --no-launch-profile -- --stress
+      - name: Verify provider editor components
+        shell: pwsh
+        run: dotnet run --project tests/model-providers-ui/ModelProviders.Ui.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- "${{ github.workspace }}/artifacts/model-provider-ui"
+      - name: Verify published account-app worker binding without UI or elevation
+        shell: pwsh
+        run: |
+          $taskProbe = Start-Process artifacts/win-x64/CodexSwitch.exe -ArgumentList @('--verify-cpu-sensor','artifacts/cpu-sensor-app.json') -WindowStyle Hidden -PassThru
+          if (!$taskProbe.WaitForExit(30000) -or $taskProbe.ExitCode -ne 0) { throw 'Published CPU sensor integration failed' }
+          Get-Content artifacts/cpu-sensor-app.json
+      - name: Verify pinned signed CPU driver on the disposable hosted VM only
+        shell: pwsh
+        run: ./scripts/verify-cpu-driver.ps1 -Worker artifacts/win-x64/sensors/CodexSwitch.Sensors.exe
+      - name: Export identifier-free CPU verification receipts
+        run: python scripts/export-cpu-evidence.py --revision "${{ github.event.pull_request.head.sha || github.sha }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: cpu-sensor-windows
+          path: artifacts/cpu-sensor-public
+          if-no-files-found: error
+          retention-days: 14
       - name: Verify read-only SQLite and WAL
         run: python scripts/verify-queues.py --executable artifacts/win-x64/CodexSwitch.exe
       - name: Publish disposable native shutdown fixture
@@ -100,24 +172,99 @@ jobs:
       - name: Verify protocol and read-only SQLite boundaries
         run: dotnet run --project tests/protocol/CodexSwitch.Protocol.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - name: Verify native resource collection and unsupported-OS boundaries
-        run: dotnet run --project tests/hardware/CodexSwitch.Hardware.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
+        run: dotnet run --project tests/hardware/CodexSwitch.Hardware.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- --report artifacts/disk-io-native.json
+      - name: Export actual disk counter verification without device identities
+        run: python scripts/export-disk-evidence.py --revision "${{ github.event.pull_request.head.sha || github.sha }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: disk-io-windows
+          path: artifacts/disk-io-public
+          if-no-files-found: error
+          retention-days: 14
       - name: Verify shared composition and actual native trayless close
         run: dotnet run --project tests/composition/CodexSwitch.Composition.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- --native-ui
-      - run: python -m pip install -r requirements-dev.txt
       - name: Run the published Windows app in isolated native UI mode
         shell: pwsh
         run: |
           $taskProcess = Start-Process artifacts/win-x64/CodexSwitch.exe -ArgumentList @('--verify-ui','artifacts/native-ui/windows/raw') -WindowStyle Hidden -PassThru
           if (!$taskProcess.WaitForExit(45000)) { throw 'Owned UI evidence process did not finish' }
-          if ($taskProcess.ExitCode -ne 0) { throw 'Native Windows UI verification failed' }
+          if ($taskProcess.ExitCode -ne 0) {
+            $taskReceipt = Get-Content -LiteralPath artifacts/native-ui/windows/raw/receipt.json -Raw | ConvertFrom-Json
+            $taskReceipt.cases | Where-Object { -not $_.passed } | ConvertTo-Json -Compress
+            throw 'Native Windows UI verification failed'
+          }
       - name: Validate isolated Windows window exports
         env:
           EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: python scripts/verify-ui-evidence.py artifacts/native-ui/windows/raw artifacts/native-ui/windows/public --os Windows --revision "${{ env.EVIDENCE_REVISION }}"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - name: Verify and export recovery state windows
+        run: python scripts/verify-recovery-evidence.py artifacts/native-ui/windows/raw artifacts/recovery-windows/public
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: recovery-windows
+          path: artifacts/recovery-windows/public
+          if-no-files-found: error
+          retention-days: 14
+      - name: Validate native credit history and protection confirmations
+        run: python scripts/verify-credit-evidence.py artifacts/native-ui/windows/raw/credits artifacts/credits-windows/public --os Windows --revision "${{ github.event.pull_request.head.sha || github.sha }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: credits-windows
+          path: artifacts/credits-windows/public
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-ui-windows
           path: artifacts/native-ui/windows/public
+          if-no-files-found: error
+          retention-days: 14
+      - name: Validate actual account automation and subscription confirmation windows
+        env:
+          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/verify-account-automation-evidence.py artifacts/native-ui/windows/raw artifacts/account-automation/public --revision "${{ env.EVIDENCE_REVISION }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: account-automation-windows
+          path: artifacts/account-automation/public
+          if-no-files-found: error
+          retention-days: 14
+      - name: Reproduce the original account-warning footer on the same native worker
+        env:
+          CODEX_SWITCH_DISPOSABLE_RUNNER: 'true'
+        run: python scripts/capture-account-warning-baseline.py --output artifacts/account-warnings/before
+      - name: Verify corrected account-warning controls and original native app pixels
+        env:
+          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/verify-account-warning-evidence.py artifacts/native-ui/windows/raw artifacts/account-warnings/after/public --revision "${{ env.EVIDENCE_REVISION }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: account-warning-windows
+          path: artifacts/account-warnings/*/public
+          if-no-files-found: error
+          retention-days: 14
+      - name: Package the same verified native Windows application
+        run: python scripts/package-desktop.py --app artifacts/win-x64 --rid win-x64 --output artifacts/release-candidate/win-x64
+      - name: Verify ordinary Windows initialization failure recovery
+        run: dotnet run --project tests/windows-startup/CodexSwitch.WindowsStartup.Tests.csproj -c Release --no-launch-profile -p:SelfContained=true -p:RuntimeIdentifier=win-x64 -p:UseSharedCompilation=false -- artifacts/startup-recovery/raw
+      - name: Export passing native startup recovery evidence
+        env:
+          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/verify-startup-evidence.py artifacts/startup-recovery/raw artifacts/startup-recovery/public --revision "${{ env.EVIDENCE_REVISION }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: startup-recovery-windows
+          path: artifacts/startup-recovery/public
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload the verified native Windows package
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-candidate-win-x64
+          path: |
+            artifacts/release-candidate/win-x64/*.zip
+            artifacts/release-candidate/win-x64/*.json
+            artifacts/release-candidate/win-x64/SHA256SUMS
           if-no-files-found: error
           retention-days: 14
 
@@ -134,11 +281,11 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: '10.0.4xx'
       - name: Compile full application for the runner architecture
@@ -147,6 +294,14 @@ jobs:
         run: python3 scripts/verify-runtime-package.py artifacts/macos-ci/${{ matrix.rid }} --rid ${{ matrix.rid }} --output artifacts/runtime-${{ matrix.rid }}.json
       - name: Run disposable read-only queue checks
         run: python3 scripts/verify-queues.py --executable artifacts/macos-ci/${{ matrix.rid }}/CodexSwitch
+      - name: Verify actual native Mac diagnostic report version
+        run: python3 scripts/verify-diagnostic-versions.py artifacts/macos-ci/${{ matrix.rid }}/CodexSwitch --mode macos --output artifacts/diagnostic-versions/${{ matrix.rid }}.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: diagnostic-versions-${{ matrix.rid }}
+          path: artifacts/diagnostic-versions/${{ matrix.rid }}.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Verify native culture and pack lifecycle
         run: dotnet run --project tests/localization/CodexSwitch.Localization.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - name: Verify portable temperature parsing and presentation
@@ -161,7 +316,7 @@ jobs:
         run: dotnet run --project tests/hardware/CodexSwitch.Hardware.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - name: Verify shared composition and actual native trayless close
         run: dotnet run --project tests/composition/CodexSwitch.Composition.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false -- --native-ui
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
       - run: python -m pip install -r requirements-dev.txt
@@ -171,9 +326,64 @@ jobs:
         env:
           EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
         run: python scripts/verify-ui-evidence.py artifacts/native-ui/${{ matrix.rid }}/raw artifacts/native-ui/${{ matrix.rid }}/public --os macOS --revision "$EVIDENCE_REVISION"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - name: Validate native credit history and protection confirmations
+        run: python scripts/verify-credit-evidence.py artifacts/native-ui/${{ matrix.rid }}/raw/credits artifacts/credits-${{ matrix.rid }}/public --os macOS --revision "${{ github.event.pull_request.head.sha || github.sha }}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: credits-${{ matrix.rid }}
+          path: artifacts/credits-${{ matrix.rid }}/public
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-ui-${{ matrix.rid }}
           path: artifacts/native-ui/${{ matrix.rid }}/public
+          if-no-files-found: error
+          retention-days: 14
+      - name: Capture unmodified pre-upgrade UI on the same native worker
+        # Dependency upgrades also compare the unmodified current-main app on this worker.
+        # All inputs are fictional; only app-owned windows are captured.
+        run: python scripts/capture-ui-baseline.py --revision 083e283609242aa6b071e7f64e126e5de8668bf4 --rid ${{ matrix.rid }} --output artifacts/dependency-baseline/${{ matrix.rid }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dependency-before-${{ matrix.rid }}
+          path: artifacts/dependency-baseline/${{ matrix.rid }}/public
+          if-no-files-found: error
+          retention-days: 14
+      - name: Capture original history baseline on the same native worker
+        # History comparison uses the unchanged latest-main renderer on this same worker.
+        # The external baseline adds diagnostic hosting only, never account credentials.
+        run: python3 scripts/capture-history-baseline.py --revision 2bc551f9d36d5ec4e23f56af43237fecca47ac6c --rid ${{ matrix.rid }} --output artifacts/history-baseline/${{ matrix.rid }}
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: history-before-${{ matrix.rid }}
+          path: artifacts/history-baseline/${{ matrix.rid }}/public
+          if-no-files-found: error
+          retention-days: 14
+      - name: Verify English history windows and quota/range interactions
+        run: artifacts/macos-ci/${{ matrix.rid }}/CodexSwitch --verify-history artifacts/native-history/${{ matrix.rid }}/raw
+      - name: Validate English native history exports
+        env:
+          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/verify-history-evidence.py artifacts/native-history/${{ matrix.rid }}/raw artifacts/native-history/${{ matrix.rid }}/public --revision "$EVIDENCE_REVISION"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: native-history-${{ matrix.rid }}
+          path: artifacts/native-history/${{ matrix.rid }}/public
+          if-no-files-found: error
+          retention-days: 14
+      - name: Package and verify native ad-hoc signatures
+        run: python3 scripts/package-desktop.py --app artifacts/macos-ci/${{ matrix.rid }} --rid ${{ matrix.rid }} --output artifacts/release-candidate/${{ matrix.rid }}
+      - name: Verify ZIP extraction, staged installation and existing-app preservation
+        shell: bash
+        run: |
+          python3 scripts/verify-macos-install.py artifacts/release-candidate/${{ matrix.rid }}/*.zip > artifacts/release-candidate/${{ matrix.rid }}/INSTALLATION.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-candidate-${{ matrix.rid }}
+          path: |
+            artifacts/release-candidate/${{ matrix.rid }}/*.zip
+            artifacts/release-candidate/${{ matrix.rid }}/*.json
+            artifacts/release-candidate/${{ matrix.rid }}/SHA256SUMS
           if-no-files-found: error
           retention-days: 14

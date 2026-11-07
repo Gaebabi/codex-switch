@@ -17,6 +17,15 @@ if data['tfm']!='net10.0' or frameworks!=expected:raise SystemExit('Package does
 names=['CodexSwitch.dll','CodexSwitch.deps.json','System.Private.CoreLib.dll']+(['CodexSwitch.exe','coreclr.dll','hostfxr.dll'] if args.rid.startswith('win') else
     ['CodexSwitch','libcoreclr.so','libhostfxr.so'] if args.rid.startswith('linux') else ['CodexSwitch','libcoreclr.dylib','libhostfxr.dylib'])
 if any(not(root/name).is_file() for name in names):raise SystemExit('Incomplete self-contained package')
+if args.rid.startswith('win'):
+    for name in ['CodexSwitch.Sensors.exe','PawnIO-Modules.LGPL-2.1.txt','SOURCE.md','module-source/AMDFamily17.p','module-source/IntelMSR.p','module-source/pawnio.inc']:
+        if not (root/'sensors'/name).is_file():raise SystemExit('Native CPU sensor worker or corresponding source/license missing')
+    worker=(root/'sensors/CodexSwitch.Sensors.exe').read_bytes()
+    pe=int.from_bytes(worker[60:64],'little'); optional=pe+24; cli=optional+112+14*8
+    if worker[pe:pe+4]!=b'PE\0\0' or int.from_bytes(worker[pe+4:pe+6],'little')!=0x8664 or int.from_bytes(worker[optional:optional+2],'little')!=0x20b:
+        raise SystemExit('CPU worker is not a native Windows x64 image')
+    if int.from_bytes(worker[optional+68:optional+70],'little')!=2 or worker[cli:cli+8]!=bytes(8):
+        raise SystemExit('CPU worker must be a windowless NativeAOT GUI-subsystem executable without a CLR startup directory')
 if args.rid.startswith('linux'):
     native=root/'libcodex-switch-secret-1.so.0'
     if not native.is_file() or not (root/'licenses/libsecret.LGPL-2.1.txt').is_file():raise SystemExit('Linux encrypted Secret Service library/license is missing')

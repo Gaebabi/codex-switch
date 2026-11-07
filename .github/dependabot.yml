@@ -12,6 +12,10 @@ updates:
     open-pull-requests-limit: 5
   - package-ecosystem: nuget
     directory: /src/desktop
+    groups:
+      avalonia:
+        patterns:
+          - "Avalonia*"
     schedule:
       interval: weekly
     open-pull-requests-limit: 5

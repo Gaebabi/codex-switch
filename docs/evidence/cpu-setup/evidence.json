@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "beforeVersion": "1.40.5",
+  "afterVersion": "1.40.7",
+  "os": "Windows",
+  "architecture": "X64",
+  "runtime": ".NET 10.0.13",
+  "images": [
+    {
+      "file": "before-dark.png",
+      "stage": "before",
+      "captureRevision": "ecbe30fdb4b6d36b7f1ef3035ceb4a6fe02a7adc",
+      "sha256": "f12d6d4172448e6cd29d0c7b6a546476a47e1b552d5eef76ec59c05f3e228b71"
+    },
+    {
+      "file": "after-dark-setup.png",
+      "stage": "after",
+      "captureRevision": "26789afbee5330c0638e41f77ad65a9a1d2b3bc0",
+      "sha256": "52e2a05388f6ed21f7d7411027a8581b72b22cd7b0fe1cab6d1fdaa45c7b062a"
+    },
+    {
+      "file": "after-dark-denied.png",
+      "stage": "after",
+      "captureRevision": "26789afbee5330c0638e41f77ad65a9a1d2b3bc0",
+      "sha256": "d1e6cc4a19dafc15e3a0025707cdce98f402e4bd5b4795481ef7189ad98b473e"
+    },
+    {
+      "file": "after-dark-available.png",
+      "stage": "after",
+      "captureRevision": "26789afbee5330c0638e41f77ad65a9a1d2b3bc0",
+      "sha256": "82a3195b26a27c7bf060594c9db85aef30ada488a1b0869aa3b2dbaf42d646e1"
+    },
+    {
+      "file": "after-dark-setup-compact.png",
+      "stage": "after",
+      "captureRevision": "26789afbee5330c0638e41f77ad65a9a1d2b3bc0",
+      "sha256": "cb3450360d6653acaab12afefab8f9037cff9eb51d18dac5b8fb33c8347d8d65"
+    },
+    {
+      "file": "after-dark-denied-compact.png",
+      "stage": "after",
+      "captureRevision": "26789afbee5330c0638e41f77ad65a9a1d2b3bc0",
+      "sha256": "bdd57930a0475b51b7835b28102f0e54643ee5cdafe9aa31cd2c9cebed572b28"
+    },
+    {
+      "file": "before-light.png",
+      "stage": "before",
+      "captureRevision": "ecbe30fdb4b6d36b7f1ef3035ceb4a6fe02a7adc",
+      "sha256": "4608afeba73a1f1c83750bb56f670d73e393cbb610eb4cabc0de9c4c6451aae6"
+    },
+    {
+      "file": "after-light-setup.png",
+      "stage": "after",
+      "captureRevision": "26789afbee5330c0638e41f77ad65a9a1d2b3bc0",
+      "sha256": "a8d9c518d3784fbee26e8fb0c554d6e653c835a225f30e900efaf02ea7439c41"
+    },
+    {
+      "file": "after-light-denied.png",
+      "stage": "after",
+      "captureRevision": "26789afbee5330c0638e41f77ad65a9a1d2b3bc0",
+      "sha256": "390e52acf55e7148958321147d149b54ea5a7d1e1e8adad0a480cb9e6da17c7c"
+    },
+    {
+      "file": "after-light-available.png",
+      "stage": "after",
+      "captureRevision": "26789afbee5330c0638e41f77ad65a9a1d2b3bc0",
+      "sha256": "bad6111973eaa095277ff581bda9e52083e7fdc6fca4cbb8b6cb421e49687f26"
+    },
+    {
+      "file": "after-light-setup-compact.png",
+      "stage": "after",
+      "captureRevision": "26789afbee5330c0638e41f77ad65a9a1d2b3bc0",
+      "sha256": "aa2c23a767ee5d6329db0cae6409ce407cf0150aee020491f5e169aeb39035cd"
+    },
+    {
+      "file": "after-light-denied-compact.png",
+      "stage": "after",
+      "captureRevision": "26789afbee5330c0638e41f77ad65a9a1d2b3bc0",
+      "sha256": "738a9932b9196dd0591ab7f4cbbc98869445d47cee15fa62e5ec090348ad15f9"
+    }
+  ],
+  "scope": "Actual native own-window before/after captures with fictional accounts and sensor inputs. No owner desktop, device identity, accounts or physical-sensor proof is pictured."
+}

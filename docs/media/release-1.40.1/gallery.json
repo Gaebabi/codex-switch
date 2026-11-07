@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "applicationVersion": "1.40.1",
+  "canvas": {
+    "width": 1000,
+    "height": 800,
+    "background": "#18202b",
+    "scaling": "none"
+  },
+  "metadataRemoved": true,
+  "images": [
+    {
+      "file": "windows.png",
+      "sha256": "f8b56c095a5fedd32d44e6f14cef8d13d20f5f9ea6d8fd7ed6dca0df84ec3d6b",
+      "sourceFile": "en-dark-800x560.png",
+      "sourceSha256": "ca0f5662e328f5cdae186e255f279964db23c09014961e4023c0396c9e60c8d9",
+      "windowRegion": {
+        "x": 100,
+        "y": 120,
+        "width": 800,
+        "height": 560
+      },
+      "originalWindowPixelsPreserved": true,
+      "os": "Windows",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "revision": "a70ec5f0ded54ea6c1cbe585856459681b7210ee",
+      "scope": "Actual native WPF window with fictional dashboard accounts and unavailable resources; no account or personal-screen capture."
+    },
+    {
+      "file": "linux.png",
+      "sha256": "2b3d26291c5e7210e7c88f193e252671ec125d40b0db3f68671cbed50411de4a",
+      "sourceFile": "ordinary-native-frame.png",
+      "sourceSha256": "03a05e3e6504029b7176cb8fcd9a21691f57201eb39dccc72fbb7945ef6fe159",
+      "windowRegion": {
+        "x": 95,
+        "y": 83,
+        "width": 810,
+        "height": 634
+      },
+      "originalWindowPixelsPreserved": true,
+      "os": "Debian13/Xfce Docker userspace",
+      "architecture": "X64",
+      "runtime": ".NET 10.0.13",
+      "revision": "a70ec5f0ded54ea6c1cbe585856459681b7210ee",
+      "testRevision": "a70ec5f0ded54ea6c1cbe585856459681b7210ee",
+      "scope": "Actual ordinary installed empty-account application with its native xfwm4 titlebar; not a booted VM, GNOME/KDE/Wayland or authenticated handoff claim."
+    }
+  ],
+  "macbook": {
+    "pending": true,
+    "slot": "macbook.png",
+    "requirement": "Maintainer real-device capture with original titlebar and privacy/provenance review; no substitute image."
+  }
+}

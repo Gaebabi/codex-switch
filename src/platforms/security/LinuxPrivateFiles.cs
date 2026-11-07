@@ -96,10 +96,10 @@ internal static class LinuxPrivateFiles
         using (var stream = new FileStream(handle, FileAccess.Write)) { stream.Write(bytes); stream.Flush(true); }
         if (fsync(Fd(directory)) != 0) throw Failure();
     }
-    public static SafeFileHandle Lock(string path)
+    public static SafeFileHandle Lock(string path, string name = ".vault-key.lock")
     {
         using var directory = OpenDirectory(path, false);
-        var handle = Handle(openat(Fd(directory), ".vault-key.lock", 2 | Create | NoFollow | CloseOnExec, FileMode));
+        var handle = Handle(openat(Fd(directory), Leaf(name), 2 | Create | NoFollow | CloseOnExec, FileMode));
         try
         {
             Verify(handle, false); var clock = Stopwatch.StartNew();

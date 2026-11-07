@@ -1,6 +1,10 @@
 <Project>
   <PropertyGroup>
-    <Version>1.40.1</Version>
+    <Version>1.44.0</Version>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(SelfContained)' == 'true'">
+    <RuntimeFrameworkVersion>10.0.13</RuntimeFrameworkVersion>
+    <TargetLatestRuntimePatch>false</TargetLatestRuntimePatch>
   </PropertyGroup>
   <PropertyGroup Condition="'$(COMPUTERNAME)' == 'CODEXWORK'">
     <BaseOutputPath>W:\Builds\CODEXWORK\codex-switch\$(MSBuildProjectName)\bin\</BaseOutputPath>

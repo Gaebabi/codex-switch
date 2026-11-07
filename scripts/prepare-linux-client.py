@@ -22,7 +22,8 @@ file=a.package_file.resolve();allowed=(Path.cwd()/'artifacts').resolve()
 if not file.is_relative_to(allowed):raise SystemExit('Client package must stay inside owned ignored artifacts')
 file.parent.mkdir(parents=True,exist_ok=True)
 url=client['packageUrl']
-expected='https://persistent.oaistatic.com/codex-app-prod/linux/deb/latest/chatgpt_'+client['debianArchitecture']+'.deb'
+expected=('https://persistent.oaistatic.com/codex-app-prod/linux/deb/pool/main/c/chatgpt/chatgpt_'
+          + manifest['packageVersion'] + '_' + client['debianArchitecture'] + '.deb')
 if url!=expected:raise SystemExit('Unexpected client package origin')
 if not file.exists():
     request=urllib.request.Request(url,headers={'User-Agent':'codex-switch-native-client-verification'})

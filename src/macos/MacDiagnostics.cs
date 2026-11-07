@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -122,7 +123,7 @@ internal static class MacDiagnostics
             if (Directory.Exists(directory)) Directory.Delete(directory, true);
         }
         Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
-        File.WriteAllText(reportPath, JsonSerializer.Serialize(new { version = "1.25.0", failures, checks,
+        File.WriteAllText(reportPath, JsonSerializer.Serialize(new { version = typeof(Program).Assembly.GetName().Version!.ToString(3), failures, checks,
             scope = "Disposable vault/socket fixtures, installed bundle discovery and OS resources. No real account access, Codex launch, shutdown, login or switch." }, new JsonSerializerOptions { WriteIndented = true }));
         return failures == 0 ? 0 : 1;
     }
@@ -176,7 +177,7 @@ internal static class MacDiagnostics
                 }
                 catch (Exception error) { failures++; checks.Add(new { name, passed = false, error = error.Message }); Console.Error.WriteLine("UI case " + name + ": " + error.Message); }
                 using var bitmap = new RenderTargetBitmap(new PixelSize((int)window.ClientSize.Width * 2, (int)window.ClientSize.Height * 2), new Vector(192, 192));
-                bitmap.Render(window); bitmap.Save(Path.Combine(directory, name + ".png"));
+                bitmap.Render(window); bitmap.Save(Path.Combine(directory, name + ".png"), PngBitmapEncoderOptions.Default);
                 if (Program.NativeUiEvidence) await NativeUiCapture.SaveAsync(window, Path.Combine(directory, name + "-native.png"));
             }
             foreach (var dark in new[] { true, false })
@@ -184,21 +185,40 @@ internal static class MacDiagnostics
                 var name = "en-" + (dark ? "dark" : "light");
                 var palette = new DeskTheme(dark, window.Appearance); var profiles = Profiles(4);
                 window.Width = 600; window.Height = 420; window.Preview("en", dark, profiles); await Task.Delay(120);
-                var owner = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "LanguageButton");
-                var menu = window.OpenLanguageMenu(owner);
+                var resource = window.GetVisualDescendants().OfType<Control>().First(c => ToolTip.GetTip(c) is MacResourceToolTip);
+                var resourceTip = (MacResourceToolTip)ToolTip.GetTip(resource)!;
+                for (var cycle = 0; cycle < 3; cycle++)
+                {
+                    ToolTip.SetIsOpen(resource, true); await Task.Delay(240);
+                    var surface = resourceTip.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "tipSurface");
+                    Assert(resourceTip.Classes.Contains(":open") && surface.Opacity == 1 && ReferenceEquals(ToolTip.GetTip(resource), resourceTip), "Resource tooltip did not reopen with its custom visible theme");
+                    if (cycle == 2 && Program.NativeUiEvidence)
+                        await NativeUiCapture.SaveAsync(TopLevel.GetTopLevel(resourceTip) ?? throw new InvalidOperationException("Tooltip has no native root"), Path.Combine(directory, name + "-tooltip-native.png"));
+                    ToolTip.SetIsOpen(resource, false); await Task.Delay(80);
+                    Assert(!ToolTip.GetIsOpen(resource) && !resourceTip.Classes.Contains(":open") && surface.Opacity == (palette.Appearance.ReducedMotion() ? 1 : 0), "Resource tooltip did not close and reset its custom surface");
+                }
+                checks.Add(new { name = name + "-resource-tooltip-reopen", passed = true });
+                var owner = window.SettingsButton;
+                var menu = window.BuildSettingsMenu(); menu.Open(owner); await Task.Delay(120);
+                if (Program.NativeUiEvidence)
+                    await NativeUiCapture.SaveAsync(TopLevel.GetTopLevel(menu) ?? throw new InvalidOperationException("Settings popup has no native root"), Path.Combine(directory, name + "-settings-native.png"));
+                var languageSettings = menu.ItemsSource!.Cast<object>().OfType<MenuItem>().Single(item => item.Name == "LanguageSettingsMenuItem");
+                languageSettings.IsSubMenuOpen = true;
                 try
                 {
                     await Task.Delay(120);
-                    var scroll = menu.GetVisualDescendants().OfType<ScrollViewer>().First();
+                    var languagePopup = languageSettings.GetTemplateDescendants().OfType<Avalonia.Controls.Primitives.Popup>().Single();
+                    var languageSurface = languagePopup.Child ?? throw new InvalidOperationException("Language submenu has no surface");
+                    var scroll = languageSurface.GetVisualDescendants().OfType<ScrollViewer>().First();
                     Assert(scroll.Extent.Height > scroll.Viewport.Height, "Language dropdown has no reachable overflow");
-                    Assert(menu.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ScrollBar>().Any(bar => bar.IsVisible), "Language dropdown has no visible scrollbar");
+                    Assert(languageSurface.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ScrollBar>().Any(bar => bar.IsVisible), "Language dropdown has no visible scrollbar");
                     scroll.Offset = new Vector(0, scroll.Extent.Height); await Task.Delay(80);
                     Assert(scroll.Offset.Y > 0, "Language dropdown cannot scroll");
                     scroll.Offset = default; await Task.Delay(80);
                     if (Program.NativeUiEvidence)
                     {
-                        var popup = menu.GetVisualRoot() as TopLevel ?? throw new InvalidOperationException("Native menu root unavailable");
-                        await NativeUiCapture.SaveAsync(popup, Path.Combine(directory, name + "-language-native.png"));
+                        var popupRoot = TopLevel.GetTopLevel(languageSurface) ?? throw new InvalidOperationException("Native menu root unavailable");
+                        await NativeUiCapture.SaveAsync(popupRoot, Path.Combine(directory, name + "-language-native.png"));
                     }
                 }
                 finally { menu.Close(); }
@@ -227,20 +247,25 @@ internal static class MacDiagnostics
             foreach (var count in new[] { 0, 1, 8 })
             {
                 window.Width = 500; window.Height = 360; window.Preview("en", true, Profiles(count)); await Task.Delay(120);
+                // Preview replaces the entire scroll subtree. Measure that current tree before
+                // inspecting its extent; elapsed time alone does not complete a native layout pass.
+                await Dispatcher.UIThread.InvokeAsync(window.UpdateLayout, DispatcherPriority.Render);
                 try
                 {
                     Assert(window.Cards.Count == count, "Account count changed.");
                     if (count == 8)
                     {
-                        Assert(window.AccountScroll.Extent.Height > window.AccountScroll.Viewport.Height, "Additional accounts cannot scroll.");
+                        Assert(window.AccountScroll.Extent.Height > window.AccountScroll.Viewport.Height,
+                            "Additional accounts cannot scroll: extent=" + window.AccountScroll.Extent + "; viewport=" + window.AccountScroll.Viewport + "; bounds=" + window.AccountScroll.Bounds);
                         window.AccountScroll.Offset = new Vector(0, window.AccountScroll.Extent.Height); await Task.Delay(80);
+                        await Dispatcher.UIThread.InvokeAsync(window.UpdateLayout, DispatcherPriority.Render);
                         Assert(window.AccountScroll.Offset.Y > 0, "Scroll position did not change.");
                     }
                     checks.Add(new { name = "account-count-" + count, passed = true });
                 }
                 catch (Exception error) { failures++; checks.Add(new { name = "account-count-" + count, passed = false, error = error.Message }); Console.Error.WriteLine("UI account-count " + count + ": " + error.Message); }
                 using var bitmap = new RenderTargetBitmap(new PixelSize((int)window.ClientSize.Width * 2, (int)window.ClientSize.Height * 2), new Vector(192, 192));
-                bitmap.Render(window); bitmap.Save(Path.Combine(directory, "accounts-" + count + ".png"));
+                bitmap.Render(window); bitmap.Save(Path.Combine(directory, "accounts-" + count + ".png"), PngBitmapEncoderOptions.Default);
             }
             foreach (var (name, used, current, expected) in new[] {
                 ("empty", (double?)100, true, "0%"), ("full", (double?)0, true, "100%"),
@@ -253,6 +278,7 @@ internal static class MacDiagnostics
                 var passed = window.MenuBarProbe is { Visible: true, Template: true, MenuItems: 5 } state && state.Title.Trim() == expected;
                 if (!passed) failures++; checks.Add(new { name = "menu-bar-" + name, passed });
             }
+            if (Program.NativeUiEvidence) await CreditEvidence.CaptureAsync(window, Path.Combine(directory, "credits"));
         }
         catch (Exception error) { failures++; checks.Add(new { name = "render", passed = false, error = error.Message }); Console.Error.WriteLine("Native UI verification failed: " + error.GetType().Name + ": " + error.Message); }
         finally

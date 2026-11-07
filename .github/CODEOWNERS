@@ -10,3 +10,8 @@
 /src/shared/Runtime.cs @Gaebabi
 /src/platforms/macos/MacKeychain.cs @Gaebabi
 /scripts/audit-public.py @Gaebabi
+/AGENTS.md @Gaebabi
+/CONTRIBUTING.md @Gaebabi
+/docs/development/MAINTAINING.md @Gaebabi
+/scripts/verify-pr-title.py @Gaebabi
+/scripts/test-pr-title.py @Gaebabi

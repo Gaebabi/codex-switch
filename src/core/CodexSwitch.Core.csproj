@@ -8,6 +8,9 @@
     <DebugType>none</DebugType>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="CodexSwitch.ModelProviders.Tests" />
+    <InternalsVisibleTo Include="CodexSwitch.AccountAutomation.Tests" />
+    <InternalsVisibleTo Include="CodexSwitch.LinuxTerminal.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.LinuxHandoff.Tests" />
     <InternalsVisibleTo Include="CodexSwitch" />
     <InternalsVisibleTo Include="CodexSwitch.Demo" />

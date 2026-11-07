@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "captureRevision": "d1f483833b1c57aee6bbd923e7f5be3c9067039f",
+  "gitObjects": {
+    "src": "f77d8e3a2e4b25fa198ad025a1647e91a61e64fb",
+    "assets": "4ba3a385e02f53b713329182f838853230828d59",
+    "resources": "7ee4f943f72df3fa0d7d4b145ab90694d51e2975",
+    "localization": "b9a6f60846602a5737f678abf797e3fe511ac17a",
+    "tests": "ca58f4b8b1eab96ff78b3c8b117606677d3e076c",
+    "scripts": "b91d2eb2f215472ac2eab4643288188a14d37a3f",
+    "tools": "55f1b9af5a27ae0625045f0fda90ca55953d36e9",
+    ".github": "d7a01c069d9783c100238c831dfa873fc369f1bf",
+    "Directory.Build.props": "244647114fea7efab1a063a84c8272a5d0d93c6d",
+    "global.json": "3dbe096286877ae684694ac9d90a36b94d6943cf",
+    "requirements-dev.txt": "47e05f0779a156ecf6f3b04c8bf16eab2aa3d21e"
+  },
+  "identicalCapturedImplementationAndBuildInputs": true,
+  "scope": "Subsequent release-branch commits change documentation and inspected evidence only; final package source/CI are recorded separately in VERIFICATION.json."
+}

@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "passed": 15,
+  "failed": 0,
+  "checks": [
+    "Existing vault retains CADL1 authenticated encryption",
+    "Owner completed ordinary Linux login for two distinct accounts",
+    "Canonical active identity remains one of the two encrypted accounts",
+    "One ordinary Switch click applied the other real account",
+    "Actual switch retained an exact backup of the former canonical login",
+    "The same utility automatically launched one approved desktop",
+    "Completed no-chat handoff cleared its encrypted checkpoint",
+    "Approved native context permits the registered account without a policy rewrite",
+    "Native account/read matches this encrypted account",
+    "Authenticated usage response parses for this account",
+    "Approved native context permits the registered account without a policy rewrite",
+    "Native account/read matches this encrypted account",
+    "Authenticated usage response parses for this account",
+    "Original keyring key reopens both encrypted accounts",
+    "Read-only account verification preserves canonical credential bytes"
+  ],
+  "realAccounts": 2,
+  "twoAccountSwitchVerified": true,
+  "automaticContinuationVerified": false,
+  "credentialsExported": false,
+  "scope": "One owner-triggered ordinary Switch applied the other real account, retained the exact previous login, launched the approved native client and cleared its no-chat checkpoint. No inference or active-chat continuation submitted.",
+  "applicationSource": "2d9940ab3a324fdaabe0aeb6d48b94117c9e1501",
+  "ownerConfirmedAutomaticAccountListRecovery": true,
+  "manualSwitchInput": "Owner clicked the other real account once; agent did not automate that UI input.",
+  "screenshots": "Public empty-home startup screenshots are separate from this authenticated case. No owner account or login screenshots are published."
+}

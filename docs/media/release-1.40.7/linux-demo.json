@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "revision": "7645e74e5285b3f8458333a0381a4a12e36eb357",
+  "sourceVersion": "1.40.7",
+  "os": "Linux",
+  "architecture": "X64",
+  "runtime": ".NET 10.0.13",
+  "artifact": "native-ui-linux-x64",
+  "run": "https://github.com/Gaebabi/codex-switch/actions/runs/39020165299",
+  "originalFile": "en-dark-800x600-native.png",
+  "originalSha256": "5caca395a8161b157f9bdc9d2dbe322cd6b2e78ef3ee39d3df94f3edc13cbf6d",
+  "galleryFile": "linux.png",
+  "gallerySha256": "f89348566bb5c78b26c6e217595d2dff620027d04ac140d354c00687890048a8",
+  "capture": "Native own window or popup",
+  "rendering": "Software (X11 native window)",
+  "inputs": "Four fictional demo accounts in the actual native app, no real login or account actions",
+  "scope": "Readability of the real Linux account overview; not proof of authenticated sign-in/switch/continuation or an original WM titlebar. Separate installed-Xfce evidence is retained."
+}

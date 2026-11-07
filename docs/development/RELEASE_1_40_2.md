@@ -1,0 +1,16 @@
+# Release1.40.2: automatic initialization recovery
+
+Issue81 / [PR82](https://github.com/Gaebabi/codex-switch/pull/82) fixes the shared desktop's startup clock lifetime. A failed first keyring/client load no longer prevents all scheduled retries: the normal window starts its existing60-second clock before initialization, and its scheduled action calls the same guarded initializer/refresh path as manual Refresh. Account actions still require actual readiness. No native provider, credential policy, key/vault/file identity, error validation or account-switch algorithm is relaxed.
+
+## Verification boundaries
+
+- [Actual before/after native program frames](../evidence/automatic-startup-recovery/README.md) reproduce the old locked-startup failure and corrected same-window recovery after actual native keyring unlock, with no app input. The corrected frames and53-check ordinary session use native current-source2d9940a CI; the earlier local cross-publish/older image-contract confirmation remains separately labeled. Neither screenshot alone substitutes for native package verification.
+- Separate owner-authenticated cases confirm automatic loading of both preserved accounts, cold manual switching and normal running-client shutdown/account change/automatic relaunch. The owner's two ordinary Switch clicks pass15/16 sanitized production checks for identity/usage, exact previous-login backups, original process exit, managed launch and cleared no-chat checkpoints. Both encrypted accounts reopen through the original keyring. No owner account/authentication screenshot is published.
+- Native Windows checks, native macOS15 arm64/Intel signing/ZIP/install checks, and actual Linux x64/ARM64 provider/client/package gates must pass on the exact final source. The ordinary x64 Xfce session now includes a locked-startup/unlock automatic-recovery regression. Final CI links and exact-head author review/merge belong to PR82. Self-review is not independent approval.
+- The MacBook real-device screenshot remains owner-provided follow-up. No active chat existed and quota was exhausted; authenticated inference/active-chat continuation and full booted GNOME/KDE/Wayland/ARM64 desktop/accessibility remain separate #5/#6/#7/#76 gates. Linux stays unsigned preview with `supportedAccountHandoff:false`; Mac remains ad-hoc signed/unnotarized.
+
+## Publication procedure
+
+Reuse the authorized manual procedure from [Release1.40.1](RELEASE_1_40_1.md). Review the exact passing native source artifacts and all nine package/runtime/RID/archive hashes. Merge the reviewed tree, create a new1.40.2 draft against its identical merged tree, and upload nine packages plus `VERIFICATION.json`/`SHA256SUMS.txt`. Verify every GitHub SHA256/size before publishing as latest; verify all eleven public download URLs and all four README languages afterward. Preserve1.40.1 and earlier releases unchanged. CI remains read-only and has no signing/account/publisher secrets.
+
+[Versioned1.40.2 Release](https://github.com/Gaebabi/codex-switch/releases/tag/v1.40.2) / [latest published Release](https://github.com/Gaebabi/codex-switch/releases/latest) are the publication record. Their verification receipt binds exact source, merged tree, native packages and CI results; a source commit or successful build alone is not publication.

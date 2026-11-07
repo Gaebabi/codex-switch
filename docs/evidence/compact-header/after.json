@@ -1,0 +1,92 @@
+{
+  "sourceRevision": "26ef26951e8438eeb684e5eb7b42370a84bbfc5d",
+  "baselineCompiledSource": "0932dc373790a81a385e11e04f445b72d951a173",
+  "baselineMergedRevision": "1b4d55823b10ea1a9e2d23d1a98895697d6ee8d3",
+  "ciRun": 40220031987,
+  "appVersion": "1.42.4",
+  "nativeChecksPerArchitecture": 12,
+  "nativeImageMatrix": "English/Korean x dark/light x500x360/600x420/800x600",
+  "images": [
+    {
+      "file": "after-x64-en-dark.png",
+      "rid": "linux-x64",
+      "originalFile": "en-dark-500x360-native-wm.png",
+      "sha256": "486c9b8223fbe813de19c1495aa30413ec4faf9e51ab5ba116c6924c1725064c",
+      "width": 510,
+      "height": 394,
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "after-x64-en-light.png",
+      "rid": "linux-x64",
+      "originalFile": "en-light-500x360-native-wm.png",
+      "sha256": "9d38f1f4b2d99c1e5d35acd630f5440ac26c31c8fc25b55554270e8597226dca",
+      "width": 510,
+      "height": 394,
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "after-x64-ko-dark.png",
+      "rid": "linux-x64",
+      "originalFile": "ko-dark-500x360-native-wm.png",
+      "sha256": "d026f4c45eaf7935499c2cbb94307961f3b3027307dc6a0da08f17e5ceda8146",
+      "width": 510,
+      "height": 394,
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "after-x64-ko-light.png",
+      "rid": "linux-x64",
+      "originalFile": "ko-light-500x360-native-wm.png",
+      "sha256": "383b5a18f9976a9a43a9aa9f62be2b49658d09f2847a84dcf2cec9f37bb7938d",
+      "width": 510,
+      "height": 394,
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "after-arm64-en-dark.png",
+      "rid": "linux-arm64",
+      "originalFile": "en-dark-500x360-native-wm.png",
+      "sha256": "6c98d7bc35bbb53709158183221be90fec8568eccac1835880d8719ff70a3bf3",
+      "width": 510,
+      "height": 394,
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "after-arm64-en-light.png",
+      "rid": "linux-arm64",
+      "originalFile": "en-light-500x360-native-wm.png",
+      "sha256": "dc3be15013b159d53945aa8cb5d8eaa469f45c2959b542ce3070d0f81245042c",
+      "width": 510,
+      "height": 394,
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "after-arm64-ko-dark.png",
+      "rid": "linux-arm64",
+      "originalFile": "ko-dark-500x360-native-wm.png",
+      "sha256": "298c0aeb3f901ebfc88fdfe8d9ebf1bddc1fca248ff06358c7dff2369e466d07",
+      "width": 510,
+      "height": 394,
+      "originalPixelsUnchanged": true
+    },
+    {
+      "file": "after-arm64-ko-light.png",
+      "rid": "linux-arm64",
+      "originalFile": "ko-light-500x360-native-wm.png",
+      "sha256": "86d085860925183ae4dfb1ca7b7090f46b65f6d85c1fb5b8b3abc224db1c015d",
+      "width": 510,
+      "height": 394,
+      "originalPixelsUnchanged": true
+    }
+  ],
+  "sourceHashes": {
+    "src/desktop/DeskWindow.cs": "17066af5f9f748b8ffd6acbe77c93b69a983bf3ee94c5acf97b99ed2f4cdeab2",
+    "src/linux/LinuxUiEvidence.cs": "0b5c9499f3ac7a86000a1ed39be41c2d63a6273a2d97ce08efb16acb6638de36",
+    "scripts/verify-linux-framed-ui.py": "9269f0b948bad05f6b5fa2f2a0ccf3d295b497f392ed3375b997a8d7161fe9fe",
+    "scripts/run-local-linux-desktop.py": "5b53ee48ee12558f7552d8dc11470dcbc25efa2beffc86f8a441edd91417dd23",
+    "Directory.Build.props": "34fbfd160120df743fdcb268b0ccb8c5407cdf8509a711bc258ba91898968f10"
+  },
+  "personalDataUsed": false,
+  "scope": "Actual own-app X11 and original direct-parent Xfwm4 frames with fictional profiles. Full caption/button/client and action/counter non-overlap, four-card/no-scroll checks passed. No owner display, login, desktop handoff or authenticated continuation."
+}

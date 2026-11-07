@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Automation;
 
 namespace CodexAccountDesk;
 
@@ -13,6 +14,7 @@ internal sealed class DriveUsagePanel : Grid
     private readonly List<DriveCell> _cells = new();
     public DriveUsagePanel(Action settings)
     { Height = 24; Margin = new Thickness(0, 0, 8, 0); _settings.Click += (_, _) => settings(); }
+    internal bool Fits => _cells.All(cell => cell.Fits);
     public void Refresh(DriveReading[] readings, Burn0Theme theme)
     {
         if (!_cells.Select(cell => cell.Root).SequenceEqual(readings.Select(reading => reading.Root)))
@@ -33,11 +35,13 @@ internal sealed class DriveUsagePanel : Grid
     private sealed class DriveCell : Grid
     {
         public string Root { get; }
+        public bool Fits => _text.ActualWidth >= 20 && _temperature.ActualWidth + 22 < ActualWidth && _ioFills.All(fill => fill.Height is >= 0 and <= 16);
         private readonly Border _track = new() { CornerRadius = new CornerRadius(3) }, _fill = new() { HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(3) };
         private readonly TextBlock _text = new() { FontSize = 11, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(5, 0, 4, 0) };
         private readonly TextBlock _temperature = new() { FontSize = 10, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 5, 0) };
         private ResourcePressure _temperaturePressure;
+        private readonly Border[] _ioTracks = new Border[2], _ioFills = new Border[2];
         private double _freePercent;
         public DriveCell(string root)
         {
@@ -45,6 +49,16 @@ internal sealed class DriveUsagePanel : Grid
             Children.Add(_track); Children.Add(_fill);
             var content = new Grid(); content.ColumnDefinitions.Add(new()); content.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
             content.Children.Add(_text); Grid.SetColumn(_temperature, 1); content.Children.Add(_temperature); Children.Add(content);
+            content.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
+            var throughput = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 5, 0) };
+            for (var index = 0; index < 2; index++)
+            {
+                var track = new Grid { Width = 3, Height = 16, Margin = new Thickness(index == 0 ? 0 : 2, 0, 0, 0) };
+                _ioTracks[index] = new Border { CornerRadius = new CornerRadius(1) };
+                _ioFills[index] = new Border { CornerRadius = new CornerRadius(1), VerticalAlignment = VerticalAlignment.Bottom };
+                track.Children.Add(_ioTracks[index]); track.Children.Add(_ioFills[index]); throughput.Children.Add(track);
+            }
+            Grid.SetColumn(throughput, 2); content.Children.Add(throughput);
             SizeChanged += (_, _) => _fill.Width = ActualWidth * _freePercent / 100;
         }
         public void Refresh(DriveReading reading, Burn0Theme theme)
@@ -58,9 +72,19 @@ internal sealed class DriveUsagePanel : Grid
             var now = DateTimeOffset.UtcNow; _temperature.Text = TemperaturePresentation.Label(reading.Temperature, now); _temperature.FontFamily = theme.Font;
             _temperaturePressure = TemperatureColors.Pressure(reading.Temperature, TemperatureKind.Disk, _temperaturePressure, now);
             _temperature.Foreground = theme.Color(TemperatureColors.Color(_temperaturePressure));
+            for (var index = 0; index < 2; index++)
+            {
+                var channel = index == 0 ? reading.Io?.Read : reading.Io?.Write;
+                var fresh = DiskIoReading.Fresh(reading.Io, now);
+                var ioColor = !fresh ? "muted" : channel?.Pressure switch { ResourcePressure.Warning => "warning", ResourcePressure.Critical => "danger", _ => index == 0 ? "accent" : "success" };
+                _ioTracks[index].Background = theme.Color("divider");
+                _ioFills[index].Background = theme.Color(ioColor); _ioFills[index].Height = 16 * DiskIoReading.Fill(reading.Io, index == 1, now);
+                AutomationProperties.SetName(_ioTracks[index].Parent as DependencyObject, Loc.T(index == 0 ? "io.read" : "io.write") + ": " + (fresh ? DiskIoReading.RateLabel(channel?.BytesPerSecond) : "—"));
+            }
             var details = reading.Root + "\n" + (reading.Free.HasValue ? Loc.F("남음 {0:0.##} / {1:0.##} GiB\n잔여 {2:0.0}%", reading.Free.Value / 1073741824.0, reading.Total!.Value / 1073741824.0, reading.FreePercent) : Loc.T("드라이브 조회 불가"));
             details += "\n\n" + TemperaturePresentation.Tooltip(reading.Temperature, now);
             details += "\n" + TemperatureColors.Tooltip(reading.Temperature, TemperatureKind.Disk);
+            details += "\n\n" + DiskIoReading.Tooltip(reading.Io, now);
             ToolTipTheme.Resource(this, label, value, details, theme, color is "warning" or "danger" ? color : "text");
         }
     }

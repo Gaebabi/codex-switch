@@ -32,14 +32,15 @@ internal static class TemperaturePresentation
         if (reading is { State: TemperatureState.Available } && !Fresh(reading, now)) text += "\n" + Loc.T("thermal.stale");
         else if (reading == null || reading.State != TemperatureState.Available)
             text += "\n" + Loc.T(reading?.State switch {
-                TemperatureState.ProviderMissing => "thermal.provider_missing", TemperatureState.AccessDenied => "thermal.access_denied",
+                TemperatureState.ProviderMissing => reading.Code is "thermal.cpu_setup_required" or "thermal.cpu_bundle_missing" ? reading.Code : "thermal.provider_missing", TemperatureState.AccessDenied => "thermal.access_denied",
                 TemperatureState.ReadFailed => "thermal.read_failed", TemperatureState.PlatformUnsupported => "thermal.platform_unsupported",
                 TemperatureState.InvalidData => "thermal.invalid_data", _ => "thermal.sensor_unavailable" });
         if (!string.IsNullOrEmpty(reading?.Source)) text += "\n" + reading.Source;
         if (reading?.Scope == TemperatureScope.HighestSensor) text += "\n" + Loc.T("thermal.highest_sensor");
         else if (reading?.Scope == TemperatureScope.BackingDisks) text += "\n" + Loc.T("thermal.backing_disks");
         if (!string.IsNullOrEmpty(reading?.Detail)) text += "\n" + reading.Detail;
-        if (!string.IsNullOrEmpty(reading?.Code)) text += "\n" + reading.Code;
+        if (!string.IsNullOrEmpty(reading?.Code) && !(reading.State == TemperatureState.ProviderMissing && reading.Code is "thermal.cpu_setup_required" or "thermal.cpu_bundle_missing"))
+            text += "\n" + (reading.Code.StartsWith("thermal.", StringComparison.Ordinal) ? Loc.T(reading.Code) : reading.Code);
         return text;
     }
 }

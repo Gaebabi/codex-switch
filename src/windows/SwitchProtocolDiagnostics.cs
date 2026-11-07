@@ -44,7 +44,7 @@ internal static class SwitchProtocolDiagnostics
             if (!passed) throw new InvalidDataException("Persisted thread identity/name/workspace did not resume.");
         }
         catch (Exception failure) { error = failure.Message; }
-        File.WriteAllText(reportPath, JsonSerializer.Serialize(new { version = "1.21.0", passed, error,
+        File.WriteAllText(reportPath, JsonSerializer.Serialize(new { version = typeof(Program).Assembly.GetName().Version!.ToString(3), passed, error,
             scope = "Isolated local protocol fixture. No inference turn, live account access, native shutdown, or live thread mutation." }, new JsonSerializerOptions { WriteIndented = true }));
         return passed ? 0 : 1;
     }

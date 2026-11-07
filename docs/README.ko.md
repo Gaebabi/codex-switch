@@ -1,54 +1,85 @@
-<p align="center">
-  <img src="../assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" />
-</p>
-<h1 align="center">Codex Switch</h1>
+<p align="center"><img src="../assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" /></p>
+<h1 align="center">Codex Switch: OpenAI Codex 계정 전환과 사용량 확인</h1>
 
-Codex 계정을 전환하고, 재개 가능한 미완료 로컬 작업을 자동으로 이어가세요. 다음 계정의 남은 사용량도 한눈에 확인합니다. **Windows와 macOS / 1.27.6**
+**Codex Switch(`codex-switch`)는 OpenAI Codex 계정 전환과 사용량 확인을 위한 오픈소스 데스크톱 앱입니다.** 여러 계정의 잔여량을 비교하고 다음 계정을 선택하세요. 전환이 중단되면 저장된 기록으로 복구할 수 있습니다. 선택적 사용량 기준 자동 전환은 기본 **꺼짐**입니다.
+
+Windows · macOS15+ · Linux 미리보기 · MIT 오픈소스 · **1.44.0**
 
 [English](../README.md) / 한국어 / [日本語](README.ja.md) / [简体中文](README.zh-CN.md)
 
-![서로 다른 잔량과 완만한 자원 변화, 상태 색을 보여주는 가상 데모](media/demo.png)
+[다운로드](#다운로드) · [시작하기](INSTALL.md) · [업데이트 내용](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0)
 
-*가상 계정·자원을 사용하는 소스 1.30.2 Windows 화면입니다. 공개 다운로드는 1.27.6입니다. [최신 스크린샷과 Windows·Mac 실제 앱 갤러리](media/README.md#native-platform-gallery).*
+<p align="center"><img src="evidence/home-simplification/native-after-windows-ko.png" width="500" height="350" alt="잔량 탱크와 톱니 설정 하나로 정리한 Codex Switch1.44.0" /></p>
 
-## 바로 시작
+가상 계정으로 검증한 실제 Windows 앱 화면입니다. [원본 화면과 소스 검증](evidence/home-simplification/README.md). 인증정보는 로컬 암호화 저장소에 보관되며 **계정 전환 시 Codex가 재시작됩니다.** OpenAI와 제휴하지 않은 독립 프로젝트입니다.
 
-**Linux:** [서명되지 않은 설치·UI 미리보기 후보](development/LINUX_PACKAGES.md)를 정식 계정 전환 지원과 구분해 검증합니다. [지원 계획](PLATFORM_SUPPORT_PLAN.md) / [이슈 #1](https://github.com/Gaebabi/codex-switch/issues/1). 실제 계정 전환·자동 재개와 전체 데스크톱 검증은 진행 중이며, 다양한 언어·배포판·접근성 관련 기여를 환영합니다.
+**유용하다면 GitHub Star로 저장하고 다른 Codex 사용자에게도 알려주세요.**
 
-소스1.40.0의 [Linux 계정·데스크톱 통합 미리보기](development/LINUX.md)는 기존 암호화 전환·복구·재개 흐름을 연결합니다. 작업 전에 앱에서 Codex를 시작하며, 계정 전환은 수동입니다. 기존 file 인증 정책과 검증된 설치본이 필요합니다. 명시적 체크섬의 CLI 전용 모드는 계정·사용량 기능만 제공합니다. [전체 설치 후보](development/LINUX_PACKAGES.md)는 미리보기이며, 실제 두 계정의 전환·재개 및 다양한 데스크톱 검증은 남아 있습니다.
+1.44.0은 잔량 탱크와 계정별 전환을 유지하면서 모델, 자동 전환, 재시작, 언어와 화면 설정을 톱니 메뉴 하나로 모았습니다. 이미지가 많은 긴 대화의 중계 오류와 동시 요청 처리도 개선했습니다. [변경 내용과 호환성](development/RELEASE_1_44_0.md).
 
-[실제 Linux 앱 전후 화면·CLI 전용 확인과 Docker42개 검증](evidence/linux-account-handoff/README.md). 빈 계정 홈과 가상 인증 데이터의 검증이며, 실제 인증 계정의 전환·Continue 검증은 별도입니다.
+1.42.2에는 경고 버튼의 해당 계정 브라우저 재로그인, 기본 꺼짐인 계정 자동 전환, 최적 자동 선택/사용자 지정 순위, 재시작 복구 기록, 구독 날짜 제목과 공식 Pro 100/200/500 표기가 포함됩니다. [동작과 검증 범위](development/ACCOUNT_AUTOMATION.md) / [릴리즈 절차](development/RELEASE_1_42_2.md).
 
-소스1.40.1은 Linux 제목 표시줄 중복을 제거하고 [사용자가 직접 로그인한 데스크톱 검증](evidence/linux-interactive-desktop/README.md)을 추가합니다. 실제 계정 하나의 암호화 저장소·활성 계정 일치·인증된 사용량 조회를 확인했습니다. 두 계정 전환·자동 재개와 더 넓은 데스크톱 검증은 남아 있으며, Linux 설치 패키지는 서명되지 않은 통합 미리보기입니다.
+1.42.3은 Codex 업데이트로 실행 파일이 교체된 뒤에도 Switch 재시작 없이 사용량 조회를 복구합니다. 유효한 경로는 캐시하고, 설치 중의 실패는 명시적으로 표시하며 요청을 반복 전송하지 않습니다. [복구와 검증](development/RELEASE_1_42_3.md).
 
-1. Windows는 전체 패키지의 `CodexSwitch.exe`를 실행하세요. Mac은 `Install.command`로 설치한 뒤 **Codex Switch.app**을 여세요. [빌드와 설치](INSTALL.md)
-2. 타이틀바의 **+**로 계정을 추가하세요. Windows에서 현재 로그인은 **↻**를 우클릭해 가져올 수 있습니다.
-3. 카드의 잔량을 비교한 뒤 **전환**을 누르세요. 60초마다 자동 조회하며 **↻**나 **F5**로 즉시 갱신할 수 있습니다.
+1.42.4는 Linux 최소 창에서도 계정 자동 전환 이름과 상태가 잘리지 않도록 개선합니다. 사용량 카드 공간과 창 최소 크기를 유지하며 의존성을 추가하지 않습니다. [네이티브 검증과 전달](development/RELEASE_1_42_4.md).
 
-패키지 폴더 전체를 유지하세요. 패키지 실행에는 .NET 설치가 필요 없고, 현재 소스 빌드에는 .NET10.0.4xx SDK와 설치된 Codex 앱/CLI가 필요합니다. 소스1.35.0은 .NET10 LTS/runtime10.0.13을 사용하며 검토한 Mac 지원 기준은macOS15+입니다. 공개1.27.6 다운로드는 별도 릴리즈 전까지 유지합니다.
+1.42.5는 만료가 가까운 사용 가능 구독을 우선 선택하고 **Auto Switch** 토글과 다음 전환 계정을 표시합니다. 일시적인 전환 실패를 최대 두 번 더 자동 재시도하며 진행 상태를 유지합니다. 재시도 횟수를 저장하고 기존 Continue 식별자를 보존해 무한 복구와 중복 전송을 막습니다. [동작과 검증](development/RELEASE_1_42_5.md).
 
-## 한눈에 확인
+1.42.6은 사용량 식별자가 중복되거나 비어 있어도 Auto Switch가 오류로 중단되지 않도록 개선합니다. 모호한 후보는 제외하고 현재 계정의 정보가 모호하면 전환하지 않습니다. 원본 데이터와 기존 만료일·사용자 순위는 유지합니다. [동작과 검증](development/RELEASE_1_42_6.md).
 
-- 남은 사용량, 리셋까지의 시간, 요금제, 구독 종료일, 초기화권과 크레딧 잔액
-- 사용 기록과 추이 기반 소진 예상 시간. 계정의 **...** 메뉴에서 **History**를 여세요.
-- 로컬 실행/큐/목표 수, 자원 추이, 드라이브 잔량. 게이지에 마우스를 올리면 상세 정보가 나옵니다.
-- **1.29.0 소스:** 리소스·디스크 게이지 오른쪽에 온도를 표시하고 정상·주의·높음 색상을 독립적으로 적용합니다. 장치가 제공하는 기준을 우선하며, 없으면 문서화한 표시 기본값을 사용합니다. 값이 없으면 `—°C`이며 CPU·RAM은 호환 센서 제공자가 필요할 수 있습니다. [온도 지원 범위](TEMPERATURES.md)
-- **1.29.1 소스:** Windows 정상 종료 후 자식 프로세스 정리까지 기다려 같은 Switch 클릭에서 계정 적용·재실행·재개를 이어갑니다. 현재 다운로드에는 이 수정이 포함되지 않습니다. [전환 과정](SWITCHING.md)
-- **1.29.2 소스:** 만료 날짜·D-day는 3일(72시간) 이내, 리셋은 2일(48시간) 이내면 경고색을 표시하고 매초 갱신합니다. [프로그램 전후·지원 범위](evidence/date-warnings/README.md)
-- **1.29.3 소스:** 자동 갱신은 항상 60초 간격으로 동작합니다. Windows 하단 스위치·문구와 Mac 설정 항목을 제거했으며, 이전에 꺼둔 설정도 갱신을 막지 않습니다. [프로그램 전후·검증 범위](evidence/always-refresh/README.md)
+1.42.7에서는 Linux 터미널 계정 명령을 검토된 Codex CLI0.164.0과 함께 사용할 수 있습니다. 실행 파일 무결성과 자격 증명 및 작업 공간 검사는 그대로 유지합니다. [호환성과 검증](development/RELEASE_1_42_7.md).
 
-상단에서 언어와 라이트/다크를 선택합니다. **1.28.0 소스**는 영어·한국어·일본어·중국어 간체/번체·스페인어·프랑스어·독일어·브라질 포르투갈어 UI와 JSON 언어팩 가져오기를 지원합니다. 현재 **1.27.6 다운로드**의 UI는 영어·한국어입니다. [언어팩·번역 기여 안내](LOCALIZATION.md)
+1.43.0에서는 히스토리에 크레딧 잔액 감소 그래프를 추가했습니다. 크레딧 사용은 기본 허용이며, 허용을 끄면 기본 한도 소진 시 안전한 중단과 재개를 지원합니다. 사용 가능한 과거 만료일 계정의 우선순위와 진단 버전 표기도 개선했습니다. [Verification](https://github.com/Gaebabi/codex-switch/issues/132).
 
-## 전환과 자동 재개
+1.43.1에서는 초기화 시각이 지났어도 최신 조회가 0%이면 다른 계정으로 자동 전환할 수 있습니다. 다음 대상 표시가 유지되며, 사용 가능한 대상이 있으면 크레딧 보호를 위한 중단보다 전환을 우선합니다. [Verification](https://github.com/Gaebabi/codex-switch/issues/136).
 
-- **전환 전 백업:** 활성 로컬 채팅 이름에 날짜를 붙여 저장·확인하고 기존 로그인을 백업합니다. 이름 저장이나 정상 종료가 실패하면 로그인 변경을 중단합니다.
-- **미완료 작업 자동 재개:** Codex를 재시작해 같은 채팅 ID·폴더·모델·권한으로 다시 열고, 이어갈 수 있는 idle 채팅에 **Continue**를 한 번 보냅니다. 이미 실행 중이거나 완료된 작업은 그대로 둡니다.
-- **중단된 전환 복구:** 진행 상태는 암호화 저장소에 보관하며 남은 재개는 **채팅 재개**로 이어갑니다. 메뉴·트레이에서 취소할 수 있고 전송 결과가 불명확하면 자동 재전송하지 않습니다.
+1.43.2에서는 Windows 임시 데이터베이스 파일의 잠금이 잠깐 남아도 로그인 취소가 정리 오류로 바뀌지 않도록 개선했습니다. 최대 2초 동안 비동기로 기다리며, 잠금이 지속되거나 권한 문제가 있으면 오류를 그대로 표시합니다. [Verification](https://github.com/Gaebabi/codex-switch/issues/139).
 
-**전환 시 Codex를 재시작**하며 같은 로그인 파일을 사용하는 CLI/IDE에도 영향을 줄 수 있습니다. [전환 방식](SWITCHING.md)
+1.43.3에서는 Responses 호환 제공자를 추가하고 사용 가능한 OpenAI 모델과 함께 채팅별로 선택할 수 있습니다. 중단된 계정 전환 복구와 크레딧 사용 내역의 기간 표시도 개선했습니다. 실제 Codex 모델 선택창과 각 외부 제공자의 호환성은 별도 검증이 남아 있습니다. [설정과 사용 범위](MODEL_PROVIDERS.md).
 
-## 더 알아보기
+## 다운로드
 
-[Mac 설치](MACOS.md) / [예측 방식](FORECAST.md) / [보안](../SECURITY.md) / [개발](../CONTRIBUTING.md)
+- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-win-x64.zip)
+- macOS15+: [Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-osx-x64.zip)
+- Linux **미리보기** x64·ARM64: [DEB·RPM·tar.gz 및 SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0)
 
-공개 오픈소스이며 OpenAI 공식 제품이 아닙니다. [Windows·Mac 실행 패키지 다운로드](https://github.com/Gaebabi/codex-switch/releases/tag/v1.27.6): 소스 빌드나 .NET 설치가 필요하지 않습니다. Mac은 미공증 패키지입니다. 인증 정보는 로컬 암호화 저장소에 보관합니다. [MIT](../LICENSE) / [리소스 고지](../licenses/Burn0Assets.LICENSE.txt)
+전체 실행 패키지에 .NET 런타임이 포함되어 소스 빌드나 .NET 설치가 필요 없습니다. 폴더·앱 번들 전체를 유지하세요. Windows·Linux는 미서명이며 Mac은 임시 서명으로 **Apple 공증은 없습니다**. [설치](INSTALL.md) / [Mac 최초 실행](MACOS.md)
+
+Linux는 통합 미리보기입니다. 키 모음·설치 UI·패키지 검증과 실제 두 계정 전환·재개 및 전체 데스크톱 지원은 구분합니다. 데스크톱 통합에는 검증된 OpenAI Linux 클라이언트26.1007.71326, 기존 file 인증 정책과 X11/XWayland가 필요하며 새 클라이언트는 별도 검토합니다. 명시적 체크섬의 CLI 전용 모드는 데스크톱 채팅을 재개하지 않습니다. [요구사항](development/LINUX.md) / [Linux 설치](development/LINUX_PACKAGES.md) / [지원 계획](PLATFORM_SUPPORT_PLAN.md)
+
+## 사용과 주요 기능
+
+경고 아이콘에 마우스를 올리면 원인을 보고, 누르면 해당 계정으로 브라우저에서 다시 로그인할 수 있습니다. [실제 앱 검증 화면](evidence/account-automation/README.md).
+
+**Linux1.44.0 다운로드에는 소스1.41.0에서 추가한 CLI 계정 전환과 저장 세션 재개가 포함됩니다.** `CodexSwitch cli`로 화면 서버 없이 기존 암호화 계정을 관리하고, `cli switch <계정> --resume <CLI 세션 UUID>`로 수동 전환과 공식 CLI 재개를 연결합니다. `--continue`는 후속 메시지 전송을 명시하며, `--exec --continue`는 비대화형 실행입니다. 검증된 네이티브 CLI·체크섬과 잠금 해제된 지원 Secret Service가 필요합니다. Linux x64에서 실제 두 계정 전환 후 기존 문맥을 기억하는 CLI 재개를 확인했습니다. ARM64·오프라인 검증과 전체 데스크톱 수용 범위는 구분합니다. [명령·실제 스크린샷·정확한 검증 범위](development/LINUX_TERMINAL.md).
+
+1. Windows는 `CodexSwitch.exe`, Mac은 `Install.command`로 설치한 **Codex Switch.app**을 실행하세요. Linux는 전체 미리보기 패키지와 지원하는 Secret Service 제공자가 필요합니다.
+2. **+**로 각 계정을 공식 브라우저 로그인합니다. 이전 계정이 자동 선택되면 별도 브라우저 프로필·비공개 창으로 다음 계정을 로그인하세요. **설정 > 현재 계정 가져오기**로 현재 로그인을 가져올 수 있습니다.
+3. 잔량을 비교한 뒤 **Switch**를 누르세요. **계정 자동 전환은 기본 꺼짐이며 설정에서 직접 켤 수 있습니다.** Linux에서는 작업 전에 **설정 > Start Codex**로 시작하세요.
+
+- **수동 전환·자동 재개:** 날짜를 붙인 채팅 이름을 저장·확인하고 기존 로그인을 백업합니다. Codex를 정상 종료하고 선택 계정을 적용한 뒤 같은 채팅 ID·폴더·모델·권한을 열어, 재개 가능한 미완료 idle 채팅에 **Continue**를 한 번 보냅니다. 실행 중·완료된 작업은 중복 실행하지 않습니다.
+- **중단 복구:** 암호화한 진행 상태를 **Resume chats**로 이어갑니다. 전송 결과가 불확실하면 자동 재전송하지 않으며 이름 저장·정상 종료 실패 시 로그인 변경을 중단합니다. Windows 자식 프로세스 종료까지 기다려 한 번의 Switch로 진행합니다. [전환 원리](SWITCHING.md)
+- **사용량·기록:** 잔량, 리셋, 요금제, 만료일, 초기화권, 크레딧과 사용 추이 예측. **... → History**에서 기록을 확인합니다. 카드 날짜는 사용자 현지 시간대로 표시하고, 공통 기록 화면의 시간축에는 KST를 명시합니다. 만료72시간·리셋48시간 이내에는 경고색을 적용합니다.
+- **로컬 상태·자원:** 실행·큐·목표 수, 자원 추이와 디스크 잔량. Windows는 제공되는 자원·디스크 온도에 독립된 색상을 적용하고 값이 없으면 알 수 없음으로 표시합니다. Linux 자원 측정은 아직 미지원입니다. [온도 지원 범위](TEMPERATURES.md)
+- **항상 60초 자동 조회**, **↻·F5** 즉시 조회. 처음 키 모음이 잠겨 있거나 클라이언트를 사용할 수 없으면, 잠금 해제·설치 후 같은 주기로 초기화를 자동 재시도합니다.
+- **9개 UI 언어와 JSON 언어팩:** 영어·한국어·일본어·중국어 간체/번체·스페인어·프랑스어·독일어·브라질 포르투갈어. 누락 번역은 영어를 사용합니다. 아이콘 테마 버튼, 다크·라이트와 공통 스크롤바를 제공합니다. [번역 기여](LOCALIZATION.md)
+
+전환은 Codex를 재시작하며 같은 로그인을 공유하는 CLI·IDE에도 영향을 줄 수 있습니다. Linux 실제 계정 전환·재개 및 다양한 데스크톱·접근성 지원의 남은 기준은 지원 계획에서 관리합니다.
+
+## 실제 앱 화면
+
+[Windows·Linux 최신 화면과 검증 범위](media/release-1.42.2/README.md). 실제 제목 표시줄을 보존하고 단색 배경을 사용합니다. 가상 UI 입력과 실제 계정 검증은 별도로 명시합니다.
+
+![Windows 실행 화면](media/release-1.42.2/windows.png)
+
+**Windows x64:** 실제 WPF 앱의 가상 계정, 공식 Pro 등급과 계정 자동 전환 문구입니다. 데모에서만 켜짐을 선택했으며 기본은 꺼짐입니다. 개인 계정·바탕화면은 사용하지 않았습니다.
+![실제 Xfce OS 타이틀바와 데모 계정 4개를 함께 촬영한 Linux 앱](media/release-1.42.2/linux-x64-dark.png)
+
+**Linux x64 · X11/Xfwm4:** 실제 OS 타이틀바와 가상 데모 계정 4개를 같은 창에서 함께 촬영했습니다. 타이틀바 합성·개인 로그인 정보는 없습니다. [라이트 테마·출처·해시·검증 범위](media/release-1.42.2/README.md).
+
+**MacBook 실기기 스크린샷 추가 예정.**
+<!-- MacBook screenshot slot: media/release-1.42.2/macbook.png; privacy/provenance review required. -->
+
+[개발·기여](../CONTRIBUTING.md) / [보안](../SECURITY.md) / [검증 자료](evidence/README.md) / [예측 방식](FORECAST.md)
+
+OpenAI 공식 제품이 아닌 독립 오픈소스입니다. 인증정보는 로컬 암호화 저장소에 보관합니다. [MIT](../LICENSE) / [리소스 고지](../licenses/Burn0Assets.LICENSE.txt)

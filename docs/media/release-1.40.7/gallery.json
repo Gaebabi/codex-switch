@@ -1,0 +1,114 @@
+{
+  "schema": 1,
+  "appVersion": "1.40.7",
+  "canvas": [
+    1000,
+    800
+  ],
+  "background": "#18202b",
+  "runtime": ".NET10.0.13",
+  "images": [
+    {
+      "file": "windows.png",
+      "captureRevision": "a3f4d5f3a2e0c54378f5371682b1d928700c6c50",
+      "captureSha256": "52e2a05388f6ed21f7d7411027a8581b72b22cd7b0fe1cab6d1fdaa45c7b062a",
+      "sha256": "b7d20eb428535fc4c90cb2b2f0ccae8ecba755f43620bd27625078c167ec9fbf",
+      "originalSize": [
+        800,
+        560
+      ],
+      "offset": [
+        100,
+        120
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Windows x64 native WPF",
+      "inputs": "Fictional accounts and sensor states"
+    },
+    {
+      "file": "linux.png",
+      "captureRevision": "7645e74e5285b3f8458333a0381a4a12e36eb357",
+      "captureSha256": "5caca395a8161b157f9bdc9d2dbe322cd6b2e78ef3ee39d3df94f3edc13cbf6d",
+      "sha256": "f89348566bb5c78b26c6e217595d2dff620027d04ac140d354c00687890048a8",
+      "originalSize": [
+        800,
+        600
+      ],
+      "offset": [
+        100,
+        100
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Linux x64 native X11 app on isolated CI",
+      "inputs": "Four fictional demo accounts; not authenticated owner accounts",
+      "role": "Historical unframed demo overview; superseded by actual framed capture",
+      "frame": "Original native app-owned XID pixels; no desktop WM frame is present or synthesized"
+    },
+    {
+      "file": "linux-desktop.png",
+      "captureRevision": "a3f4d5f3a2e0c54378f5371682b1d928700c6c50",
+      "captureSha256": "cc06853e0358a61d800fc4a024c888d60c047efc35df0855dce3549969457785",
+      "sha256": "d6793c162c2c974e9a0b5a7d9a10ccd5010baeb9118bd1f35e2be38f9467bb7d",
+      "originalSize": [
+        810,
+        634
+      ],
+      "offset": [
+        95,
+        83
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Linux x64 Debian13 Xfce/xfwm4 isolated desktop",
+      "inputs": "Empty account home, actual per-user installed app and native window frame",
+      "role": "Supporting installed-desktop/lifecycle evidence, not the main account overview"
+    },
+    {
+      "file": "linux-framed.png",
+      "captureRevision": "919b8c2229d6989b53fa70b4591b5b5899ed5bd6",
+      "captureSha256": "5a429199290b2f845cd33f1a64f5ec093b281d17c45593dfdde3669623a3e372",
+      "sha256": "9a4876f59d80c40a94b187685601805ae4864d00a14911715461f082a54fda46",
+      "originalSize": [
+        810,
+        634
+      ],
+      "offset": [
+        95,
+        83
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Linux x64, actual X11/Xfwm4 OS titlebar",
+      "inputs": "Four fictional demo accounts in the actual published app diagnostic; no personal login",
+      "role": "Main account overview",
+      "frame": "Original direct-parent window-manager frame containing the same app PID; desktop root excluded; no titlebar composition",
+      "originalAppPidVerified": true,
+      "directParentFrameVerified": true
+    },
+    {
+      "file": "linux-framed-light.png",
+      "captureRevision": "919b8c2229d6989b53fa70b4591b5b5899ed5bd6",
+      "captureSha256": "e9c1116c56422e700372b6fe9c52747286081985db210105ee8c3bb9f11b6dcf",
+      "sha256": "0c8735c37c54d9d6f496d817c4ad0d2da56f553e729b0f9e19091b2dee2488c0",
+      "originalSize": [
+        810,
+        634
+      ],
+      "offset": [
+        95,
+        83
+      ],
+      "originalPixelsUnchanged": true,
+      "os": "Linux x64, actual X11/Xfwm4 OS titlebar",
+      "inputs": "Four fictional demo accounts in the actual published app diagnostic; no personal login",
+      "role": "Light-theme account overview",
+      "frame": "Original direct-parent window-manager frame containing the same app PID; desktop root excluded; no titlebar composition",
+      "originalAppPidVerified": true,
+      "directParentFrameVerified": true
+    }
+  ],
+  "scope": "Actual native app windows, including same-capture Linux demo cards and original direct-parent Xfce OS titlebar. Per-image source/runtime/hash recorded, every original frame pixel unchanged at1:1 on a solid canvas; no owner screen, login, cursor or titlebar composition. Historical unframed/empty-home proof is retained separately. Not authenticated handoff/full-desktop acceptance.",
+  "captureRevisions": [
+    "a3f4d5f3a2e0c54378f5371682b1d928700c6c50",
+    "7645e74e5285b3f8458333a0381a4a12e36eb357",
+    "919b8c2229d6989b53fa70b4591b5b5899ed5bd6"
+  ]
+}

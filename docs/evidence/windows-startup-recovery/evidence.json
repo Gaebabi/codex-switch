@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "os": "Windows",
+  "architecture": "X64",
+  "runtime": ".NET 10.0.13",
+  "version": "1.40.1",
+  "passed": 12,
+  "failed": 0,
+  "checks": [
+    "manual: real initialization failed while the configured client path is absent",
+    "manual: account addition stays disabled before successful initialization",
+    "manual: refresh remains reachable after initialization failure",
+    "manual: ordinary retry initialized without restarting the window",
+    "manual: refresh and account addition recover together",
+    "manual: no canonical credentials were created",
+    "automatic: real initialization failed while the configured client path is absent",
+    "automatic: account addition stays disabled before successful initialization",
+    "automatic: refresh remains reachable after initialization failure",
+    "automatic: ordinary retry initialized without restarting the window",
+    "automatic: refresh and account addition recover together",
+    "automatic: no canonical credentials were created"
+  ],
+  "scope": "Actual WPF window and production initializer/manual button/DispatcherTimer recovery; owned absent-then-placeholder path and empty encrypted storage only. Placeholder never executed; no network, real accounts, personal Codex or desktop capture.",
+  "revision": "60db3c8fbb51f0c9cab8a036f0874d77764f5cab",
+  "images": [
+    {
+      "file": "manual-unavailable.png",
+      "width": 600,
+      "height": 400,
+      "sha256": "c38e464ba73f1dcc0dfb16d4b2996d419f3062e2aac40f43e30e22d5cdd5f862"
+    },
+    {
+      "file": "manual-recovered.png",
+      "width": 600,
+      "height": 400,
+      "sha256": "f78db2ed44ebd4c707c926d4817a04dd6db81f09140adbf8fc76ab0360c55601"
+    },
+    {
+      "file": "automatic-unavailable.png",
+      "width": 600,
+      "height": 400,
+      "sha256": "c38e464ba73f1dcc0dfb16d4b2996d419f3062e2aac40f43e30e22d5cdd5f862"
+    },
+    {
+      "file": "automatic-recovered.png",
+      "width": 600,
+      "height": 400,
+      "sha256": "f78db2ed44ebd4c707c926d4817a04dd6db81f09140adbf8fc76ab0360c55601"
+    }
+  ],
+  "metadataRemoved": true
+}

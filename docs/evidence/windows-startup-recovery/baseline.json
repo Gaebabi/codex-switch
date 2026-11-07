@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "applicationVersion": "1.40.1",
+  "productionRevision": "eb6a79a5bfbbe1a007315f91d5d8d8f0e06824d4",
+  "os": "Windows",
+  "capture": "Actual own HWND via PrintWindow; empty isolated vault, no real account or personal desktop",
+  "metadataRemoved": true,
+  "sha256": "cb9bcd277ef366dd9ec5b863c0baee3f188fb6036e31881114127b34b6c29806",
+  "expectedBaselineFailure": "refresh remains reachable after initialization failure"
+}

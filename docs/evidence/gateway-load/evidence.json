@@ -1,0 +1,67 @@
+{
+  "scope": "Native hosted Windows fictional-account continuity and isolated generated-byte measurements, not external inference or owner account acceptance.",
+  "screenshots": [
+    {
+      "file": "before-windows.png",
+      "sourceRevision": "9741e6ee202f4938ccdb8caf49ae5bc998e89941",
+      "run": 41302434623,
+      "artifactId": 13081834051,
+      "archiveDigest": "sha256:d602b240eacc8075eef79ebc1de085311fde3e36c9dcddcbd606a9579ea5cec6",
+      "sha256": "320049d86e415b3991ed0525e353b855d15949d0f76f1f45bf6c66044e4b9ee8",
+      "originalPixelsUnchanged": true,
+      "dimensions": [
+        800,
+        560
+      ]
+    },
+    {
+      "file": "after-windows.png",
+      "sourceRevision": "19cc3666c2d2f2000122b5ffc263ad43771614bc",
+      "run": 41306288667,
+      "artifactId": 13083975412,
+      "archiveDigest": "sha256:537c788c5b90794d27def88de780fcd2cb8a1753001589e366985594404591a1",
+      "sha256": "320049d86e415b3991ed0525e353b855d15949d0f76f1f45bf6c66044e4b9ee8",
+      "originalPixelsUnchanged": true,
+      "dimensions": [
+        800,
+        560
+      ]
+    }
+  ],
+  "gatewayLoad": {
+    "measurements": [
+      {
+        "endpoint": "/responses",
+        "bytes": 536870912,
+        "status": 200
+      },
+      {
+        "endpoint": "/responses/compact",
+        "bytes": 536870912,
+        "status": 200
+      },
+      {
+        "endpoint": "/images/edits",
+        "bytes": 536870912,
+        "status": 200
+      },
+      {
+        "scenario": "eight-custom-uploads",
+        "bytes": 545259184,
+        "milliseconds": 527,
+        "successes": 8
+      }
+    ],
+    "elapsedMs": 9170,
+    "baselineManagedBytes": 2848064,
+    "peakManagedBytes": 1013850160,
+    "retainedManagedBytesAfterLargeRequests": 3821384,
+    "bufferBudgetBytes": 1073741824,
+    "scope": "Generated fictional bytes and streaming fake upstream; excludes external API and owner account acceptance."
+  },
+  "providerChecks": 184,
+  "stressChecks": 74,
+  "officialCli": "0.163.0",
+  "packageSelfTests": 99,
+  "runtime": "10.0.13"
+}

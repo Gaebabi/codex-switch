@@ -64,7 +64,7 @@ internal static class DeskDialogs
         {
             var selection = saved.FirstOrDefault(p => p.Root == path); var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,100,Auto,Auto") };
             var enabled = new CheckBox { IsChecked = selection != null, Content = path }; row.Children.Add(enabled);
-            var name = new TextBox { Text = selection?.Label ?? known[path], Watermark = path }; Grid.SetColumn(name, 1); row.Children.Add(name); rows.Children.Add(row);
+            var name = new TextBox { Text = selection?.Label ?? known[path], PlaceholderText = path }; Grid.SetColumn(name, 1); row.Children.Add(name); rows.Children.Add(row);
             var up = theme.IconButton(DeskButtonIconKind.Up, Loc.T("위로"), () => Move(path, -1)); Grid.SetColumn(up, 2); row.Children.Add(up);
             var down = theme.IconButton(DeskButtonIconKind.Down, Loc.T("아래로"), () => Move(path, 1)); Grid.SetColumn(down, 3); row.Children.Add(down);
             fields.Add((path, enabled, name, row));

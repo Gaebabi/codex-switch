@@ -34,17 +34,17 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 35
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: '10.0.4xx'
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
       - name: Install the locked official standalone CLI without lifecycle scripts
@@ -62,7 +62,7 @@ jobs:
       - name: Install the native test provider and D-Bus tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install --no-install-recommends -y libsecret-1-0 libsqlite3-0 gnome-keyring libkf5wallet-bin libqca-qt5-2-plugins dbus-x11 libglib2.0-bin xvfb xauth x11-apps imagemagick libfontconfig1 fonts-dejavu-core fonts-noto-cjk meson ninja-build build-essential pkg-config libglib2.0-dev libgcrypt20-dev gettext xsltproc patch rpm
+          sudo apt-get install --no-install-recommends -y libsecret-1-0 libsqlite3-0 gnome-keyring libkf5wallet-bin libqca-qt5-2-plugins dbus-x11 libglib2.0-bin xvfb xauth x11-apps x11-utils xfwm4 xterm xdotool imagemagick libfontconfig1 fonts-dejavu-core fonts-noto-cjk meson ninja-build build-essential pkg-config libglib2.0-dev libgcrypt20-dev gettext xsltproc patch rpm
       - name: Build the checksum-pinned private encrypted Secret Service library
         run: python scripts/build-linux-secret.py --output artifacts/linux-secret
       - name: Install only the checksum-pinned official native client on this disposable runner
@@ -81,13 +81,35 @@ jobs:
         run: dotnet publish src/linux/CodexSwitch.Linux.csproj -c Release -r ${{ matrix.rid }} --self-contained true -p:UseSharedCompilation=false -o artifacts/linux-native/${{ matrix.rid }}/app
       - name: Inspect the complete Linux runtime package
         run: python scripts/verify-runtime-package.py artifacts/linux-native/${{ matrix.rid }}/app --rid ${{ matrix.rid }} --output artifacts/linux-native/${{ matrix.rid }}/runtime.json
+      - name: Build headless terminal account and session contracts
+        run: dotnet build tests/linux-terminal/CodexSwitch.LinuxTerminal.Tests.csproj -c Release --nologo -p:UseSharedCompilation=false -o artifacts/linux-native/${{ matrix.rid }}/terminal-tests
+      - name: Verify actual headless commands with native standalone CLI and encrypted storage
+        env:
+          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/verify-linux-keyring.py --assembly artifacts/linux-native/${{ matrix.rid }}/tests/CodexSwitch.LinuxVault.Tests.dll --architecture ${{ matrix.architecture }} --terminal-assembly artifacts/linux-native/${{ matrix.rid }}/terminal-tests/CodexSwitch.LinuxTerminal.Tests.dll --terminal-app artifacts/linux-native/${{ matrix.rid }}/app/CodexSwitch --terminal-capture --report artifacts/linux-native/${{ matrix.rid }}/terminal-public/evidence.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: terminal-contracts-${{ matrix.rid }}
+          path: artifacts/linux-native/${{ matrix.rid }}/terminal-public
+          if-no-files-found: error
+          retention-days: 14
+      - run: python -m pip install -r requirements-dev.txt
+      - name: Verify actual app account cards and original OS titlebar together
+        env:
+          EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/verify-linux-framed-ui.py --app artifacts/linux-native/${{ matrix.rid }}/app/CodexSwitch --output artifacts/linux-native/${{ matrix.rid }}/framed-public --revision "$EVIDENCE_REVISION"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: framed-ui-${{ matrix.rid }}
+          path: artifacts/linux-native/${{ matrix.rid }}/framed-public
+          if-no-files-found: error
+          retention-days: 14
       - name: Verify native read-only SQLite and committed WAL without content mutation
         run: python scripts/verify-queues.py --executable artifacts/linux-native/${{ matrix.rid }}/app/CodexSwitch
       - name: Verify native protocol and read-only SQLite boundaries
         run: dotnet run --project tests/protocol/CodexSwitch.Protocol.Tests.csproj -c Release --no-launch-profile -p:UseSharedCompilation=false
       - name: Verify genuine client identity, effective backend and managed policy with unchanged inputs
         run: python scripts/verify-linux-client.py --architecture ${{ matrix.architecture }} --executable artifacts/linux-native/${{ matrix.rid }}/app/CodexSwitch --tests artifacts/linux-native/${{ matrix.rid }}/client-tests/CodexSwitch.LinuxClient.Tests.dll --report artifacts/linux-native/${{ matrix.rid }}/client-summary.json
-      - run: python -m pip install -r requirements-dev.txt
       - name: Verify attested legacy KWallet6 and normalized KSecrets with actual native app captures
         env:
           EVIDENCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -109,16 +131,18 @@ jobs:
       - name: Verify ordinary installed UI and native lifecycles in a real isolated desktop session
         if: matrix.rid == 'linux-x64'
         run: python scripts/run-local-linux-desktop.py --packages artifacts/linux-native/${{ matrix.rid }}/packages --upstream-package artifacts/linux-native/${{ matrix.rid }}/upstream-client.deb --output artifacts/linux-native/${{ matrix.rid }}/desktop-session
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: matrix.rid == 'linux-x64'
         with:
           name: desktop-session-linux-x64
           path: |
             artifacts/linux-native/${{ matrix.rid }}/desktop-session/results/*.png
             artifacts/linux-native/${{ matrix.rid }}/desktop-session/results/session.json
+            artifacts/linux-native/${{ matrix.rid }}/desktop-session/results/framed-accounts.json
+            artifacts/linux-native/${{ matrix.rid }}/desktop-session/results/terminal-lifecycle.json
           if-no-files-found: error
           retention-days: 14
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: linux-preview-candidates-${{ matrix.rid }}
           path: |
@@ -129,37 +153,37 @@ jobs:
             artifacts/linux-native/${{ matrix.rid }}/packages/SHA256SUMS
           if-no-files-found: error
           retention-days: 14
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: installed-app-ui-${{ matrix.rid }}
           path: artifacts/linux-native/${{ matrix.rid }}/fresh-packages/public
           if-no-files-found: error
           retention-days: 14
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-peer-${{ matrix.rid }}
           path: artifacts/linux-native/${{ matrix.rid }}/kde6/kwallet6/results/desktop
           if-no-files-found: error
           retention-days: 14
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: native-ui-${{ matrix.rid }}
           path: artifacts/linux-native/${{ matrix.rid }}/public
           if-no-files-found: error
           retention-days: 14
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: kwallet6-ui-${{ matrix.rid }}
           path: artifacts/linux-native/${{ matrix.rid }}/kde6/kwallet6/results/public
           if-no-files-found: error
           retention-days: 14
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ksecrets-ui-${{ matrix.rid }}
           path: artifacts/linux-native/${{ matrix.rid }}/kde6/ksecrets/results/public
           if-no-files-found: error
           retention-days: 14
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ksecrets-current-ui-${{ matrix.rid }}
           path: artifacts/linux-native/${{ matrix.rid }}/kde6/ksecrets-current/results/public

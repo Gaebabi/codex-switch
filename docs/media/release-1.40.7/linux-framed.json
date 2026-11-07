@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "revision": "919b8c2229d6989b53fa70b4591b5b5899ed5bd6",
+  "os": "Linux",
+  "architecture": "X64",
+  "appVersion": "1.40.7",
+  "runtime": ".NET 10.0.13",
+  "windowManager": "Xfwm4",
+  "nativeWindowCapture": true,
+  "renderChecks": 12,
+  "scope": "Actual published app on an owned native X11 display with four fictional cards and original direct-parent Xfce titlebar. No titlebar composition, owner data, real login or authenticated handoff/full-desktop claim.",
+  "nativeFramesVerified": 12,
+  "images": [
+    {
+      "File": "en-dark-800x600-native-wm.png",
+      "WindowManager": "Xfwm4",
+      "OriginalAppPidVerified": true,
+      "DirectParentFrameVerified": true,
+      "DesktopRootExcluded": true,
+      "DemoAccounts": 4,
+      "file": "en-dark-800x600-native-wm.png",
+      "sha256": "5a429199290b2f845cd33f1a64f5ec093b281d17c45593dfdde3669623a3e372",
+      "width": 810,
+      "height": 634,
+      "galleryFile": "linux-framed.png",
+      "gallerySha256": "9a4876f59d80c40a94b187685601805ae4864d00a14911715461f082a54fda46"
+    },
+    {
+      "File": "en-light-800x600-native-wm.png",
+      "WindowManager": "Xfwm4",
+      "OriginalAppPidVerified": true,
+      "DirectParentFrameVerified": true,
+      "DesktopRootExcluded": true,
+      "DemoAccounts": 4,
+      "file": "en-light-800x600-native-wm.png",
+      "sha256": "e9c1116c56422e700372b6fe9c52747286081985db210105ee8c3bb9f11b6dcf",
+      "width": 810,
+      "height": 634,
+      "galleryFile": "linux-framed-light.png",
+      "gallerySha256": "0c8735c37c54d9d6f496d817c4ad0d2da56f553e729b0f9e19091b2dee2488c0"
+    }
+  ]
+}

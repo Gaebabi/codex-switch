@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "appVersion": "1.42.2",
+  "runtime": ".NET 10.0.13",
+  "applicationSha256": "29336403dc8910b99cc8cb82d24d575a32b64993cb721d4ac5e5d169c50a73fa",
+  "scope": "Offscreen rendering of the public application UI with simulated account/quota/resource/storage inputs. No native capture, physical reading, live account/client, desktop input or hardware collection.",
+  "simulatedData": true,
+  "images": [
+    {
+      "file": "en-dark-demo.png",
+      "width": 500,
+      "height": 400,
+      "noNativeWindow": true,
+      "resources": [
+        "38%",
+        "71%",
+        "46%",
+        "64%"
+      ],
+      "storageLabelsFit": true,
+      "sha256": "8ea4ea4b3e073bd593ec8da8eccbf236bddc144430fe466754afd24b3a2d36e6",
+      "renderPixelsUnchanged": true
+    },
+    {
+      "file": "en-light-demo.png",
+      "width": 500,
+      "height": 400,
+      "noNativeWindow": true,
+      "resources": [
+        "38%",
+        "71%",
+        "46%",
+        "64%"
+      ],
+      "storageLabelsFit": true,
+      "sha256": "6b244fe8fecd68ec798af191bb36b1b406feb44c10140bca8a62b380f8784262",
+      "renderPixelsUnchanged": true
+    },
+    {
+      "file": "ko-dark-demo.png",
+      "width": 500,
+      "height": 400,
+      "noNativeWindow": true,
+      "resources": [
+        "38%",
+        "71%",
+        "46%",
+        "64%"
+      ],
+      "storageLabelsFit": true,
+      "sha256": "9bdeba4dfb4813a4823516fe101d5f110b2da491d3b833058e71b14ef86e750f",
+      "renderPixelsUnchanged": true
+    },
+    {
+      "file": "ko-light-demo.png",
+      "width": 500,
+      "height": 400,
+      "noNativeWindow": true,
+      "resources": [
+        "38%",
+        "71%",
+        "46%",
+        "64%"
+      ],
+      "storageLabelsFit": true,
+      "sha256": "eebf0b718c41ffe079d2d26fdb0493759b8face0b79c84e8c1968226a278f91f",
+      "renderPixelsUnchanged": true
+    }
+  ],
+  "sourceRevision": "98b516c2ed75bdb3aac4953dc105299017564b00",
+  "mergedRevision": "a441545d7100ba84c66fb32f3aad592b1d30b8d4",
+  "personalDataUsed": false,
+  "metadataRemoved": true
+}

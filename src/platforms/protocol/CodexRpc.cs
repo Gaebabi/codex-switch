@@ -21,7 +21,9 @@ internal sealed class CodexRpc : IAsyncDisposable
     private readonly Task _errorDrain;
     private int _nextId;
     public event Action<string, JsonElement>? Notification;
+    internal event Action<string>? DiagnosticMessage;
     public JsonElement? Initialization { get; private set; }
+    internal int OwnedProcessId => _process.Id;
     public CodexRpc(string executable, string home, bool preserveProvider = false)
         : this(CreateStart(executable, home, preserveProvider, true)) { }
     public static CodexRpc InspectLinuxConfiguration(LinuxExecutable executable, string home)
@@ -43,6 +45,7 @@ internal sealed class CodexRpc : IAsyncDisposable
         start.Environment["RUST_LOG"] = "error";
         start.Environment.Remove("CODEX_ACCESS_TOKEN");
         start.Environment.Remove("OPENAI_API_KEY");
+        start.Environment.Remove("CODEX_API_KEY");
         start.Environment.Remove("OPENAI_IDENTITY_TOKEN_FILE");
         start.Environment.Remove("OPENAI_IDENTITY_TOKEN_AUDIENCE");
         return start;
@@ -108,7 +111,7 @@ internal sealed class CodexRpc : IAsyncDisposable
     }
     private async Task DrainErrorsAsync()
     {
-        try { while (await _process.StandardError.ReadLineAsync(_stop.Token) != null) { } }
+        try { while (await _process.StandardError.ReadLineAsync(_stop.Token) is string line) DiagnosticMessage?.Invoke(line); }
         catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
     }
     public async ValueTask DisposeAsync()

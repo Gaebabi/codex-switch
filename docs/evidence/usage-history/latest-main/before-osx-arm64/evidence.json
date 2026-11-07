@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "revision": "8c3a40feefdc4c9b7572599711603c3167e10b46",
+  "applicationSource": "2bc551f9d36d5ec4e23f56af43237fecca47ac6c",
+  "os": "macOS",
+  "architecture": "Arm64",
+  "appVersion": "1.40.2",
+  "runtime": ".NET 10.0.13",
+  "language": "en",
+  "nativeWindowCapture": true,
+  "checks": [
+    "dark/actual original history window",
+    "dark/no Codex home or authentication",
+    "light/actual original history window",
+    "light/no Codex home or authentication"
+  ],
+  "unchangedRendererSha256": {
+    "src/desktop/HistoryWindow.cs": "08f1d2c165ccf15c380a4da1abb598778badc1ab5f60462f06dbb8e8a173d0d9",
+    "src/desktop/TankAndCharts.cs": "9c8f2b774378650e9d38006fc23657dab7c6a2c4ca51e9d75218661f465afb42",
+    "src/desktop/DeskTheme.cs": "3a05fbced7afb58786d0e302a01e4a5503a13d0badd0cb88fd5a90d6b4eb2cb3"
+  },
+  "adapterSha256": "2348954dd7e74aa2266750de75188354aa044f264c032c84889b79be828e6c93",
+  "fixtureSha256": "ff581601f262609b9bef629e5bb8ff800951b94fd780e51ef002b16784718de8",
+  "images": [
+    {
+      "file": "en-dark-history-native.png",
+      "width": 640,
+      "height": 408,
+      "sha256": "58d57d02cb2a01001d75871fa1e6a930feab7e6d1316d812a5c35fa2c291f33f",
+      "capture": "Actual app-owned original history NSWindow; capture-only host instrumentation and fictional inputs"
+    },
+    {
+      "file": "en-light-history-native.png",
+      "width": 640,
+      "height": 408,
+      "sha256": "922b405b0a5a360460ed4123190a34ba5ee4e86c7308731cf5926bb48ab3d78d",
+      "capture": "Actual app-owned original history NSWindow; capture-only host instrumentation and fictional inputs"
+    }
+  ],
+  "scope": "Original main history renderer, capture-only host and shared fictional growth input. Actual app-owned NSWindows; no personal account, home, network or Codex action."
+}
