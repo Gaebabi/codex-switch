@@ -33,6 +33,7 @@ internal sealed class DeskWindow : Window
     private readonly Dictionary<string, ResourcePressure> _volumeTemperaturePressure = new();
     private readonly List<Task> _operations = new();
     private AccountService? _service;
+    private DesktopStreamRecoveryMonitor? _streamRecovery;
     private DeskTheme _theme;
     private Grid _accounts = new(), _hardware = new();
     private ScrollViewer _accountScroll = new();
@@ -105,6 +106,9 @@ internal sealed class DeskWindow : Window
             await _service.InitializeAsync(token); _ready = true;
             if (OperatingSystem.IsLinux()) _statusMessage = Loc.T(_service.HasLinuxDesktop ? "msg.linux_desktop_ready" : "msg.linux_cli_only");
             _sessions.Start(); _resources.Start(); _drives.Configure(_service.Vault.Data.Drives.ToArray()); _drives.Start();
+            _streamRecovery ??= new DesktopStreamRecoveryMonitor(_service, _sessions, () => _ready && !Exiting && _login == null && _switch == null &&
+                !_providerEditing && !_service.IsBusy && _service.Vault.Data.ActivePendingSwitch == null);
+            _streamRecovery.Start();
             UpdateTray(); RenderAccounts();
             await _service.RefreshAllAsync(null, token);
             await RecoverAutomaticSwitchAsync();
@@ -155,7 +159,7 @@ internal sealed class DeskWindow : Window
         _cancel = _theme.Button(Loc.T("취소"), () => { _login?.Cancel(); _switch?.Cancel(); }); _cancel.IsVisible = _login != null || _switch != null;
         _cancel.HorizontalAlignment = HorizontalAlignment.Left;
         toolbar.Children.Add(_cancel);
-        _sessionValues = new StackPanel { Orientation = Orientation.Horizontal, Spacing = nativeTitle ? 12 : 24, HorizontalAlignment = HorizontalAlignment.Center };
+        _sessionValues = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, HorizontalAlignment = HorizontalAlignment.Center };
         Grid.SetColumn(_sessionValues, 1);
         toolbar.Children.Add(_sessionValues);
         var automaticSwitchLabel = Loc.T(_service?.Vault.Data.AutomaticSwitchEnabled == true ? "auto.on" : "auto.off");
@@ -429,17 +433,17 @@ internal sealed class DeskWindow : Window
     private void RenderSessions()
     {
         _sessionValues.Children.Clear(); var current = _sessions.Current;
-        var numbers = new int?[] { current.Available ? current.Running : null, current.Available ? current.Queued : null, current.Available ? current.Goals : null };
-        var labels = new[] { "실행", "큐", "목표" };
-        for (var i = 0; i < 3; i++)
+        var numbers = new int?[] { current.Available ? current.Running : null, current.Available ? current.Queued : null, current.Available ? current.Goals : null, current.Available ? current.Errors : null };
+        var labels = new[] { "실행", "큐", "목표", "sessions.errors" };
+        for (var i = 0; i < labels.Length; i++)
         {
             var cell = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
             var label = _theme.Text(Loc.T(labels[i]), 10, "muted"); label.VerticalAlignment = VerticalAlignment.Center;
-            var value = _theme.Text(numbers[i]?.ToString(Loc.Culture) ?? "—", 16); value.VerticalAlignment = VerticalAlignment.Center; value.FontWeight = FontWeight.SemiBold;
-            cell.Children.Add(label); cell.Children.Add(value); _sessionValues.Children.Add(cell);
+            var value = _theme.Text(numbers[i]?.ToString(Loc.Culture) ?? "—", 16, i == 3 && numbers[i] > 0 ? "warning" : numbers[i].HasValue ? "text" : "muted"); value.VerticalAlignment = VerticalAlignment.Center; value.FontWeight = FontWeight.SemiBold;
+            cell.Children.Add(label); cell.Children.Add(value); if (i == 3) ToolTip.SetTip(cell, Loc.T("sessions.errors_help")); _sessionValues.Children.Add(cell);
         }
         ToolTip.SetTip(_sessionValues, current.Available ? Loc.F("승인/입력 대기 {0}", current.Waiting) + "\n" +
-            (current.Queued.HasValue ? Loc.F("큐는 예약 메시지 수\n보류된 큐 {0}", current.PausedQueued) : Loc.Error(current.QueueProblem ?? "큐 상태 확인 중…")) + "\n" + Loc.F("목표는 진행 중인 Goal 수\n멈춘 목표 {0}", current.PausedGoals) : Loc.Error(current.Problem ?? "채팅 상태 확인 중…"));
+            (current.Queued.HasValue ? Loc.F("큐는 예약 메시지 수\n보류된 큐 {0}", current.PausedQueued) : Loc.Error(current.QueueProblem ?? "큐 상태 확인 중…")) + "\n" + Loc.F("목표는 진행 중인 Goal 수\n멈춘 목표 {0}", current.PausedGoals) + "\n" + Loc.T("sessions.errors_help") : Loc.Error(current.Problem ?? "채팅 상태 확인 중…"));
     }
     private void RenderHardware()
     {
@@ -601,6 +605,7 @@ internal sealed class DeskWindow : Window
     {
         if (Exiting) return; Exiting = true; _clock.Stop(); _stop.Cancel(); _login?.Cancel(); _switch?.Cancel();
         await Task.WhenAll(_operations.ToArray());
+        if (_streamRecovery != null) await _streamRecovery.DisposeAsync();
         if (_service != null) await _service.StopAsync();
         await _sessions.DisposeAsync(); await _resources.DisposeAsync(); await _drives.DisposeAsync(); _tray?.Dispose();
         _service?.ReleaseDesktop();

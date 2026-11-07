@@ -35,6 +35,7 @@ internal sealed class DesktopSessionMonitor : IAsyncDisposable
         _run ??= Task.Run(RunAsync);
     }
     public DesktopThreadState[] Threads => _ledger.Threads();
+    internal int? QueuedFor(string id) => _ledger.QueuedFor(id);
     public void RestartDiscovery()
     {
         _ledger.Reset(); Publish(_ledger.Read());

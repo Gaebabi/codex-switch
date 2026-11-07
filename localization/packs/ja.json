@@ -6,6 +6,8 @@
   "culture": "ja-JP",
   "direction": "ltr",
   "strings": {
+    "sessions.errors": "エラー",
+    "sessions.errors_help": "システムエラーまたは最新ターンの失敗で停止したローカルのメインチャット数です。サブエージェント、実行中のチャット、キャンセルと復旧済みの過去エラーは除きます。",
     "providers.reasoning_title": "Codex で GPT の推論強度を使う",
     "providers.reasoning_model": "モデル",
     "providers.reasoning_override": "対応する推論レベルを指定",

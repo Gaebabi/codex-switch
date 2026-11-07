@@ -6,6 +6,8 @@
   "culture": "pt-BR",
   "direction": "ltr",
   "strings": {
+    "sessions.errors": "Erros",
+    "sessions.errors_help": "Conta conversas principais locais paradas por erro de sistema ou falha no último turno. Exclui subagentes, conversas ativas, cancelamentos e erros já resolvidos.",
     "providers.reasoning_title": "Raciocínio GPT no Codex",
     "providers.reasoning_model": "Modelo",
     "providers.reasoning_override": "Definir níveis de raciocínio compatíveis",

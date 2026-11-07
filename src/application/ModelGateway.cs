@@ -130,11 +130,10 @@ internal sealed class ModelGateway : IAsyncDisposable
             var bytesIn = input.Bytes;
             var original = new GatewayJsonRequest(bytesIn);
             JsonObject? body = null;
-            void ReleaseInput(HttpRequestMessage outgoing)
+            void ReleaseInput()
             {
-                // Upload is complete once response headers arrive. Do not retain its buffers
-                // or admission slot during a potentially long-running response stream.
-                outgoing.Content?.Dispose(); outgoing.Content = null;
+                // Keep the budgeted input only while a pre-response 507 retry is possible.
+                // Successful response streams never retain request buffers/upload slots.
                 original.Release(); body = null; bytesIn = default;
                 input.Dispose();
                 if (largeBody) { _largeBodies.Release(); largeBody = false; }
@@ -146,7 +145,7 @@ internal sealed class ModelGateway : IAsyncDisposable
                 CopyOpenAiHeaders(request, image, identity);
                 image.Content = new ReadOnlyMemoryContent(bytesIn); image.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 using var imageResult = await _http.SendAsync(image, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
-                ReleaseInput(image);
+                image.Content?.Dispose(); image.Content = null; ReleaseInput();
                 if (!imageResult.IsSuccessStatusCode)
                 { await ErrorAsync(response, (int)imageResult.StatusCode is >= 300 and < 400 ? 502 : (int)imageResult.StatusCode, "The OpenAI image endpoint returned HTTP " + (int)imageResult.StatusCode + ". No request was retried.", cancellation).ConfigureAwait(false); return; }
                 response.StatusCode = (int)imageResult.StatusCode; response.ContentType = imageResult.Content.Headers.ContentType?.ToString() ?? "application/json";
@@ -202,20 +201,63 @@ internal sealed class ModelGateway : IAsyncDisposable
                 destination = new Uri(ProviderCatalog.Endpoint(route.Provider.BaseUrl), path.EndsWith("/compact", StringComparison.Ordinal) ? "responses/compact" : "responses");
             }
             else destination = new Uri((identity.ApiKey ? "https://api.openai.com/v1/" : "https://chatgpt.com/backend-api/codex/") + (path.EndsWith("/compact", StringComparison.Ordinal) ? "responses/compact" : "responses"));
-            using var upstream = new HttpRequestMessage(HttpMethod.Post, destination);
-            if (route.Provider == null) CopyOpenAiHeaders(request, upstream, identity);
-            else upstream.Headers.Authorization = new AuthenticationHeaderValue("Bearer", route.Provider.ApiKey);
-            upstream.Content = route.Provider != null || removeReasoning ?
-                new GatewayRoutedContent(bytesIn, body ?? new JsonObject(), route.Provider != null, route.Model?.GenericMetadata == true, removeReasoning) :
-                new ReadOnlyMemoryContent(bytesIn);
-            upstream.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            using var result = await _http.SendAsync(upstream, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
-            ReleaseInput(upstream);
+            var retries = 0;
+            HttpRequestMessage CreateUpstream()
+            {
+                var upstream = new HttpRequestMessage(HttpMethod.Post, destination);
+                if (route.Provider == null) CopyOpenAiHeaders(request, upstream, identity);
+                else upstream.Headers.Authorization = new AuthenticationHeaderValue("Bearer", route.Provider.ApiKey);
+                upstream.Content = route.Provider != null || removeReasoning ?
+                    new GatewayRoutedContent(bytesIn, body ?? new JsonObject(), route.Provider != null, route.Model?.GenericMetadata == true, removeReasoning) :
+                    new ReadOnlyMemoryContent(bytesIn);
+                upstream.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+                return upstream;
+            }
+            async Task BeforeRetry(int retry, TimeSpan delay, CancellationToken token)
+            {
+                retries = retry;
+                LastError = "Upstream HTTP 507; automatic recovery " + retry + "/" + GatewayUpstreamRetry.MaximumRetries + ".";
+                if (!started)
+                {
+                    response.StatusCode = 200; response.ContentType = "text/event-stream";
+                    response.Headers["Cache-Control"] = "no-store"; response.SendChunked = true; started = true;
+                }
+                // Real writes during backoff detect a cancelled/disconnected caller before
+                // another inference request. Comments never create a response or chat turn.
+                await RetryCommentAsync(response, ": Switch HTTP 507 recovery " + retry + "/3\n\n", token).ConfigureAwait(false);
+                var until = DateTimeOffset.UtcNow + delay;
+                while (DateTimeOffset.UtcNow < until)
+                {
+                    var remaining = until - DateTimeOffset.UtcNow;
+                    if (remaining > TimeSpan.Zero) await Task.Delay(remaining < TimeSpan.FromMilliseconds(250) ? remaining : TimeSpan.FromMilliseconds(250), token).ConfigureAwait(false);
+                    await RetryCommentAsync(response, ": Switch waiting for upstream recovery\n\n", token).ConfigureAwait(false);
+                }
+                var current = _authenticate(request.Headers["Authorization"], request.Headers["ChatGPT-Account-ID"]);
+                if (current == null || current.Token != identity.Token || current.AccountId != identity.AccountId || current.ApiKey != identity.ApiKey)
+                    throw new InvalidOperationException("The original sign-in changed before automatic recovery.");
+            }
+            using var result = await GatewayUpstreamRetry.SendAsync(_http, CreateUpstream,
+                path == "/backend-api/codex/responses" && original.Streaming, BeforeRetry, cancellation).ConfigureAwait(false);
+            ReleaseInput();
             if (!result.IsSuccessStatusCode)
-            { await ErrorAsync(response, (int)result.StatusCode is >= 300 and < 400 ? 502 : (int)result.StatusCode, "The selected upstream returned HTTP " + (int)result.StatusCode + ". No request was retried.", cancellation).ConfigureAwait(false); return; }
+            {
+                LastError = "The selected upstream returned HTTP " + (int)result.StatusCode + ". " +
+                    (retries == 0 ? "No request was retried." : "Automatic HTTP 507 recovery stopped after " + retries + " of 3 retries.");
+                if (started) await RetryFailureAsync(response, LastError, cancellation).ConfigureAwait(false);
+                else await ErrorAsync(response, (int)result.StatusCode is >= 300 and < 400 ? 502 : (int)result.StatusCode, LastError, cancellation).ConfigureAwait(false);
+                return;
+            }
+            if (started && result.Content.Headers.ContentType?.MediaType != "text/event-stream")
+            {
+                LastError = "The selected upstream did not return the requested event stream after HTTP 507 recovery.";
+                await RetryFailureAsync(response, LastError, cancellation).ConfigureAwait(false); return;
+            }
             _store.RecordSuccessfulRoute(request.Headers["session_id"] ?? request.Headers["conversation_id"], identity, routeIdentity);
-            response.StatusCode = (int)result.StatusCode; response.ContentType = result.Content.Headers.ContentType?.ToString() ?? "application/json";
-            response.Headers["Cache-Control"] = "no-store"; response.SendChunked = true; started = true;
+            if (!started)
+            {
+                response.StatusCode = (int)result.StatusCode; response.ContentType = result.Content.Headers.ContentType?.ToString() ?? "application/json";
+                response.Headers["Cache-Control"] = "no-store"; response.SendChunked = true; started = true;
+            }
             await using var stream = await result.Content.ReadAsStreamAsync(cancellation).ConfigureAwait(false);
             var buffer = new byte[16384]; int count;
             while ((count = await stream.ReadAsync(buffer, cancellation).ConfigureAwait(false)) > 0)
@@ -224,15 +266,15 @@ internal sealed class ModelGateway : IAsyncDisposable
         }
         catch (GatewayBusyException)
         { if (!started) await TryErrorAsync(context.Response, 503, "The local model gateway's request buffer budget is busy. Try again when uploads finish.", cancellation).ConfigureAwait(false); }
-        catch (OperationCanceledException) { LastError = "The model request was cancelled or timed out."; context.Response.Abort(); }
+        catch (OperationCanceledException) { LastError = "The model request was cancelled or timed out."; AbortResponse(context.Response); }
         catch (Exception error)
         {
             LastError = "The model request or upstream connection failed (" + error.GetType().Name + ").";
-            if (started) context.Response.Abort();
+            if (started) AbortResponse(context.Response);
             else
             {
                 try { await ErrorAsync(context.Response, error is InvalidDataException or JsonException or ArgumentException ? 400 : 502, LastError, cancellation).ConfigureAwait(false); }
-                catch (Exception transport) when (transport is IOException or HttpListenerException or OperationCanceledException or ObjectDisposedException) { context.Response.Abort(); }
+                catch (Exception transport) when (transport is IOException or HttpListenerException or OperationCanceledException or ObjectDisposedException) { AbortResponse(context.Response); }
             }
         }
         finally { if (largeBody) _largeBodies.Release(); if (workSlot) _slots.Release(); if (streamSlot) _streamSlots.Release(); context.Response.Close(); }
@@ -309,10 +351,25 @@ internal sealed class ModelGateway : IAsyncDisposable
         try { await response.OutputStream.WriteAsync(bytes, cancellation).ConfigureAwait(false); }
         finally { response.Close(); }
     }
+    private static async Task RetryCommentAsync(HttpListenerResponse response, string comment, CancellationToken cancellation)
+    {
+        await response.OutputStream.WriteAsync(Encoding.UTF8.GetBytes(comment), cancellation).ConfigureAwait(false);
+        await response.OutputStream.FlushAsync(cancellation).ConfigureAwait(false);
+    }
+    private static Task RetryFailureAsync(HttpListenerResponse response, string message, CancellationToken cancellation) =>
+        RetryCommentAsync(response, "data: " + JsonSerializer.Serialize(new { type = "response.failed", response = new {
+            id = "switch_507_" + Guid.NewGuid().ToString("N"), @object = "response", status = "failed", output = Array.Empty<object>(),
+            error = new { code = "switch_upstream_recovery_stopped", message } } }) + "\n\n", cancellation);
     private static async Task TryErrorAsync(HttpListenerResponse response, int status, string message, CancellationToken cancellation)
     {
         try { await ErrorAsync(response, status, message, cancellation).ConfigureAwait(false); }
-        catch (Exception error) when (error is IOException or HttpListenerException or ObjectDisposedException or OperationCanceledException) { response.Abort(); }
+        catch (Exception error) when (error is IOException or HttpListenerException or ObjectDisposedException or OperationCanceledException) { AbortResponse(response); }
+    }
+    private static void AbortResponse(HttpListenerResponse response)
+    {
+        try { response.Abort(); }
+        // Listener shutdown can dispose HTTP.sys before the cancelled request unwinds.
+        catch (ObjectDisposedException) { }
     }
     private async Task RejectAsync(HttpListenerContext context)
     {

@@ -6,6 +6,8 @@
   "culture": "ko-KR",
   "direction": "ltr",
   "strings": {
+    "sessions.errors": "오류",
+    "sessions.errors_help": "시스템 오류 또는 최근 턴 실패로 멈춘 로컬 주 대화 수입니다. 하위 에이전트, 실행 중인 대화, 사용자 중단과 복구된 과거 오류는 제외합니다.",
     "providers.reasoning_title": "Codex에서 GPT 추론 강도 사용",
     "providers.reasoning_model": "모델",
     "providers.reasoning_override": "지원하는 추론 단계 직접 설정",

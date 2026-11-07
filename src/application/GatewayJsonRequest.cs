@@ -40,6 +40,7 @@ internal sealed class GatewayJsonRequest
     internal bool Present(string name)
     { var value = Get(name); return !value.IsEmpty && !value.Span.SequenceEqual("null"u8); }
     internal string? Model => String(Get("model"));
+    internal bool Streaming => Get("stream").Span.SequenceEqual("true"u8);
     internal static string? String(ReadOnlyMemory<byte> value)
     {
         if (value.IsEmpty || value.Length > 1024) return null;

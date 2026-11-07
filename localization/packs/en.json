@@ -6,6 +6,8 @@
   "culture": "en-US",
   "direction": "ltr",
   "strings": {
+    "sessions.errors": "Errors",
+    "sessions.errors_help": "Counts local main chats currently stopped by a system error or failed latest turn. Excludes subagents, active chats, cancellations and past errors after recovery.",
     "providers.reasoning_title": "GPT reasoning in Codex",
     "providers.reasoning_model": "Model",
     "providers.reasoning_override": "Set supported reasoning levels",

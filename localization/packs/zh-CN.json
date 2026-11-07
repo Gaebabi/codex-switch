@@ -6,6 +6,8 @@
   "culture": "zh-CN",
   "direction": "ltr",
   "strings": {
+    "sessions.errors": "错误",
+    "sessions.errors_help": "因系统错误或最新轮次失败而停止的本地主对话数。不包含子代理、正在运行的对话、用户取消或已恢复的历史错误。",
     "providers.reasoning_title": "在 Codex 中使用 GPT 推理强度",
     "providers.reasoning_model": "模型",
     "providers.reasoning_override": "指定支持的推理级别",

@@ -5,6 +5,7 @@ using System.Text.Json;
 var checks = new List<string>();
 void Check(string name, bool condition) { if (!condition) throw new Exception(name); checks.Add(name); }
 var now = DateTimeOffset.UtcNow;
+await StreamRecoveryContracts.Run(Check);
 CreditHistoryContracts.Run(Check);
 HistoryRangeContracts.Run(Check);
 CreditOverlayContracts.Run(Check);

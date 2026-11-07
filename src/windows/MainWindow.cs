@@ -23,6 +23,7 @@ internal sealed class MainWindow : Window
 {
     private readonly AccountService _service;
     private readonly DesktopSessionMonitor _sessions;
+    private readonly DesktopStreamRecoveryMonitor _streamRecovery;
     private readonly HardwareResourceMonitor _hardware = new();
     private readonly HardwareUsagePanel _hardwarePanel = new();
     private readonly DriveMonitor _drives = new(WindowsDiskTemperature.Read);
@@ -72,6 +73,8 @@ internal sealed class MainWindow : Window
         _service = service; _options = options;
         _drivePanel = new(OpenDriveSettings);
         _sessions = new DesktopSessionMonitor(options.CodexHome);
+        _streamRecovery = new DesktopStreamRecoveryMonitor(service, _sessions, () => _ready && !_closing && !_switching && !_loggingIn && !_providerEditing &&
+            !_service.IsBusy && _service.Vault.Data.ActivePendingSwitch == null);
         _theme = new Burn0Theme(service.Vault.Data.Theme != "light");
         Title = "Codex Switch"; Icon = AppIdentity.WindowIcon; Width = 600; Height = 400; MinWidth = 500; MinHeight = 360;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -373,6 +376,7 @@ internal sealed class MainWindow : Window
         _started = true;
         if (_options.UiEvidenceDirectory != null) return;
         _sessions.Start();
+        if (_options.ReportPath == null) _streamRecovery.Start();
         _hardware.Start();
         _drives.Configure(_service.Vault.Data.Drives.ToArray()); _drives.Start();
         if (_options.ReportPath == null) { CreateTray(); _refreshTimer.Start(); _clockTimer.Start(); }
@@ -584,7 +588,7 @@ internal sealed class MainWindow : Window
         _sessionCount.ToolTip = activity.Available ? Loc.T("이 PC의 로컬 Codex 주 채팅\n하위 에이전트 제외\n계정별 구분 없음") + "\n" +
             Loc.F("승인/입력 대기 {0}", activity.Waiting) + "\n" +
             (activity.Queued.HasValue ? Loc.F("큐는 예약 메시지 수\n보류된 큐 {0}", activity.PausedQueued) : Loc.T(activity.QueueProblem ?? "큐 상태 확인 중…")) + "\n" +
-            (activity.Goals.HasValue ? Loc.F("목표는 진행 중인 Goal 수\n멈춘 목표 {0}", activity.PausedGoals) : Loc.T("목표 상태 확인 중…")) : Loc.T(activity.Problem ?? "채팅 상태 확인 중…");
+            (activity.Goals.HasValue ? Loc.F("목표는 진행 중인 Goal 수\n멈춘 목표 {0}", activity.PausedGoals) : Loc.T("목표 상태 확인 중…")) + "\n" + Loc.T("sessions.errors_help") : Loc.T(activity.Problem ?? "채팅 상태 확인 중…");
     }
     private void RenderAccounts()
     {
@@ -1021,6 +1025,7 @@ internal sealed class MainWindow : Window
         await Task.WhenAll(_operations.ToArray());
         WriteRunningState("stopping-drives"); await _drives.DisposeAsync();
         WriteRunningState("stopping-hardware"); await _hardware.DisposeAsync();
+        WriteRunningState("stopping-stream-recovery"); await _streamRecovery.DisposeAsync();
         WriteRunningState("stopping-sessions"); await _sessions.DisposeAsync();
         WriteRunningState("stopping-service"); await _service.StopAsync();
         _exit = true; _tray?.Dispose(); WriteRunningState("stopped"); Application.Current.Shutdown();

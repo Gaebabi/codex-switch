@@ -6,6 +6,8 @@
   "culture": "fr-FR",
   "direction": "ltr",
   "strings": {
+    "sessions.errors": "Erreurs",
+    "sessions.errors_help": "Nombre de chats principaux locaux arrêtés par une erreur système ou un échec du dernier tour. Exclut les sous-agents, les chats actifs, les annulations et les erreurs résolues.",
     "providers.reasoning_title": "Raisonnement GPT dans Codex",
     "providers.reasoning_model": "Modèle",
     "providers.reasoning_override": "Définir les niveaux de raisonnement pris en charge",

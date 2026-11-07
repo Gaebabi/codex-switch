@@ -6,6 +6,8 @@
   "culture": "zh-TW",
   "direction": "ltr",
   "strings": {
+    "sessions.errors": "錯誤",
+    "sessions.errors_help": "因系統錯誤或最新回合失敗而停止的本機主對話數。不包含子代理、執行中的對話、使用者取消或已復原的歷史錯誤。",
     "providers.reasoning_title": "在 Codex 中使用 GPT 推理強度",
     "providers.reasoning_model": "模型",
     "providers.reasoning_override": "指定支援的推理級別",

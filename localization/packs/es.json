@@ -6,6 +6,8 @@
   "culture": "es-ES",
   "direction": "ltr",
   "strings": {
+    "sessions.errors": "Errores",
+    "sessions.errors_help": "Cuenta los chats principales locales detenidos por un error del sistema o el fallo del último turno. Excluye subagentes, chats activos, cancelaciones y errores ya recuperados.",
     "providers.reasoning_title": "Razonamiento de GPT en Codex",
     "providers.reasoning_model": "Modelo",
     "providers.reasoning_override": "Definir niveles de razonamiento compatibles",

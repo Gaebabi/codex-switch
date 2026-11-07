@@ -100,6 +100,16 @@ internal sealed class ModelProviderStore
             Update(next => next.ConversationRoutes[key] = new GatewayConversationRoute { Route = route, Mixed = mixed });
         }
     }
+    internal static string? RecoveryConversationKey(string? session, string auth)
+    {
+        if (string.IsNullOrEmpty(session) || session.Length > 256) return null;
+        using var json = JsonDocument.Parse(auth);
+        var root = json.RootElement; string? identity = null;
+        if (root.TryGetProperty("tokens", out var tokens)) identity = JsonValue.String(tokens, "account_id");
+        identity ??= JsonValue.String(root, "OPENAI_API_KEY");
+        if (string.IsNullOrEmpty(identity)) return null;
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity + "\n" + session)));
+    }
     private static bool IsMixed(GatewayConversationRoute? previous, string route) =>
         previous?.Mixed == true || (previous != null ? previous.Route != route : route != "openai");
     private static string? ConversationKey(string? session, GatewayIdentity identity) =>

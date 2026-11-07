@@ -142,6 +142,7 @@ internal static class ProviderUiEvidence
                 checks.Add(language + ": duplicate restart action disabled while busy");
             }
             HomeLayoutContracts.Verify(service, args[0], checks);
+            SessionCounterContracts.Verify(args[0], checks);
             File.WriteAllText(Path.Combine(args[0], "ui-verification.json"), JsonSerializer.Serialize(new
             {
                 checks,

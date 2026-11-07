@@ -6,6 +6,8 @@
   "culture": "de-DE",
   "direction": "ltr",
   "strings": {
+    "sessions.errors": "Fehler",
+    "sessions.errors_help": "Zählt lokale Hauptchats, die durch einen Systemfehler oder einen fehlgeschlagenen letzten Schritt angehalten wurden. Unteragenten, aktive Chats, Abbrüche und behobene Fehler sind ausgeschlossen.",
     "providers.reasoning_title": "GPT-Denkintensität in Codex",
     "providers.reasoning_model": "Modell",
     "providers.reasoning_override": "Unterstützte Denkstufen festlegen",
