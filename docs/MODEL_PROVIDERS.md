@@ -7,12 +7,14 @@ Keep eligible OpenAI models and custom Responses models in the existing Codex mo
 ## Set up a provider
 
 1. In1.44.0, open Model providers in the titlebar Settings gear. Older1.43.3 Windows packages use Models in the toolbar.
-2. Select Add a provider, enter a display name, API base URL and API key, then choose Discover and save.
-3. If the provider has a large catalog, enter the model IDs to include, one per line. Leave this field empty to discover all models within the supported bounds.
-4. Choose Connect Codex, then use Restart Codex in Settings when ready (on the main window in older1.43.3). Saving provider details alone does not connect Codex. The editor keeps the connection state visible after saving. Connecting prepares settings; the separate restart action normally closes and reopens Codex and resumes eligible unfinished chats with the same login.
+2. In the first step, select Add a provider or a saved provider, then enter its display name, API base URL and API key. Choose Save and continue to discover and save its models.
+3. For a large catalog, expand the optional model-ID field and enter one ID per line. Leave it empty to discover all models within the supported bounds. Reasoning and conversation-handoff controls stay under Advanced in the second step.
+4. In the second step, choose Connect Codex, then Restart Codex when ready. Saving alone does not connect or restart Codex. The restart button uses the existing normal restart and chat-recovery flow with the same login.
 5. Keep Switch running, including in its tray. Choose OpenAI or a custom model inside each Codex chat. New connections use an explicit local model catalog; after changing its models or reasoning settings, restart Codex when ready to load the updated catalog.
 
-Select an existing provider to edit it. An empty key field retains its saved key; changing the destination URL requires a replacement key. Keys remain masked in the editor and encrypted in the separate local model-providers.vault file. The account vault and original OpenAI login are preserved.
+Saved providers reopen with their fields and a masked key. The eye button shows or hides the current key, and Copy copies it only after an explicit click. Neither action changes the key. Changing the destination URL still requires an explicitly entered replacement key; displaying a saved key does not authorize sending it elsewhere.
+
+Draft fields and the last selected provider are encrypted in the existing model-providers.vault when changing providers, attempting a save or closing the editor. A failed save retains the input. More options offers Load saved values, Use these values for a new provider, provider removal and connection restoration. Loading saved values is the explicit way to discard an edit. The account vault and original OpenAI login are preserved.
 
 Restart Codex keeps the current account and original chat names. It uses the existing durable recovery and uncertain-Continue suppression. Running work and active unfinished goals are captured; completed or already-running work is checked before another Continue is sent. Existing credit-protection settings still apply. The action stays disabled while another login/restart/handoff is in progress.
 

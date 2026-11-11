@@ -352,6 +352,7 @@ try
     Check("Shutdown cancels and drains discovery before disposing state without saving a partial key", cancelled && !File.Exists(Path.Combine(cancelPath, "model-providers.vault")));
     await GatewayLoadContracts.Run(root, Check, args.Contains("--stress"));
     await GatewayRetryContracts.Run(root, Check);
+    await ProviderEditorContracts.Run(root, Check);
     Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, nativeClient = args.Contains("--codex"), framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription, scope = "Disposable encrypted storage, loopback gateway and fictional upstreams; no owner home, account or desktop." }, new JsonSerializerOptions { WriteIndented = true }));
 }
 finally

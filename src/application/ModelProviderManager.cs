@@ -13,7 +13,7 @@ using NodeValue = System.Text.Json.Nodes.JsonValue;
 
 namespace CodexAccountDesk;
 
-internal sealed class ModelProviderManager : IAsyncDisposable
+internal sealed partial class ModelProviderManager : IAsyncDisposable
 {
     private readonly ModelProviderStore _store;
     private readonly HttpClient _http;
@@ -59,7 +59,7 @@ internal sealed class ModelProviderManager : IAsyncDisposable
                 foreach (var model in provider.Models)
                     model.ReasoningOverride = previous.Models.FirstOrDefault(old => old.UpstreamId == model.UpstreamId)?.ReasoningOverride;
             cancellation.ThrowIfCancellationRequested();
-            _store.Update(next => { var index = next.Providers.FindIndex(p => p.Id == provider.Id); if (index < 0) next.Providers.Add(provider); else next.Providers[index] = provider; });
+            _store.Update(next => { var index = next.Providers.FindIndex(p => p.Id == provider.Id); if (index < 0) next.Providers.Add(provider); else next.Providers[index] = provider; RememberSavedEditor(next, provider, id); });
             await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
             return provider;
         }
@@ -69,7 +69,11 @@ internal sealed class ModelProviderManager : IAsyncDisposable
     {
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _lifetime.Token); cancellation = lifetime.Token;
         await _changes.WaitAsync(cancellation).ConfigureAwait(false);
-        try { _store.Update(next => next.Providers.RemoveAll(p => p.Id == id)); await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false); }
+        try
+        {
+            _store.Update(next => { next.Providers.RemoveAll(p => p.Id == id); next.EditorDrafts.Remove(id); if (next.EditorSelection == id) next.EditorSelection = null; });
+            await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
+        }
         finally { _changes.Release(); }
     }
     internal async Task SaveReasoningAsync(string providerId, string modelId, ProviderReasoningOptions? options, CancellationToken cancellation)

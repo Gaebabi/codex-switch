@@ -1,6 +1,10 @@
 # Provider connection state
 
-These images are production WPF components rendered offscreen after the ordinary reasoning-settings Save action, with fictional provider metadata, an empty key field and disposable encrypted storage. The saved state remains explicitly disconnected, Connect stays available, and Restore is disabled. They are not native Codex picker or real-provider acceptance evidence.
+These images are production WPF components rendered offscreen with fictional provider metadata and disposable encrypted storage. The two-step flow loads saved fields, keeps keys masked, retains failed edits, and advances to Connect only after saving. Eye, copy, explicit reload/reuse and close/reopen are checked through the editor's normal controls and persistence paths. These are not native Codex picker or real-provider acceptance images.
+
+![English provider details](providers-en-dark.png)
+
+![Korean provider details](providers-ko-dark.png)
 
 ![English saved provider connection state](saved-connection-en-dark.png)
 
