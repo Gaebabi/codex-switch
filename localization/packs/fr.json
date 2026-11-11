@@ -487,7 +487,7 @@
     "providers.history_hint": "Changing providers sends the replayed conversation to the selected provider. Opaque encrypted reasoning is excluded. Stateful response references are refused. Existing OpenAI-provider chats retain their IDs.",
     "providers.prepared": "Connection settings prepared. Restart Codex once when ready.",
     "providers.not_connected": "Codex is not connected to the local gateway.",
-    "providers.saved": "Provider settings saved. New requests use the saved route; model-list refresh may take a few minutes.",
+    "providers.saved": "Provider settings saved.",
     "providers.working": "Working…",
     "providers.cancelled": "Cancelled or timed out.",
     "providers.failed": "Provider operation failed.",

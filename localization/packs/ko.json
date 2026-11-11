@@ -487,7 +487,7 @@
     "providers.history_hint": "제공자를 바꾸면 기존 대화 내용이 선택한 제공자에게 전달됩니다. 제공자 전용으로 암호화된 추론은 제외합니다. 응답 ID에 의존하는 요청은 거부합니다. 기존 OpenAI 채팅의 식별자는 유지합니다.",
     "providers.prepared": "연결 설정을 준비했습니다. 편할 때 Codex를 한 번 재시작하세요.",
     "providers.not_connected": "Codex가 로컬 중계에 연결되어 있지 않습니다.",
-    "providers.saved": "제공자 설정을 저장했습니다. 다음 요청부터 적용되며 모델 목록 갱신은 몇 분 걸릴 수 있습니다.",
+    "providers.saved": "제공자 설정을 저장했습니다.",
     "providers.working": "처리 중…",
     "providers.cancelled": "취소되었거나 시간이 초과되었습니다.",
     "providers.failed": "제공자 작업에 실패했습니다.",

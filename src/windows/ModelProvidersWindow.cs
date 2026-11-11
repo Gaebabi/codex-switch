@@ -98,15 +98,31 @@ internal sealed class ModelProvidersWindow : Window
     }
     private Button Action(string message, Func<Task> action)
     {
-        var button = new Button { Content = Loc.T(message), Margin = new Thickness(0, 0, 8, 6), Padding = new Thickness(10, 5, 10, 5), Background = _theme.Color("surface"), Foreground = _theme.Color("text") };
+        var button = new Button { Content = Loc.T(message), Tag = message, Margin = new Thickness(0, 0, 8, 6), Padding = new Thickness(10, 5, 10, 5), Background = _theme.Color("surface"), Foreground = _theme.Color("text") };
         button.Click += async (_, _) => await RunAsync(action, message == "providers.connect" ? "providers.prepared" : message == "providers.disconnect" ? "providers.restored" : "providers.saved"); _actions.Add(button); return button;
     }
     private void RefreshChoices(string? selected)
     {
         var choices = new[] { new Choice(null, Loc.T("providers.new")) }.Concat(_manager.Settings.Providers.Select(p => new Choice(p.Id, p.Name))).ToArray();
         _providers.ItemsSource = choices; _providers.SelectedItem = choices.FirstOrDefault(p => p.Id == selected) ?? choices[0];
+        SetStatus(); UpdateActions();
+    }
+    private void SetStatus(string? message = null)
+    {
         var settings = _manager.Settings;
-        _status.Text = Loc.T(settings.Connected ? settings.ConnectionWriteConfirmed ? "providers.prepared" : "providers.incomplete" : "providers.not_connected");
+        var connection = Loc.T(settings.Connected ? settings.ConnectionWriteConfirmed ? "providers.prepared" : "providers.incomplete" : "providers.not_connected");
+        _status.Text = message == null || message == connection ? connection : message + "\n" + connection;
+    }
+    private void UpdateActions()
+    {
+        var settings = _manager.Settings;
+        foreach (var button in _actions)
+            button.IsEnabled = !_busy && ((button.Tag as string) switch
+            {
+                "providers.connect" => !settings.Connected && settings.Providers.Count != 0,
+                "providers.disconnect" => settings.Connected,
+                _ => true
+            });
     }
     private void Select()
     {
@@ -157,9 +173,9 @@ internal sealed class ModelProvidersWindow : Window
         _reasoningPanel.IsEnabled = false;
         foreach (var button in _actions) button.IsEnabled = false; _providers.IsEnabled = false;
         _status.Text = Loc.T("providers.working");
-        try { await action(); _status.Text = Loc.T(success); }
-        catch (OperationCanceledException) { _status.Text = Loc.T("providers.cancelled"); }
-        catch (Exception error) { _status.Text = Loc.T("providers.failed") + " " + error.Message; }
-        finally { _key.Clear(); _busy = false; foreach (var button in _actions) button.IsEnabled = true; _providers.IsEnabled = _name.IsEnabled = _url.IsEnabled = _key.IsEnabled = _included.IsEnabled = true; _reasoningPanel.IsEnabled = _selected != null; }
+        try { await action(); SetStatus(Loc.T(success)); }
+        catch (OperationCanceledException) { SetStatus(Loc.T("providers.cancelled")); }
+        catch (Exception error) { SetStatus(Loc.T("providers.failed") + " " + error.Message); }
+        finally { _key.Clear(); _busy = false; UpdateActions(); _providers.IsEnabled = _name.IsEnabled = _url.IsEnabled = _key.IsEnabled = _included.IsEnabled = true; _reasoningPanel.IsEnabled = _selected != null; }
     }
 }

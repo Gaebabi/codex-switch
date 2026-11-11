@@ -39,6 +39,8 @@ internal static class ProviderUiEvidence
                 var form = (StackPanel)surface.Content;
                 var buttons = form.Children.OfType<WrapPanel>().SelectMany(p => p.Children.OfType<Button>()).ToArray();
                 if (buttons.Length != 4 || buttons.Any(b => b.ActualWidth < 30 || b.ActualHeight < 20)) throw new Exception("Provider actions must be reachable.");
+                if (!buttons.Single(button => button.Tag as string == "providers.connect").IsEnabled || buttons.Single(button => button.Tag as string == "providers.disconnect").IsEnabled)
+                    throw new Exception("Saved but disconnected providers must expose Connect and disable Restore.");
                 var bitmap = new RenderTargetBitmap(540, 700, 96, 96, PixelFormats.Pbgra32);
                 var drawing = new DrawingVisual();
                 using (var context = drawing.RenderOpen())
@@ -67,8 +69,16 @@ internal static class ProviderUiEvidence
                 reasoningPanel.Children.OfType<Button>().Single().RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 var saved = service.ModelProviders.Settings.Providers.Single().Models.Single().ReasoningOverride;
                 if (saved?.Default != "medium" || !saved.Levels.SequenceEqual(new[] { "low", "medium", "high" })) throw new Exception("Editor action must save the selected model's levels and default.");
+                var status = (TextBlock)typeof(ModelProvidersWindow).GetField("_status", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(window)!;
+                if (!status.Text.Contains(Loc.T("providers.saved")) || !status.Text.Contains(Loc.T("providers.not_connected")) || !buttons.Single(button => button.Tag as string == "providers.connect").IsEnabled)
+                    throw new Exception("A successful save must retain the disconnected state and the next Connect action.");
+                checks.Add(language + "/" + (dark ? "dark" : "light") + ": save preserves visible connection state and actionable Connect control");
                 checks.Add(language + "/" + (dark ? "dark" : "light") + ": production reasoning save action persists only fictional per-model settings");
                 reasoning.IsExpanded = false;
+                surface.UpdateLayout(); surface.ScrollToBottom(); surface.UpdateLayout();
+                bitmap = new RenderTargetBitmap(540, 700, 96, 96, PixelFormats.Pbgra32); bitmap.Render(surface);
+                encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
+                using (var file = File.Create(Path.Combine(args[0], "saved-connection-" + language + "-" + (dark ? "dark" : "light") + ".png"))) encoder.Save(file);
                 var handoff = form.Children.OfType<Expander>().Single(control => control.Name == "PortableHistoryHelp");
                 handoff.IsExpanded = true;
                 surface.UpdateLayout(); surface.ScrollToBottom(); surface.UpdateLayout();
