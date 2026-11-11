@@ -60,7 +60,7 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
                     model.ReasoningOverride = previous.Models.FirstOrDefault(old => old.UpstreamId == model.UpstreamId)?.ReasoningOverride;
             cancellation.ThrowIfCancellationRequested();
             _store.Update(next => { var index = next.Providers.FindIndex(p => p.Id == provider.Id); if (index < 0) next.Providers.Add(provider); else next.Providers[index] = provider; RememberSavedEditor(next, provider, id); });
-            await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
+            if (!Settings.RouterEnabled) await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
             return provider;
         }
         finally { _changes.Release(); }
@@ -72,7 +72,7 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         try
         {
             _store.Update(next => { next.Providers.RemoveAll(p => p.Id == id); next.EditorDrafts.Remove(id); if (next.EditorSelection == id) next.EditorSelection = null; });
-            await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
+            if (!Settings.RouterEnabled) await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
         }
         finally { _changes.Release(); }
     }
@@ -87,7 +87,7 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         {
             lifetime.Token.ThrowIfCancellationRequested();
             _store.Update(next => next.Providers.Single(p => p.Id == providerId).Models.Single(m => m.UpstreamId == modelId).ReasoningOverride = options);
-            await RefreshCatalogCoreAsync(lifetime.Token, true).ConfigureAwait(false);
+            if (!Settings.RouterEnabled) await RefreshCatalogCoreAsync(lifetime.Token, true).ConfigureAwait(false);
         }
         finally { _changes.Release(); }
     }
@@ -106,13 +106,15 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         catch { gateway.DisposeAsync().AsTask().GetAwaiter().GetResult(); throw; }
         }
     }
-    public async Task ConnectAsync(string executable, string home, CancellationToken cancellation)
+    public async Task ConnectAsync(string executable, string home, CancellationToken cancellation, bool router = true)
     {
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _lifetime.Token); cancellation = lifetime.Token;
         await _changes.WaitAsync(cancellation).ConfigureAwait(false);
         try
         {
-            if (_store.Read().Connected) throw new InvalidOperationException("Codex connection settings are already prepared. Restart Codex once when ready.");
+            var settings = _store.Read();
+            if (settings.Connected && (settings.RouterEnabled || !router)) throw new InvalidOperationException("Codex connection settings are already prepared. Restart Codex once when ready.");
+            if (router && !ModelRouting.Registered(settings, settings.SelectedRoute)) throw new InvalidOperationException("Select an available model in Codex Switch before connecting.");
             Start();
             await using var rpc = new CodexRpc(executable, home, preserveProvider: true);
             await rpc.InitializeAsync(cancellation).ConfigureAwait(false);
@@ -129,19 +131,24 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
             var originalProvider = ValueAt(snapshot.Config, "model_provider")?.GetValue<string>();
             if (originalProvider != null && originalProvider != "openai")
                 throw new InvalidOperationException("Restore the original OpenAI provider before connecting the combined model catalog.");
+            if (settings.AppliedConfig != null)
+                foreach (var (key, applied) in settings.AppliedConfig)
+                    if (!JsonNode.DeepEquals(ValueAt(snapshot.Config, key), applied) && !JsonNode.DeepEquals(ValueAt(snapshot.Config, key), settings.OriginalConfig![key]))
+                        throw new InvalidOperationException("Codex connection settings changed outside Switch. Review them before preparing the fixed model.");
             if (version == null) throw new InvalidOperationException("The Codex version could not be verified before preparing the model catalog.");
             _home = Path.GetFullPath(home);
-            await WriteCatalogAsync(version, cancellation).ConfigureAwait(false);
+            await WriteCatalogAsync(version, cancellation, router: router).ConfigureAwait(false);
             var edits = new Dictionary<string, JsonNode?>
             {
                 ["openai_base_url"] = NodeValue.Create(_gateway!.BaseUrl),
                 ["model_catalog_json"] = NodeValue.Create(_catalogPath), ["features.responses_websockets_v2"] = NodeValue.Create(false),
                 ["features.enable_request_compression"] = NodeValue.Create(false)
             };
-            var original = edits.Keys.Append("model").ToDictionary(key => key, key => ValueAt(snapshot.Config, key)?.DeepClone());
+            if (router) edits["model"] = NodeValue.Create(ModelRouting.Model);
+            var original = settings.OriginalConfig ?? edits.Keys.Append("model").Distinct().ToDictionary(key => key, key => ValueAt(snapshot.Config, key)?.DeepClone());
             // Persist recovery before the atomic config write. A crash can only leave an extra listener,
             // never a client configured for a listener that will not be started on the next Switch launch.
-            _store.Update(next => { next.OriginalConfig = original; next.AppliedConfig = edits; next.Connected = true; next.ConnectionWriteConfirmed = false; });
+            _store.Update(next => { next.OriginalConfig = original; next.AppliedConfig = edits; next.RouterEnabled = router; next.Connected = true; next.ConnectionWriteConfirmed = false; });
             // Keep recovery information if the RPC commits before its reply is lost.
             // Disconnect re-reads the file and refuses to overwrite divergent values.
             await WriteConfigAsync(rpc, home, snapshot.Version, edits, cancellation).ConfigureAwait(false);
@@ -178,14 +185,14 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         }
         finally { CryptographicOperations.ZeroMemory(bytes); }
     }
-    private async Task WriteCatalogAsync(string version, CancellationToken cancellation, bool force = true)
+    private async Task WriteCatalogAsync(string version, CancellationToken cancellation, bool force = true, bool? router = null)
     {
         var identity = ReadIdentity();
         var identityKey = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity.Token + "\n" + identity.AccountId)));
         if (!force && _catalogIdentity == identityKey && DateTimeOffset.UtcNow - _catalogUpdated < TimeSpan.FromMinutes(5) && File.Exists(_catalogPath)) return;
         Start();
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(30));
-        var catalog = await _gateway!.ReadCatalogAsync(identity, version, deadline.Token).ConfigureAwait(false);
+        var catalog = await _gateway!.ReadCatalogAsync(identity, version, deadline.Token, router).ConfigureAwait(false);
         var current = ReadIdentity();
         if (current.Token != identity.Token || current.AccountId != identity.AccountId || current.ApiKey != identity.ApiKey)
             throw new InvalidOperationException("The OpenAI sign-in changed while refreshing the model catalog.");
@@ -209,11 +216,13 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
             foreach (var (key, applied) in settings.AppliedConfig)
             {
                 var current = ValueAt(snapshot.Config, key);
+                if (key == "model" && current is NodeValue changed && changed.TryGetValue<string>(out var currentModel) &&
+                    currentModel != ModelRouting.Model && !currentModel.StartsWith("cs_", StringComparison.Ordinal)) continue;
                 if (!JsonNode.DeepEquals(current, applied) && !JsonNode.DeepEquals(current, settings.OriginalConfig[key]))
                     throw new InvalidOperationException("Codex connection settings changed outside Switch. Review them before disconnecting.");
                 restore[key] = settings.OriginalConfig[key]?.DeepClone();
             }
-            if (ValueAt(snapshot.Config, "model") is NodeValue model && model.TryGetValue<string>(out var selected) && selected.StartsWith("cs_", StringComparison.Ordinal))
+            if (ValueAt(snapshot.Config, "model") is NodeValue model && model.TryGetValue<string>(out var selected) && (selected == ModelRouting.Model || selected.StartsWith("cs_", StringComparison.Ordinal)))
                 restore["model"] = settings.OriginalConfig["model"]?.DeepClone();
             await WriteConfigAsync(rpc, home, snapshot.Version, restore, cancellation).ConfigureAwait(false);
             _store.Update(next => { next.Connected = false; next.ConnectionWriteConfirmed = false; next.OriginalConfig = null; next.AppliedConfig = null; });

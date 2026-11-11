@@ -33,6 +33,7 @@ internal static class StreamRecoveryPolicy
     // a failed request. Actual user interruptions remain a separate turn state.
     internal static bool Failed(string status) => status == "failed";
     internal static bool RegisteredModel(string model, ModelProviderSettings providers) =>
+        model == ModelRouting.Model ? ModelRouting.Registered(providers, providers.SelectedRoute) :
         !model.StartsWith("cs_", StringComparison.Ordinal) || providers.Providers.Any(provider =>
             provider.Models.Any(item => item.Alias(provider.Id) == model));
     internal static bool Same(StreamRecoveryObservation a, StreamRecoveryObservation b) => b.Ready &&

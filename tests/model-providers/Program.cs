@@ -353,6 +353,7 @@ try
     await GatewayLoadContracts.Run(root, Check, args.Contains("--stress"));
     await GatewayRetryContracts.Run(root, Check);
     await ProviderEditorContracts.Run(root, Check);
+    await ModelRoutingContracts.Run(root, Check);
     Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, nativeClient = args.Contains("--codex"), framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription, scope = "Disposable encrypted storage, loopback gateway and fictional upstreams; no owner home, account or desktop." }, new JsonSerializerOptions { WriteIndented = true }));
 }
 finally
@@ -372,6 +373,8 @@ internal sealed class Upstreams : HttpMessageHandler
     internal bool ImageFailure;
     internal int StorageFailures;
     internal int StreamFailures;
+    internal bool InvalidNativeLabel;
+    internal Func<Task>? BeforeNextResponse;
     internal TaskCompletionSource DiscoveryEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     internal GatedStream? Slow;
     internal string? BlockedKey;
@@ -393,6 +396,7 @@ internal sealed class Upstreams : HttpMessageHandler
         {
             if (BlockDiscovery) { DiscoveryEntered.TrySetResult(); await Task.Delay(Timeout.Infinite, cancellation); }
             var data = request.RequestUri.Host == "chatgpt.com" ? new JsonObject { ["models"] = new JsonArray(ProviderCatalog.Generic("fixture-openai")) } : new JsonObject { ["data"] = new JsonArray(new JsonObject { ["id"] = "shared-model" }) };
+            if (InvalidNativeLabel && request.RequestUri.Host == "chatgpt.com") data["models"]![0]!["display_name"] = new string('x', 513);
             if (MatchingReasoning && request.RequestUri.Host == "chatgpt.com")
             {
                 var matchingModel = ProviderCatalog.Generic("shared-model");
@@ -404,6 +408,7 @@ internal sealed class Upstreams : HttpMessageHandler
         }
         if (BlockNext)
         { BlockNext = false; BlockedKey = request.Headers.Authorization?.Parameter; Entered.TrySetResult(); await Release.Task.WaitAsync(cancellation); }
+        if (BeforeNextResponse != null) { var action = BeforeNextResponse; BeforeNextResponse = null; await action(); }
         if (FailNext) { FailNext = false; return new(HttpStatusCode.TooManyRequests) { Content = new StringContent("fictional-key-a-new") }; }
         if (StorageFailures > 0) { StorageFailures--; return new((HttpStatusCode)507) { Content = new StringContent("fictional-key-must-not-be-echoed") }; }
         if (StreamFailures > 0)
@@ -444,7 +449,7 @@ internal static class NativeClient
         var jwtPayload = Convert.ToBase64String(Encoding.UTF8.GetBytes("{\"email\":\"fictional@example.invalid\",\"exp\":4102444800,\"https://api.openai.com/auth\":{\"chatgpt_account_id\":\"fictional-account\",\"chatgpt_plan_type\":\"plus\"}}")).TrimEnd('=').Replace('+', '-').Replace('/', '_');
         await File.WriteAllTextAsync(Path.Combine(home, "auth.json"), JsonSerializer.Serialize(new { auth_mode = "chatgpt", tokens = new { access_token = "fictional-openai-token", refresh_token = "fictional-refresh", id_token = "eyJhbGciOiJub25lIn0." + jwtPayload + ".fixture", account_id = "fictional-account" }, last_refresh = DateTimeOffset.UtcNow }));
         await File.WriteAllTextAsync(Path.Combine(home, "config.toml"), "# Fictional isolated native client\nmodel_provider = \"openai\"\nmodel = \"fixture-openai\"\ncli_auth_credentials_store = \"file\"\nopenai_base_url = \"" + manager.BaseUrl + "\"\nchatgpt_base_url = \"" + control.BaseUrl + "\"\n[features]\nresponses_websockets_v2 = false\nenable_request_compression = false\nshell_tool = false\ncode_mode = false\n");
-        await manager.ConnectAsync(executable, home, CancellationToken.None);
+        await manager.ConnectAsync(executable, home, CancellationToken.None, router: false);
         var connectedConfig = await File.ReadAllTextAsync(Path.Combine(home, "config.toml"));
         check("Connection preserves OpenAI provider identity for existing chats", connectedConfig.Contains("model_provider = \"openai\"") && !connectedConfig.Contains("[model_providers.codex_switch_router]"));
         var catalogPath = manager.Settings.AppliedConfig!["model_catalog_json"]!.GetValue<string>();
@@ -476,21 +481,22 @@ internal static class NativeClient
         check("Actual Codex retains the original OpenAI display name", listed.GetProperty("data").EnumerateArray().Single(m => m.GetProperty("model").GetString() == "fixture-openai").GetProperty("displayName").GetString() == "fixture-openai");
         var thread = await rpc.RequestAsync("thread/start", new { model = "fixture-openai", cwd = home, ephemeral = true, approvalPolicy = "never", sandbox = "read-only", config = new Dictionary<string, object> { ["mcp_servers"] = new Dictionary<string, object>() } }, cancellation);
         var threadId = thread.GetProperty("thread").GetProperty("id").GetString()!;
-        async Task<JsonElement> Turn(string target, string? model, string name, string? effort = null, bool expectedFailure = false)
+        async Task<JsonElement> Turn(string target, string? model, string name, string? effort = null, bool expectedFailure = false, CodexRpc? actualClient = null)
         {
+            var client = actualClient ?? rpc;
             var complete = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
             void Notification(string method, JsonElement value) { if (method == "turn/completed" && value.GetProperty("threadId").GetString() == target) complete.TrySetResult(value.Clone()); }
-            rpc.Notification += Notification;
+            client.Notification += Notification;
             try
             {
-                await rpc.RequestAsync("turn/start", new { threadId = target, model, effort, input = new[] { new { type = "text", text = "Reply with fixture-ok." } } }, cancellation);
+                await client.RequestAsync("turn/start", new { threadId = target, model, effort, input = new[] { new { type = "text", text = "Reply with fixture-ok." } } }, cancellation);
                 var result = await complete.Task.WaitAsync(cancellation);
                 var expected = expectedFailure ? "failed" : "completed";
                 if (result.GetProperty("turn").GetProperty("status").GetString() != expected) Console.WriteLine(JsonSerializer.Serialize(new { nativeFixtureTurn = result, gatewayError = manager.LastError, lastRoute = upstreams.Requests.Last().Host }));
                 check(name, result.GetProperty("turn").GetProperty("status").GetString() == expected);
                 return result;
             }
-            finally { rpc.Notification -= Notification; }
+            finally { client.Notification -= Notification; }
         }
         foreach (var model in new[] { "fixture-openai", aliases[0], aliases[1], "fixture-openai" })
             await Turn(threadId, model, "Same running Codex client and chat completes selected route: " + (model.StartsWith("cs_", StringComparison.Ordinal) ? model[..10] : model));
@@ -517,6 +523,37 @@ internal static class NativeClient
         var streamFailed = await Turn(threadId, "fixture-openai", "Actual Codex persists an explicit post-response stream failure", expectedFailure: true);
         check("Actual post-response failure is eligible for guarded same-chat continuation", StreamRecoveryPolicy.Failed(CodexAccountDesk.JsonValue.String(streamFailed.GetProperty("turn"), "status")!));
         await Turn(threadId, null, "Actual Codex completes a following turn in the same chat after stream failure");
+        manager.SelectRoute(aliases[0]);
+        await manager.ConnectAsync(executable, home, cancellation);
+        var fixedCatalog = await File.ReadAllTextAsync(catalogPath);
+        check("The upgraded catalog contains one stable Codex Switch model", JsonNode.Parse(fixedCatalog)!["models"]!.AsArray().Single()!["slug"]!.GetValue<string>() == ModelRouting.Model);
+        await using (var routerClient = new CodexRpc(executable, home, preserveProvider: true))
+        {
+            await routerClient.InitializeAsync(cancellation);
+            var fixedList = await routerClient.RequestAsync("model/list", new { includeHidden = false }, cancellation);
+            check("The actual native picker exposes exactly the fixed model", fixedList.GetProperty("data").GetArrayLength() == 1 && fixedList.GetProperty("data")[0].GetProperty("model").GetString() == ModelRouting.Model);
+            var routedThread = await routerClient.RequestAsync("thread/start", new { cwd = home, ephemeral = true, approvalPolicy = "never", sandbox = "read-only", config = new Dictionary<string, object> { ["mcp_servers"] = new Dictionary<string, object>() } }, cancellation);
+            var routedId = routedThread.GetProperty("thread").GetProperty("id").GetString()!;
+            check("New native chats default to the fixed model while retaining OpenAI identity", routedThread.GetProperty("model").GetString() == ModelRouting.Model && routedThread.GetProperty("modelProvider").GetString() == "openai");
+            foreach (var selection in new[] { aliases[0], aliases[1], "fixture-openai", aliases[0] })
+            {
+                manager.SelectRoute(selection);
+                await Turn(routedId, null, "Same native client and chat completes a changed Switch selection: " + selection[..Math.Min(10, selection.Length)], actualClient: routerClient);
+                var expectedHost = selection == aliases[0] ? "a.example.invalid" : selection == aliases[1] ? "b.example.invalid" : "chatgpt.com";
+                check("The saved selection controls the actual native upstream without changing its model", upstreams.Requests.Last().Host == expectedHost && JsonNode.Parse(upstreams.Requests.Last().Body!)!["model"]!.GetValue<string>() == (selection == "fixture-openai" ? selection : "shared-model"));
+            }
+            var added = await manager.SaveAsync(null, "Provider added after startup", "https://c.example.invalid/v1", "fictional-added-provider-key", cancellation);
+            manager.SelectRoute(added.Models.Single().Alias(added.Id));
+            await Turn(routedId, null, "The same native process can use a provider added after its catalog loaded", actualClient: routerClient);
+            check("New provider discovery does not require a native model-menu reload", upstreams.Requests.Last().Host == "c.example.invalid" && upstreams.Requests.Last().Token == "fictional-added-provider-key" && await File.ReadAllTextAsync(catalogPath) == fixedCatalog);
+            manager.SelectRoute(aliases[0]);
+            await manager.SaveReasoningAsync(reasoningProvider.Id, reasoningProvider.Models.Single().UpstreamId, new ProviderReasoningOptions { Levels = new() { "low", "high" }, Default = "low" }, cancellation);
+            await Turn(routedId, null, "Selected model reasoning changes apply in the same native process", actualClient: routerClient);
+            check("Saved actual-model default reaches the native routed request", JsonNode.Parse(upstreams.Requests.Last().Body!)!["reasoning"]!["effort"]!.GetValue<string>() == "low");
+            check("Route and reasoning selection leave the fixed native catalog untouched", await File.ReadAllTextAsync(catalogPath) == fixedCatalog);
+            var unchangedList = await routerClient.RequestAsync("model/list", new { includeHidden = false }, cancellation);
+            check("The native model list stays fixed after live backend model changes", unchangedList.GetProperty("data").GetArrayLength() == 1 && unchangedList.GetProperty("data")[0].GetProperty("model").GetString() == ModelRouting.Model);
+        }
         var config = await File.ReadAllTextAsync(Path.Combine(home, "config.toml"));
         check("Connection preserves unrelated TOML comments and settings", config.Contains("# Fictional isolated native client") && config.Contains("shell_tool = false"));
         var outsideEdit = config.Replace(manager.BaseUrl!, manager.BaseUrl + "/owner-change");

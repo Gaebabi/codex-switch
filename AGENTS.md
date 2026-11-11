@@ -5,6 +5,7 @@
 - Model provider keys and connection recovery are stored separately in model-providers.vault using the existing protection identity. Preserve this file, the account vault and the original Codex sign-in.
 - ProviderEditorSession retains drafts and selection in that same encrypted store. A null draft API key retains the saved credential; an explicitly empty key is invalid. Revealing/copying a loaded key must never authorize sending it to a changed destination. Preserve drafts on provider changes, failed saves and close/reopen.
 - Connection/restoration edits use the official version-checked configuration RPC. Model choices route per request; never restart the owner's Codex for verification.
+- New connections publish one stable codex-switch model. The saved actual-model selection applies globally to new virtual-model requests; snapshot its destination/key/options once and retain them through streams/retries. Never retarget a duplicate turn request after selection changes, fall back from a missing route, or rewrite the catalog merely to select a model. Preserve legacy aliases and explicit history/image compatibility refusals.
 - The gateway runs inside Switch. Treat an active gateway as part of ongoing Codex work when planning utility updates; use an owner-approved idle handoff.
 - Provider checks use disposable storage, fictional upstreams and an explicit reviewed CLI. Keep component renders, native app-server contracts, native desktop picker confirmation, real provider acceptance and public release as separate states. [Contract](docs/MODEL_PROVIDERS.md).
 

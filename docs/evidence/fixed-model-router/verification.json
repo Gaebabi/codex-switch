@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "nativeCli": "codex-cli 0.167.0-alpha.3.2",
+  "providerContracts": 292,
+  "accountRecoveryContracts": 350,
+  "languageApiContracts": 42,
+  "wpfComponentContracts": 124,
+  "catalogs": 9,
+  "messagesPerCatalog": 535,
+  "productionSourceSha256NormalizedLf": {
+    "src/windows/ModelRoutePicker.cs": "5eb84163027b233581129dd968513a8b027812e362ff2c0c048693de4a581e56",
+    "src/windows/MainWindow.cs": "e74370fd898f90f4649a9e9a4249ccfde52939143ef8478c855e30061d2cfab0",
+    "src/windows/ModelProvidersWindow.cs": "831a7e8234164c7cccb18ce36fe12f424fe0032a8266d6e83fa3c9e609191a5f",
+    "src/application/ModelRouting.cs": "5879e1179991b91330b10c20bb1848de6e9b1abb3bf5f5135a4121f1872217fe",
+    "tests/model-providers-ui/Program.cs": "c3ea142478f5a447536aac55ee6232a0a145ca94fa880cb2003e5747a724891e"
+  },
+  "pictures": [
+    {
+      "file": "setup-en.png",
+      "sha256": "1b4a555bca6aba28ab660ed4ba94edb3eca49c5acfb826d6af16e7cb39bdc752",
+      "dimensions": [
+        500,
+        510
+      ]
+    },
+    {
+      "file": "home-en.png",
+      "sha256": "bd7a7292f55ef8e355a06a92f57cbcfdd960cf5783805e5a312e7dc6416c078e",
+      "dimensions": [
+        500,
+        360
+      ]
+    },
+    {
+      "file": "setup-ko.png",
+      "sha256": "10d5be1f90c4728b84006f1184e30e54c22e6619ed0af4fb9d3416edfc1f305c",
+      "dimensions": [
+        500,
+        510
+      ]
+    },
+    {
+      "file": "home-ko.png",
+      "sha256": "136a396415bcfc71cf8749ce74b060e2b467ef25673578503fe7c89eafde49b5",
+      "dimensions": [
+        500,
+        360
+      ]
+    }
+  ],
+  "scope": "Fictional upstreams/disposable current native CLI and offscreen production WPF controls only. No owner process/account, real desktop picker, external-provider inference or public release acceptance."
+}
