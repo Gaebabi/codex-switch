@@ -42,6 +42,9 @@ internal sealed class ModelProviderSettings
     public string? LastClientVersion { get; set; }
     public bool Connected { get; set; }
     public bool ConnectionWriteConfirmed { get; set; }
+    public bool RouterEnabled { get; set; }
+    public string? SelectedRoute { get; set; }
+    public List<ModelRouteChoice> OpenAiModels { get; set; } = new();
     public List<ModelProvider> Providers { get; set; } = new();
     public string? EditorSelection { get; set; }
     public Dictionary<string, ProviderEditorDraft> EditorDrafts { get; set; } = new();
@@ -74,6 +77,9 @@ internal sealed class ModelProviderStore
             _settings.Providers.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != _settings.Providers.Count)
             throw new InvalidDataException("The model provider store is invalid.");
         foreach (var provider in _settings.Providers) ProviderCatalog.Validate(provider);
+        if (_settings.SelectedRoute?.Length > 256 || _settings.SelectedRoute != null && (string.IsNullOrWhiteSpace(_settings.SelectedRoute) || _settings.SelectedRoute.Any(char.IsControl)))
+            throw new InvalidDataException("The saved model routing choices are invalid.");
+        ModelRouting.ValidateChoices(_settings.OpenAiModels);
         if (_settings.EditorDrafts == null || _settings.EditorDrafts.Count > 33 ||
             _settings.EditorSelection != null && _settings.EditorSelection != ModelProviderManager.NewEditorProvider && !Guid.TryParseExact(_settings.EditorSelection, "N", out _))
             throw new InvalidDataException("The provider editor state is invalid.");

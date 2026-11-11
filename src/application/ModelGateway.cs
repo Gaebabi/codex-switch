@@ -93,6 +93,7 @@ internal sealed class ModelGateway : IAsyncDisposable
             { await ErrorAsync(response, 403, "Only authenticated local Codex requests are accepted.", cancellation).ConfigureAwait(false); return; }
             var identity = _authenticate(request.Headers["Authorization"], request.Headers["ChatGPT-Account-ID"]);
             if (identity == null) { await ErrorAsync(response, 401, "The current OpenAI sign-in is required.", cancellation).ConfigureAwait(false); return; }
+            var routingSettings = _store.Read();
             LastRequestAt = DateTimeOffset.UtcNow;
             var path = request.Url?.AbsolutePath;
             if (path == "/backend-api/codex/models" && request.HttpMethod == "GET")
@@ -161,11 +162,19 @@ internal sealed class ModelGateway : IAsyncDisposable
             var model = original.Model;
             if (string.IsNullOrEmpty(model)) throw new InvalidDataException("A model must be selected.");
             // Snapshot a route and its key before the first upstream byte. Settings edits never retarget an in-flight request.
-            var providers = _store.Read().Providers;
+            var settings = routingSettings; var routed = model == ModelRouting.Model;
+            if (routed)
+            {
+                if (!ModelRouting.Registered(settings, settings.SelectedRoute))
+                { await ErrorAsync(response, 400, "Select an available model in Codex Switch before sending another request.", cancellation).ConfigureAwait(false); return; }
+                model = settings.SelectedRoute!;
+            }
+            var providers = settings.Providers;
             var route = providers.SelectMany(p => p.Models.Select(m => (Provider: p, Model: m))).FirstOrDefault(pair => pair.Model.Alias(pair.Provider.Id) == model);
             if (model.StartsWith("cs_", StringComparison.Ordinal) && route.Provider == null)
             { await ErrorAsync(response, 404, "The selected custom model is no longer registered. Select another model.", cancellation).ConfigureAwait(false); return; }
-            if (route.Provider == null && !await KnownOpenAiModelAsync(model, identity, request, cancellation).ConfigureAwait(false))
+            JsonObject? openAiModel = null;
+            if (route.Provider == null && (openAiModel = await NativeModelAsync(model, identity, request, cancellation).ConfigureAwait(false)) == null)
             { await ErrorAsync(response, 404, "The selected model is not in this account's OpenAI catalog or registered custom routes. Select a model from the combined list.", cancellation).ConfigureAwait(false); return; }
             // Incremental provider state and opaque reasoning cannot be transferred between upstreams.
             // HTTP full-input replay is required for every routed request, including after gateway restart.
@@ -181,28 +190,48 @@ internal sealed class ModelGateway : IAsyncDisposable
                 removeReasoning = original.HasEncrypted("reasoning");
             }
             Uri destination;
+            var rewrite = routed || route.Provider != null;
+            if (rewrite)
+            {
+                body = new JsonObject { ["model"] = route.Provider == null ? model : route.Model.UpstreamId };
+                foreach (var option in GatewayRoutedContent.Fields(bytesIn).Where(field => field.Name is "reasoning" or "text"))
+                {
+                    if (option.Value.Length > 65536) throw new InvalidDataException("The model routing options are too large.");
+                    body[option.Name] = JsonNode.Parse(option.Value.Span);
+                }
+            }
             if (route.Provider != null)
             {
-                body = new JsonObject { ["model"] = route.Model.UpstreamId };
-                foreach (var option in GatewayRoutedContent.Fields(bytesIn).Where(field => field.Name is "reasoning" or "text"))
-                    {
-                        // Routing controls are small; unbounded history/images never enter a mutable tree.
-                        if (option.Value.Length > 65536) throw new InvalidDataException("The model routing options are too large.");
-                        body[option.Name] = JsonNode.Parse(option.Value.Span);
-                    }
                 JsonObject? native = null;
-                if (route.Model.GenericMetadata && route.Model.ReasoningOverride == null && body["reasoning"] != null)
+                if (route.Model.GenericMetadata && route.Model.ReasoningOverride == null &&
+                    (routed ? settings.OpenAiModels.Any(choice => choice.Id == route.Model.UpstreamId) : body!["reasoning"] != null))
                     native = await NativeModelAsync(route.Model.UpstreamId, identity, request, cancellation).ConfigureAwait(false);
-                var reasoningError = ProviderReasoning.PrepareRequest(route.Model, ProviderReasoning.Metadata(route.Model, native), body, native != null);
+                var metadata = ProviderReasoning.Metadata(route.Model, native);
+                if (routed)
+                {
+                    if (original.HasInputType("input_image") && (metadata["input_modalities"] as JsonArray)?.Any(item => item?.GetValue<string>() == "image") != true)
+                    { await ErrorAsync(response, 400, "The model selected in Codex Switch does not declare image input support. Select an image-capable model; no input was removed or sent.", cancellation).ConfigureAwait(false); return; }
+                    ModelRouting.ApplyReasoning(body!, metadata);
+                }
+                var reasoningError = ProviderReasoning.PrepareRequest(route.Model, metadata, body!, native != null);
                 if (reasoningError != null) { await ErrorAsync(response, 400, reasoningError, cancellation).ConfigureAwait(false); return; }
                 if (route.Model.GenericMetadata)
                 {
-                    if (body["text"] is JsonObject text) text.Remove("verbosity");
+                    if (body!["text"] is JsonObject text) text.Remove("verbosity");
                 }
                 destination = new Uri(ProviderCatalog.Endpoint(route.Provider.BaseUrl), path.EndsWith("/compact", StringComparison.Ordinal) ? "responses/compact" : "responses");
             }
-            else destination = new Uri((identity.ApiKey ? "https://api.openai.com/v1/" : "https://chatgpt.com/backend-api/codex/") + (path.EndsWith("/compact", StringComparison.Ordinal) ? "responses/compact" : "responses"));
-            var requestKey = RequestKey(bytesIn, identity, routeIdentity, path);
+            else
+            {
+                if (routed)
+                {
+                    if (original.HasInputType("input_image") && (openAiModel!["input_modalities"] as JsonArray)?.Any(item => item?.GetValue<string>() == "image") != true)
+                    { await ErrorAsync(response, 400, "The model selected in Codex Switch does not declare image input support. Select an image-capable model; no input was removed or sent.", cancellation).ConfigureAwait(false); return; }
+                    ModelRouting.ApplyReasoning(body!, openAiModel!);
+                }
+                destination = new Uri((identity.ApiKey ? "https://api.openai.com/v1/" : "https://chatgpt.com/backend-api/codex/") + (path.EndsWith("/compact", StringComparison.Ordinal) ? "responses/compact" : "responses"));
+            }
+            var requestKey = RequestKey(bytesIn, identity, routed ? ModelRouting.Model : routeIdentity, path);
             if (requestKey != null)
             {
                 var admission = ReserveRequest(requestKey);
@@ -220,8 +249,8 @@ internal sealed class ModelGateway : IAsyncDisposable
                 var upstream = new HttpRequestMessage(HttpMethod.Post, destination);
                 if (route.Provider == null) CopyOpenAiHeaders(request, upstream, identity);
                 else upstream.Headers.Authorization = new AuthenticationHeaderValue("Bearer", route.Provider.ApiKey);
-                upstream.Content = route.Provider != null || removeReasoning ?
-                    new GatewayRoutedContent(bytesIn, body ?? new JsonObject(), route.Provider != null, route.Model?.GenericMetadata == true, removeReasoning) :
+                upstream.Content = rewrite || removeReasoning ?
+                    new GatewayRoutedContent(bytesIn, body ?? new JsonObject(), rewrite, route.Model?.GenericMetadata == true, removeReasoning) :
                     new ReadOnlyMemoryContent(bytesIn);
                 upstream.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 return upstream;
@@ -292,9 +321,9 @@ internal sealed class ModelGateway : IAsyncDisposable
         }
         finally { if (largeBody) _largeBodies.Release(); if (workSlot) _slots.Release(); if (streamSlot) _streamSlots.Release(); context.Response.Close(); }
     }
-    internal Task<JsonObject> ReadCatalogAsync(GatewayIdentity identity, string clientVersion, CancellationToken cancellation) =>
-        CatalogAsync(identity, null, cancellation, clientVersion);
-    private async Task<JsonObject> CatalogAsync(GatewayIdentity identity, HttpListenerRequest? incoming, CancellationToken cancellation, string? clientVersion = null)
+    internal Task<JsonObject> ReadCatalogAsync(GatewayIdentity identity, string clientVersion, CancellationToken cancellation, bool? router = null) =>
+        CatalogAsync(identity, null, cancellation, clientVersion, router);
+    private async Task<JsonObject> CatalogAsync(GatewayIdentity identity, HttpListenerRequest? incoming, CancellationToken cancellation, string? clientVersion = null, bool? router = null)
     {
         var version = clientVersion ?? incoming?.QueryString["client_version"] ?? "";
         if (version.Length is < 1 or > 80 || version.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '+')))
@@ -315,10 +344,25 @@ internal sealed class ModelGateway : IAsyncDisposable
         {
             if (model is not JsonObject metadata || metadata["slug"]?.GetValue<string>() is not string slug || !slugs.Add(slug)) throw new InvalidDataException("The OpenAI catalog has invalid model IDs.");
         }
+        if (models.Count > 256 || slugs.Contains(ModelRouting.Model) || slugs.Any(slug => slug.StartsWith("cs_", StringComparison.Ordinal)))
+            throw new InvalidDataException("The OpenAI model catalog has too many models or reserved route IDs.");
+        var choices = models.Cast<JsonObject>().Where(model => model["visibility"]?.GetValue<string>() == "list" &&
+            (!identity.ApiKey || model["supported_in_api"]?.GetValue<bool>() == true)).Select(model => new ModelRouteChoice(model["slug"]!.GetValue<string>(),
+                (model["display_name"]?.GetValue<string>() ?? model["slug"]!.GetValue<string>()) + " (OpenAI)")).ToList();
+        ModelRouting.ValidateChoices(choices);
         if (_nativeCatalogs.Count >= 64) _nativeCatalogs.Clear();
         var nativeModels = models.Cast<JsonObject>().ToDictionary(m => m["slug"]!.GetValue<string>(), m => (JsonObject)m.DeepClone(), StringComparer.Ordinal);
         _nativeCatalogs[IdentityKey(identity)] = new NativeCatalog(nativeModels, DateTimeOffset.UtcNow.AddMinutes(5));
-        if (_store.Read().LastClientVersion != version) _store.Update(settings => settings.LastClientVersion = version);
+        _store.Update(settings =>
+        {
+            settings.LastClientVersion = version;
+            settings.OpenAiModels = choices;
+        });
+        if (router ?? _store.Read().RouterEnabled)
+        {
+            result!["models"] = new JsonArray(ModelRouting.Metadata());
+            return result;
+        }
         foreach (var provider in _store.Read().Providers)
         foreach (var model in provider.Models)
         {
@@ -330,8 +374,6 @@ internal sealed class ModelGateway : IAsyncDisposable
         }
         return result!;
     }
-    private async Task<bool> KnownOpenAiModelAsync(string model, GatewayIdentity identity, HttpListenerRequest incoming, CancellationToken cancellation)
-        => await NativeModelAsync(model, identity, incoming, cancellation).ConfigureAwait(false) != null;
     private async Task<JsonObject?> NativeModelAsync(string model, GatewayIdentity identity, HttpListenerRequest incoming, CancellationToken cancellation)
     {
         var key = IdentityKey(identity);

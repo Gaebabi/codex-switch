@@ -37,13 +37,18 @@ internal sealed class GatewayRoutedContent : HttpContent
         foreach (var field in Fields(original))
         {
             if (custom && (field.Name == "prompt_cache_key" || generic && field.Name == "service_tier")) continue;
-            if (custom && field.Name == "reasoning" && !options.ContainsKey("reasoning")) continue;
+            if (custom && field.Name == "reasoning" && options["reasoning"] == null) continue;
             if (comma) Add(","); comma = true;
             _parts.Add(JsonSerializer.SerializeToUtf8Bytes(field.Name)); Add(":");
             if (custom && (field.Name is "model" or "reasoning" || generic && field.Name == "text"))
                 _parts.Add(JsonSerializer.SerializeToUtf8Bytes(options[field.Name]));
             else if (removeReasoning && field.Name == "input") AddInput(field.Value);
             else _parts.Add(field.Value);
+        }
+        if (custom && !Fields(original).Any(field => field.Name == "reasoning") && options["reasoning"] != null)
+        {
+            if (comma) Add(",");
+            Add("\"reasoning\":"); _parts.Add(JsonSerializer.SerializeToUtf8Bytes(options["reasoning"]));
         }
         Add("}"); _length = _parts.Sum(part => (long)part.Length);
         Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");

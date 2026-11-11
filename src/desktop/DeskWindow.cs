@@ -128,7 +128,7 @@ internal sealed class DeskWindow : Window
         _theme.Apply(this);
         FlowDirection = Loc.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
         var nativeTitle = OperatingSystem.IsLinux();
-        var shell = new Grid { RowDefinitions = new RowDefinitions(nativeTitle ? "34,0,*,50" : "34,Auto,*,50") };
+        var shell = new Grid { RowDefinitions = new RowDefinitions(nativeTitle ? "34,0,Auto,*,50" : "34,Auto,Auto,*,50") };
         var titlebar = new Grid { Background = _theme.Brush("chrome"), ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto"), Margin = new Thickness(0) };
         var caption = _theme.Text("Codex Switch", 12); caption.VerticalAlignment = VerticalAlignment.Center;
         var mark = new BrandMark { Width = 18, Height = 18, Ink = _theme.Brush("text") };
@@ -180,16 +180,22 @@ internal sealed class DeskWindow : Window
             Grid.SetColumn(toolbar, 0); titlebar.Children.Add(toolbar);
         }
         else { Grid.SetRow(toolbar, 1); shell.Children.Add(toolbar); }
+        if (_service != null)
+        {
+            var routePicker = new DeskModelRoutePicker(_theme, _service.ModelProviders, error => { _statusMessage = error.Message; Build(); })
+            { Margin = new Thickness(8, 2, 8, 4), IsEnabled = _ready && !Exiting && _switch == null && _login == null };
+            Grid.SetRow(routePicker, 2); shell.Children.Add(routePicker);
+        }
         _accounts = new Grid { Margin = new Thickness(4, 1) };
         _accountScroll = new ScrollViewer { Content = _accounts, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
-        _accountScroll.SizeChanged += (_, _) => ResizeAccounts(); Grid.SetRow(_accountScroll, 2); shell.Children.Add(_accountScroll);
+        _accountScroll.SizeChanged += (_, _) => ResizeAccounts(); Grid.SetRow(_accountScroll, 3); shell.Children.Add(_accountScroll);
         var footer = new Grid { RowDefinitions = new RowDefinitions("22,24"), ColumnDefinitions = new ColumnDefinitions("*,Auto"), Margin = new Thickness(8, 2) };
         _hardware = new Grid { Height = 18, Margin = new Thickness(0, 0, 0, 4), FlowDirection = FlowDirection.LeftToRight }; Grid.SetColumnSpan(_hardware, 2); footer.Children.Add(_hardware);
         _volumes = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, FlowDirection = FlowDirection.LeftToRight };
         var footerActions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         footerActions.Children.Add(_volumes); Grid.SetRow(footerActions, 1); footer.Children.Add(footerActions);
         _status = _theme.Text(_statusMessage, 10, "muted"); ToolTip.SetTip(_status, _statusMessage); _status.MaxWidth = 150; _status.VerticalAlignment = VerticalAlignment.Center;
-        Grid.SetColumn(_status, 1); Grid.SetRow(_status, 1); footer.Children.Add(_status); Grid.SetRow(footer, 3); shell.Children.Add(footer); Content = shell;
+        Grid.SetColumn(_status, 1); Grid.SetRow(_status, 1); footer.Children.Add(_status); Grid.SetRow(footer, 4); shell.Children.Add(footer); Content = shell;
         RenderAccounts(); RenderSessions(); RenderHardware(); RenderVolumes();
     }
     private void ChangeLanguage(string code)

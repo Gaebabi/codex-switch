@@ -29,6 +29,7 @@ internal sealed class ModelProvidersWindow : Window
     private readonly CancellationTokenSource _stop = new();
     private readonly Button _providerPicker, _more, _reveal, _copyKey, _primary, _back;
     private readonly ScrollViewer _scroll;
+    private readonly ModelRoutePicker _routePicker;
     private bool _busy, _loading, _syncingKey, _keyVisible, _closed;
     private string? _message;
     internal bool RestartRequested { get; private set; }
@@ -62,6 +63,8 @@ internal sealed class ModelProvidersWindow : Window
         AutomationProperties.SetName(_key, Loc.T("providers.key")); AutomationProperties.SetName(_plainKey, Loc.T("providers.key"));
         var filters = new StackPanel(); Input(_included); filters.Children.Add(Frame(_included));
         _entry.Children.Add(new Expander { Header = Loc.T("providers.include"), Foreground = _theme.Color("muted"), Content = filters, Margin = new Thickness(0, 0, 0, 8) }); form.Children.Add(_entry);
+        _routePicker = new ModelRoutePicker(theme, _manager, error => { _message = error.Message; Render(); }, Render);
+        _routePicker.Margin = new Thickness(0, 0, 0, 16); _ready.Children.Add(_routePicker);
         _models.FontSize = 14; _models.LineHeight = 23; _models.Margin = new Thickness(0, 0, 0, 18); _ready.Children.Add(_models); BuildAdvanced(_ready); form.Children.Add(_ready);
         _scroll = new ScrollViewer { Content = form, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
         Grid.SetRow(_scroll, 1); root.Children.Add(_scroll);
@@ -178,7 +181,7 @@ internal sealed class ModelProvidersWindow : Window
     {
         if (_busy) return;
         if (_editor.Draft.Step == 0) await RunAsync(async () => { await _editor.SaveAsync(_stop.Token); _message = null; LoadFields(); });
-        else if (!_manager.Settings.Connected) await RunAsync(async () => { await _service.ConnectModelProvidersAsync(_stop.Token); _message = null; });
+        else if (!_manager.Settings.Connected || !_manager.Settings.RouterEnabled) await RunAsync(async () => { await _service.ConnectModelProvidersAsync(_stop.Token); _message = null; });
         else if (!_manager.Settings.ConnectionWriteConfirmed) await RunAsync(async () => { await _service.DisconnectModelProvidersAsync(_stop.Token); _message = null; });
         else { _editor.Persist(); RestartRequested = true; Close(); }
     }
@@ -192,6 +195,7 @@ internal sealed class ModelProvidersWindow : Window
     }
     private void Render()
     {
+        _routePicker.Refresh();
         var settings = _manager.Settings; var ready = _editor.Draft.Step == 1;
         var provider = settings.Providers.FirstOrDefault(item => item.Id == _editor.SelectedId);
         _providerPicker.Content = (provider?.Name ?? Loc.T("providers.new")) + "  ▾"; _providerPicker.IsEnabled = _more.IsEnabled = !_busy;
@@ -202,9 +206,9 @@ internal sealed class ModelProvidersWindow : Window
         _reveal.IsEnabled = _copyKey.IsEnabled = _editor.ApiKey.Length != 0;
         _models.Text = provider == null ? "" : Loc.F("providers.model_count", provider.Models.Count) + "\n" + string.Join("\n", provider.Models.Take(3).Select(item => item.UpstreamId));
         _back.Content = Loc.T(ready ? "providers.edit" : "providers.close"); _back.IsEnabled = !_busy;
-        _primary.Content = Loc.T(!ready ? "providers.save_next" : !settings.Connected ? "providers.connect" : !settings.ConnectionWriteConfirmed ? "providers.disconnect" : "restart.title");
-        _primary.IsEnabled = !_busy && (ready || !string.IsNullOrWhiteSpace(_editor.Draft.Name) && !string.IsNullOrWhiteSpace(_editor.Draft.BaseUrl) && _editor.ApiKey.Length != 0);
-        _status.Text = _message ?? (ready ? Loc.T(settings.Connected ? settings.ConnectionWriteConfirmed ? "providers.prepared" : "providers.incomplete" : "providers.not_connected") : "");
+        _primary.Content = Loc.T(!ready ? "providers.save_next" : !settings.Connected || !settings.RouterEnabled ? "providers.connect" : !settings.ConnectionWriteConfirmed ? "providers.disconnect" : "restart.title");
+        _primary.IsEnabled = !_busy && (ready ? settings.Connected && settings.RouterEnabled || ModelRouting.Registered(settings, settings.SelectedRoute) : !string.IsNullOrWhiteSpace(_editor.Draft.Name) && !string.IsNullOrWhiteSpace(_editor.Draft.BaseUrl) && _editor.ApiKey.Length != 0);
+        _status.Text = _message ?? (ready ? Loc.T(settings.Connected && !settings.RouterEnabled ? "router.first_connection" : settings.Connected ? settings.ConnectionWriteConfirmed ? "providers.prepared" : "providers.incomplete" : "providers.not_connected") : "");
         _status.Visibility = _status.Text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
     private void BuildAdvanced(Panel parent)

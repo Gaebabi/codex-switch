@@ -18,16 +18,16 @@ internal static class ProviderUiEvidence
         TextElement.SetForeground(viewport, window.Foreground); TextElement.SetFontFamily(viewport, window.FontFamily); TextElement.SetFontSize(viewport, window.FontSize);
         viewport.Children.Add(content); return viewport;
     }
-    private static void Layout(FrameworkElement root)
-    { root.Width = 500; root.Height = 510; root.Measure(new Size(500, 510)); root.Arrange(new Rect(0, 0, 500, 510)); root.UpdateLayout(); }
-    private static void Capture(FrameworkElement root, string path, Brush background)
+    private static void Layout(FrameworkElement root, double width = 500, double height = 510)
+    { root.Width = width; root.Height = height; root.Measure(new Size(width, height)); root.Arrange(new Rect(0, 0, width, height)); root.UpdateLayout(); }
+    private static void Capture(FrameworkElement root, string path, Brush background, int width = 500, int height = 510)
     {
-        Layout(root);
+        Layout(root, width, height);
         var frame = new System.Windows.Threading.DispatcherFrame();
         root.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, new Action(() => frame.Continue = false));
         System.Windows.Threading.Dispatcher.PushFrame(frame);
-        var image = new RenderTargetBitmap(500, 510, 96, 96, PixelFormats.Pbgra32);
-        var canvas = new DrawingVisual(); using (var context = canvas.RenderOpen()) context.DrawRectangle(background, null, new Rect(0, 0, 500, 510));
+        var image = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+        var canvas = new DrawingVisual(); using (var context = canvas.RenderOpen()) context.DrawRectangle(background, null, new Rect(0, 0, width, height));
         image.Render(canvas); image.Render(root); var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
         using var file = File.Create(path); encoder.Save(file);
     }
@@ -83,6 +83,11 @@ internal static class ProviderUiEvidence
                 url.Text = saved.BaseUrl; primary.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Layout(root);
                 if (editor.Draft.Step != 1 || ready.Visibility != Visibility.Visible || entry.Visibility != Visibility.Collapsed || (string)primary.Content != Loc.T("providers.connect") || key.Password != copied)
                     throw new Exception("The real Save action must retain fields and advance to Connect.");
+                var routePicker = Field<ModelRoutePicker>(window, "_routePicker");
+                routePicker.CreateMenu().Items.OfType<MenuItem>().Single(item => item.Tag as string == manager.Settings.Providers.Single().Models.Single().Alias(saved.Id)).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                if (manager.Settings.SelectedRoute != routePicker.Models.Tag as string || !primary.IsEnabled || manager.Settings.Connected)
+                    throw new Exception("The actual routing dropdown must save the selected model without connecting Codex.");
+                checks.Add(language + "/" + dark + ": routing dropdown persists the actual choice and enables initial connection without changing Codex");
                 Capture(root, Path.Combine(args[0], "saved-connection-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"));
                 checks.Add(language + "/" + dark + ": failed and successful saves preserve input and advance only after persistence");
                 Field<Button>(window, "_back").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -115,6 +120,16 @@ internal static class ProviderUiEvidence
                     throw new Exception("Reuse must create a new draft without losing connection values.");
                 reopened.Close();
                 checks.Add(language + "/" + dark + ": explicit reuse carries saved connection values into a new draft");
+                service.Vault.Data.Theme = dark ? "dark" : "light";
+                var main = new MainWindow(service, new Program.Options { DataDirectory = data, CodexHome = Path.Combine(temporary, "absent-home"), UiEvidenceDirectory = args[0] });
+                var mainRoot = Surface(main); Layout(mainRoot, 500, 360);
+                var mainPicker = Field<ModelRoutePicker>(main, "_routePicker");
+                if (mainPicker.Visibility != Visibility.Visible || mainPicker.Models.Tag as string != manager.Settings.SelectedRoute ||
+                    mainPicker.Models.TranslatePoint(new Point(), mainRoot).X + mainPicker.Models.ActualWidth > 500)
+                    throw new Exception("The Home dropdown must retain the selection and fit the minimum width.");
+                Capture(mainRoot, Path.Combine(args[0], "router-home-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"), 500, 360);
+                checks.Add(language + "/" + dark + ": the Home dropdown retains selection and fits the minimum client layout");
+                main.Close();
             }
             var fixtureClaims = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"sub\":\"home-ui-fixture\",\"email\":\"home@example.invalid\"}")).TrimEnd('=').Replace('+', '-').Replace('/', '_');
             var fixtureAccount = service.Vault.Upsert(JsonSerializer.Serialize(new { auth_mode = "chatgpt", tokens = new { account_id = "home-ui-fixture", id_token = "e30." + fixtureClaims + ".fictional", access_token = "fictional-home-access", refresh_token = "fictional-home-refresh" } }));

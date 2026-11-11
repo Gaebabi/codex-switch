@@ -130,7 +130,7 @@ internal sealed class DesktopStreamRecoveryMonitor : IAsyncDisposable
         if (!StreamRecoveryPolicy.RegisteredModel(outcome.Model, providers)) return Skip("selected-model-unregistered", outcome.Id);
         var rechecked = await Task.Run(() => DesktopTurnOutcomes.Read(_service.CodexHome, id), cancellation).ConfigureAwait(false);
         if (rechecked == null || rechecked.Id != outcome.Id || rechecked.Status != outcome.Status) return Skip("turn-changed", outcome.Id);
-        var route = SecureFiles.Hash(JsonSerializer.Serialize(providers.Providers));
+        var route = SecureFiles.Hash(JsonSerializer.Serialize(new { providers.Providers, providers.SelectedRoute }));
         var current = _sessions.Threads.SingleOrDefault(item => item.Id == id);
         if (current == null || current.Owner != thread.Owner || !Stopped(current) || _sessions.QueuedFor(id) != 0) return Skip("state-changed", outcome.Id);
         return new(id, thread.Owner, outcome.Id, outcome.Status, outcome.Error, outcome.Model, outcome.Provider, identity, route, outcome.At, true);

@@ -41,6 +41,7 @@ internal sealed class MainWindow : Window
     private readonly MenuItem _restartCodex = new();
     private readonly Button _homeActions = new();
     private bool _providerEditing;
+    private ModelRoutePicker? _routePicker;
     private readonly Button _stampTitles = new();
     private MenuItem? _importCurrent;
     private readonly Border _loginPanel = new();
@@ -181,7 +182,10 @@ internal sealed class MainWindow : Window
         _stampTitles.ToolTip = Loc.T("titles.help"); toolbarRow.Children.Add(_stampTitles);
         _sessionCount.HorizontalAlignment = HorizontalAlignment.Center;
         Grid.SetColumn(_sessionCount, 1);
-        toolbarRow.Children.Add(_sessionCount); body.Children.Add(toolbarRow);
+        toolbarRow.Children.Add(_sessionCount);
+        var modelHeader = new StackPanel(); modelHeader.Children.Add(toolbarRow);
+        _routePicker = new ModelRoutePicker(_theme, _service.ModelProviders, error => SetStatus(error.Message, true));
+        modelHeader.Children.Add(_routePicker); body.Children.Add(modelHeader);
         _providers.Header = Loc.T("providers.title"); _providers.Name = "ModelProvidersMenuItem";
         _providers.Click -= OpenModelProviders; _providers.Click += OpenModelProviders;
         _restartCodex.Header = Loc.T("restart.title"); _restartCodex.Name = "RestartCodexMenuItem";
@@ -291,7 +295,7 @@ internal sealed class MainWindow : Window
         var restart = false;
         try { _providerEditing = true; var window = new ModelProvidersWindow(this, _theme, _service); window.ShowDialog(); restart = window.RestartRequested; }
         catch (Exception error) { SetStatus(Loc.T("providers.failed") + " " + error.Message, true); }
-        finally { _providerEditing = false; }
+        finally { _providerEditing = false; _routePicker?.Refresh(); }
         if (restart) RestartCodexClicked(sender, args);
     }
     private async Task ImportLanguagePackAsync()
@@ -991,6 +995,8 @@ internal sealed class MainWindow : Window
     }
     private void UpdateControls()
     {
+        _routePicker?.Refresh();
+        if (_routePicker != null) _routePicker.IsEnabled = _ready && !_closing && !_switching && !_loggingIn;
         _providers.IsEnabled = !_closing && !_switching && !_loggingIn;
         _restartCodex.IsEnabled = _ready && !_closing && !_switching && !_loggingIn && !_providerEditing && _service.Accounts.Any(profile => profile.IsCurrent) && PendingSwitch() is not { RestartOnly: false };
         var automaticSwitchLabel = Loc.T(_service.Vault.Data.AutomaticSwitchEnabled ? "auto.on" : "auto.off");
