@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
@@ -11,7 +13,7 @@ using NodeValue = System.Text.Json.Nodes.JsonValue;
 
 namespace CodexAccountDesk;
 
-internal sealed class ModelProviderManager : IAsyncDisposable
+internal sealed partial class ModelProviderManager : IAsyncDisposable
 {
     private readonly ModelProviderStore _store;
     private readonly HttpClient _http;
@@ -21,13 +23,20 @@ internal sealed class ModelProviderManager : IAsyncDisposable
     private readonly CancellationTokenSource _lifetime = new();
     private Task? _disposal;
     private ModelGateway? _gateway;
+    private readonly string _catalogPath;
+    private string? _home;
+    private string? _catalogIdentity;
+    private DateTimeOffset _catalogUpdated;
     public ModelProviderSettings Settings => _store.Read();
     public bool Running => _gateway?.Running == true;
     public string? LastError => _gateway?.LastError;
     public DateTimeOffset? LastRequestAt => _gateway?.LastRequestAt;
     public string? BaseUrl => _gateway?.BaseUrl;
-    internal ModelProviderManager(string directory, Func<string?, string?, GatewayIdentity?> authenticate, HttpClient? http = null)
-    { _store = new ModelProviderStore(directory); _authenticate = authenticate; _http = http ?? ProviderCatalog.CreateHttpClient(); }
+    internal ModelProviderManager(string directory, Func<string?, string?, GatewayIdentity?> authenticate, HttpClient? http = null, string? codexHome = null)
+    {
+        _store = new ModelProviderStore(directory); _authenticate = authenticate; _http = http ?? ProviderCatalog.CreateHttpClient();
+        _catalogPath = Path.GetFullPath(Path.Combine(directory, "model-providers-catalog.json")); _home = codexHome;
+    }
     public async Task<ModelProvider> SaveAsync(string? id, string name, string url, string key, CancellationToken cancellation, IReadOnlyCollection<string>? includedIds = null)
     {
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _lifetime.Token); cancellation = lifetime.Token;
@@ -50,7 +59,8 @@ internal sealed class ModelProviderManager : IAsyncDisposable
                 foreach (var model in provider.Models)
                     model.ReasoningOverride = previous.Models.FirstOrDefault(old => old.UpstreamId == model.UpstreamId)?.ReasoningOverride;
             cancellation.ThrowIfCancellationRequested();
-            _store.Update(next => { var index = next.Providers.FindIndex(p => p.Id == provider.Id); if (index < 0) next.Providers.Add(provider); else next.Providers[index] = provider; });
+            _store.Update(next => { var index = next.Providers.FindIndex(p => p.Id == provider.Id); if (index < 0) next.Providers.Add(provider); else next.Providers[index] = provider; RememberSavedEditor(next, provider, id); });
+            await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
             return provider;
         }
         finally { _changes.Release(); }
@@ -59,7 +69,11 @@ internal sealed class ModelProviderManager : IAsyncDisposable
     {
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _lifetime.Token); cancellation = lifetime.Token;
         await _changes.WaitAsync(cancellation).ConfigureAwait(false);
-        try { _store.Update(next => next.Providers.RemoveAll(p => p.Id == id)); }
+        try
+        {
+            _store.Update(next => { next.Providers.RemoveAll(p => p.Id == id); next.EditorDrafts.Remove(id); if (next.EditorSelection == id) next.EditorSelection = null; });
+            await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
+        }
         finally { _changes.Release(); }
     }
     internal async Task SaveReasoningAsync(string providerId, string modelId, ProviderReasoningOptions? options, CancellationToken cancellation)
@@ -73,6 +87,7 @@ internal sealed class ModelProviderManager : IAsyncDisposable
         {
             lifetime.Token.ThrowIfCancellationRequested();
             _store.Update(next => next.Providers.Single(p => p.Id == providerId).Models.Single(m => m.UpstreamId == modelId).ReasoningOverride = options);
+            await RefreshCatalogCoreAsync(lifetime.Token, true).ConfigureAwait(false);
         }
         finally { _changes.Release(); }
     }
@@ -111,21 +126,17 @@ internal sealed class ModelProviderManager : IAsyncDisposable
             var version = rpc.Initialization is JsonElement hello ? ModelGateway.ClientVersion(JsonValue.String(hello, "userAgent")) : null;
             if (version != null) _store.Update(next => next.LastClientVersion = version);
             var snapshot = await ReadUserConfigAsync(rpc, home, cancellation).ConfigureAwait(false);
-            if (ValueAt(snapshot.Config, "model_providers.codex_switch_router") != null)
-                throw new InvalidOperationException("The provider ID codex_switch_router is already configured. Review it before connecting.");
+            var originalProvider = ValueAt(snapshot.Config, "model_provider")?.GetValue<string>();
+            if (originalProvider != null && originalProvider != "openai")
+                throw new InvalidOperationException("Restore the original OpenAI provider before connecting the combined model catalog.");
+            if (version == null) throw new InvalidOperationException("The Codex version could not be verified before preparing the model catalog.");
+            _home = Path.GetFullPath(home);
+            await WriteCatalogAsync(version, cancellation).ConfigureAwait(false);
             var edits = new Dictionary<string, JsonNode?>
             {
-                ["openai_base_url"] = NodeValue.Create(_gateway!.BaseUrl), ["model_provider"] = NodeValue.Create("codex_switch_router"),
-                ["model_catalog_json"] = null, ["features.responses_websockets_v2"] = NodeValue.Create(false),
-                ["features.enable_request_compression"] = NodeValue.Create(false),
-                ["model_providers.codex_switch_router"] = new JsonObject
-                {
-                    ["name"] = "Codex Switch", ["base_url"] = _gateway.BaseUrl, ["wire_api"] = "responses",
-                    ["requires_openai_auth"] = true, ["supports_websockets"] = false,
-                    ["model_catalog_url"] = _gateway.BaseUrl + "/models",
-                    ["request_max_retries"] = 0, ["stream_max_retries"] = 0,
-                    ["capabilities"] = new JsonObject { ["remote_compaction"] = "unsupported" }
-                }
+                ["openai_base_url"] = NodeValue.Create(_gateway!.BaseUrl),
+                ["model_catalog_json"] = NodeValue.Create(_catalogPath), ["features.responses_websockets_v2"] = NodeValue.Create(false),
+                ["features.enable_request_compression"] = NodeValue.Create(false)
             };
             var original = edits.Keys.Append("model").ToDictionary(key => key, key => ValueAt(snapshot.Config, key)?.DeepClone());
             // Persist recovery before the atomic config write. A crash can only leave an extra listener,
@@ -137,6 +148,51 @@ internal sealed class ModelProviderManager : IAsyncDisposable
             _store.Update(next => next.ConnectionWriteConfirmed = true);
         }
         finally { _changes.Release(); }
+    }
+    internal async Task RefreshCatalogAsync(CancellationToken cancellation, bool force = false)
+    {
+        using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellation, _lifetime.Token);
+        await _changes.WaitAsync(lifetime.Token).ConfigureAwait(false);
+        try { await RefreshCatalogCoreAsync(lifetime.Token, force).ConfigureAwait(false); }
+        finally { _changes.Release(); }
+    }
+    private Task RefreshCatalogCoreAsync(CancellationToken cancellation, bool force)
+    {
+        var settings = _store.Read();
+        if (!settings.Connected || settings.AppliedConfig == null ||
+            !settings.AppliedConfig.TryGetValue("model_catalog_json", out var path) || path?.GetValue<string>() != _catalogPath)
+            return Task.CompletedTask;
+        return WriteCatalogAsync(settings.LastClientVersion ?? throw new InvalidDataException("The connected Codex version is unavailable."), cancellation, force);
+    }
+    private GatewayIdentity ReadIdentity()
+    {
+        if (_home == null) throw new InvalidOperationException("The connected Codex home is unavailable.");
+        var bytes = SecureFiles.ReadPrivateBytes(Path.Combine(_home, "auth.json"));
+        try
+        {
+            using var document = JsonDocument.Parse(bytes); var root = document.RootElement;
+            var token = JsonValue.String(root, "OPENAI_API_KEY"); string? account = null;
+            if (string.IsNullOrWhiteSpace(token) && root.TryGetProperty("tokens", out var tokens))
+            { token = JsonValue.String(tokens, "access_token"); account = JsonValue.String(tokens, "account_id"); }
+            return _authenticate("Bearer " + token, account) ?? throw new InvalidOperationException("The current OpenAI sign-in is required to refresh the model catalog.");
+        }
+        finally { CryptographicOperations.ZeroMemory(bytes); }
+    }
+    private async Task WriteCatalogAsync(string version, CancellationToken cancellation, bool force = true)
+    {
+        var identity = ReadIdentity();
+        var identityKey = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity.Token + "\n" + identity.AccountId)));
+        if (!force && _catalogIdentity == identityKey && DateTimeOffset.UtcNow - _catalogUpdated < TimeSpan.FromMinutes(5) && File.Exists(_catalogPath)) return;
+        Start();
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(30));
+        var catalog = await _gateway!.ReadCatalogAsync(identity, version, deadline.Token).ConfigureAwait(false);
+        var current = ReadIdentity();
+        if (current.Token != identity.Token || current.AccountId != identity.AccountId || current.ApiKey != identity.ApiKey)
+            throw new InvalidOperationException("The OpenAI sign-in changed while refreshing the model catalog.");
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(catalog);
+        if (bytes.Length > ProviderCatalog.MaximumCatalogBytes) throw new InvalidDataException("The combined model catalog exceeds the client limit.");
+        SecureFiles.AtomicWrite(_catalogPath, bytes);
+        _catalogIdentity = identityKey; _catalogUpdated = DateTimeOffset.UtcNow;
     }
     public async Task DisconnectAsync(string executable, string home, CancellationToken cancellation)
     {

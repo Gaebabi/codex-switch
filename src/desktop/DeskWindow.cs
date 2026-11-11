@@ -562,8 +562,14 @@ internal sealed class DeskWindow : Window
         var providers = new MenuItem { Header = Loc.T("providers.title"), IsEnabled = service != null && _switch == null && _login == null }; providers.Click += async (_, _) =>
         {
             if (_service == null || _switch != null || _login != null) return;
-            try { _providerEditing = true; await RunAsync(async _ => await new DeskProvidersWindow(_theme, _service).ShowDialog(this)); }
+            var window = new DeskProvidersWindow(_theme, _service);
+            try { _providerEditing = true; await RunAsync(async _ => await window.ShowDialog(this)); }
             finally { _providerEditing = false; }
+            if (window.RestartRequested)
+            {
+                var currentAccount = _service.Accounts.SingleOrDefault(profile => profile.IsCurrent);
+                if (currentAccount != null) await SwitchAsync(currentAccount, restart: true);
+            }
         };
         var quit = new MenuItem { Header = Loc.T("종료") }; quit.Click += async (_, _) => await ExitAsync();
         var automatic = new MenuItem { Name = "AutomaticSwitchMenuItem", Header = Loc.T(service?.Vault.Data.AutomaticSwitchEnabled == true ? "auto.on" : "auto.off"), IsEnabled = service != null, ItemsSource = BuildAutomaticSwitchMenu().ItemsSource };

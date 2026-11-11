@@ -4,11 +4,33 @@ using System.Reflection;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 internal static class ProviderUiEvidence
 {
+    private static T Field<T>(object instance, string name) => (T)instance.GetType().GetField(name, BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(instance)!;
+    private static FrameworkElement Surface(Window window)
+    {
+        var content = (FrameworkElement)window.Content; window.Content = null;
+        var viewport = new Grid { Background = window.Background };
+        TextElement.SetForeground(viewport, window.Foreground); TextElement.SetFontFamily(viewport, window.FontFamily); TextElement.SetFontSize(viewport, window.FontSize);
+        viewport.Children.Add(content); return viewport;
+    }
+    private static void Layout(FrameworkElement root)
+    { root.Width = 500; root.Height = 510; root.Measure(new Size(500, 510)); root.Arrange(new Rect(0, 0, 500, 510)); root.UpdateLayout(); }
+    private static void Capture(FrameworkElement root, string path, Brush background)
+    {
+        Layout(root);
+        var frame = new System.Windows.Threading.DispatcherFrame();
+        root.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, new Action(() => frame.Continue = false));
+        System.Windows.Threading.Dispatcher.PushFrame(frame);
+        var image = new RenderTargetBitmap(500, 510, 96, 96, PixelFormats.Pbgra32);
+        var canvas = new DrawingVisual(); using (var context = canvas.RenderOpen()) context.DrawRectangle(background, null, new Rect(0, 0, 500, 510));
+        image.Render(canvas); image.Render(root); var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
+        using var file = File.Create(path); encoder.Save(file);
+    }
     [STAThread]
     private static int Main(string[] args)
     {
@@ -18,8 +40,11 @@ internal static class ProviderUiEvidence
         var temporary = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp", "CodexSwitchProviderUi", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(temporary);
         var fixtureProvider = new ModelProvider { Name = "Fictional GPT API", BaseUrl = "https://fixture.example.invalid/v1", ApiKey = "fictional-ui-key", Models = new() { new ProviderModel { UpstreamId = "gpt-fixture", GenericMetadata = true, Metadata = ProviderCatalog.Generic("gpt-fixture") } } };
-        new ModelProviderStore(Path.Combine(temporary, "data")).Update(settings => settings.Providers.Add(fixtureProvider));
-        var service = new AccountService(new AccountVault(Path.Combine(temporary, "data")), Path.Combine(temporary, "absent-home"));
+        var data = Path.Combine(temporary, "data");
+        new ModelProviderStore(data).Update(settings => settings.Providers.Add(fixtureProvider));
+        var service = new AccountService(new AccountVault(data), Path.Combine(temporary, "absent-home"));
+        var manager = new ModelProviderManager(data, (_, _) => null, new System.Net.Http.HttpClient(new ProviderUiHttp()));
+        typeof(AccountService).GetField("_modelProviders", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(service, manager);
         var checks = new List<string>();
         try
         {
@@ -27,64 +52,69 @@ internal static class ProviderUiEvidence
             foreach (var dark in new[] { true, false })
             {
                 Loc.SetLanguage(language);
-                var owner = new Window { Left = -12000, Top = -12000 };
-                string? copiedPrompt = null;
-                var window = new ModelProvidersWindow(owner, new Burn0Theme(dark), service, text => copiedPrompt = text);
-                var surface = (ScrollViewer)window.Content;
-                surface.Background = new Burn0Theme(dark).Color("canvas");
-                surface.Width = 540; surface.Height = 700;
-                surface.Measure(new Size(540, 700)); surface.Arrange(new Rect(0, 0, 540, 700)); surface.UpdateLayout();
-                var key = (PasswordBox)typeof(ModelProvidersWindow).GetField("_key", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(window)!;
-                if (key.Password.Length != 0 || key.ActualWidth <= 100 || key.ActualHeight < 25) throw new Exception("Blank protected key field must be visible.");
-                var form = (StackPanel)surface.Content;
-                var buttons = form.Children.OfType<WrapPanel>().SelectMany(p => p.Children.OfType<Button>()).ToArray();
-                if (buttons.Length != 4 || buttons.Any(b => b.ActualWidth < 30 || b.ActualHeight < 20)) throw new Exception("Provider actions must be reachable.");
-                var bitmap = new RenderTargetBitmap(540, 700, 96, 96, PixelFormats.Pbgra32);
-                var drawing = new DrawingVisual();
-                using (var context = drawing.RenderOpen())
-                {
-                    context.DrawRectangle(new Burn0Theme(dark).Color("canvas"), null, new Rect(0, 0, 540, 700));
-                }
-                bitmap.Render(drawing);
-                bitmap.Render(surface);
-                var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
-                using (var file = File.Create(Path.Combine(args[0], "providers-" + language + "-" + (dark ? "dark" : "light") + ".png"))) encoder.Save(file);
-                checks.Add(language + "/" + (dark ? "dark" : "light") + ": actual offscreen WPF provider editor, empty key and four reachable actions");
-                ((ListBox)typeof(ModelProvidersWindow).GetField("_providers", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(window)!).SelectedIndex = 1;
-                var reasoning = form.Children.OfType<Expander>().Single(control => control.Name == "ReasoningSettings");
-                reasoning.IsExpanded = true; surface.UpdateLayout(); reasoning.BringIntoView(); surface.UpdateLayout();
-                var reasoningPanel = (StackPanel)reasoning.Content;
-                var overrideCheck = reasoningPanel.Children.OfType<CheckBox>().Single();
-                overrideCheck.IsChecked = true;
-                surface.UpdateLayout();
-                var effortChecks = reasoningPanel.Children.OfType<WrapPanel>().Single().Children.OfType<CheckBox>().ToArray();
-                if (effortChecks.Length != ProviderReasoning.Efforts.Length || effortChecks.Any(check => check.ActualWidth < 20 || check.ActualHeight < 20 || !check.IsEnabled))
-                    throw new Exception("All configurable reasoning levels must be laid out and enabled by the override: " + JsonSerializer.Serialize(effortChecks.Select(check => new { check.Content, check.ActualWidth, check.ActualHeight, check.IsEnabled })));
-                bitmap = new RenderTargetBitmap(540, 700, 96, 96, PixelFormats.Pbgra32); bitmap.Render(surface);
-                encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
-                using (var file = File.Create(Path.Combine(args[0], "reasoning-" + language + "-" + (dark ? "dark" : "light") + ".png"))) encoder.Save(file);
-                checks.Add(language + "/" + (dark ? "dark" : "light") + ": model reasoning override, level choices and default laid out offscreen; no save or account action");
-                reasoningPanel.Children.OfType<Button>().Single().RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                var saved = service.ModelProviders.Settings.Providers.Single().Models.Single().ReasoningOverride;
-                if (saved?.Default != "medium" || !saved.Levels.SequenceEqual(new[] { "low", "medium", "high" })) throw new Exception("Editor action must save the selected model's levels and default.");
-                checks.Add(language + "/" + (dark ? "dark" : "light") + ": production reasoning save action persists only fictional per-model settings");
-                reasoning.IsExpanded = false;
-                var handoff = form.Children.OfType<Expander>().Single(control => control.Name == "PortableHistoryHelp");
-                handoff.IsExpanded = true;
-                surface.UpdateLayout(); surface.ScrollToBottom(); surface.UpdateLayout();
-                var copy = ((StackPanel)handoff.Content).Children.OfType<Button>().Single();
-                var dataBeforeCopy = Directory.Exists(Path.Combine(temporary, "data"));
-                key.Password = "fictional-unsaved-input";
-                copy.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                if (copiedPrompt != ModelHistoryHandoff.Prompt || key.Password != "fictional-unsaved-input" || service.ModelProviders.Running || Directory.Exists(Path.Combine(temporary, "data")) != dataBeforeCopy)
-                    throw new Exception("Copy handoff must copy only the fixed prompt, preserve unsaved input and perform no provider I/O.");
-                key.Clear();
-                if (copy.ActualWidth < 30 || copy.ActualWidth > 500 || copy.ActualHeight < 20) throw new Exception("Handoff action must fit the scrollable form.");
-                bitmap = new RenderTargetBitmap(540, 700, 96, 96, PixelFormats.Pbgra32); bitmap.Render(surface);
-                encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
-                using (var file = File.Create(Path.Combine(args[0], "handoff-" + language + "-" + (dark ? "dark" : "light") + ".png"))) encoder.Save(file);
-                checks.Add(language + "/" + (dark ? "dark" : "light") + ": readable recovery steps and fixed-prompt copy without clipboard, provider I/O or input loss");
-                // No window is shown or activated, and no account/client initialization is invoked.
+                var saved = manager.Settings.Providers.Single(); manager.RememberEditorDraft(saved.Id, ProviderEditorDraft.From(saved));
+                var owner = new Window { Left = -12000, Top = -12000 }; var theme = new Burn0Theme(dark);
+                string? copied = null;
+                var window = new ModelProvidersWindow(owner, theme, service, value => copied = value);
+                var root = Surface(window); Layout(root);
+                var name = Field<TextBox>(window, "_name"); var url = Field<TextBox>(window, "_url");
+                var key = Field<PasswordBox>(window, "_key"); var plainKey = Field<TextBox>(window, "_plainKey");
+                var primary = Field<Button>(window, "_primary"); var entry = Field<StackPanel>(window, "_entry"); var ready = Field<StackPanel>(window, "_ready");
+                var editor = Field<ProviderEditorSession>(window, "_editor");
+                if (name.Text != saved.Name || url.Text != saved.BaseUrl || key.Password != saved.ApiKey || plainKey.Visibility != Visibility.Collapsed || entry.Visibility != Visibility.Visible || ready.Visibility != Visibility.Collapsed)
+                    throw new Exception("Opening a saved provider must load its values into the masked first step.");
+                if (primary.ActualWidth < 80 || primary.TranslatePoint(new Point(), root).X + primary.ActualWidth > 500 || Field<Button>(window, "_copyKey").ActualWidth < 32)
+                    throw new Exception("The primary and key actions must fit the narrow layout.");
+                if (Field<Button>(window, "_copyKey").TranslatePoint(new Point(), root).X + Field<Button>(window, "_copyKey").ActualWidth > 500)
+                    throw new Exception("The key copy control must remain inside the client viewport.");
+                Capture(root, Path.Combine(args[0], "providers-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"));
+                checks.Add(language + "/" + dark + ": saved values load in a compact two-step form with a masked key");
+                Field<Button>(window, "_reveal").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (plainKey.Visibility != Visibility.Visible || plainKey.Text != saved.ApiKey) throw new Exception("Eye action must reveal the saved key without clearing it.");
+                plainKey.Text = "fictional-edited-key";
+                Field<Button>(window, "_copyKey").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (copied != "fictional-edited-key" || key.Password != copied) throw new Exception("Copy must use the entered key and synchronize masked editing.");
+                Field<Button>(window, "_reveal").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (plainKey.Visibility != Visibility.Collapsed || key.Password != copied) throw new Exception("Hiding a key must preserve its exact value.");
+                checks.Add(language + "/" + dark + ": eye, edit, copy and re-mask preserve the exact fictional key");
+                url.Text = "invalid endpoint"; primary.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (url.Text != "invalid endpoint" || key.Password != copied || editor.Draft.Step != 0 || !Field<TextBlock>(window, "_status").Text.Contains(Loc.T("providers.failed")))
+                    throw new Exception("Failed save must preserve all fields on the first step.");
+                url.Text = saved.BaseUrl; primary.RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); Layout(root);
+                if (editor.Draft.Step != 1 || ready.Visibility != Visibility.Visible || entry.Visibility != Visibility.Collapsed || (string)primary.Content != Loc.T("providers.connect") || key.Password != copied)
+                    throw new Exception("The real Save action must retain fields and advance to Connect.");
+                Capture(root, Path.Combine(args[0], "saved-connection-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"));
+                checks.Add(language + "/" + dark + ": failed and successful saves preserve input and advance only after persistence");
+                Field<Button>(window, "_back").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                name.Text = "Unfinished provider edit"; window.Close();
+                var reopened = new ModelProvidersWindow(owner, theme, service, value => copied = value);
+                var reopenedRoot = Surface(reopened);
+                if (Field<TextBox>(reopened, "_name").Text != "Unfinished provider edit" || Field<PasswordBox>(reopened, "_key").Password != "fictional-edited-key")
+                    throw new Exception("Closing and reopening must retain the selected provider draft.");
+                reopened.CreateMoreMenu().Items.OfType<MenuItem>().Single(item => (string)item.Header == Loc.T("providers.reset")).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                if (Field<TextBox>(reopened, "_name").Text != saved.Name || Field<PasswordBox>(reopened, "_key").Password != "fictional-edited-key")
+                    throw new Exception("Explicit Load must restore the persisted provider values.");
+                checks.Add(language + "/" + dark + ": close/reopen preserves drafts and explicit Load restores saved values");
+                Field<Button>(reopened, "_primary").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                var advanced = Field<StackPanel>(reopened, "_ready").Children.OfType<Expander>().Single(); advanced.IsExpanded = true;
+                var advancedPanel = (StackPanel)advanced.Content;
+                var reasoning = advancedPanel.Children.OfType<Expander>().Single(control => control.Name == "ReasoningSettings"); reasoning.IsExpanded = true;
+                var panel = (StackPanel)reasoning.Content; var overrideCheck = panel.Children.OfType<CheckBox>().Single(); overrideCheck.IsChecked = true;
+                var efforts = panel.Children.OfType<WrapPanel>().Single().Children.OfType<CheckBox>().ToArray();
+                if (efforts.Length != ProviderReasoning.Efforts.Length || efforts.Any(check => !check.IsEnabled)) throw new Exception("Advanced reasoning controls must remain available.");
+                panel.Children.OfType<Button>().Single().RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (manager.Settings.Providers.Single().Models.Single().ReasoningOverride?.Default != "medium") throw new Exception("Advanced reasoning save must persist.");
+                Capture(reopenedRoot, Path.Combine(args[0], "reasoning-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"));
+                var handoff = advancedPanel.Children.OfType<Expander>().Single(control => control.Name == "PortableHistoryHelp"); handoff.IsExpanded = true;
+                ((StackPanel)handoff.Content).Children.OfType<Button>().Single().RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (copied != ModelHistoryHandoff.Prompt || Field<PasswordBox>(reopened, "_key").Password != "fictional-edited-key") throw new Exception("Handoff copy must preserve provider fields.");
+                Capture(reopenedRoot, Path.Combine(args[0], "handoff-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"));
+                checks.Add(language + "/" + dark + ": advanced reasoning and handoff actions retain saved provider fields");
+                reopened.CreateMoreMenu().Items.OfType<MenuItem>().Single(item => (string)item.Header == Loc.T("providers.reuse")).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                if (Field<TextBox>(reopened, "_url").Text != saved.BaseUrl || Field<PasswordBox>(reopened, "_key").Password != "fictional-edited-key" || Field<ProviderEditorSession>(reopened, "_editor").SelectedId != null)
+                    throw new Exception("Reuse must create a new draft without losing connection values.");
+                reopened.Close();
+                checks.Add(language + "/" + dark + ": explicit reuse carries saved connection values into a new draft");
             }
             var fixtureClaims = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"sub\":\"home-ui-fixture\",\"email\":\"home@example.invalid\"}")).TrimEnd('=').Replace('+', '-').Replace('/', '_');
             var fixtureAccount = service.Vault.Upsert(JsonSerializer.Serialize(new { auth_mode = "chatgpt", tokens = new { account_id = "home-ui-fixture", id_token = "e30." + fixtureClaims + ".fictional", access_token = "fictional-home-access", refresh_token = "fictional-home-refresh" } }));
@@ -156,4 +186,11 @@ internal static class ProviderUiEvidence
             if (Guid.TryParseExact(Path.GetFileName(temporary), "N", out _)) Directory.Delete(temporary, true);
         }
     }
+}
+
+internal sealed class ProviderUiHttp : System.Net.Http.HttpMessageHandler
+{
+    protected override Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, CancellationToken cancellationToken) =>
+        Task.FromResult(new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        { Content = new System.Net.Http.StringContent("{\"data\":[{\"id\":\"gpt-fixture\"}]}", System.Text.Encoding.UTF8, "application/json") });
 }

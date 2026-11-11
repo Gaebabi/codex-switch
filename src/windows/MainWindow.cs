@@ -288,9 +288,11 @@ internal sealed class MainWindow : Window
     private void OpenModelProviders(object? sender, RoutedEventArgs args)
     {
         if (_closing || _switching || _loggingIn) return;
-        try { _providerEditing = true; new ModelProvidersWindow(this, _theme, _service).ShowDialog(); }
+        var restart = false;
+        try { _providerEditing = true; var window = new ModelProvidersWindow(this, _theme, _service); window.ShowDialog(); restart = window.RestartRequested; }
         catch (Exception error) { SetStatus(Loc.T("providers.failed") + " " + error.Message, true); }
         finally { _providerEditing = false; }
+        if (restart) RestartCodexClicked(sender, args);
     }
     private async Task ImportLanguagePackAsync()
     {

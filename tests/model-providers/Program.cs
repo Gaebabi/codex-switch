@@ -89,11 +89,13 @@ try
     using var client = ProviderCatalog.CreateHttpClient(); client.Timeout = TimeSpan.FromSeconds(20);
     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "fictional-openai-token");
     client.DefaultRequestHeaders.Add("ChatGPT-Account-ID", "fictional-account");
-    async Task<HttpResponseMessage> Send(string model, string session, JsonArray? input = null, string? previous = null, string? effort = null)
+    async Task<HttpResponseMessage> Send(string model, string session, JsonArray? input = null, string? previous = null, string? effort = null, Guid? turn = null)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, manager.BaseUrl + "/responses");
         request.Headers.Add("session_id", session);
-        request.Content = new StringContent(new JsonObject { ["model"] = model, ["stream"] = true, ["input"] = input ?? new JsonArray(new JsonObject { ["role"] = "user", ["content"] = "fixture" }), ["previous_response_id"] = previous, ["reasoning"] = effort == null ? null : new JsonObject { ["effort"] = effort, ["summary"] = "auto" } }.ToJsonString(), Encoding.UTF8, "application/json");
+        var body = new JsonObject { ["model"] = model, ["stream"] = true, ["input"] = input ?? new JsonArray(new JsonObject { ["role"] = "user", ["content"] = "fixture" }), ["previous_response_id"] = previous, ["reasoning"] = effort == null ? null : new JsonObject { ["effort"] = effort, ["summary"] = "auto" } };
+        if (turn != null) body["client_metadata"] = new JsonObject { ["x-codex-turn-metadata"] = JsonSerializer.Serialize(new { turn_id = turn }) };
+        request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
         return await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
     }
     using (var catalog = await client.GetAsync(manager.BaseUrl + "/models?client_version=0.163.0"))
@@ -102,6 +104,13 @@ try
         Check("Catalog retains OpenAI and both custom routes", models.Count == 3 && models.Any(m => m!["slug"]!.GetValue<string>() == "fixture-openai") && models.Any(m => m!["slug"]!.GetValue<string>() == aliasA));
         Check("Picker preserves original OpenAI names and labels custom providers", models.Single(m => m!["slug"]!.GetValue<string>() == "fixture-openai")!["display_name"]!.GetValue<string>() == "fixture-openai" && models.Single(m => m!["slug"]!.GetValue<string>() == aliasA)!["display_name"]!.GetValue<string>() == "shared-model (Provider A edited)" && models.Single(m => m!["slug"]!.GetValue<string>() == aliasB)!["display_name"]!.GetValue<string>() == "shared-model (Provider B)");
     }
+    var identifiedTurn = Guid.NewGuid();
+    using (var result = await Send(aliasA, "identified-turn", turn: identifiedTurn)) { await result.Content.ReadAsStringAsync(); Check("An identified native turn request reaches its provider", result.IsSuccessStatusCode); }
+    var beforeRepeatedTurn = handler.Requests.Count(r => r.Method == "POST");
+    using (var result = await Send(aliasA, "identified-turn", turn: identifiedTurn))
+        Check("An automatic repeat of the same turn input cannot duplicate upstream work", result.StatusCode == HttpStatusCode.BadRequest && handler.Requests.Count(r => r.Method == "POST") == beforeRepeatedTurn);
+    using (var result = await Send(aliasA, "identified-turn", turn: Guid.NewGuid())) { await result.Content.ReadAsStringAsync(); Check("A new user turn may send the same input", result.IsSuccessStatusCode); }
+    using (var result = await Send(aliasA, "identified-turn", new JsonArray(new JsonObject { ["role"] = "user", ["content"] = "tool follow-up" }), turn: identifiedTurn)) { await result.Content.ReadAsStringAsync(); Check("Changed full-input tool follow-ups remain usable within a turn", result.IsSuccessStatusCode); }
     var beforeUnknownEffort = handler.Requests.Count(r => r.Method == "POST");
     using (var result = await Send(aliasA, "unknown-effort", effort: "high")) Check("Unknown reasoning support refuses a chosen strength before inference", result.StatusCode == HttpStatusCode.BadRequest && handler.Requests.Count(r => r.Method == "POST") == beforeUnknownEffort);
     handler.MatchingReasoning = true;
@@ -343,6 +352,7 @@ try
     Check("Shutdown cancels and drains discovery before disposing state without saving a partial key", cancelled && !File.Exists(Path.Combine(cancelPath, "model-providers.vault")));
     await GatewayLoadContracts.Run(root, Check, args.Contains("--stress"));
     await GatewayRetryContracts.Run(root, Check);
+    await ProviderEditorContracts.Run(root, Check);
     Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, nativeClient = args.Contains("--codex"), framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription, scope = "Disposable encrypted storage, loopback gateway and fictional upstreams; no owner home, account or desktop." }, new JsonSerializerOptions { WriteIndented = true }));
 }
 finally
@@ -435,6 +445,11 @@ internal static class NativeClient
         await File.WriteAllTextAsync(Path.Combine(home, "auth.json"), JsonSerializer.Serialize(new { auth_mode = "chatgpt", tokens = new { access_token = "fictional-openai-token", refresh_token = "fictional-refresh", id_token = "eyJhbGciOiJub25lIn0." + jwtPayload + ".fixture", account_id = "fictional-account" }, last_refresh = DateTimeOffset.UtcNow }));
         await File.WriteAllTextAsync(Path.Combine(home, "config.toml"), "# Fictional isolated native client\nmodel_provider = \"openai\"\nmodel = \"fixture-openai\"\ncli_auth_credentials_store = \"file\"\nopenai_base_url = \"" + manager.BaseUrl + "\"\nchatgpt_base_url = \"" + control.BaseUrl + "\"\n[features]\nresponses_websockets_v2 = false\nenable_request_compression = false\nshell_tool = false\ncode_mode = false\n");
         await manager.ConnectAsync(executable, home, CancellationToken.None);
+        var connectedConfig = await File.ReadAllTextAsync(Path.Combine(home, "config.toml"));
+        check("Connection preserves OpenAI provider identity for existing chats", connectedConfig.Contains("model_provider = \"openai\"") && !connectedConfig.Contains("[model_providers.codex_switch_router]"));
+        var catalogPath = manager.Settings.AppliedConfig!["model_catalog_json"]!.GetValue<string>();
+        var catalogText = await File.ReadAllTextAsync(catalogPath);
+        check("Connection supplies an explicit private catalog without credentials", File.Exists(catalogPath) && !catalogText.Contains("fictional-openai-token") && manager.Settings.Providers.All(provider => !catalogText.Contains(provider.ApiKey)));
         await using var rpc = new CodexRpc(executable, home, preserveProvider: true);
         var diagnostics = new ConcurrentQueue<string>();
         rpc.DiagnosticMessage += line => { if (line.Contains("models", StringComparison.OrdinalIgnoreCase) && diagnostics.Count < 20) diagnostics.Enqueue(line); };
@@ -449,6 +464,13 @@ internal static class NativeClient
             Console.WriteLine(JsonSerializer.Serialize(new { nativeFixtureModels = models, account, gatewayError = manager.LastError, catalogRequests = upstreams.Requests.Count(r => r.Method == "GET" && r.Host == "chatgpt.com"), diagnostics }));
         }
         check("Actual Codex app-server discovers both providers through the loopback catalog", aliases.All(alias => models.Contains(alias)) && models.Contains("fixture-openai"));
+        var visible = await rpc.RequestAsync("model/list", new { includeHidden = false }, cancellation);
+        check("Custom models are present in the ordinary visible Codex model list", aliases.All(alias => visible.GetProperty("data").EnumerateArray().Any(model => model.GetProperty("model").GetString() == alias && !model.GetProperty("hidden").GetBoolean())));
+        var effective = await rpc.RequestAsync("config/read", new { includeLayers = false }, cancellation);
+        check("Desktop config recognizes the explicit model catalog while retaining OpenAI", effective.GetProperty("config").GetProperty("model_catalog_json").GetString() == catalogPath && effective.GetProperty("config").GetProperty("model_provider").GetString() == "openai");
+        await manager.SaveReasoningAsync(reasoningProvider.Id, reasoningProvider.Models.Single().UpstreamId, new ProviderReasoningOptions { Levels = new() { "low", "medium", "high", "xhigh" }, Default = "high" }, cancellation);
+        var refreshedCatalog = JsonNode.Parse(await File.ReadAllTextAsync(catalogPath))!["models"]!.AsArray();
+        check("Editing a connected provider refreshes its persisted picker metadata", refreshedCatalog.Single(model => model!["slug"]!.GetValue<string>() == aliases[0])!["default_reasoning_level"]!.GetValue<string>() == "high");
         var reasoningModel = listed.GetProperty("data").EnumerateArray().Single(m => m.GetProperty("model").GetString() == aliases[0]);
         check("Actual Codex model list exposes custom reasoning levels and default", reasoningModel.GetProperty("defaultReasoningEffort").GetString() == "medium" && reasoningModel.GetProperty("supportedReasoningEfforts").EnumerateArray().Select(l => l.GetProperty("reasoningEffort").GetString()).SequenceEqual(new[] { "low", "medium", "high", "xhigh" }));
         check("Actual Codex retains the original OpenAI display name", listed.GetProperty("data").EnumerateArray().Single(m => m.GetProperty("model").GetString() == "fixture-openai").GetProperty("displayName").GetString() == "fixture-openai");
@@ -497,7 +519,7 @@ internal static class NativeClient
         await Turn(threadId, null, "Actual Codex completes a following turn in the same chat after stream failure");
         var config = await File.ReadAllTextAsync(Path.Combine(home, "config.toml"));
         check("Connection preserves unrelated TOML comments and settings", config.Contains("# Fictional isolated native client") && config.Contains("shell_tool = false"));
-        var outsideEdit = config.Replace("name = \"Codex Switch\"", "name = \"Owner edited provider\"");
+        var outsideEdit = config.Replace(manager.BaseUrl!, manager.BaseUrl + "/owner-change");
         await File.WriteAllTextAsync(Path.Combine(home, "config.toml"), outsideEdit);
         var rejected = false;
         try { await manager.DisconnectAsync(executable, home, cancellation); } catch (InvalidOperationException) { rejected = true; }
@@ -505,7 +527,7 @@ internal static class NativeClient
         await File.WriteAllTextAsync(Path.Combine(home, "config.toml"), config + "\n# Independent owner comment\n");
         await manager.DisconnectAsync(executable, home, cancellation);
         check("Connection restoration preserves the original configured route", (await File.ReadAllTextAsync(Path.Combine(home, "config.toml"))).Contains("openai_base_url"));
-        check("Connection restoration removes only its owned provider definition", !(await File.ReadAllTextAsync(Path.Combine(home, "config.toml"))).Contains("codex_switch_router"));
+        check("Connection restoration retains the original OpenAI provider identity", (await File.ReadAllTextAsync(Path.Combine(home, "config.toml"))).Contains("model_provider = \"openai\""));
         check("Restore preserves concurrent unrelated owner comments", (await File.ReadAllTextAsync(Path.Combine(home, "config.toml"))).Contains("# Independent owner comment"));
     }
 }

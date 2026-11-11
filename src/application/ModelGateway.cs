@@ -33,6 +33,7 @@ internal sealed class ModelGateway : IAsyncDisposable
     private readonly SemaphoreSlim _streamSlots = new(48, 48);
     private readonly SemaphoreSlim _rejections = new(4, 4);
     private readonly GatewayBodyBudget _bodyBudget = new();
+    private readonly Dictionary<string, DateTimeOffset> _requestReceipts = new();
     private Task? _accept;
     private int _nextRequest;
     private sealed record NativeCatalog(Dictionary<string, JsonObject> Models, DateTimeOffset Expires);
@@ -201,6 +202,18 @@ internal sealed class ModelGateway : IAsyncDisposable
                 destination = new Uri(ProviderCatalog.Endpoint(route.Provider.BaseUrl), path.EndsWith("/compact", StringComparison.Ordinal) ? "responses/compact" : "responses");
             }
             else destination = new Uri((identity.ApiKey ? "https://api.openai.com/v1/" : "https://chatgpt.com/backend-api/codex/") + (path.EndsWith("/compact", StringComparison.Ordinal) ? "responses/compact" : "responses"));
+            var requestKey = RequestKey(bytesIn, identity, routeIdentity, path);
+            if (requestKey != null)
+            {
+                var admission = ReserveRequest(requestKey);
+                if (admission != 0)
+                {
+                    await ErrorAsync(response, admission == 1 ? 400 : 503, admission == 1
+                        ? "This Codex turn request has already been sent upstream. Its input was not replayed; start a new turn to retry."
+                        : "The local model gateway's request receipt capacity is busy.", cancellation).ConfigureAwait(false);
+                    return;
+                }
+            }
             var retries = 0;
             HttpRequestMessage CreateUpstream()
             {
@@ -279,13 +292,20 @@ internal sealed class ModelGateway : IAsyncDisposable
         }
         finally { if (largeBody) _largeBodies.Release(); if (workSlot) _slots.Release(); if (streamSlot) _streamSlots.Release(); context.Response.Close(); }
     }
-    private async Task<JsonObject> CatalogAsync(GatewayIdentity identity, HttpListenerRequest incoming, CancellationToken cancellation, string? clientVersion = null)
+    internal Task<JsonObject> ReadCatalogAsync(GatewayIdentity identity, string clientVersion, CancellationToken cancellation) =>
+        CatalogAsync(identity, null, cancellation, clientVersion);
+    private async Task<JsonObject> CatalogAsync(GatewayIdentity identity, HttpListenerRequest? incoming, CancellationToken cancellation, string? clientVersion = null)
     {
-        var version = clientVersion ?? incoming.QueryString["client_version"] ?? "";
+        var version = clientVersion ?? incoming?.QueryString["client_version"] ?? "";
         if (version.Length is < 1 or > 80 || version.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '+')))
             throw new InvalidDataException("The model catalog request has no valid client version.");
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://chatgpt.com/backend-api/codex/models?client_version=" + Uri.EscapeDataString(version));
-        CopyOpenAiHeaders(incoming, request, identity);
+        if (incoming != null) CopyOpenAiHeaders(incoming, request, identity);
+        else
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", identity.Token);
+            if (identity.AccountId != null) request.Headers.TryAddWithoutValidation("ChatGPT-Account-ID", identity.AccountId);
+        }
         using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
         if (!response.IsSuccessStatusCode) throw new IOException("The current account's OpenAI model catalog is unavailable.");
         var result = JsonNode.Parse(await ProviderCatalog.ReadLimitedAsync(response.Content, ProviderCatalog.MaximumCatalogBytes, cancellation).ConfigureAwait(false)) as JsonObject;
@@ -322,12 +342,43 @@ internal sealed class ModelGateway : IAsyncDisposable
         return _nativeCatalogs.TryGetValue(key, out cached) ? cached.Models.GetValueOrDefault(model) : null;
     }
     private static string IdentityKey(GatewayIdentity identity) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity.Token + "\n" + identity.AccountId)));
+    private int ReserveRequest(string key)
+    {
+        lock (_requestReceipts)
+        {
+            var now = DateTimeOffset.UtcNow;
+            if (_requestReceipts.Count >= 4096)
+                foreach (var expired in _requestReceipts.Where(pair => pair.Value <= now).Select(pair => pair.Key).ToArray()) _requestReceipts.Remove(expired);
+            if (_requestReceipts.TryGetValue(key, out var until) && until > now) return 1;
+            if (_requestReceipts.Count >= 4096) return 2;
+            _requestReceipts[key] = now.AddMinutes(30); return 0;
+        }
+    }
+    private static string? RequestKey(ReadOnlyMemory<byte> body, GatewayIdentity identity, string route, string path)
+    {
+        var fields = GatewayRoutedContent.Fields(body);
+        var metadata = fields.FirstOrDefault(field => field.Name == "client_metadata").Value;
+        if (metadata.IsEmpty || metadata.Length > 65536) return null;
+        using var client = JsonDocument.Parse(metadata);
+        if (client.RootElement.ValueKind != JsonValueKind.Object ||
+            !client.RootElement.TryGetProperty("x-codex-turn-metadata", out var encoded) || encoded.ValueKind != JsonValueKind.String) return null;
+        using var turnMetadata = JsonDocument.Parse(encoded.GetString()!);
+        if (!Guid.TryParse(JsonValue.String(turnMetadata.RootElement, "turn_id"), out var turn)) return null;
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        hash.AppendData(Encoding.UTF8.GetBytes((identity.AccountId ?? identity.Token) + "\n" + turn.ToString("D") + "\n" + route + "\n" + path));
+        foreach (var field in fields.Where(field => field.Name != "client_metadata"))
+        {
+            hash.AppendData(Encoding.UTF8.GetBytes("\n" + field.Name + "\n"));
+            hash.AppendData(field.Value.Span);
+        }
+        return Convert.ToHexString(hash.GetHashAndReset());
+    }
     internal static string? ClientVersion(string? value)
     {
         if (value == null) return null;
         var direct = Regex.Match(value, @"^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$");
         if (direct.Success) return direct.Value.Split(new[] { '-', '+' })[0];
-        var agent = Regex.Match(value, @"(?:Codex Desktop|codex_cli_rs|Codex CLI|codex)/(\d+\.\d+\.\d+)");
+        var agent = Regex.Match(value, @"(?:Codex Desktop|codex_cli_rs|Codex CLI|codex_account_desk|codex)/(\d+\.\d+\.\d+)");
         return agent.Success ? agent.Groups[1].Value : null;
     }
     private static void CopyOpenAiHeaders(HttpListenerRequest incoming, HttpRequestMessage outgoing, GatewayIdentity identity)

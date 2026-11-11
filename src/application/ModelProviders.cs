@@ -43,6 +43,8 @@ internal sealed class ModelProviderSettings
     public bool Connected { get; set; }
     public bool ConnectionWriteConfirmed { get; set; }
     public List<ModelProvider> Providers { get; set; } = new();
+    public string? EditorSelection { get; set; }
+    public Dictionary<string, ProviderEditorDraft> EditorDrafts { get; set; } = new();
     public Dictionary<string, JsonNode?>? OriginalConfig { get; set; }
     public Dictionary<string, JsonNode?>? AppliedConfig { get; set; }
     public Dictionary<string, GatewayConversationRoute> ConversationRoutes { get; set; } = new();
@@ -72,6 +74,15 @@ internal sealed class ModelProviderStore
             _settings.Providers.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != _settings.Providers.Count)
             throw new InvalidDataException("The model provider store is invalid.");
         foreach (var provider in _settings.Providers) ProviderCatalog.Validate(provider);
+        if (_settings.EditorDrafts == null || _settings.EditorDrafts.Count > 33 ||
+            _settings.EditorSelection != null && _settings.EditorSelection != ModelProviderManager.NewEditorProvider && !Guid.TryParseExact(_settings.EditorSelection, "N", out _))
+            throw new InvalidDataException("The provider editor state is invalid.");
+        foreach (var (id, draft) in _settings.EditorDrafts)
+        {
+            if (id != ModelProviderManager.NewEditorProvider && !Guid.TryParseExact(id, "N", out _) || draft == null)
+                throw new InvalidDataException("The provider editor state is invalid.");
+            draft.Validate();
+        }
     }
     public ModelProviderSettings Read() { lock (_gate) return Clone(_settings); }
     internal bool RequiresPortableHistory(string? session, GatewayIdentity identity, string route)

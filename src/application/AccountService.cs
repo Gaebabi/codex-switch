@@ -49,7 +49,7 @@ internal sealed class AccountService
             if (!File.Exists(AuthPath)) return null;
             if ((File.GetAttributes(AuthPath) & FileAttributes.ReparsePoint) != 0) throw new IOException("The Codex sign-in file is a linked path.");
             return Encoding.UTF8.GetString(SecureFiles.ReadPrivateBytes(AuthPath));
-        }));
+        }), codexHome: CodexHome);
     internal LinuxDesktopRuntime? LinuxDesktop { get; }
     internal bool HasLinuxDesktop => LinuxDesktop != null;
     private HashSet<string> _switchTargets = new();
@@ -127,6 +127,7 @@ internal sealed class AccountService
             var result = Accounts.FirstOrDefault(a => a.Key == account.Key);
             if (result != null) updated?.Invoke(result);
         })).ConfigureAwait(false);
+        if (_modelProviders != null) await _modelProviders.RefreshCatalogAsync(cancellation).ConfigureAwait(false);
     }
     public async Task RefreshAccountAsync(string key, CancellationToken cancellation, bool supersede = false)
     {
@@ -337,6 +338,7 @@ internal sealed class AccountService
                 SecureFiles.AtomicWriteText(AuthPath, selectedAuth); selected.RequiresApply = false;
                 SynchronizeCurrentCore(policy); Vault.Save();
             }
+            if (_modelProviders != null) await _modelProviders.RefreshCatalogAsync(cancellation, true).ConfigureAwait(false);
             if (launch)
             {
                 if (OperatingSystem.IsLinux()) { if (LinuxDesktop != null) await LinuxDesktop.StartAsync(cancellation).ConfigureAwait(false); }
