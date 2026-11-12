@@ -15,6 +15,7 @@ internal static class IsolatedProfileContracts
         await File.WriteAllTextAsync(profile, content);
         var store = new ModelProviderStore(directory);
         store.Update(settings => { settings.IsolatedProfile = true; settings.Connected = true; settings.ConnectionWriteConfirmed = true; settings.RouterEnabled = true; settings.CustomProfilePath = profile; settings.CustomProfileContent = content; settings.CustomExecutablePath = Environment.ProcessPath; settings.CustomExecutableSha256 = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(Environment.ProcessPath!))); });
+        await File.WriteAllTextAsync(Path.Combine(directory, "model-providers-catalog.json"), new JsonObject { ["models"] = new JsonArray(ModelRouting.Metadata()) }.ToJsonString());
         var upstream = new Upstreams();
         GatewayIdentity? Authenticate(string? auth, string? account) => GatewayIdentity.Authenticate(auth, account,
             () => "{\"tokens\":{\"access_token\":\"fictional-isolated-token\",\"account_id\":\"fictional-isolated-account\"}}");

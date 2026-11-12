@@ -40,6 +40,17 @@ async Task Refuses(string name, Func<Task> action)
 { try { await action(); } catch (Exception e) when (e is ArgumentException or InvalidOperationException or IOException or InvalidDataException) { Check(name, true); return; } throw new Exception(name); }
 var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp", "CodexSwitchModelProviders", Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
+if (args.Contains("--reasoning-only"))
+{
+    try
+    {
+        await ReasoningControlContracts.Run(root, Check);
+        if (args.Length == 3 && args[1] == "--codex") await ReasoningNativeContracts.Run(args[2], root, Check);
+        Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, scope = "Native reasoning metadata and exact selected-strength forwarding; fictional providers." }));
+    }
+    finally { Directory.Delete(root, true); }
+    return;
+}
 if (args.Contains("--history-only"))
 {
     try
@@ -364,6 +375,7 @@ try
         await NativeClient.Run(args[1], nativeHome, manager, handler, Check);
         await DesktopProfileContracts.Run(args[1], root, Check);
         await HistoryNativeContracts.Run(args[1], root, Check);
+        await ReasoningNativeContracts.Run(args[1], root, Check);
     }
     await manager.RemoveAsync(b.Id, CancellationToken.None);
     using (var result = await Send(aliasB, "removed")) Check("Removing a provider fails stale choices explicitly", result.StatusCode == HttpStatusCode.NotFound);
@@ -382,6 +394,7 @@ try
     await ModelRoutingContracts.Run(root, Check);
     await IsolatedProfileContracts.Run(root, Check);
     await HistoryTransferContracts.Run(root, Check);
+    await ReasoningControlContracts.Run(root, Check);
     Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, nativeClient = args.Contains("--codex"), framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription, scope = "Disposable encrypted storage, loopback gateway and fictional upstreams; no owner home, account or desktop." }, new JsonSerializerOptions { WriteIndented = true }));
 }
 finally

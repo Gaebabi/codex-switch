@@ -42,7 +42,7 @@ internal static class DesktopProfileContracts
         check("Desktop profile removes an effort unsupported by the selected native model", !connectedConfig.Contains("model_reasoning_effort"));
         var catalog = JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(directory, "model-providers-desktop-catalog.json"), cancellation))!["models"]!.AsArray();
         check("Desktop picker preserves the complete native model document and appends exactly one Switch item", catalog.Count == 2 && JsonNode.DeepEquals(catalog[0], metadata) && catalog[1]!["slug"]!.GetValue<string>() == ModelRouting.Model);
-        check("Virtual model cannot seed unsupported none effort when returning to a native model", catalog[1]!["default_reasoning_level"]!.GetValue<string>() == "medium");
+        check("The virtual entry uses the selected provider's own reasoning default", catalog[1]!["default_reasoning_level"]!.GetValue<string>() == ProviderReasoning.Metadata(provider.Models.Single(), null)["default_reasoning_level"]!.GetValue<string>());
         await manager.ApplyDesktopProfileAsync(executable, home, CodexModelProfile.Switch, cancellation);
         check("Repeated profile application retains the original native endpoint receipt", manager.Settings.DesktopOriginalConfig!["openai_base_url"]!.GetValue<string>() == native.BaseUrl);
         await using (var rpc = new CodexRpc(executable, home, preserveProvider: true))
@@ -50,7 +50,7 @@ internal static class DesktopProfileContracts
             await rpc.InitializeAsync(cancellation);
             var list = await rpc.RequestAsync("model/list", new { includeHidden = false }, cancellation);
             check("Actual Codex picker keeps native models before its sole Switch entry", list.GetProperty("data").EnumerateArray().Select(item => item.GetProperty("model").GetString()).SequenceEqual(new[] { "fixture-openai", ModelRouting.Model }));
-            check("Actual Codex catalog reports the portable virtual reasoning default", list.GetProperty("data").EnumerateArray().Last().GetProperty("defaultReasoningEffort").GetString() == "medium");
+            check("Actual Codex catalog reports the selected provider's reasoning default", list.GetProperty("data").EnumerateArray().Last().GetProperty("defaultReasoningEffort").GetString() == ProviderReasoning.Metadata(provider.Models.Single(), null)["default_reasoning_level"]!.GetValue<string>());
             var thread = await rpc.RequestAsync("thread/start", new { cwd = home, ephemeral = true, model = ModelRouting.Model, approvalPolicy = "never", sandbox = "read-only",
                 config = new Dictionary<string, object> { ["mcp_servers"] = new Dictionary<string, object>() } }, cancellation);
             var id = thread.GetProperty("thread").GetProperty("id").GetString()!;
@@ -88,7 +88,10 @@ internal static class DesktopProfileContracts
         rpc.Notification += Notification;
         try
         {
-            await rpc.RequestAsync("turn/start", new { threadId = id, model, input = new[] { new { type = "text", text = "Reply with fixture-ok." } } }, cancellation);
+            var catalog = await rpc.RequestAsync("model/list", new { includeHidden = true }, cancellation);
+            var selected = catalog.GetProperty("data").EnumerateArray().Single(item => item.GetProperty("model").GetString() == model);
+            var effort = selected.GetProperty("defaultReasoningEffort").GetString();
+            await rpc.RequestAsync("turn/start", new { threadId = id, model, effort, input = new[] { new { type = "text", text = "Reply with fixture-ok." } } }, cancellation);
             return (await complete.Task.WaitAsync(cancellation)).GetProperty("turn").GetProperty("status").GetString() == "completed";
         }
         finally { rpc.Notification -= Notification; }

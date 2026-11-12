@@ -54,15 +54,18 @@ internal static class IsolatedNativeClientContracts
             return result.GetProperty("thread").GetProperty("id").GetString()!;
         }
         var normalId = await Thread(normal, "fixture-openai"); var customId = await Thread(custom, ModelRouting.Model);
-        async Task<bool> Turn(CodexRpc client, string id, string? model = null)
+        async Task<bool> Turn(CodexRpc client, string id, string? model = null, string? effort = null)
         {
             var complete = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
             void Notification(string method, JsonElement value) { if (method == "turn/completed" && value.GetProperty("threadId").GetString() == id) complete.TrySetResult(value.Clone()); }
             client.Notification += Notification;
             try
             {
-                await client.RequestAsync("turn/start", new { threadId = id, model, input = new[] { new { type = "text", text = "Reply with fixture-ok." } } }, cancellation);
-                return (await complete.Task.WaitAsync(cancellation)).GetProperty("turn").GetProperty("status").GetString() == "completed";
+                await client.RequestAsync("turn/start", new { threadId = id, model, effort, input = new[] { new { type = "text", text = "Reply with fixture-ok." } } }, cancellation);
+                var result = await complete.Task.WaitAsync(cancellation);
+                var success = result.GetProperty("turn").GetProperty("status").GetString() == "completed";
+                if (!success) Console.WriteLine("Fictional reasoning turn result: " + result.GetRawText());
+                return success;
             }
             finally { client.Notification -= Notification; }
         }
@@ -82,8 +85,11 @@ internal static class IsolatedNativeClientContracts
         manager.SelectRoute(aliases[0]);
         var first = manager.Settings.Providers[0];
         await manager.SaveReasoningAsync(first.Id, first.Models.Single().UpstreamId, new ProviderReasoningOptions { Levels = new() { "low", "high" }, Default = "low" }, cancellation);
-        check("Saved reasoning applies to the same dedicated chat", await Turn(custom, customId) && JsonNode.Parse(upstreams.Requests.Last().Body!)!["reasoning"]!["effort"]!.GetValue<string>() == "low");
-        check("Live custom changes never rewrite either catalog", catalog == await File.ReadAllTextAsync(catalogPath, cancellation) && nativeCatalog == await File.ReadAllTextAsync(nativeCatalogPath, cancellation));
+        var beforeReasoningChange = upstreams.Requests.Count(request => request.Method == "POST");
+        check("A reasoning choice from a stale native catalog is refused before inference", !await Turn(custom, customId) && upstreams.Requests.Count(request => request.Method == "POST") == beforeReasoningChange);
+        check("An explicitly selected supported effort applies to the same dedicated chat", await Turn(custom, customId, effort: "low") && JsonNode.Parse(upstreams.Requests.Last().Body!)!["reasoning"]!["effort"]!.GetValue<string>() == "low");
+        var updatedCatalog = JsonNode.Parse(await File.ReadAllTextAsync(catalogPath, cancellation))!["models"]!.AsArray();
+        check("Live reasoning changes update only the fixed Switch capability range and preserve the native catalog", updatedCatalog.Count == 1 && updatedCatalog[0]!["slug"]!.GetValue<string>() == ModelRouting.Model && updatedCatalog[0]!["supported_reasoning_levels"]!.AsArray().Select(level => level!["effort"]!.GetValue<string>()).SequenceEqual(new[] { "low", "high" }) && nativeCatalog == await File.ReadAllTextAsync(nativeCatalogPath, cancellation));
         Console.WriteLine("Native isolation phase: bounded custom 507 and stream recovery");
         var nativeBeforeRecovery = native.Upstream.Requests.Count;
         var recoveryStart = upstreams.Requests.Count;

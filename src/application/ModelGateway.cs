@@ -360,7 +360,7 @@ internal sealed partial class ModelGateway : IAsyncDisposable
     private async Task<JsonObject> CatalogAsync(GatewayIdentity identity, HttpListenerRequest? incoming, CancellationToken cancellation, string? clientVersion = null, bool? router = null, bool desktop = false)
     {
         var profile = _store.Read();
-        if (profile.IsolatedProfile && !profile.DesktopProfile && !desktop) return new JsonObject { ["models"] = new JsonArray(ModelRouting.Metadata()) };
+        if (profile.IsolatedProfile && !profile.DesktopProfile && !desktop) return new JsonObject { ["models"] = new JsonArray(ModelRouting.Metadata(profile)) };
         var version = clientVersion ?? incoming?.QueryString["client_version"] ?? "";
         if (version.Length is < 1 or > 80 || version.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '+')))
             throw new InvalidDataException("The model catalog request has no valid client version.");
@@ -396,7 +396,7 @@ internal sealed partial class ModelGateway : IAsyncDisposable
         });
         if (router ?? _store.Read().RouterEnabled)
         {
-            models.Add(ModelRouting.Metadata());
+            models.Add(ModelRouting.Metadata(_store.Read(), nativeModels));
             return result!;
         }
         foreach (var provider in _store.Read().Providers)

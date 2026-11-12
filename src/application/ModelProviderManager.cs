@@ -86,7 +86,8 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
                     model.ReasoningOverride = previous.Models.FirstOrDefault(old => old.UpstreamId == model.UpstreamId)?.ReasoningOverride;
             cancellation.ThrowIfCancellationRequested();
             _store.Update(next => { var index = next.Providers.FindIndex(p => p.Id == provider.Id); if (index < 0) next.Providers.Add(provider); else next.Providers[index] = provider; RememberSavedEditor(next, provider, id); });
-            if (!Settings.RouterEnabled) await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
+            if (Settings.RouterEnabled) RefreshRoutingReasoning(Settings);
+            else await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
             return provider;
         }
         finally { _changes.Release(); }
@@ -98,7 +99,8 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         try
         {
             _store.Update(next => { next.Providers.RemoveAll(p => p.Id == id); next.EditorDrafts.Remove(id); if (next.EditorSelection == id) next.EditorSelection = null; });
-            if (!Settings.RouterEnabled) await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
+            if (Settings.RouterEnabled) RefreshRoutingReasoning(Settings);
+            else await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
         }
         finally { _changes.Release(); }
     }
@@ -113,7 +115,8 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         {
             lifetime.Token.ThrowIfCancellationRequested();
             _store.Update(next => next.Providers.Single(p => p.Id == providerId).Models.Single(m => m.UpstreamId == modelId).ReasoningOverride = options);
-            if (!Settings.RouterEnabled) await RefreshCatalogCoreAsync(lifetime.Token, true).ConfigureAwait(false);
+            if (Settings.RouterEnabled) RefreshRoutingReasoning(Settings);
+            else await RefreshCatalogCoreAsync(lifetime.Token, true).ConfigureAwait(false);
         }
         finally { _changes.Release(); }
     }
@@ -242,11 +245,11 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         if (Settings.IsolatedProfile && !Settings.DesktopProfile && !desktop)
         {
             cancellation.ThrowIfCancellationRequested();
-            SecureFiles.AtomicWrite(_catalogPath, JsonSerializer.SerializeToUtf8Bytes(new JsonObject { ["models"] = new JsonArray(ModelRouting.Metadata()) }));
+            SecureFiles.AtomicWrite(_catalogPath, JsonSerializer.SerializeToUtf8Bytes(new JsonObject { ["models"] = new JsonArray(ModelRouting.Metadata(Settings)) }));
             return;
         }
         var identity = ReadIdentity();
-        var identityKey = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity.Token + "\n" + identity.AccountId)));
+        var identityKey = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity.Token + "\n" + identity.AccountId + "\n" + ModelRouting.Metadata(Settings).ToJsonString())));
         var catalogPath = desktop || Settings.DesktopProfile ? DesktopCatalogPath : _catalogPath;
         if (!force && _catalogIdentity == identityKey && DateTimeOffset.UtcNow - _catalogUpdated < TimeSpan.FromMinutes(5) && File.Exists(catalogPath)) return;
         Start();

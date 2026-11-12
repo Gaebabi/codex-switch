@@ -46,7 +46,6 @@ internal static class ProviderReasoning
     // reasoning fields still require catalog support; never discard a chosen effort.
     internal static string? PrepareRequest(ProviderModel model, JsonObject metadata, JsonObject body, bool nativeMatch)
     {
-        if (!model.GenericMetadata && model.ReasoningOverride == null) return null;
         if (body["reasoning"] == null) return null;
         if (body["reasoning"] is not JsonObject reasoning) return "Reasoning must contain a supported effort. Refresh the model list or configure this model's reasoning levels in Switch > Models.";
         if (reasoning["effort"] != null)
