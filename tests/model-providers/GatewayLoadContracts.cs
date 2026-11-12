@@ -49,11 +49,12 @@ internal static class GatewayLoadContracts
             check("Sliced custom rewrites retain exact history bytes and remove escaped opaque reasoning", !text.Contains("opaque") && text.Contains("한글\\u0020image-data") && text.Contains("{ \"kept\" : true }") && parsed["model"]!.GetValue<string>() == "load-model" && parsed["reasoning"]!["effort"]!.GetValue<string>() == "high" && parsed["prompt_cache_key"] == null);
         }
         var handler = new LoadUpstream();
-        var store = new ModelProviderStore(Path.Combine(root, "load-providers"));
+        var directory = Path.Combine(root, "load-providers");
+        var store = new ModelProviderStore(directory);
         var custom = new ModelProvider { Name = "Load fixture", BaseUrl = "https://load.example.invalid/v1", ApiKey = "fictional-load-key" };
         custom.Models.Add(new ProviderModel { UpstreamId = "load-model", GenericMetadata = true, Metadata = ProviderCatalog.Generic("load-model") });
         store.Update(next => next.Providers.Add(custom));
-        await using var gateway = new ModelGateway(store, (auth, _) => auth == "Bearer fictional-load-token" ? new GatewayIdentity("fictional-load-token", "fictional-load-account", false) : null, new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan });
+        await using var gateway = new ModelGateway(store, (auth, _) => auth == "Bearer fictional-load-token" ? new GatewayIdentity("fictional-load-token", "fictional-load-account", false) : null, new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan }, directory, () => null);
         gateway.Start();
         using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(3) };
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "fictional-load-token");

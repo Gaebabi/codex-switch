@@ -32,7 +32,6 @@ internal sealed class DeskProvidersWindow : Window
     private readonly DeskModelRoutePicker _routePicker;
     private bool _busy, _loading, _keyVisible, _closed;
     private string? _message;
-    internal bool RestartRequested { get; private set; }
 
     internal DeskProvidersWindow(DeskTheme theme, AccountService service, Func<string, Task>? copyHandoff = null)
     {
@@ -71,7 +70,7 @@ internal sealed class DeskProvidersWindow : Window
         Closing += (_, args) =>
         {
             try { _editor.Persist(); _closed = true; _stop.Cancel(); }
-            catch (Exception error) { RestartRequested = false; args.Cancel = true; _message = Loc.T("providers.failed") + " " + error.Message; Render(); }
+            catch (Exception error) { args.Cancel = true; _message = Loc.T("providers.failed") + " " + error.Message; Render(); }
         };
         LoadFields();
     }
@@ -147,16 +146,17 @@ internal sealed class DeskProvidersWindow : Window
             Add("providers.reset", true, () => { _editor.LoadSaved(); _message = null; LoadFields(); return Task.CompletedTask; });
             Add("providers.remove", true, async () => { await _manager.RemoveAsync(_editor.SelectedId!, _stop.Token); _editor = new(_manager); _message = null; LoadFields(); });
         }
-        if (_manager.Settings.Connected) Add("providers.disconnect", true, async () => { await _service.DisconnectModelProvidersAsync(_stop.Token); _message = null; });
+        if (_manager.Settings.Connected && !_manager.Settings.DesktopProfile) Add("providers.disconnect", true, async () => { await _service.DisconnectModelProvidersAsync(_stop.Token); _message = null; });
         _more.ContextMenu = menu; menu.Open(_more);
     }
     private async Task PrimaryAsync()
     {
         if (_busy) return;
         if (_editor.Draft.Step == 0) await RunAsync(async () => { await _editor.SaveAsync(_stop.Token); _message = null; LoadFields(); });
-        else if (!_manager.Settings.Connected || !_manager.Settings.RouterEnabled) await RunAsync(async () => { await _service.ConnectModelProvidersAsync(_stop.Token); _message = null; });
+        else if (_manager.Settings.DesktopProfile) { _editor.Persist(); Close(); }
+        else if (!_manager.Settings.Connected || !_manager.Settings.IsolatedProfile) await RunAsync(async () => { await _service.ConnectModelProvidersAsync(_stop.Token); _message = null; });
         else if (!_manager.Settings.ConnectionWriteConfirmed) await RunAsync(async () => { await _service.DisconnectModelProvidersAsync(_stop.Token); _message = null; });
-        else { _editor.Persist(); RestartRequested = true; Close(); }
+        else await RunAsync(async () => { _editor.Persist(); await CopyAsync(_service.GetCustomTerminalCommand(), "providers.terminal_copied"); });
     }
     private async Task RunAsync(Func<Task> action)
     {
@@ -178,9 +178,9 @@ internal sealed class DeskProvidersWindow : Window
         _reveal.IsEnabled = _copyKey.IsEnabled = _editor.ApiKey.Length != 0;
         _models.Text = provider == null ? "" : Loc.F("providers.model_count", provider.Models.Count) + "\n" + string.Join("\n", provider.Models.Take(3).Select(item => item.UpstreamId));
         _back.Content = Loc.T(ready ? "providers.edit" : "providers.close"); _back.IsEnabled = !_busy;
-        _primary.Content = Loc.T(!ready ? "providers.save_next" : !settings.Connected || !settings.RouterEnabled ? "providers.connect" : !settings.ConnectionWriteConfirmed ? "providers.disconnect" : "restart.title");
-        _primary.IsEnabled = !_busy && (ready ? settings.Connected && settings.RouterEnabled || ModelRouting.Registered(settings, settings.SelectedRoute) : !string.IsNullOrWhiteSpace(_editor.Draft.Name) && !string.IsNullOrWhiteSpace(_editor.Draft.BaseUrl) && _editor.ApiKey.Length != 0);
-        _status.Text = _message ?? (ready ? Loc.T(settings.Connected && !settings.RouterEnabled ? "router.first_connection" : settings.Connected ? settings.ConnectionWriteConfirmed ? "providers.prepared" : "providers.incomplete" : "providers.not_connected") : ""); _status.IsVisible = _status.Text.Length != 0;
+        _primary.Content = Loc.T(!ready ? "providers.save_next" : settings.DesktopProfile ? "providers.close" : !settings.Connected || !settings.IsolatedProfile ? "providers.connect" : !settings.ConnectionWriteConfirmed ? "providers.disconnect" : "providers.terminal_copy");
+        _primary.IsEnabled = !_busy && (ready ? settings.DesktopProfile || settings.Connected && settings.IsolatedProfile && !settings.ConnectionWriteConfirmed || ModelRouting.Registered(settings, settings.SelectedRoute) : !string.IsNullOrWhiteSpace(_editor.Draft.Name) && !string.IsNullOrWhiteSpace(_editor.Draft.BaseUrl) && _editor.ApiKey.Length != 0);
+        _status.Text = _message ?? (ready && settings.DesktopProfile ? Loc.T("profiles.next_request") : ready && !ModelRouting.Registered(settings, settings.SelectedRoute) && !(settings.Connected && settings.IsolatedProfile && !settings.ConnectionWriteConfirmed) ? Loc.T("router.choose") : ready ? Loc.T(settings.Connected && !settings.IsolatedProfile ? "router.first_connection" : settings.Connected ? settings.ConnectionWriteConfirmed ? "providers.prepared" : "providers.incomplete" : "providers.not_connected") : ""); _status.IsVisible = _status.Text.Length != 0;
     }
     private void BuildAdvanced(Panel parent)
     {

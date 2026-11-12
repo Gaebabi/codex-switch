@@ -32,6 +32,32 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
     public string? LastError => _gateway?.LastError;
     public DateTimeOffset? LastRequestAt => _gateway?.LastRequestAt;
     public string? BaseUrl => _gateway?.BaseUrl;
+    internal string GetCustomTerminalCommand(string executable, string home, bool windows)
+    {
+        var settings = Settings;
+        var path = Path.GetFullPath(Path.Combine(home, "codex-switch.config.toml"));
+        VerifyProfile(settings, path);
+        if (!settings.IsolatedProfile || !settings.Connected || !settings.ConnectionWriteConfirmed || !Running || !File.Exists(path))
+            throw new InvalidOperationException("Prepare the custom profile and keep Switch running before opening its terminal.");
+        if (!ModelRouting.Registered(settings, settings.SelectedRoute)) throw new InvalidOperationException("Select an available custom model in Codex Switch before opening its terminal.");
+        if (!Path.IsPathFullyQualified(executable) || !File.Exists(executable)) throw new InvalidOperationException("The reviewed Codex CLI is unavailable. Refresh the Codex installation first.");
+        if (!string.Equals(Path.GetFullPath(executable), settings.CustomExecutablePath, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) ||
+            ExecutableHash(executable) != settings.CustomExecutableSha256)
+            throw new InvalidOperationException("The Codex CLI changed since profile preparation. Prepare the custom profile again before launching.");
+        static string PowerShellQuote(string value) => "'" + value.Replace("'", "''") + "'";
+        static string ShellQuote(string value) => "'" + value.Replace("'", "'\"'\"'") + "'";
+        var credentialVariables = new[] { "OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN", "OPENAI_BASE_URL", "OPENAI_IDENTITY_TOKEN_FILE", "OPENAI_IDENTITY_TOKEN_AUDIENCE" };
+        return windows
+            ? "& { $p = New-Object System.Diagnostics.ProcessStartInfo; $p.FileName = " + PowerShellQuote(executable) +
+                "; $p.Arguments = '--no-daemon --profile codex-switch'; $p.UseShellExecute = $false; $p.EnvironmentVariables['CODEX_HOME'] = " + PowerShellQuote(Path.GetFullPath(home)) +
+                "; foreach ($name in @(" + string.Join(",", credentialVariables.Select(PowerShellQuote)) + ")) { $p.EnvironmentVariables.Remove($name) }; [System.Diagnostics.Process]::Start($p).WaitForExit() }"
+            : "env " + string.Join(" ", credentialVariables.Select(name => "-u " + name)) + " CODEX_HOME=" + ShellQuote(Path.GetFullPath(home)) + " " + ShellQuote(executable) + " --no-daemon --profile codex-switch";
+    }
+    private static string ExecutableHash(string executable)
+    {
+        using var file = File.OpenRead(executable);
+        return Convert.ToHexString(SHA256.HashData(file));
+    }
     internal ModelProviderManager(string directory, Func<string?, string?, GatewayIdentity?> authenticate, HttpClient? http = null, string? codexHome = null)
     {
         _store = new ModelProviderStore(directory); _authenticate = authenticate; _http = http ?? ProviderCatalog.CreateHttpClient();
@@ -101,7 +127,7 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         {
         if (_disposal != null) throw new ObjectDisposedException(nameof(ModelProviderManager));
         if (_gateway != null) return;
-        var gateway = new ModelGateway(_store, _authenticate, _http);
+        var gateway = new ModelGateway(_store, _authenticate, _http, Path.GetDirectoryName(_catalogPath)!, () => _home);
         try { gateway.Start(); _gateway = gateway; }
         catch { gateway.DisposeAsync().AsTask().GetAwaiter().GetResult(); throw; }
         }
@@ -113,8 +139,13 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         try
         {
             var settings = _store.Read();
-            if (settings.Connected && (settings.RouterEnabled || !router)) throw new InvalidOperationException("Codex connection settings are already prepared. Restart Codex once when ready.");
-            if (router && !ModelRouting.Registered(settings, settings.SelectedRoute)) throw new InvalidOperationException("Select an available model in Codex Switch before connecting.");
+            if (!router) throw new InvalidOperationException("New connections require the isolated custom-model profile.");
+            if (settings.DesktopProfile) throw new InvalidOperationException("Restore the Default Codex profile before preparing an isolated terminal profile.");
+            if (!ModelRouting.Registered(settings, settings.SelectedRoute)) throw new InvalidOperationException("Select an available custom model in Codex Switch before connecting.");
+            var profilePath = Path.GetFullPath(Path.Combine(home, "codex-switch.config.toml"));
+            VerifyProfile(settings, profilePath);
+            var executablePath = Path.GetFullPath(executable);
+            var executableHash = ExecutableHash(executablePath);
             Start();
             await using var rpc = new CodexRpc(executable, home, preserveProvider: true);
             await rpc.InitializeAsync(cancellation).ConfigureAwait(false);
@@ -128,33 +159,52 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
             var version = rpc.Initialization is JsonElement hello ? ModelGateway.ClientVersion(JsonValue.String(hello, "userAgent")) : null;
             if (version != null) _store.Update(next => next.LastClientVersion = version);
             var snapshot = await ReadUserConfigAsync(rpc, home, cancellation).ConfigureAwait(false);
-            var originalProvider = ValueAt(snapshot.Config, "model_provider")?.GetValue<string>();
-            if (originalProvider != null && originalProvider != "openai")
-                throw new InvalidOperationException("Restore the original OpenAI provider before connecting the combined model catalog.");
-            if (settings.AppliedConfig != null)
-                foreach (var (key, applied) in settings.AppliedConfig)
-                    if (!JsonNode.DeepEquals(ValueAt(snapshot.Config, key), applied) && !JsonNode.DeepEquals(ValueAt(snapshot.Config, key), settings.OriginalConfig![key]))
-                        throw new InvalidOperationException("Codex connection settings changed outside Switch. Review them before preparing the fixed model.");
-            if (version == null) throw new InvalidOperationException("The Codex version could not be verified before preparing the model catalog.");
+            if (version == null || !Version.TryParse(version.Split('-')[0], out var parsedVersion) || parsedVersion < new Version(0, 167, 0))
+                throw new InvalidOperationException("The isolated profile requires a reviewed Codex CLI version 0.167.0 or newer with V2 profile support.");
             _home = Path.GetFullPath(home);
-            await WriteCatalogAsync(version, cancellation, router: router).ConfigureAwait(false);
-            var edits = new Dictionary<string, JsonNode?>
-            {
-                ["openai_base_url"] = NodeValue.Create(_gateway!.BaseUrl),
-                ["model_catalog_json"] = NodeValue.Create(_catalogPath), ["features.responses_websockets_v2"] = NodeValue.Create(false),
-                ["features.enable_request_compression"] = NodeValue.Create(false)
-            };
-            if (router) edits["model"] = NodeValue.Create(ModelRouting.Model);
-            var original = settings.OriginalConfig ?? edits.Keys.Append("model").Distinct().ToDictionary(key => key, key => ValueAt(snapshot.Config, key)?.DeepClone());
-            // Persist recovery before the atomic config write. A crash can only leave an extra listener,
-            // never a client configured for a listener that will not be started on the next Switch launch.
-            _store.Update(next => { next.OriginalConfig = original; next.AppliedConfig = edits; next.RouterEnabled = router; next.Connected = true; next.ConnectionWriteConfirmed = false; });
-            // Keep recovery information if the RPC commits before its reply is lost.
-            // Disconnect re-reads the file and refuses to overwrite divergent values.
-            await WriteConfigAsync(rpc, home, snapshot.Version, edits, cancellation).ConfigureAwait(false);
+            if (ExecutableHash(executablePath) != executableHash) throw new InvalidOperationException("The Codex CLI changed during profile preparation. No profile was written.");
+            // Only migrate recorded app-owned root values. Never install a new root override.
+            await RestoreRootAsync(rpc, home, snapshot, settings, cancellation).ConfigureAwait(false);
+            VerifyProfile(settings, profilePath);
+            var content = "# Codex Switch custom-only process. Native Codex uses config.toml unchanged.\n" +
+                "model_provider = \"openai\"\nmodel = \"codex-switch\"\ncli_auth_credentials_store = \"file\"\nopenai_base_url = " + JsonSerializer.Serialize(_gateway!.BaseUrl) +
+                "\nmodel_catalog_json = " + JsonSerializer.Serialize(_catalogPath) +
+                "\n[features]\nresponses_websockets_v2 = false\nenable_request_compression = false\n";
+            // Record ownership before writing, so uncertain completion remains recoverable.
+            _store.Update(next => { next.IsolatedProfile = true; next.RootMigrationCompleted = true; next.CustomProfilePath = profilePath; next.CustomProfileContent = content; next.CustomExecutablePath = executablePath; next.CustomExecutableSha256 = executableHash; next.RouterEnabled = true; next.Connected = true; next.ConnectionWriteConfirmed = false; });
+            await WriteCatalogAsync(version, cancellation).ConfigureAwait(false);
+            SecureFiles.AtomicWrite(profilePath, Encoding.UTF8.GetBytes(content));
             _store.Update(next => next.ConnectionWriteConfirmed = true);
         }
         finally { _changes.Release(); }
+    }
+    private static void VerifyProfile(ModelProviderSettings settings, string path)
+    {
+        if (settings.CustomProfilePath != null && !string.Equals(settings.CustomProfilePath, path, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+            throw new InvalidOperationException("The custom profile belongs to another Codex home.");
+        if (File.Exists(path) && (settings.CustomProfileContent == null || File.ReadAllText(path) != settings.CustomProfileContent))
+            throw new InvalidOperationException("The custom profile changed outside Switch. Review it before connecting or disconnecting.");
+    }
+    private async Task RestoreRootAsync(CodexRpc rpc, string home, (JsonObject Config, string Version) snapshot, ModelProviderSettings settings, CancellationToken cancellation)
+    {
+        if (settings.RootMigrationCompleted) return;
+        if (settings.AppliedConfig == null)
+        {
+            if (settings.Connected && !settings.IsolatedProfile) throw new InvalidOperationException("The legacy connection recovery is missing. Restore the native configuration before preparing a custom profile.");
+            return;
+        }
+        if (settings.OriginalConfig == null) throw new InvalidOperationException("The original connection recovery is incomplete.");
+        var restore = new Dictionary<string, JsonNode?>();
+        foreach (var (key, applied) in settings.AppliedConfig)
+        {
+            if (!settings.OriginalConfig.TryGetValue(key, out var original)) throw new InvalidOperationException("The original connection recovery is incomplete.");
+            var current = ValueAt(snapshot.Config, key);
+            if (JsonNode.DeepEquals(current, original)) continue;
+            if (!JsonNode.DeepEquals(current, applied)) throw new InvalidOperationException("Codex connection settings changed outside Switch. Review them before migration; no root settings were overwritten.");
+            restore[key] = original?.DeepClone();
+        }
+        if (restore.Count > 0) await WriteConfigAsync(rpc, home, snapshot.Version, restore, cancellation).ConfigureAwait(false);
+        // Retain the original/applied recovery receipt for old provider-pinned histories.
     }
     internal async Task RefreshCatalogAsync(CancellationToken cancellation, bool force = false)
     {
@@ -166,6 +216,8 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
     private Task RefreshCatalogCoreAsync(CancellationToken cancellation, bool force)
     {
         var settings = _store.Read();
+        if (settings.DesktopProfile && settings.Connected) return WriteCatalogAsync(settings.LastClientVersion ?? "unknown", cancellation, force, true, true);
+        if (settings.IsolatedProfile && settings.Connected) return WriteCatalogAsync(settings.LastClientVersion ?? "unknown", cancellation, force);
         if (!settings.Connected || settings.AppliedConfig == null ||
             !settings.AppliedConfig.TryGetValue("model_catalog_json", out var path) || path?.GetValue<string>() != _catalogPath)
             return Task.CompletedTask;
@@ -185,20 +237,27 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         }
         finally { CryptographicOperations.ZeroMemory(bytes); }
     }
-    private async Task WriteCatalogAsync(string version, CancellationToken cancellation, bool force = true, bool? router = null)
+    private async Task WriteCatalogAsync(string version, CancellationToken cancellation, bool force = true, bool? router = null, bool desktop = false)
     {
+        if (Settings.IsolatedProfile && !Settings.DesktopProfile && !desktop)
+        {
+            cancellation.ThrowIfCancellationRequested();
+            SecureFiles.AtomicWrite(_catalogPath, JsonSerializer.SerializeToUtf8Bytes(new JsonObject { ["models"] = new JsonArray(ModelRouting.Metadata()) }));
+            return;
+        }
         var identity = ReadIdentity();
         var identityKey = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity.Token + "\n" + identity.AccountId)));
-        if (!force && _catalogIdentity == identityKey && DateTimeOffset.UtcNow - _catalogUpdated < TimeSpan.FromMinutes(5) && File.Exists(_catalogPath)) return;
+        var catalogPath = desktop || Settings.DesktopProfile ? DesktopCatalogPath : _catalogPath;
+        if (!force && _catalogIdentity == identityKey && DateTimeOffset.UtcNow - _catalogUpdated < TimeSpan.FromMinutes(5) && File.Exists(catalogPath)) return;
         Start();
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(30));
-        var catalog = await _gateway!.ReadCatalogAsync(identity, version, deadline.Token, router).ConfigureAwait(false);
+        var catalog = await _gateway!.ReadCatalogAsync(identity, version, deadline.Token, router, desktop).ConfigureAwait(false);
         var current = ReadIdentity();
         if (current.Token != identity.Token || current.AccountId != identity.AccountId || current.ApiKey != identity.ApiKey)
             throw new InvalidOperationException("The OpenAI sign-in changed while refreshing the model catalog.");
         var bytes = JsonSerializer.SerializeToUtf8Bytes(catalog);
         if (bytes.Length > ProviderCatalog.MaximumCatalogBytes) throw new InvalidDataException("The combined model catalog exceeds the client limit.");
-        SecureFiles.AtomicWrite(_catalogPath, bytes);
+        SecureFiles.AtomicWrite(catalogPath, bytes);
         _catalogIdentity = identityKey; _catalogUpdated = DateTimeOffset.UtcNow;
     }
     public async Task DisconnectAsync(string executable, string home, CancellationToken cancellation)
@@ -208,26 +267,23 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         try
         {
             var settings = _store.Read();
+            if (settings.DesktopProfile) throw new InvalidOperationException("Use Codex profile > Default — restore and restart before disconnecting the desktop gateway.");
+            if (settings.IsolatedProfile)
+            {
+                var path = Path.GetFullPath(Path.Combine(home, "codex-switch.config.toml"));
+                VerifyProfile(settings, path);
+                if (File.Exists(path)) File.Delete(path);
+                _store.Update(next => { next.Connected = false; next.ConnectionWriteConfirmed = false; });
+                if (_gateway != null) { await _gateway.DisposeAsync().ConfigureAwait(false); _gateway = null; }
+                return;
+            }
             if (settings.OriginalConfig == null || settings.AppliedConfig == null) return;
             await using var rpc = new CodexRpc(executable, home, preserveProvider: true);
             await rpc.InitializeAsync(cancellation).ConfigureAwait(false);
             var snapshot = await ReadUserConfigAsync(rpc, home, cancellation).ConfigureAwait(false);
-            var restore = new Dictionary<string, JsonNode?>();
-            foreach (var (key, applied) in settings.AppliedConfig)
-            {
-                var current = ValueAt(snapshot.Config, key);
-                if (key == "model" && current is NodeValue changed && changed.TryGetValue<string>(out var currentModel) &&
-                    currentModel != ModelRouting.Model && !currentModel.StartsWith("cs_", StringComparison.Ordinal)) continue;
-                if (!JsonNode.DeepEquals(current, applied) && !JsonNode.DeepEquals(current, settings.OriginalConfig[key]))
-                    throw new InvalidOperationException("Codex connection settings changed outside Switch. Review them before disconnecting.");
-                restore[key] = settings.OriginalConfig[key]?.DeepClone();
-            }
-            if (ValueAt(snapshot.Config, "model") is NodeValue model && model.TryGetValue<string>(out var selected) && (selected == ModelRouting.Model || selected.StartsWith("cs_", StringComparison.Ordinal)))
-                restore["model"] = settings.OriginalConfig["model"]?.DeepClone();
-            await WriteConfigAsync(rpc, home, snapshot.Version, restore, cancellation).ConfigureAwait(false);
-            _store.Update(next => { next.Connected = false; next.ConnectionWriteConfirmed = false; next.OriginalConfig = null; next.AppliedConfig = null; });
-            // Keep the current listener alive until Switch exits: already-open Codex sessions may
-            // still use it until the owner's one-time restart after disconnecting.
+            await RestoreRootAsync(rpc, home, snapshot, settings, cancellation).ConfigureAwait(false);
+            _store.Update(next => { next.Connected = false; next.ConnectionWriteConfirmed = false; next.RootMigrationCompleted = true; });
+            if (_gateway != null) { await _gateway.DisposeAsync().ConfigureAwait(false); _gateway = null; }
         }
         finally { _changes.Release(); }
     }

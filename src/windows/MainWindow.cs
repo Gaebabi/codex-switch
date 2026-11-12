@@ -212,7 +212,7 @@ internal sealed class MainWindow : Window
         _automaticSwitch.Items.Clear();
         var automatic = BuildAutomaticSwitchMenu();
         while (automatic.Items.Count > 0) { var item = automatic.Items[0]; automatic.Items.RemoveAt(0); _automaticSwitch.Items.Add(item); }
-        menu.Items.Add(_automaticSwitch); menu.Items.Add(_restartCodex); menu.Items.Add(new Separator());
+        menu.Items.Add(_automaticSwitch); menu.Items.Add(_restartCodex); menu.Items.Add(BuildModelProfileMenu()); menu.Items.Add(new Separator());
         var languages = new MenuItem { Name = "LanguageSettingsMenuItem", Header = Loc.T("언어 설정") + "  " + Loc.LanguageName };
         if (_options.LanguagePackProblems > 0) languages.ToolTip = Loc.F("pack.invalid_local_packs", _options.LanguagePackProblems);
         else if (_options.SavedLanguageUnavailable) languages.ToolTip = Loc.T("Saved language pack unavailable. Showing English.");
@@ -292,11 +292,9 @@ internal sealed class MainWindow : Window
     private void OpenModelProviders(object? sender, RoutedEventArgs args)
     {
         if (_closing || _switching || _loggingIn) return;
-        var restart = false;
-        try { _providerEditing = true; var window = new ModelProvidersWindow(this, _theme, _service); window.ShowDialog(); restart = window.RestartRequested; }
+        try { _providerEditing = true; var window = new ModelProvidersWindow(this, _theme, _service); window.ShowDialog(); }
         catch (Exception error) { SetStatus(Loc.T("providers.failed") + " " + error.Message, true); }
         finally { _providerEditing = false; _routePicker?.Refresh(); }
-        if (restart) RestartCodexClicked(sender, args);
     }
     private async Task ImportLanguagePackAsync()
     {
@@ -845,9 +843,28 @@ internal sealed class MainWindow : Window
         if (current == null) { SetStatus(Loc.T("restart.login_changed"), true); return; }
         await QueueSwitchAsync(current, restart: true);
     }
-    private async Task QueueSwitchAsync(AccountProfile profile, bool automatic = false, bool creditPause = false, bool restart = false)
+    internal MenuItem BuildModelProfileMenu()
+    {
+        var menu = new MenuItem { Name = "CodexModelProfileMenuItem", Header = Loc.T("profiles.title"),
+            IsEnabled = _ready && !_closing && !_switching && !_loggingIn && !_providerEditing && PendingSwitch() == null && _service.Accounts.Any(profile => profile.IsCurrent) };
+        foreach (var profile in new[] { CodexModelProfile.Native, CodexModelProfile.Switch })
+        {
+            var item = new MenuItem { Name = profile == CodexModelProfile.Native ? "NativeModelProfileMenuItem" : "SwitchModelProfileMenuItem",
+                Header = Loc.T(profile == CodexModelProfile.Native ? "profiles.native" : "profiles.switch"),
+                IsEnabled = profile == CodexModelProfile.Native || ModelRouting.Registered(_service.ModelProviders.Settings, _service.ModelProviders.Settings.SelectedRoute) };
+            item.Click += async (_, _) =>
+            {
+                var current = _service.Accounts.SingleOrDefault(account => account.IsCurrent);
+                if (current != null) await QueueSwitchAsync(current, restart: true, modelProfile: profile);
+            };
+            menu.Items.Add(item);
+        }
+        return menu;
+    }
+    private async Task QueueSwitchAsync(AccountProfile profile, bool automatic = false, bool creditPause = false, bool restart = false, CodexModelProfile? modelProfile = null)
     {
         var pending = PendingSwitch();
+        if (modelProfile != null && pending != null) { SetStatus("남은 채팅 재개 작업을 먼저 처리해 주세요.", true); return; }
         restart |= pending?.RestartOnly == true;
         if (_closing || _switching || _stampingTitles || _loggingIn || !restart && !creditPause && profile.IsCurrent && !profile.RequiresApply && pending?.TargetAccountKey != profile.Key) return;
         if (restart && pending != null && !pending.RestartOnly) { SetStatus("남은 채팅 재개 작업을 먼저 처리해 주세요.", true); return; }
@@ -865,9 +882,9 @@ internal sealed class MainWindow : Window
             {
                 var cancellation = _switchCancellation.Token;
                 await using var backend = new DesktopSwitchBackend(_service, _sessions, profile.Key, includeUnfinished: restart);
-                var coordinator = new AccountSwitchCoordinator(backend, SaveSwitch, SwitchChanged, UserErrors.Describe);
+                var coordinator = new AccountSwitchCoordinator(backend, SaveSwitch, SwitchChanged, UserErrors.Describe, _service.ApplyModelProfileAsync);
                 var plan = pending != null ? JsonSerializer.Deserialize<AccountSwitchPlan>(JsonSerializer.Serialize(pending))! :
-                    restart ? await coordinator.PrepareRestartAsync(profile.Key, DateTimeOffset.UtcNow, cancellation) :
+                    restart ? await coordinator.PrepareRestartAsync(profile.Key, DateTimeOffset.UtcNow, cancellation, modelProfile) :
                     await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, cancellation, creditPause);
                 if (plan.CreditProtectionPause)
                 {

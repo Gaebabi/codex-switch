@@ -81,7 +81,7 @@ internal static class GatewayRetryContracts
             using var response = await fixture.Send(); var body = await response.Content.ReadAsStringAsync();
             check("A different failure after recovery is terminal without extra attempts", handler.Requests.Count == 2 && body.Contains("response.failed") && body.Contains("HTTP 429") && !body.Contains("fictional-secret-in-error"));
         }
-        foreach (var path in new[] { "/responses/compact", "/images/generations", "/images/edits", "/responses?nonstream" })
+        foreach (var path in new[] { "/images/generations", "/images/edits", "/responses?nonstream" })
         {
             using var handler = new RetryUpstream { Failures = 10 };
             await using var fixture = new Fixture(root, handler);
@@ -149,13 +149,14 @@ internal static class GatewayRetryContracts
         internal bool GatewayDisposed;
         internal Fixture(string root, RetryUpstream handler, bool custom = false)
         {
-            Store = new ModelProviderStore(Path.Combine(root, "retry-" + Guid.NewGuid().ToString("N")));
+            var directory = Path.Combine(root, "retry-" + Guid.NewGuid().ToString("N"));
+            Store = new ModelProviderStore(directory);
             var model = new ProviderModel { UpstreamId = "fixture-openai" };
             var provider = new ModelProvider { Name = "Retry fixture", BaseUrl = "https://retry.example.invalid/v1", ApiKey = "fictional-custom-retry-key", Models = new() { model } };
             if (custom) Store.Update(next => next.Providers.Add(provider));
             _model = custom ? model.Alias(provider.Id) : model.UpstreamId;
             _upstream = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
-            Gateway = new ModelGateway(Store, (_, _) => SignedIn ? new GatewayIdentity("fictional-openai-retry-token", "fictional-retry-account", false) : null, _upstream);
+            Gateway = new ModelGateway(Store, (_, _) => SignedIn ? new GatewayIdentity("fictional-openai-retry-token", "fictional-retry-account", false) : null, _upstream, directory, () => null);
             Gateway.Start();
             _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "fictional-openai-retry-token");
             _client.DefaultRequestHeaders.Add("session_id", "retry-conversation");

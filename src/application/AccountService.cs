@@ -376,6 +376,12 @@ internal sealed class AccountService
         if (providers != null) await providers.DisposeAsync().ConfigureAwait(false);
     }
     internal void ReleaseDesktop() => LinuxDesktop?.Dispose();
+    internal string GetCustomTerminalCommand() => ModelProviders.GetCustomTerminalCommand(Installation.CliPath, CodexHome, OperatingSystem.IsWindows());
+    internal Task ApplyModelProfileAsync(CodexModelProfile profile, CancellationToken cancellation)
+    {
+        if (string.IsNullOrEmpty(Installation.CliPath)) throw new InvalidOperationException("The Codex runtime is not ready. Refresh the dashboard before changing profiles.");
+        return ModelProviders.ApplyDesktopProfileAsync(Installation.CliPath, CodexHome, profile, cancellation);
+    }
     internal Task ConnectModelProvidersAsync(CancellationToken cancellation)
     {
         if (string.IsNullOrEmpty(Installation.CliPath)) throw new InvalidOperationException("The Codex runtime is not ready. Refresh the dashboard before connecting.");

@@ -3,6 +3,8 @@
 
 **Codex Switch (`codex-switch`) is an open-source desktop account switcher and usage quota monitor for OpenAI Codex.** See your accounts together, choose the next one, and recover an interrupted handoff. Optional quota-based switching starts **Off**.
 
+Unreleased: [desktop model profiles](docs/DESKTOP_MODEL_PROFILES.md) keep native OpenAI choices and add one Codex Switch entry, with explicit Default/Switch restoration and restart actions.
+
 Windows · macOS15+ · Linux preview · MIT open source · **1.44.0**
 
 [English](README.md) / [한국어](docs/README.ko.md) / [日本語](docs/README.ja.md) / [简体中文](docs/README.zh-CN.md)
@@ -65,7 +67,7 @@ Warning icons retain full hover details; activate one to sign in again for the s
 
 ## Features
 
-- **Models from your providers:** save a compatible provider and key, connect Codex, and choose a model for each chat. Keep Switch running while connected. [Provider setup and compatibility](docs/MODEL_PROVIDERS.md)
+- **Models from your providers:** save a compatible Responses provider and key. Unreleased source prepares a separate custom CLI profile while leaving normal Codex models independent of Switch. Keep Switch running for custom requests, choose their actual model in Switch, and explicitly open the custom terminal. Published downloads retain the earlier connection behavior. [Provider setup and compatibility](docs/MODEL_PROVIDERS.md)
 - **Manual switch, automatic continuation:** back up the current login and verify date-prefixed chat names, normally close Codex, apply the selected account, reopen the same chat IDs/folders/models/permissions, and send one **Continue** to eligible idle unfinished chats. Running or completed work is left alone.
 - **Recover interrupted handoffs:** encrypted checkpoints retain progress. **Resume chats** continues pending work; uncertain sends are never automatically repeated. Naming/shutdown failures stop the login change. Windows waits for child processes so one Switch click can finish the flow. [Switching details](docs/SWITCHING.md)
 - **Quota and history:** remaining usage, resets, plans, subscription expiry, reset allowances, credits and consumption forecasts. Open **History** in an account's **...** menu. Card dates use your local time zone; the shared history view explicitly labels its KST axes. Expiry within72hours and reset within48hours use warning colors.

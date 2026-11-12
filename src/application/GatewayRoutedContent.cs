@@ -31,7 +31,7 @@ internal sealed class GatewayRoutedContent : HttpContent
         }
         return fields;
     }
-    internal GatewayRoutedContent(ReadOnlyMemory<byte> original, JsonObject options, bool custom, bool generic, bool removeReasoning)
+    internal GatewayRoutedContent(ReadOnlyMemory<byte> original, JsonObject options, bool custom, bool generic, bool removeReasoning, IReadOnlyDictionary<int, ReadOnlyMemory<byte>>? history = null)
     {
         Add("{"); var comma = false;
         foreach (var field in Fields(original))
@@ -42,7 +42,7 @@ internal sealed class GatewayRoutedContent : HttpContent
             _parts.Add(JsonSerializer.SerializeToUtf8Bytes(field.Name)); Add(":");
             if (custom && (field.Name is "model" or "reasoning" || generic && field.Name == "text"))
                 _parts.Add(JsonSerializer.SerializeToUtf8Bytes(options[field.Name]));
-            else if (removeReasoning && field.Name == "input") AddInput(field.Value);
+            else if (field.Name == "input" && (removeReasoning || history?.Count > 0)) AddInput(field.Value, removeReasoning, history);
             else _parts.Add(field.Value);
         }
         if (custom && !Fields(original).Any(field => field.Name == "reasoning") && options["reasoning"] != null)
@@ -65,12 +65,17 @@ internal sealed class GatewayRoutedContent : HttpContent
         }
         return items;
     }
-    private void AddInput(ReadOnlyMemory<byte> json)
+    private void AddInput(ReadOnlyMemory<byte> json, bool removeReasoning, IReadOnlyDictionary<int, ReadOnlyMemory<byte>>? history)
     {
-        Add("["); var comma = false;
+        Add("["); var comma = false; var index = 0;
         foreach (var value in Items(json))
         {
-            if (value.Span[0] == (byte)'{')
+            var current = index++;
+            if (history != null && history.TryGetValue(current, out var replacement))
+            {
+                if (comma) Add(","); comma = true; _parts.Add(replacement); continue;
+            }
+            if (removeReasoning && value.Span[0] == (byte)'{')
             {
                 var fields = Fields(value);
                 var type = fields.FirstOrDefault(f => f.Name == "type").Value;

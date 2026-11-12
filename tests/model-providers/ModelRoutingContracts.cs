@@ -103,9 +103,13 @@ internal static class ModelRoutingContracts
             check("Malformed discovery cannot persist an unreadable routing cache or lose saved providers", !malformed.IsSuccessStatusCode && new ModelProviderStore(directory).Read().OpenAiModels.SequenceEqual(savedChoices) && manager.Settings.Providers.Count == 2);
         upstream.InvalidNativeLabel = false;
         using (var response = await client.GetAsync(manager.BaseUrl + "/models?client_version=0.167.0")) response.EnsureSuccessStatusCode();
-        manager.SelectRoute("fixture-openai");
-        using (var native = await Send("native-selection")) await native.Content.ReadAsStringAsync();
-        check("The virtual model can route to original OpenAI with its own authentication", upstream.Requests.Last().Host == "chatgpt.com" && upstream.Requests.Last().Token == "fictional-router-token" && upstream.Requests.Last().Account == "fictional-router-account" && JsonNode.Parse(upstream.Requests.Last().Body!)!["model"]!.GetValue<string>() == "fixture-openai");
+        check("Switch choices contain only registered custom models after OpenAI discovery", manager.RoutingChoices.Select(choice => choice.Id).SequenceEqual(new[] { aliasA, aliasB }));
+        refused = false;
+        try { manager.SelectRoute("fixture-openai"); } catch (InvalidOperationException) { refused = true; }
+        check("Native OpenAI selection belongs to Codex and cannot replace the saved custom route", refused && manager.Settings.SelectedRoute == aliasB);
+        using (var native = await client.PostAsync(manager.BaseUrl + "/responses", new StringContent("{\"model\":\"fixture-openai\",\"stream\":true,\"input\":[]}", Encoding.UTF8, "application/json")))
+            native.EnsureSuccessStatusCode();
+        check("Native OpenAI requests keep their own model and authentication independent of the Switch choice", upstream.Requests.Last().Host == "chatgpt.com" && upstream.Requests.Last().Token == "fictional-router-token" && upstream.Requests.Last().Account == "fictional-router-account" && JsonNode.Parse(upstream.Requests.Last().Body!)!["model"]!.GetValue<string>() == "fixture-openai" && manager.Settings.SelectedRoute == aliasB);
         manager.SelectRoute(aliasB); await manager.RemoveAsync(b.Id, CancellationToken.None); start = upstream.Requests.Count;
         using (var removed = await Send("removed-selection"))
             check("Deleting the selected provider refuses explicitly without a fallback", removed.StatusCode == HttpStatusCode.BadRequest && manager.Settings.SelectedRoute == aliasB && upstream.Requests.Skip(start).All(request => request.Method != "POST"));

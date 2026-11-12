@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace CodexAccountDesk;
 
-internal sealed class ModelGateway : IAsyncDisposable
+internal sealed partial class ModelGateway : IAsyncDisposable
 {
     internal const int MaximumRequestBytes = 512 * 1024 * 1024;
     private const int SmallRequestBytes = 16 * 1024 * 1024;
@@ -25,6 +25,7 @@ internal sealed class ModelGateway : IAsyncDisposable
     private readonly ModelProviderStore _store;
     private readonly Func<string?, string?, GatewayIdentity?> _authenticate;
     private readonly HttpClient _http;
+    private readonly GatewayHistoryBridge _history;
     private readonly HttpListener _listener = new();
     private readonly CancellationTokenSource _stop = new();
     private readonly ConcurrentDictionary<int, Task> _requests = new();
@@ -43,8 +44,15 @@ internal sealed class ModelGateway : IAsyncDisposable
     public string? LastError { get; private set; }
     public DateTimeOffset? LastRequestAt { get; private set; }
     public string BaseUrl => "http://127.0.0.1:" + Port + "/backend-api/codex";
-    internal ModelGateway(ModelProviderStore store, Func<string?, string?, GatewayIdentity?> authenticate, HttpClient http)
-    { _store = store; _authenticate = authenticate; _http = http; }
+    internal ModelGateway(ModelProviderStore store, Func<string?, string?, GatewayIdentity?> authenticate, HttpClient http, string directory, Func<string?> home)
+    {
+        _store = store; _authenticate = authenticate; _http = http;
+        _history = new(directory, store, http, home, identity =>
+        {
+            var current = authenticate("Bearer " + identity.Token, identity.AccountId);
+            return current != null && current.Token == identity.Token && current.AccountId == identity.AccountId && current.ApiKey == identity.ApiKey;
+        });
+    }
     public void Start()
     {
         if (_accept != null) return;
@@ -96,6 +104,8 @@ internal sealed class ModelGateway : IAsyncDisposable
             var routingSettings = _store.Read();
             LastRequestAt = DateTimeOffset.UtcNow;
             var path = request.Url?.AbsolutePath;
+            if (path == "/backend-api/codex/responses" && request.IsWebSocketRequest)
+            { await ErrorAsync(response, 426, "Use HTTP Responses with full input. This gateway does not support WebSocket continuation.", cancellation).ConfigureAwait(false); return; }
             if (path == "/backend-api/codex/models" && request.HttpMethod == "GET")
             {
                 var catalog = await CatalogAsync(identity, request, cancellation).ConfigureAwait(false);
@@ -105,6 +115,8 @@ internal sealed class ModelGateway : IAsyncDisposable
                 await response.OutputStream.WriteAsync(bytes, cancellation).ConfigureAwait(false); return;
             }
             var imageRequest = path is "/backend-api/codex/images/generations" or "/backend-api/codex/images/edits";
+            if (imageRequest && routingSettings.IsolatedProfile && !routingSettings.DesktopProfile)
+            { await ErrorAsync(response, 400, "Built-in OpenAI images belong to native Codex. This process supports custom models only.", cancellation).ConfigureAwait(false); return; }
             if (request.HttpMethod != "POST" || path == null || !imageRequest && path is not ("/backend-api/codex/responses" or "/backend-api/codex/responses/compact"))
             { await ErrorAsync(response, 404, "This model gateway endpoint is not supported.", cancellation).ConfigureAwait(false); return; }
             if (!MediaTypeHeaderValue.TryParse(request.ContentType, out var contentType) || !string.Equals(contentType.MediaType, "application/json", StringComparison.OrdinalIgnoreCase))
@@ -132,11 +144,12 @@ internal sealed class ModelGateway : IAsyncDisposable
             var bytesIn = input.Bytes;
             var original = new GatewayJsonRequest(bytesIn);
             JsonObject? body = null;
+            GatewayHistoryInput? history = null;
             void ReleaseInput()
             {
                 // Keep the budgeted input only while a pre-response 507 retry is possible.
                 // Successful response streams never retain request buffers/upload slots.
-                original.Release(); body = null; bytesIn = default;
+                original.Release(); history?.Release(); body = null; bytesIn = default;
                 input.Dispose();
                 if (largeBody) { _largeBodies.Release(); largeBody = false; }
                 if (workSlot) { _slots.Release(); workSlot = false; }
@@ -163,6 +176,7 @@ internal sealed class ModelGateway : IAsyncDisposable
             if (string.IsNullOrEmpty(model)) throw new InvalidDataException("A model must be selected.");
             // Snapshot a route and its key before the first upstream byte. Settings edits never retarget an in-flight request.
             var settings = routingSettings; var routed = model == ModelRouting.Model;
+            var session = ConversationIdentity(request, original);
             if (routed)
             {
                 if (!ModelRouting.Registered(settings, settings.SelectedRoute))
@@ -173,6 +187,8 @@ internal sealed class ModelGateway : IAsyncDisposable
             var route = providers.SelectMany(p => p.Models.Select(m => (Provider: p, Model: m))).FirstOrDefault(pair => pair.Model.Alias(pair.Provider.Id) == model);
             if (model.StartsWith("cs_", StringComparison.Ordinal) && route.Provider == null)
             { await ErrorAsync(response, 404, "The selected custom model is no longer registered. Select another model.", cancellation).ConfigureAwait(false); return; }
+            if (settings.IsolatedProfile && !settings.DesktopProfile && route.Provider == null)
+            { await ErrorAsync(response, 400, "This is the custom-only Switch process. Use native Codex for OpenAI models.", cancellation).ConfigureAwait(false); return; }
             JsonObject? openAiModel = null;
             if (route.Provider == null && (openAiModel = await NativeModelAsync(model, identity, request, cancellation).ConfigureAwait(false)) == null)
             { await ErrorAsync(response, 404, "The selected model is not in this account's OpenAI catalog or registered custom routes. Select a model from the combined list.", cancellation).ConfigureAwait(false); return; }
@@ -182,11 +198,12 @@ internal sealed class ModelGateway : IAsyncDisposable
             { await ErrorAsync(response, 400, "Use full-input HTTP Responses replay; provider-specific response references cannot be routed safely.", cancellation).ConfigureAwait(false); return; }
             var removeReasoning = false;
             var routeIdentity = route.Provider == null ? "openai" : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(route.Provider.Id + "\n" + route.Provider.BaseUrl + "\n" + route.Provider.ApiKey)));
-            var portableHistory = _store.RequiresPortableHistory(request.Headers["session_id"] ?? request.Headers["conversation_id"], identity, routeIdentity);
+            var portableHistory = _store.RequiresPortableHistory(session, identity, routeIdentity);
+            var source = route.Provider == null ? new GatewayHistorySource("openai", model) : GatewayHistoryBridge.Source(route.Provider, route.Model);
+            history = new GatewayHistoryInput(original);
+            var historyOperation = RequestKey(bytesIn, identity, routed ? ModelRouting.Model : routeIdentity, path) ?? Convert.ToHexString(SHA256.HashData(bytesIn.Span));
             if (portableHistory)
             {
-                if (original.HasEncrypted("compaction"))
-                { await ErrorAsync(response, 400, ModelHistoryHandoff.Refusal, cancellation).ConfigureAwait(false); return; }
                 removeReasoning = original.HasEncrypted("reasoning");
             }
             Uri destination;
@@ -203,7 +220,7 @@ internal sealed class ModelGateway : IAsyncDisposable
             if (route.Provider != null)
             {
                 JsonObject? native = null;
-                if (route.Model.GenericMetadata && route.Model.ReasoningOverride == null &&
+                if ((!settings.IsolatedProfile || settings.DesktopProfile) && route.Model.GenericMetadata && route.Model.ReasoningOverride == null &&
                     (routed ? settings.OpenAiModels.Any(choice => choice.Id == route.Model.UpstreamId) : body!["reasoning"] != null))
                     native = await NativeModelAsync(route.Model.UpstreamId, identity, request, cancellation).ConfigureAwait(false);
                 var metadata = ProviderReasoning.Metadata(route.Model, native);
@@ -232,6 +249,10 @@ internal sealed class ModelGateway : IAsyncDisposable
                 destination = new Uri((identity.ApiKey ? "https://api.openai.com/v1/" : "https://chatgpt.com/backend-api/codex/") + (path.EndsWith("/compact", StringComparison.Ordinal) ? "responses/compact" : "responses"));
             }
             var requestKey = RequestKey(bytesIn, identity, routed ? ModelRouting.Model : routeIdentity, path);
+            var compaction = path.EndsWith("/compact", StringComparison.Ordinal) || history.CompactionTrigger;
+            // Source-summary reservations are durable per checkpoint. Unknown history
+            // cannot reserve or alter the destination's generation receipt.
+            await _history.PrepareAsync(history, session, identity, source, settings, request, historyOperation, cancellation).ConfigureAwait(false);
             if (requestKey != null)
             {
                 var admission = ReserveRequest(requestKey);
@@ -243,14 +264,22 @@ internal sealed class ModelGateway : IAsyncDisposable
                     return;
                 }
             }
+            if (compaction)
+            {
+                var checkpoint = await _history.CompactAsync(history, session, identity, source, settings, request, historyOperation, cancellation).ConfigureAwait(false);
+                ReleaseInput();
+                await WritePortableCompactionAsync(response, checkpoint, source.Model, path.EndsWith("/compact", StringComparison.Ordinal), cancellation).ConfigureAwait(false);
+                _store.RecordSuccessfulRoute(session, identity, routeIdentity, source.Model, source.ProviderId);
+                LastError = null; return;
+            }
             var retries = 0;
             HttpRequestMessage CreateUpstream()
             {
                 var upstream = new HttpRequestMessage(HttpMethod.Post, destination);
                 if (route.Provider == null) CopyOpenAiHeaders(request, upstream, identity);
                 else upstream.Headers.Authorization = new AuthenticationHeaderValue("Bearer", route.Provider.ApiKey);
-                upstream.Content = rewrite || removeReasoning ?
-                    new GatewayRoutedContent(bytesIn, body ?? new JsonObject(), rewrite, route.Model?.GenericMetadata == true, removeReasoning) :
+                upstream.Content = rewrite || removeReasoning || history.Changed ?
+                    new GatewayRoutedContent(bytesIn, body ?? new JsonObject(), rewrite, route.Model?.GenericMetadata == true, removeReasoning, history.Replacements) :
                     new ReadOnlyMemoryContent(bytesIn);
                 upstream.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 return upstream;
@@ -278,8 +307,9 @@ internal sealed class ModelGateway : IAsyncDisposable
                 if (current == null || current.Token != identity.Token || current.AccountId != identity.AccountId || current.ApiKey != identity.ApiKey)
                     throw new InvalidOperationException("The original sign-in changed before automatic recovery.");
             }
+            var streaming = original.Streaming;
             using var result = await GatewayUpstreamRetry.SendAsync(_http, CreateUpstream,
-                path == "/backend-api/codex/responses" && original.Streaming, BeforeRetry, cancellation).ConfigureAwait(false);
+                path == "/backend-api/codex/responses" && streaming, BeforeRetry, cancellation).ConfigureAwait(false);
             ReleaseInput();
             if (!result.IsSuccessStatusCode)
             {
@@ -289,25 +319,29 @@ internal sealed class ModelGateway : IAsyncDisposable
                 else await ErrorAsync(response, (int)result.StatusCode is >= 300 and < 400 ? 502 : (int)result.StatusCode, LastError, cancellation).ConfigureAwait(false);
                 return;
             }
-            if (started && result.Content.Headers.ContentType?.MediaType != "text/event-stream")
+            var responseMediaType = result.Content.Headers.ContentType?.MediaType ?? (streaming ? "text/event-stream" : "application/json");
+            if (started && !string.Equals(responseMediaType, "text/event-stream", StringComparison.OrdinalIgnoreCase))
             {
                 LastError = "The selected upstream did not return the requested event stream after HTTP 507 recovery.";
                 await RetryFailureAsync(response, LastError, cancellation).ConfigureAwait(false); return;
             }
-            _store.RecordSuccessfulRoute(request.Headers["session_id"] ?? request.Headers["conversation_id"], identity, routeIdentity);
+            _store.RecordSuccessfulRoute(session, identity, routeIdentity, source.Model, source.ProviderId);
             if (!started)
             {
-                response.StatusCode = (int)result.StatusCode; response.ContentType = result.Content.Headers.ContentType?.ToString() ?? "application/json";
+                response.StatusCode = (int)result.StatusCode; response.ContentType = result.Content.Headers.ContentType?.ToString() ?? responseMediaType;
                 response.Headers["Cache-Control"] = "no-store"; response.SendChunked = true; started = true;
             }
             await using var stream = await result.Content.ReadAsStreamAsync(cancellation).ConfigureAwait(false);
+            using var provenance = new GatewayHistoryObserver(_history, session, identity, source, response.ContentType);
             var buffer = new byte[16384]; int count;
             while ((count = await stream.ReadAsync(buffer, cancellation).ConfigureAwait(false)) > 0)
-            { await response.OutputStream.WriteAsync(buffer.AsMemory(0, count), cancellation).ConfigureAwait(false); await response.OutputStream.FlushAsync(cancellation).ConfigureAwait(false); }
+            { provenance.Observe(buffer.AsSpan(0, count)); await response.OutputStream.WriteAsync(buffer.AsMemory(0, count), cancellation).ConfigureAwait(false); await response.OutputStream.FlushAsync(cancellation).ConfigureAwait(false); }
             LastError = null;
         }
         catch (GatewayBusyException)
         { if (!started) await TryErrorAsync(context.Response, 503, "The local model gateway's request buffer budget is busy. Try again when uploads finish.", cancellation).ConfigureAwait(false); }
+        catch (GatewayHistoryException error)
+        { LastError = error.Message; if (!started) await TryErrorAsync(context.Response, 400, error.Message, cancellation).ConfigureAwait(false); else AbortResponse(context.Response); }
         catch (OperationCanceledException) { LastError = "The model request was cancelled or timed out."; AbortResponse(context.Response); }
         catch (Exception error)
         {
@@ -321,10 +355,12 @@ internal sealed class ModelGateway : IAsyncDisposable
         }
         finally { if (largeBody) _largeBodies.Release(); if (workSlot) _slots.Release(); if (streamSlot) _streamSlots.Release(); context.Response.Close(); }
     }
-    internal Task<JsonObject> ReadCatalogAsync(GatewayIdentity identity, string clientVersion, CancellationToken cancellation, bool? router = null) =>
-        CatalogAsync(identity, null, cancellation, clientVersion, router);
-    private async Task<JsonObject> CatalogAsync(GatewayIdentity identity, HttpListenerRequest? incoming, CancellationToken cancellation, string? clientVersion = null, bool? router = null)
+    internal Task<JsonObject> ReadCatalogAsync(GatewayIdentity identity, string clientVersion, CancellationToken cancellation, bool? router = null, bool desktop = false) =>
+        CatalogAsync(identity, null, cancellation, clientVersion, router, desktop);
+    private async Task<JsonObject> CatalogAsync(GatewayIdentity identity, HttpListenerRequest? incoming, CancellationToken cancellation, string? clientVersion = null, bool? router = null, bool desktop = false)
     {
+        var profile = _store.Read();
+        if (profile.IsolatedProfile && !profile.DesktopProfile && !desktop) return new JsonObject { ["models"] = new JsonArray(ModelRouting.Metadata()) };
         var version = clientVersion ?? incoming?.QueryString["client_version"] ?? "";
         if (version.Length is < 1 or > 80 || version.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '+')))
             throw new InvalidDataException("The model catalog request has no valid client version.");
@@ -360,8 +396,8 @@ internal sealed class ModelGateway : IAsyncDisposable
         });
         if (router ?? _store.Read().RouterEnabled)
         {
-            result!["models"] = new JsonArray(ModelRouting.Metadata());
-            return result;
+            models.Add(ModelRouting.Metadata());
+            return result!;
         }
         foreach (var provider in _store.Read().Providers)
         foreach (var model in provider.Models)
@@ -414,6 +450,17 @@ internal sealed class ModelGateway : IAsyncDisposable
             hash.AppendData(field.Value.Span);
         }
         return Convert.ToHexString(hash.GetHashAndReset());
+    }
+    private static string? ConversationIdentity(HttpListenerRequest request, GatewayJsonRequest original)
+    {
+        var legacy = request.Headers["session_id"] ?? request.Headers["conversation_id"];
+        var metadata = original.Get("client_metadata");
+        if (metadata.IsEmpty) return legacy;
+        if (metadata.Length > 65536) throw new GatewayHistoryException("Conversation metadata exceeds the safe identity bound.");
+        using var document = JsonDocument.Parse(metadata);
+        if (document.RootElement.ValueKind != JsonValueKind.Object) throw new GatewayHistoryException("The conversation metadata is invalid.");
+        var thread = JsonValue.String(document.RootElement, "thread_id");
+        return !string.IsNullOrEmpty(thread) ? thread : legacy ?? JsonValue.String(document.RootElement, "session_id");
     }
     internal static string? ClientVersion(string? value)
     {

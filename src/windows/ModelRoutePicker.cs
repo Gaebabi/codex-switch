@@ -58,10 +58,10 @@ internal sealed class ModelRoutePicker : Grid
         if (_models.ContextMenu?.IsOpen == true) return;
         var settings = _manager.Settings; var choices = _manager.RoutingChoices;
         Visibility = choices.Count == 0 && settings.SelectedRoute == null ? Visibility.Collapsed : Visibility.Visible;
-        _label.Text = Loc.T(settings.Connected && settings.RouterEnabled ? "router.model" : "router.setup_model");
+        _label.Text = Loc.T(settings.Connected && (settings.IsolatedProfile || settings.DesktopProfile) ? "router.model" : "router.setup_model");
         _caption.Text = choices.FirstOrDefault(choice => choice.Id == settings.SelectedRoute)?.Label ?? Loc.T(settings.SelectedRoute == null ? "router.choose" : "router.unavailable");
         _models.Tag = settings.SelectedRoute;
         AutomationProperties.SetName(_models, Loc.T("router.model") + ": " + _caption.Text);
-        _models.ToolTip = _caption.Text + "\n" + Loc.T(settings.Connected && settings.RouterEnabled ? "router.next_request" : "router.first_connection");
+        _models.ToolTip = _caption.Text + "\n" + Loc.T(settings.DesktopProfile ? "profiles.next_request" : settings.Connected && settings.IsolatedProfile ? "router.next_request" : "router.first_connection");
     }
 }

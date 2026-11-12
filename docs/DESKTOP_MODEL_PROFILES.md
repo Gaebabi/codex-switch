@@ -1,0 +1,18 @@
+# Desktop model profiles
+
+In Switch's settings menu, **Codex profile** offers two explicit actions:
+
+- **Default — restore and restart** restores the native connection and catalog recorded before Switch applied its desktop routing.
+- **Codex Switch — apply and restart** keeps native model documents and the native default, adding a single **Codex Switch** item at the end of the model list. Select the actual custom model in Switch. OpenAI models remain in Codex's own picker.
+
+Both actions use the existing same-account restart/recovery coordinator. It saves the requested profile and chat recovery state, closes Codex normally, applies version-checked configuration edits, and reopens it. It never applies a different account. A configuration conflict remains visible; the coordinator reopens the existing desktop without sending Continue. Recovering that operation closes the reopened desktop before retrying the configuration change. A confirmed profile write is not repeated after a launch retry.
+
+Profile restoration changes only recorded app-owned routing keys. Already-restored values are accepted; divergent owner edits stop the operation. Other TOML settings, sign-in data and saved provider selection are retained. A native model's unsupported root reasoning effort is removed using its actual `model/list` capabilities, allowing Codex to choose its model default. Supported explicit efforts are retained. The virtual model advertises `medium` as its default instead of seeding `none`, which some native models reject after a model change.
+
+Keep Switch running while using its desktop profile. The Default profile connects directly to the original native endpoint and continues with Switch stopped. The existing separate custom CLI profile remains a different opt-in workflow; its custom-only catalog is not replaced by the desktop catalog. Return to Default before preparing that CLI profile. Disconnecting the desktop gateway requires the Default restore-and-restart action.
+
+Provider-encrypted compaction cannot be decrypted or transferred by Switch. Keep the original chat and use its original provider, model and account to produce a readable handoff before continuing in a new provider's chat. If a native OpenAI chat is blocked by the gateway, use Default to return to its original connection. Profiles do not delete or rewrite chat history. An existing chat that saved an unsupported effort must select a supported effort in Codex before its next turn; root configuration restoration does not rewrite per-chat settings.
+
+Verification uses disposable homes and fictional upstreams with the reviewed native CLI. It covers real app-server model lists and turns, native-to-Switch-to-native selection, unsupported-effort refusal, version-checked profile application/restoration, owner-edit conflicts, unchanged authentication, native operation with Switch stopped, and durable restart ordering. Offscreen production UI checks establish menu structure and busy states.
+
+The owner-authorized2026-11-12 installation separately confirmed the actual profile-menu restart, recovery of the active chat, preservation of four observed chat records, and unchanged native model documents plus one Switch entry. The installed backend dropdown and matching route receipts confirmed real Qwen YaRN/Gemma responses; official native app-server health turns completed through Qwen and OpenAI. Keep native desktop picker clicking, general external-provider compatibility and a public release separate. Provider responses can take several minutes; a client deadline does not prove the selected model was misrouted. The final selection remains Qwen YaRN.

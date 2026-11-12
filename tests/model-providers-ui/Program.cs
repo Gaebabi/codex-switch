@@ -34,6 +34,12 @@ internal static class ProviderUiEvidence
     [STAThread]
     private static int Main(string[] args)
     {
+        if (args.SequenceEqual(new[] { "--no-daemon", "--profile", "codex-switch" }) && Environment.GetEnvironmentVariable("CODEX_SWITCH_TEST_ENV_REPORT") is string environmentReport)
+        {
+            var clean = new[] { "OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN", "OPENAI_BASE_URL", "OPENAI_IDENTITY_TOKEN_FILE", "OPENAI_IDENTITY_TOKEN_AUDIENCE" }.All(name => Environment.GetEnvironmentVariable(name) == null);
+            File.WriteAllText(environmentReport, JsonSerializer.Serialize(new { clean, home = Environment.GetEnvironmentVariable("CODEX_HOME") }));
+            return 0;
+        }
         if (args.Length != 1 || !Path.IsPathFullyQualified(args[0])) throw new ArgumentException("Provide an absolute evidence directory.");
         Directory.CreateDirectory(args[0]);
         var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
@@ -41,7 +47,7 @@ internal static class ProviderUiEvidence
         Directory.CreateDirectory(temporary);
         var fixtureProvider = new ModelProvider { Name = "Fictional GPT API", BaseUrl = "https://fixture.example.invalid/v1", ApiKey = "fictional-ui-key", Models = new() { new ProviderModel { UpstreamId = "gpt-fixture", GenericMetadata = true, Metadata = ProviderCatalog.Generic("gpt-fixture") } } };
         var data = Path.Combine(temporary, "data");
-        new ModelProviderStore(data).Update(settings => settings.Providers.Add(fixtureProvider));
+        new ModelProviderStore(data).Update(settings => { settings.Providers.Add(fixtureProvider); settings.OpenAiModels.Add(new ModelRouteChoice("fixture-openai", "Native OpenAI")); });
         var service = new AccountService(new AccountVault(data), Path.Combine(temporary, "absent-home"));
         var manager = new ModelProviderManager(data, (_, _) => null, new System.Net.Http.HttpClient(new ProviderUiHttp()));
         typeof(AccountService).GetField("_modelProviders", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(service, manager);
@@ -84,6 +90,9 @@ internal static class ProviderUiEvidence
                 if (editor.Draft.Step != 1 || ready.Visibility != Visibility.Visible || entry.Visibility != Visibility.Collapsed || (string)primary.Content != Loc.T("providers.connect") || key.Password != copied)
                     throw new Exception("The real Save action must retain fields and advance to Connect.");
                 var routePicker = Field<ModelRoutePicker>(window, "_routePicker");
+                if (routePicker.CreateMenu().Items.OfType<MenuItem>().Any(item => item.Tag as string == "fixture-openai") || routePicker.CreateMenu().Items.Count != 1)
+                    throw new Exception("Provider setup must show only registered custom models, never cached native OpenAI choices.");
+                checks.Add(language + "/" + dark + ": provider setup keeps native OpenAI models out of the custom picker");
                 routePicker.CreateMenu().Items.OfType<MenuItem>().Single(item => item.Tag as string == manager.Settings.Providers.Single().Models.Single().Alias(saved.Id)).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
                 if (manager.Settings.SelectedRoute != routePicker.Models.Tag as string || !primary.IsEnabled || manager.Settings.Connected)
                     throw new Exception("The actual routing dropdown must save the selected model without connecting Codex.");
@@ -124,6 +133,9 @@ internal static class ProviderUiEvidence
                 var main = new MainWindow(service, new Program.Options { DataDirectory = data, CodexHome = Path.Combine(temporary, "absent-home"), UiEvidenceDirectory = args[0] });
                 var mainRoot = Surface(main); Layout(mainRoot, 500, 360);
                 var mainPicker = Field<ModelRoutePicker>(main, "_routePicker");
+                if (mainPicker.CreateMenu().Items.Count != 1 || mainPicker.CreateMenu().Items.OfType<MenuItem>().Single().Tag as string != manager.Settings.SelectedRoute)
+                    throw new Exception("Home must retain one custom-only choice after reopening and native catalog discovery.");
+                checks.Add(language + "/" + dark + ": Home reopens with the same custom-only model choice");
                 if (mainPicker.Visibility != Visibility.Visible || mainPicker.Models.Tag as string != manager.Settings.SelectedRoute ||
                     mainPicker.Models.TranslatePoint(new Point(), mainRoot).X + mainPicker.Models.ActualWidth > 500)
                     throw new Exception("The Home dropdown must retain the selection and fit the minimum width.");
@@ -146,6 +158,11 @@ internal static class ProviderUiEvidence
                 var restart = (MenuItem)typeof(MainWindow).GetField("_restartCodex", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
                 var models = (MenuItem)typeof(MainWindow).GetField("_providers", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
                 var settings = main.HomeActionsMenu();
+                var profiles = settings.Items.OfType<MenuItem>().Single(item => item.Name == "CodexModelProfileMenuItem");
+                if (!profiles.IsEnabled || profiles.Items.Count != 2 || profiles.Items.OfType<MenuItem>().Any(item => !item.IsEnabled) ||
+                    profiles.Items.OfType<MenuItem>().Select(item => item.Header as string).Distinct().Count() != 2)
+                    throw new Exception("Settings must offer exactly the two explicit restore/apply-and-restart profile actions.");
+                checks.Add(language + ": settings expose Default and Codex Switch profile actions without invoking a real restart");
                 var gear = (Button)typeof(MainWindow).GetField("_homeActions", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
                 if (!restart.IsEnabled || !models.IsEnabled || !settings.Items.Contains(restart) || !settings.Items.Contains(models) || gear.ActualWidth < 28 || gear.TranslatePoint(new Point(), root).X + gear.ActualWidth > 500)
                     throw new Exception("Settings gear must expose enabled model and restart actions at the minimum width.");
@@ -184,8 +201,10 @@ internal static class ProviderUiEvidence
                 typeof(MainWindow).GetField("_switching", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(main, true);
                 typeof(MainWindow).GetMethod("UpdateControls", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(main, null);
                 if (restart.IsEnabled) throw new Exception("Restart must be disabled while a handoff is in progress.");
+                if (main.BuildModelProfileMenu().IsEnabled) throw new Exception("Profile switching must be disabled while another handoff is in progress.");
                 checks.Add(language + ": duplicate restart action disabled while busy");
             }
+            CustomTerminalUiContracts.Verify(temporary, checks, (window, name) => Capture(Surface(window), Path.Combine(args[0], name + ".png"), window.Background));
             HomeLayoutContracts.Verify(service, args[0], checks);
             SessionCounterContracts.Verify(args[0], checks);
             File.WriteAllText(Path.Combine(args[0], "ui-verification.json"), JsonSerializer.Serialize(new

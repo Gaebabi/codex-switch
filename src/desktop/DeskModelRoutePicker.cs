@@ -52,9 +52,9 @@ internal sealed class DeskModelRoutePicker : Grid
         if (_models.ContextMenu?.IsOpen == true) return;
         var settings = _manager.Settings; var choices = _manager.RoutingChoices;
         IsVisible = choices.Count != 0 || settings.SelectedRoute != null;
-        _label.Text = Loc.T(settings.Connected && settings.RouterEnabled ? "router.model" : "router.setup_model");
+        _label.Text = Loc.T(settings.Connected && (settings.IsolatedProfile || settings.DesktopProfile) ? "router.model" : "router.setup_model");
         _caption.Text = choices.FirstOrDefault(choice => choice.Id == settings.SelectedRoute)?.Label ?? Loc.T(settings.SelectedRoute == null ? "router.choose" : "router.unavailable");
         AutomationProperties.SetName(_models, Loc.T("router.model") + ": " + _caption.Text);
-        ToolTip.SetTip(_models, _caption.Text + "\n" + Loc.T(settings.Connected && settings.RouterEnabled ? "router.next_request" : "router.first_connection"));
+        ToolTip.SetTip(_models, _caption.Text + "\n" + Loc.T(settings.DesktopProfile ? "profiles.next_request" : settings.Connected && settings.IsolatedProfile ? "router.next_request" : "router.first_connection"));
     }
 }

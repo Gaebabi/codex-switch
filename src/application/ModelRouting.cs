@@ -14,9 +14,9 @@ internal sealed record ModelRouteChoice(string Id, string Label)
 internal static class ModelRouting
 {
     internal const string Model = "codex-switch";
-    internal static List<ModelRouteChoice> Choices(ModelProviderSettings settings) => settings.OpenAiModels
-        .Concat(settings.Providers.SelectMany(provider => provider.Models.Select(model =>
-            new ModelRouteChoice(model.Alias(provider.Id), model.UpstreamId + " (" + provider.Name + ")")))).ToList();
+    internal static List<ModelRouteChoice> Choices(ModelProviderSettings settings) => settings.Providers
+        .SelectMany(provider => provider.Models.Select(model =>
+            new ModelRouteChoice(model.Alias(provider.Id), model.UpstreamId + " (" + provider.Name + ")"))).ToList();
     internal static bool Registered(ModelProviderSettings settings, string? route) =>
         route != null && Choices(settings).Any(choice => choice.Id == route);
     internal static void ValidateChoices(List<ModelRouteChoice>? choices)
@@ -30,7 +30,9 @@ internal static class ModelRouting
     {
         var model = ProviderCatalog.Generic(Model);
         model["display_name"] = "Codex Switch";
+        model["priority"] = int.MaxValue;
         model["description"] = "Select the actual model in Codex Switch. New requests use the saved selection.";
+        model["default_reasoning_level"] = "medium";
         model["supported_reasoning_levels"] = new JsonArray();
         model["input_modalities"] = new JsonArray("text", "image");
         model["upgrade"] = null;

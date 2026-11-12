@@ -43,6 +43,15 @@ internal sealed class ModelProviderSettings
     public bool Connected { get; set; }
     public bool ConnectionWriteConfirmed { get; set; }
     public bool RouterEnabled { get; set; }
+    public bool IsolatedProfile { get; set; }
+    public bool DesktopProfile { get; set; }
+    public Dictionary<string, JsonNode?>? DesktopOriginalConfig { get; set; }
+    public Dictionary<string, JsonNode?>? DesktopAppliedConfig { get; set; }
+    public bool RootMigrationCompleted { get; set; }
+    public string? CustomProfilePath { get; set; }
+    public string? CustomProfileContent { get; set; }
+    public string? CustomExecutablePath { get; set; }
+    public string? CustomExecutableSha256 { get; set; }
     public string? SelectedRoute { get; set; }
     public List<ModelRouteChoice> OpenAiModels { get; set; } = new();
     public List<ModelProvider> Providers { get; set; } = new();
@@ -57,6 +66,8 @@ internal sealed class GatewayConversationRoute
 {
     public string Route { get; set; } = "";
     public bool Mixed { get; set; }
+    public string? Model { get; set; }
+    public string? ProviderId { get; set; }
 }
 
 internal sealed class ModelProviderStore
@@ -104,7 +115,7 @@ internal sealed class ModelProviderStore
             return IsMixed(previous, route);
         }
     }
-    internal void RecordSuccessfulRoute(string? session, GatewayIdentity identity, string route)
+    internal void RecordSuccessfulRoute(string? session, GatewayIdentity identity, string route, string? model = null, string? providerId = null)
     {
         var key = ConversationKey(session, identity);
         if (key == null) return;
@@ -113,8 +124,8 @@ internal sealed class ModelProviderStore
             _settings.ConversationRoutes.TryGetValue(key, out var previous);
             if (previous == null && _settings.ConversationRoutes.Count >= 10000) return;
             var mixed = IsMixed(previous, route);
-            if (previous?.Route == route && previous.Mixed == mixed) return;
-            Update(next => next.ConversationRoutes[key] = new GatewayConversationRoute { Route = route, Mixed = mixed });
+            if (previous?.Route == route && previous.Mixed == mixed && previous.Model == model && previous.ProviderId == providerId) return;
+            Update(next => next.ConversationRoutes[key] = new GatewayConversationRoute { Route = route, Mixed = mixed, Model = model, ProviderId = providerId });
         }
     }
     internal static string? RecoveryConversationKey(string? session, string auth)
