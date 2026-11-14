@@ -5,6 +5,8 @@
 
 Windows · macOS15以降 · Linuxプレビュー · MITオープンソース · **1.45.0**
 
+Windowsのモデル設定にある**コンテキストと自動圧縮**では、OpenAI共通値と外部モデルごとの値を調整できます。保存後はCodexを再起動せず次のリクエストから適用し、空欄で既定値に戻せます。モデルの実際の上限と安全余裕は維持されます。
+
 [English](../README.md) / [한국어](README.ko.md) / 日本語 / [简体中文](README.zh-CN.md)
 
 [ダウンロード](#ダウンロード) · [使い始める](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.0)

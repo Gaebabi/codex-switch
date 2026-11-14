@@ -32,6 +32,8 @@ internal sealed class ProviderModel
     public bool EnabledInCodex { get; set; } = true;
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public ProviderReasoningOptions? ReasoningOverride { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public ModelContextOptions? ContextOverride { get; set; }
     public JsonObject Metadata { get; set; } = new();
     public string Alias(string providerId) => "cs_" + providerId + "_" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(UpstreamId)))[..16].ToLowerInvariant();
 }
@@ -58,6 +60,7 @@ internal sealed class ModelProviderSettings
     public string? SelectedRoute { get; set; }
     public List<ModelRouteChoice> OpenAiModels { get; set; } = new();
     public List<ModelProvider> Providers { get; set; } = new();
+    public ModelContextOptions? NativeContext { get; set; }
     public string? EditorSelection { get; set; }
     public Dictionary<string, ProviderEditorDraft> EditorDrafts { get; set; } = new();
     public Dictionary<string, JsonNode?>? OriginalConfig { get; set; }
@@ -96,6 +99,7 @@ internal sealed class ModelProviderStore
             _settings.Providers.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != _settings.Providers.Count)
             throw new InvalidDataException("The model provider store is invalid.");
         foreach (var provider in _settings.Providers) ProviderCatalog.Validate(provider);
+        ModelContextOptions.Validate(_settings.NativeContext);
         if (_settings.SelectedRoute?.Length > 256 || _settings.SelectedRoute != null && (string.IsNullOrWhiteSpace(_settings.SelectedRoute) || _settings.SelectedRoute.Any(char.IsControl)))
             throw new InvalidDataException("The saved model routing choices are invalid.");
         ModelRouting.ValidateChoices(_settings.OpenAiModels);
@@ -205,6 +209,7 @@ internal static class ProviderCatalog
         foreach (var model in provider.Models)
         {
             ProviderReasoning.Validate(model.ReasoningOverride);
+            ModelContextOptions.Validate(model.ContextOverride);
             var metadata = model.Metadata;
             if (!validateMetadata) continue;
             ProviderReasoning.ValidateMetadata(metadata);

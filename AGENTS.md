@@ -2,6 +2,8 @@
 
 ## Unreleased model provider gateway
 
+- Windows context controls store native defaults and per-custom-model overrides separately. Apply context size and auto-compaction token thresholds through thread-scoped native configuration and same-ID handoff on the next request, preserving an active turn and both process identities. Blank values restore the original defaults; retain actual model capacity and native safety margins. Do not mutate root configuration or proxy OpenAI to implement these controls. Verify actual native token-usage events, automatic compaction and the production controls, not only saved JSON.
+
 - Native desktop integration now uses the Codex-side JSON-RPC backend in `docs/DESKTOP_MODEL_BACKEND.md`. Keep OpenAI HTTP direct and the root configuration untouched. Append validated fixed custom aliases to the same native picker; only custom threads receive scoped endpoints/catalogs. Model edits and connection handoffs must keep the native process alive. Preserve settings, unload confirmation, active-turn routing and official native checkpoint conversion on return to OpenAI. The user's one initial installation restart is separate from normal model operations. The old combined root HTTP profile remains retired; the separate-terminal-only sentence below describes the superseded implementation.
 
 - Desktop custom catalogs declare both `tool_mode=code_mode_only` and `supports_search_tool=true` for native deferred tool discovery. General code-mode flags or empty MCP configuration do not prevent account-enabled app schemas from filling a request. Preserve available tools and truthful context limits; verify actual native wire requests and real custom tool execution. Keep native model metadata unchanged.

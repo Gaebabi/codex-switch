@@ -4,6 +4,8 @@ This release delivers live Windows Codex model integration and native encrypted-
 
 Native compaction keeps the original upstream encrypted result. Recovery converts older Switch checkpoints through official native compaction without editing chat databases or old rollout bytes. Custom catalogs use native code-mode execution and deferred tool discovery to retain available tools without expanding every connected app schema into the initial request. Concurrent protected-store writers preserve the latest provider/history state.
 
+Windows model settings also expose context size and automatic compaction thresholds: shared defaults for native OpenAI models, separate overrides for each registered model, and empty fields to restore defaults. Changes apply to the next request of an existing conversation without restarting either process or interrupting an active response. Native model capacity and safety margins remain authoritative. The running backend must include the new context-setting support; the editor identifies an older backend instead of claiming live application.
+
 ## Platform and upgrade scope
 
 The live desktop backend is Windows x64 only and requires explicit configuration with the original Codex executable and existing data directories. Existing installations that already enabled it retain their current backend until their next ordinary Codex launch; replacing the Switch editor must not restart the owner client. A fresh ZIP does not silently change the desktop launch override. macOS Apple Silicon/Intel and Linux x64/ARM64 retain the shared provider/history fixes and their existing platform capabilities; a unified native picker is not claimed for those platforms.

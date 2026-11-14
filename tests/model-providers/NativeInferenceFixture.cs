@@ -26,16 +26,18 @@ internal sealed class NativeInferenceFixture : IAsyncDisposable
             while (!stop.IsCancellationRequested)
             {
                 var context = await listener.GetContextAsync().WaitAsync(stop.Token);
+                if (context.Request.IsWebSocketRequest)
+                { context.Response.StatusCode = 426; context.Response.Close(); continue; }
                 if (context.Request.HttpMethod != "POST")
                 { context.Response.StatusCode = 405; context.Response.Close(); continue; }
                 using var reader = new StreamReader(context.Request.InputStream, Encoding.UTF8);
-                using var request = new HttpRequestMessage(HttpMethod.Post, "https://chatgpt.com/backend-api/codex/responses")
+                using var request = new HttpRequestMessage(HttpMethod.Post, "https://chatgpt.com/backend-api/codex/responses" + (context.Request.Url!.AbsolutePath.EndsWith("/compact", StringComparison.Ordinal) ? "/compact" : ""))
                 { Content = new StringContent(await reader.ReadToEndAsync(stop.Token), Encoding.UTF8, "application/json") };
                 request.Headers.TryAddWithoutValidation("Authorization", context.Request.Headers["Authorization"]);
                 request.Headers.TryAddWithoutValidation("ChatGPT-Account-ID", context.Request.Headers["ChatGPT-Account-ID"]);
                 using var result = await transport.SendAsync(request, stop.Token);
                 context.Response.StatusCode = (int)result.StatusCode;
-                context.Response.ContentType = "text/event-stream";
+                context.Response.ContentType = result.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
                 var bytes = await result.Content.ReadAsByteArrayAsync(stop.Token);
                 context.Response.ContentLength64 = bytes.Length;
                 await context.Response.OutputStream.WriteAsync(bytes, stop.Token); context.Response.Close();

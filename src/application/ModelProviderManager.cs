@@ -86,6 +86,7 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
                 {
                     var prior = previous.Models.FirstOrDefault(old => old.UpstreamId == model.UpstreamId);
                     model.ReasoningOverride = prior?.ReasoningOverride;
+                    model.ContextOverride = prior?.ContextOverride;
                     model.EnabledInCodex = prior?.EnabledInCodex ?? true;
                 }
             cancellation.ThrowIfCancellationRequested();

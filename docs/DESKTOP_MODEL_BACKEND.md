@@ -30,6 +30,14 @@ Desktop custom catalogs declare `tool_mode="code_mode_only"` and `supports_searc
 
 ## Conversation routing and history
 
+### Context size and automatic compaction
+
+On Windows, open Switch's model settings and expand **Context and auto compaction**. Select **OpenAI (all native models)** for shared native defaults, or a registered model for an independent override. Enter positive whole token counts for the context window and automatic compaction threshold, then save. Empty fields restore the original configuration/provider defaults. The threshold cannot exceed the entered window. Model capacity and the native engine's safety margins still apply; these controls do not expand an upstream model's actual capacity.
+
+Settings are stored in the existing encrypted provider store and published with the catalog revision. The backend passes `model_context_window` and `model_auto_compact_token_limit` only in the selected conversation's configuration. It never changes root configuration or sends native OpenAI HTTP through Switch. The next request in an already loaded conversation uses the new values through the same-ID unload/resume path; an active response finishes with its original settings. Neither model setting requires a Codex restart. The Windows backend must include this feature; an already running older executable keeps its prior behavior until the next ordinary launch selects the upgraded backend.
+
+The native-engine contracts verify reported context sizes, automatic compaction after lowering a threshold, default restoration, changes during an active request, direct native routing and unchanged backend/native process identities. Production Windows controls are tested with fictional data in Korean and English.
+
 Custom conversations use the original `openai` provider identity with thread-scoped `openai_base_url` and `model_catalog_json` overrides. Native conversations use their original configuration. A model name alone cannot change a running native session's endpoint: the adapter unsubscribes the idle conversation, waits for confirmed unload, then resumes the same ID with its new scoped configuration and restores its settings. The native process is not restarted. Requests are serialized per conversation so unrelated native chats remain available during a handoff; active turns keep their existing destination.
 
 Ephemeral sessions have no durable resume contract, so a connection handoff is refused before unloading them. Start such sessions with the intended model. Ordinary desktop chats retain their original IDs and history.

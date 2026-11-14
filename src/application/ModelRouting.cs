@@ -27,6 +27,7 @@ internal static class ModelRouting
         foreach (var item in provider.Models)
         {
             var actual = ProviderReasoning.Metadata(item, native?.GetValueOrDefault(item.UpstreamId));
+            ModelContextOptions.ApplyMetadata(actual, item.ContextOverride);
             ProviderReasoning.ValidateMetadata(actual);
             var metadata = ProviderCatalog.Generic(item.Alias(provider.Id));
             foreach (var field in actual) metadata[field.Key] = field.Value?.DeepClone();
@@ -79,6 +80,7 @@ internal static class ModelRouting
             ProviderReasoning.ValidateMetadata(actual);
             foreach (var key in new[] { "default_reasoning_level", "supported_reasoning_levels", "supports_reasoning_summary_parameter" })
                 if (actual.TryGetPropertyValue(key, out var value)) model[key] = value?.DeepClone();
+            ModelContextOptions.ApplyMetadata(model, selected.ContextOverride);
         }
         model["input_modalities"] = new JsonArray("text", "image");
         model["upgrade"] = null;

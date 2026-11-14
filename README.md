@@ -3,9 +3,11 @@
 
 **Codex Switch (`codex-switch`) is an open-source desktop account switcher and usage quota monitor for OpenAI Codex.** See your accounts together, choose the next one, and recover an interrupted handoff. Optional quota-based switching starts **Off**.
 
-Unreleased: [native desktop model integration](docs/DESKTOP_MODEL_BACKEND.md) places registered custom models in the same Codex model picker while OpenAI connects directly. One initial backend installation restart is required; normal model edits and selection need no restart. The former combined HTTP profile remains retired.
+[Native desktop model integration](docs/DESKTOP_MODEL_BACKEND.md) places registered custom models in the same Codex model picker while OpenAI connects directly. One initial backend installation restart is required; normal model edits and selection need no restart. The former combined HTTP profile remains retired.
 
 Windows · macOS15+ · Linux preview · MIT open source · **1.45.0**
+
+Windows model settings include **Context and auto compaction**: edit native OpenAI defaults or individual external models, save, and use the new values on the next request without restarting Codex. Empty fields restore defaults; actual model limits and native safety margins remain in effect.
 
 [English](README.md) / [한국어](docs/README.ko.md) / [日本語](docs/README.ja.md) / [简体中文](docs/README.zh-CN.md)
 

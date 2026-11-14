@@ -151,7 +151,7 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
             { reply = new() { ["id"] = message["id"]!.DeepClone(), ["error"] = new JsonObject { ["code"] = -32000, ["message"] = error.Message } }; }
             await WriteClientAsync(reply).ConfigureAwait(false);
             if (catalogReceipt != null)
-                SecureFiles.AtomicWrite(Path.Combine(_config.Directory, DesktopBackendCatalog.ObservedFileName), JsonSerializer.SerializeToUtf8Bytes(new { revision = catalogReceipt, backendPid = Environment.ProcessId, nativePid = _native.Id }));
+                SecureFiles.AtomicWrite(Path.Combine(_config.Directory, DesktopBackendCatalog.ObservedFileName), JsonSerializer.SerializeToUtf8Bytes(new { revision = catalogReceipt, backendPid = Environment.ProcessId, nativePid = _native.Id, contextSettingsVersion = 1 }));
         }
         finally { gate.Release(); }
     }
@@ -258,10 +258,18 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
         }
         return response;
     }
-    private string? Configure(JsonObject parameters, string? model)
+    private string? Configure(JsonObject parameters, string? model, JsonObject? catalog = null)
     {
-        if (!ModelRouting.Owned(model)) return null;
-        var catalog = Catalog();
+        catalog ??= Catalog();
+        var revision = RouteRevision(catalog, model);
+        var context = ModelRouting.Owned(model) ? catalog["contextOverrides"]?[model!] as JsonObject : catalog["nativeContext"] as JsonObject;
+        if (context != null)
+        {
+            var scoped = parameters["config"] as JsonObject ?? new();
+            foreach (var pair in context) scoped[pair.Key] = pair.Value?.DeepClone();
+            parameters["config"] = scoped;
+        }
+        if (!ModelRouting.Owned(model)) return revision;
         if (!catalog["models"]!.AsArray().Any(item => item?["model"]?.GetValue<string>() == model))
             throw new InvalidOperationException("The selected custom model was removed. Select a registered model; the conversation was preserved.");
         EnsureGateway();
@@ -272,8 +280,11 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
         config["features.responses_websockets_v2"] = false;
         parameters["config"] = config;
         parameters["modelProvider"] = "openai";
-        return catalog["revision"]!.GetValue<string>();
+        return revision;
     }
+    private static string? RouteRevision(JsonObject catalog, string? model) => ModelRouting.Owned(model)
+        ? catalog["revision"]!.GetValue<string>() + ":" + model
+        : catalog["nativeContext"] is JsonObject context && context.Count != 0 ? SecureFiles.Hash(context.ToJsonString()) : null;
     private void EnsureGateway()
     {
         lock (_gatewayGate)
@@ -311,12 +322,13 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
     {
         if (model == null) return;
         var custom = ModelRouting.Owned(model);
-        var revision = custom ? Catalog()["revision"]!.GetValue<string>() : null;
+        var catalog = Catalog();
+        var revision = RouteRevision(catalog, model);
         if (previous != null && previous.Custom == custom && previous.Revision == revision) return;
         if (previous?.Ephemeral == true) throw new InvalidOperationException("An ephemeral conversation cannot be unloaded and resumed. Start it with the desired model.");
         if (_active.ContainsKey(thread)) throw new InvalidOperationException("Wait for the current turn to finish before changing model connections.");
         var resume = new JsonObject { ["threadId"] = thread, ["model"] = model, ["excludeTurns"] = true };
-        Configure(resume, model);
+        Configure(resume, model, catalog);
         _handoffs[thread] = 0;
         try
         {

@@ -21,7 +21,8 @@ internal static class DesktopBackendCatalog
         if (version != ReviewedClientVersion)
             throw new InvalidDataException("Live desktop models require the reviewed native Codex CLI " + ReviewedClientVersion + ". The existing configuration and catalog were preserved.");
     }
-    internal static string Revision(ModelProviderSettings settings) => SecureFiles.Hash(ModelRouting.Catalog(settings).ToJsonString());
+    internal static string Revision(ModelProviderSettings settings) => SecureFiles.Hash(new JsonObject
+    { ["models"] = ModelRouting.Catalog(settings), ["nativeContext"] = settings.NativeContext?.Configuration() }.ToJsonString());
     internal static async Task<string> PublishAsync(string directory, ModelProviderSettings settings, CancellationToken cancellation)
     {
         var executable = settings.DesktopBackendExecutable ?? throw new InvalidDataException("The native Codex executable is not configured.");
@@ -33,7 +34,11 @@ internal static class DesktopBackendCatalog
         var result = new JsonObject
         {
             ["revision"] = revision, ["catalogPath"] = catalogPath,
-            ["models"] = JsonNode.Parse(list.GetProperty("data").GetRawText())
+            ["models"] = JsonNode.Parse(list.GetProperty("data").GetRawText()),
+            ["nativeContext"] = settings.NativeContext?.Configuration(),
+            ["contextOverrides"] = new JsonObject(settings.Providers.SelectMany(provider => provider.Models
+                .Where(model => model.ContextOverride != null).Select(model => new System.Collections.Generic.KeyValuePair<string, JsonNode?>(
+                    model.Alias(provider.Id), model.ContextOverride!.Configuration()))))
         };
         SecureFiles.AtomicWrite(Path.Combine(directory, FileName), JsonSerializer.SerializeToUtf8Bytes(result));
         return revision;

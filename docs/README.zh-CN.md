@@ -5,6 +5,8 @@
 
 Windows · macOS15及以上 · Linux预览版 · MIT开源 · **1.45.0**
 
+Windows模型设置中的**上下文与自动压缩**支持调整OpenAI通用值和各外部模型的独立值。保存后无需重启Codex，下次请求即生效；留空恢复默认值。模型的实际限制和原生安全余量保持有效。
+
 [English](../README.md) / [한국어](README.ko.md) / [日本語](README.ja.md) / 简体中文
 
 [下载](#下载) · [开始使用](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.0)

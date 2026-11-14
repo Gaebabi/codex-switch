@@ -18,11 +18,13 @@ internal static class DesktopBackendContracts
         await using var custom = new NativeInferenceFixture();
         var auth = "{\"OPENAI_API_KEY\":\"fictional-native-key\"}";
         var nativeCatalog = Path.Combine(home, "native.json");
-        File.WriteAllText(nativeCatalog, new JsonObject { ["models"] = new JsonArray(ProviderCatalog.Generic("fixture-native")) }.ToJsonString());
+        var nativeMetadata = ProviderCatalog.Generic("fixture-native"); nativeMetadata["context_window"] = 256000;
+        File.WriteAllText(nativeCatalog, new JsonObject { ["models"] = new JsonArray(nativeMetadata) }.ToJsonString());
         var config = "model=\"fixture-native\"\nmodel_provider=\"openai\"\ncli_auth_credentials_store=\"file\"\nopenai_base_url=" + JsonSerializer.Serialize(native.BaseUrl) +
             "\nmodel_catalog_json=" + JsonSerializer.Serialize(nativeCatalog) + "\n[features]\nshell_tool=false\ncode_mode=false\nenable_request_compression=false\n";
         File.WriteAllText(Path.Combine(home, "auth.json"), auth); File.WriteAllText(Path.Combine(home, "config.toml"), config);
         var model = new ProviderModel { UpstreamId = "fixture-custom", Metadata = ProviderCatalog.Generic("fixture-custom") };
+        model.Metadata["context_window"] = 96000;
         var provider = new ModelProvider { Name = "Fictional custom", BaseUrl = custom.BaseUrl, ApiKey = "fictional-custom-key", Models = new() { model } };
         var store = new ModelProviderStore(directory); store.Update(settings => { settings.Providers.Add(provider); settings.SelectedRoute = model.Alias(provider.Id); });
         var second = new ModelProviderStore(directory);
@@ -114,6 +116,14 @@ internal static class DesktopBackendContracts
             var final = JsonNode.Parse(File.ReadAllText(Path.Combine(directory, DesktopBackendCatalog.ObservedFileName)))!;
             check("Model edits and provider changes keep both backend process identities", pid == rpc.OwnedProcessId && final["nativePid"]!.GetValue<int>() == nativePid && !Process.GetProcessById(nativePid).HasExited);
             check("Native authentication and root configuration remain byte-for-byte unchanged", File.ReadAllText(Path.Combine(home, "auth.json")) == auth && File.ReadAllText(Path.Combine(home, "config.toml")) == config);
+            store.Update(settings => settings.Providers.Add(provider));
+            await using var contextManager = new ModelProviderManager(directory, (_, _) => null, codexHome: home);
+            await DesktopBackendCatalog.PublishAsync(directory, store.Read(), cancellation);
+            await ModelContextContracts.Run(rpc, contextManager, native, custom, alias, home, cancellation, check);
+            await Models();
+            var contextFinal = JsonNode.Parse(File.ReadAllText(Path.Combine(directory, DesktopBackendCatalog.ObservedFileName)))!;
+            check("Context and compaction changes preserve both process identities and original authentication/configuration", pid == rpc.OwnedProcessId && contextFinal["nativePid"]!.GetValue<int>() == nativePid &&
+                File.ReadAllText(Path.Combine(home, "auth.json")) == auth && File.ReadAllText(Path.Combine(home, "config.toml")) == config);
         }
         finally { Environment.SetEnvironmentVariable("CODEX_SWITCH_BACKEND_CONFIG", originalEnvironment); }
     }

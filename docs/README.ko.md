@@ -5,6 +5,8 @@
 
 Windows · macOS15+ · Linux 미리보기 · MIT 오픈소스 · **1.45.0**
 
+Windows 모델 설정의 **컨텍스트 및 자동 압축**에서 OpenAI 공통값과 외부 모델별 값을 조정할 수 있습니다. 저장하면 Codex 재실행 없이 다음 요청부터 적용하며, 빈 값은 기본값으로 복원합니다. 실제 모델 한도와 네이티브 안전 여유는 유지됩니다.
+
 [English](../README.md) / 한국어 / [日本語](README.ja.md) / [简体中文](README.zh-CN.md)
 
 [다운로드](#다운로드) · [시작하기](INSTALL.md) · [업데이트 내용](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.0)

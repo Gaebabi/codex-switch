@@ -438,6 +438,8 @@ internal sealed class Upstreams : HttpMessageHandler
     internal int StorageFailures;
     internal int StreamFailures;
     internal bool InvalidNativeLabel;
+    internal bool AllowNativeCompaction;
+    internal int InputTokens = 1;
     internal JsonObject? NativeMetadata;
     internal Func<Task>? BeforeNextResponse;
     internal TaskCompletionSource DiscoveryEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -487,17 +489,24 @@ internal sealed class Upstreams : HttpMessageHandler
             return new(HttpStatusCode.OK) { Content = content };
         }
         var model = JsonNode.Parse(body!)!["model"]!.GetValue<string>();
+        if (AllowNativeCompaction && (request.RequestUri.AbsolutePath.EndsWith("/compact", StringComparison.Ordinal) ||
+            JsonNode.Parse(body!)?["input"] is JsonArray compactInput && compactInput.Any(item => item?["type"]?.GetValue<string>() == "compaction_trigger")))
+        {
+            var legacy = request.RequestUri.AbsolutePath.EndsWith("/compact", StringComparison.Ordinal);
+            return new(HttpStatusCode.OK) { Content = new StringContent(legacy ? NativeRecoveryContracts.RecoveryUpstream.CompactJson : NativeRecoveryContracts.RecoveryUpstream.Stream,
+                Encoding.UTF8, legacy ? "application/json" : "text/event-stream") };
+        }
         if (NativeMetadata != null && request.RequestUri.Host == "chatgpt.com" && JsonNode.Parse(body!)?["reasoning"]?["effort"]?.GetValue<string>() is string effort &&
             !NativeMetadata["supported_reasoning_levels"]!.AsArray().Any(level => level!["effort"]!.GetValue<string>() == effort))
             return new(HttpStatusCode.BadRequest) { Content = new StringContent("{\"error\":{\"message\":\"Unsupported reasoning effort\",\"param\":\"reasoning.effort\"}}", Encoding.UTF8, "application/json") };
-        return new(HttpStatusCode.OK) { Content = new StringContent(Stream(model), Encoding.UTF8, "text/event-stream") };
+        return new(HttpStatusCode.OK) { Content = new StringContent(Stream(model, InputTokens), Encoding.UTF8, "text/event-stream") };
     }
-    internal static string Stream(string model)
+    internal static string Stream(string model, int inputTokens = 1)
     {
         var id = "fixture_" + Guid.NewGuid().ToString("N"); var itemId = "message_" + Guid.NewGuid().ToString("N");
         var part = new { type = "output_text", text = "fixture-ok", annotations = Array.Empty<object>() };
         var item = new { id = itemId, type = "message", role = "assistant", status = "completed", content = new[] { part } };
-        var response = new { id, @object = "response", status = "completed", model, output = new[] { item }, usage = new { input_tokens = 1, output_tokens = 1, total_tokens = 2, input_tokens_details = new { cached_tokens = 0 }, output_tokens_details = new { reasoning_tokens = 0 } } };
+        var response = new { id, @object = "response", status = "completed", model, output = new[] { item }, usage = new { input_tokens = inputTokens, output_tokens = 1, total_tokens = inputTokens + 1, input_tokens_details = new { cached_tokens = 0 }, output_tokens_details = new { reasoning_tokens = 0 } } };
         string Event(object value) => "data: " + JsonSerializer.Serialize(value) + "\n\n";
         return Event(new { type = "response.created", response = new { id, status = "in_progress", model, output = Array.Empty<object>() } }) +
             Event(new { type = "response.output_item.added", output_index = 0, item = new { id = itemId, type = "message", role = "assistant", status = "in_progress", content = Array.Empty<object>() } }) +

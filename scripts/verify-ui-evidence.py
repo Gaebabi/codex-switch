@@ -22,8 +22,11 @@ extra=re.compile(r'en-(dark|light)-(language|history|settings)'+('' if args.os==
 tooltip=re.compile(r'en-(dark|light)-tooltip'+('' if args.os=='Windows' else '-native')+r'\.png') if args.os!='Linux' else None
 cpu=re.compile(r'en-(dark|light)-cpu-(setup|denied|available|menu|setup-compact|denied-compact)\.png') if args.os=='Windows' else None
 disk=re.compile(r'en-(dark|light)-disk-(normal|pressure|unknown|compact|tooltip)\.png') if args.os=='Windows' else None
-paths=sorted(p for p in args.source.glob('*.png') if pattern.fullmatch(p.name) or extra.fullmatch(p.name) or tooltip and tooltip.fullmatch(p.name) or cpu and cpu.fullmatch(p.name) or disk and disk.fullmatch(p.name))
-if len(paths)!=(38 if args.os=='Windows' else 12 if args.os=='Linux' else 20):raise SystemExit('Complete declared language/theme/size/settings/menu/history/tooltip/CPU/disk evidence required')
+context=re.compile(r'(en|ko)-(dark|light)-context\.png') if args.os=='Windows' else None
+paths=sorted(p for p in args.source.glob('*.png') if pattern.fullmatch(p.name) or extra.fullmatch(p.name) or tooltip and tooltip.fullmatch(p.name) or cpu and cpu.fullmatch(p.name) or disk and disk.fullmatch(p.name) or context and context.fullmatch(p.name))
+if len(paths)!=(42 if args.os=='Windows' else 12 if args.os=='Linux' else 20):raise SystemExit('Complete declared language/theme/size/settings/menu/history/tooltip/CPU/disk/context evidence required')
+if args.os=='Windows' and not any(case.get('name')=='context-settings' and case.get('passed') is True and case.get('nativeAndCustomSaved') is True for case in data['cases']):
+    raise SystemExit('Actual native and custom context-control persistence required')
 args.destination.mkdir(parents=True,exist_ok=True)
 images=[]
 for path in paths:
