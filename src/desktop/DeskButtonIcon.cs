@@ -4,7 +4,7 @@ using Avalonia.Media;
 
 namespace CodexAccountDesk;
 
-internal enum DeskButtonIconKind { More, Refresh, Plus, Up, Down, Sun, Moon, Launch, Settings, Eye, EyeOff, Copy }
+internal enum DeskButtonIconKind { More, Refresh, Plus, Up, Down, Sun, Moon, Launch, Settings, Eye, EyeOff, Copy, Models }
 
 internal sealed class DeskButtonIcon : Control
 {
@@ -19,6 +19,7 @@ internal sealed class DeskButtonIcon : Control
     private static readonly Geometry Eye = Geometry.Parse("M2 12C4 8 7 5 12 5S20 8 22 12C20 16 17 19 12 19S4 16 2 12Z M15 12A3 3 0 1 1 9 12A3 3 0 1 1 15 12");
     private static readonly Geometry EyeOff = Geometry.Parse("M2 12C4 8 7 5 12 5S20 8 22 12C20 16 17 19 12 19S4 16 2 12Z M15 12A3 3 0 1 1 9 12A3 3 0 1 1 15 12 M3 3L21 21");
     private static readonly Geometry Copy = Geometry.Parse("M9 9H21V21H9Z M15 9V3H3V15H9");
+    private static readonly Geometry Models = Geometry.Parse("M4 5H20M4 12H20M4 19H20 M9 3V7M15 10V14M9 17V21");
     private readonly DeskButtonIconKind _kind;
     private readonly IBrush _brush;
     public DeskButtonIcon(DeskButtonIconKind kind, IBrush brush) { _kind = kind; _brush = brush; IsHitTestVisible = false; Width = Height = 14; }
@@ -33,7 +34,7 @@ internal sealed class DeskButtonIcon : Control
             else context.DrawGeometry(null, new Pen(_brush, 1.8, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round),
                 _kind switch { DeskButtonIconKind.Refresh => Refresh, DeskButtonIconKind.Plus => Plus, DeskButtonIconKind.Up => Up,
                     DeskButtonIconKind.Down => Down, DeskButtonIconKind.Sun => Sun, DeskButtonIconKind.Launch => Launch, DeskButtonIconKind.Settings => Settings,
-                    DeskButtonIconKind.Eye => Eye, DeskButtonIconKind.EyeOff => EyeOff, DeskButtonIconKind.Copy => Copy, _ => Moon });
+                    DeskButtonIconKind.Eye => Eye, DeskButtonIconKind.EyeOff => EyeOff, DeskButtonIconKind.Copy => Copy, DeskButtonIconKind.Models => Models, _ => Moon });
         }
     }
 }

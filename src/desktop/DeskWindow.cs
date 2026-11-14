@@ -38,7 +38,15 @@ internal sealed class DeskWindow : Window
     private Grid _accounts = new(), _hardware = new();
     private ScrollViewer _accountScroll = new();
     private StackPanel _sessionValues = new(), _volumes = new();
+    private async Task OpenModelProvidersAsync()
+    {
+        if (_service == null || _providerEditing) return;
+        var window = new DeskProvidersWindow(_theme, _service);
+        try { _providerEditing = true; await RunAsync(async _ => await window.ShowDialog(this)); }
+        finally { _providerEditing = false; _routePicker?.Refresh(); }
+    }
     private TextBlock _status = new();
+    private DeskModelRoutePicker? _routePicker;
     private Button _add = new(), _cancel = new(), _refresh = new(), _settingsButton = new(), _startCodex = new();
     private MenuItem _restartCodex = new();
     private Button _stampTitles = new();
@@ -182,9 +190,16 @@ internal sealed class DeskWindow : Window
         else { Grid.SetRow(toolbar, 1); shell.Children.Add(toolbar); }
         if (_service != null)
         {
-            var routePicker = new DeskModelRoutePicker(_theme, _service.ModelProviders, error => { _statusMessage = error.Message; Build(); })
-            { Margin = new Thickness(8, 2, 8, 4), IsEnabled = _ready && !Exiting && _switch == null && _login == null };
-            Grid.SetRow(routePicker, 2); shell.Children.Add(routePicker);
+            var modelProviders = _service.ModelProviders;
+            modelProviders.ModelCatalogChanged = _sessions.NotifyModelCatalogChangedAsync;
+            modelProviders.CatalogRefreshUpdated = () => OnUi(() =>
+            {
+                if (modelProviders.CatalogRefreshStatus.DisplayMessage is not string message) return;
+                _statusMessage = message; _status.Text = message; ToolTip.SetTip(_status, message); _routePicker?.Refresh();
+            });
+            var routePicker = _routePicker = new DeskModelRoutePicker(_theme, modelProviders, error => { if (!Exiting) { _statusMessage = error.Message; _status.Text = error.Message; } }, manage: () => _ = OpenModelProvidersAsync())
+            { Margin = new Thickness(0, 0, 4, 0), IsEnabled = _ready && !Exiting && _switch == null && _login == null };
+            actions.Children.Insert(0, routePicker);
         }
         _accounts = new Grid { Margin = new Thickness(4, 1) };
         _accountScroll = new ScrollViewer { Content = _accounts, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
@@ -314,10 +329,11 @@ internal sealed class DeskWindow : Window
         }
         finally { _login.Dispose(); _login = null; if (!Exiting) RenderAccounts(); }
     }
-    private async Task SwitchAsync(AccountProfile profile, bool automatic = false, bool creditPause = false, bool restart = false)
+    private async Task SwitchAsync(AccountProfile profile, bool automatic = false, bool creditPause = false, bool restart = false, CodexModelProfile? modelProfile = null)
     {
         if (!_ready || _switch != null || _login != null || _stampingTitles) return;
         var creditPending = _service!.Vault.Data.ActivePendingSwitch;
+        if (modelProfile != null && creditPending != null) { _statusMessage = Loc.T("남은 채팅 재개 작업을 먼저 처리해 주세요."); _status.Text = _statusMessage; return; }
         restart |= creditPending?.RestartOnly == true;
         if (restart && creditPending != null && !creditPending.RestartOnly) { _statusMessage = Loc.T("남은 채팅 재개 작업을 먼저 처리해 주세요."); _status.Text = _statusMessage; return; }
         creditPause |= creditPending is { CreditProtectionPause: true, Phase: not SwitchPhase.CreditPaused } && creditPending.TargetAccountKey == profile.Key && !AccountAutomation.CanUse(_service, profile, DateTimeOffset.UtcNow);
@@ -331,10 +347,10 @@ internal sealed class DeskWindow : Window
                 await using var backend = new DesktopSwitchBackend(_service, _sessions, profile.Key, includeUnfinished: restart);
                 var coordinator = new AccountSwitchCoordinator(backend,
                     plan => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.PendingSwitch = plan; _service.Vault.Save(); } },
-                    plan => OnUi(() => { _phase = plan.Phase; RenderAccounts(); }), UserErrors.Describe);
+                    plan => OnUi(() => { _phase = plan.Phase; RenderAccounts(); }), UserErrors.Describe, _service.ApplyModelProfileAsync, _service.ValidateModelProfileAsync);
                 var pending = _service.Vault.Data.ActivePendingSwitch;
                 if (pending != null && !pending.CreditProtectionPause && pending.TargetAccountKey != profile.Key) throw new InvalidOperationException(Loc.T("남은 채팅 재개 작업을 먼저 처리해 주세요."));
-                var plan = pending ?? (restart ? await coordinator.PrepareRestartAsync(profile.Key, DateTimeOffset.UtcNow, _switch.Token) :
+                var plan = pending ?? (restart ? await coordinator.PrepareRestartAsync(profile.Key, DateTimeOffset.UtcNow, _switch.Token, modelProfile) :
                     await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, _switch.Token, creditPause));
                 if (plan.CreditProtectionPause)
                 {
@@ -565,18 +581,7 @@ internal sealed class DeskWindow : Window
             if (selection != null) await RunAsync(_ => { lock (service.Vault.SyncRoot) { service.Vault.Data.Drives = selection.ToList(); service.Vault.Save(); } _drives.Configure(selection); return Task.CompletedTask; });
         };
         var current = new MenuItem { Header = Loc.T("현재 계정 가져오기") }; current.Click += async (_, _) => await RefreshAsync();
-        var providers = new MenuItem { Header = Loc.T("providers.title"), IsEnabled = service != null && _switch == null && _login == null }; providers.Click += async (_, _) =>
-        {
-            if (_service == null || _switch != null || _login != null) return;
-            var window = new DeskProvidersWindow(_theme, _service);
-            try { _providerEditing = true; await RunAsync(async _ => await window.ShowDialog(this)); }
-            finally { _providerEditing = false; }
-            if (window.RestartRequested)
-            {
-                var currentAccount = _service.Accounts.SingleOrDefault(profile => profile.IsCurrent);
-                if (currentAccount != null) await SwitchAsync(currentAccount, restart: true);
-            }
-        };
+        var providers = new MenuItem { Header = Loc.T("providers.title"), IsEnabled = service != null && _switch == null && _login == null }; providers.Click += async (_, _) => await OpenModelProvidersAsync();
         var quit = new MenuItem { Header = Loc.T("종료") }; quit.Click += async (_, _) => await ExitAsync();
         var automatic = new MenuItem { Name = "AutomaticSwitchMenuItem", Header = Loc.T(service?.Vault.Data.AutomaticSwitchEnabled == true ? "auto.on" : "auto.off"), IsEnabled = service != null, ItemsSource = BuildAutomaticSwitchMenu().ItemsSource };
         var languages = BuildLanguageSettings();
@@ -591,7 +596,14 @@ internal sealed class DeskWindow : Window
             IsEnabled = _ready && !Exiting && _switch == null && _login == null && !_providerEditing && service?.Accounts.Any(profile => profile.IsCurrent) == true && service.Vault.Data.ActivePendingSwitch is not { RestartOnly: false } };
         ToolTip.SetTip(_restartCodex, Loc.T("restart.help"));
         _restartCodex.Click += (_, _) => { var currentAccount = _service?.Accounts.SingleOrDefault(profile => profile.IsCurrent); if (currentAccount != null) _ = SwitchAsync(currentAccount, restart: true); };
-        var items = new List<object> { providers, automatic, _restartCodex, new Separator(), languages, appearance, new Separator(), drives, current };
+        var profiles = new MenuItem { Name = "CodexModelProfileMenuItem", Header = Loc.T("profiles.title"),
+            IsEnabled = _restartCodex.IsEnabled && service?.Vault.Data.ActivePendingSwitch == null };
+        {
+            var choice = new MenuItem { Name = "NativeModelProfileMenuItem", Header = Loc.T("profiles.native") };
+            choice.Click += (_, _) => { var account = service?.Accounts.SingleOrDefault(value => value.IsCurrent); if (account != null) _ = SwitchAsync(account, restart: true, modelProfile: CodexModelProfile.Native); };
+            profiles.Items.Add(choice);
+        }
+        var items = new List<object> { providers, automatic, _restartCodex, profiles, new Separator(), languages, appearance, new Separator(), drives, current };
         if (_startCodex.IsVisible)
         {
             var start = new MenuItem { Header = Loc.T("msg.linux_start_codex"), IsEnabled = _startCodex.IsEnabled };

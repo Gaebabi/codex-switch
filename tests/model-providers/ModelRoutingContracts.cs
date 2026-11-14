@@ -20,18 +20,27 @@ internal static class ModelRoutingContracts
         using var client = ProviderCatalog.CreateHttpClient(); client.Timeout = TimeSpan.FromSeconds(30);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "fictional-router-token");
         client.DefaultRequestHeaders.Add("ChatGPT-Account-ID", "fictional-router-account");
-        async Task<HttpResponseMessage> Send(string session, Guid? turn = null, JsonArray? input = null)
+        async Task<HttpResponseMessage> Send(string session, Guid? turn = null, JsonArray? input = null, string? model = null)
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, manager.BaseUrl + "/responses");
             request.Headers.Add("session_id", session);
-            var body = new JsonObject { ["model"] = ModelRouting.Model, ["stream"] = true,
+            var body = new JsonObject { ["model"] = model ?? ModelRouting.Model, ["stream"] = true,
                 ["input"] = input ?? new JsonArray(new JsonObject { ["role"] = "user", ["content"] = "fictional-router-input" }) };
             if (turn != null) body["client_metadata"] = new JsonObject { ["x-codex-turn-metadata"] = JsonSerializer.Serialize(new { turn_id = turn }) };
             request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
             return await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         }
-        using (var missing = await Send("unset"))
-            check("A fixed model without an explicit selection refuses before upstream inference", missing.StatusCode == HttpStatusCode.BadRequest && !upstream.Requests.Any(request => request.Method == "POST"));
+        check("Initial registration seeds a legacy default once without retargeting it on later additions", manager.Settings.SelectedRoute == aliasA);
+        manager.SelectRoute(aliasB);
+        await manager.SetModelEnabledAsync(aliasA, false, CancellationToken.None);
+        using (var fixedRoute = await Send("fixed-hidden-route", model: aliasA))
+        {
+            await fixedRoute.Content.ReadAsStringAsync();
+            check("A hidden fixed model still resumes its existing chat independently of the global legacy selection", fixedRoute.IsSuccessStatusCode && upstream.Requests.Last().Host == "a.example.invalid" && manager.Settings.SelectedRoute == aliasB);
+        }
+        await manager.SaveAsync(a.Id, a.Name, a.BaseUrl, "", CancellationToken.None);
+        check("Visibility survives same-model rediscovery and encrypted store reload", !new ModelProviderStore(directory).Read().Providers.Single(p => p.Id == a.Id).Models.Single().EnabledInCodex);
+        await manager.SetModelEnabledAsync(aliasA, true, CancellationToken.None);
         var catalog = Path.Combine(directory, "model-providers-catalog.json");
         await File.WriteAllTextAsync(catalog, "fictional-unchanged-catalog");
         manager.SelectRoute(aliasA);
@@ -103,9 +112,13 @@ internal static class ModelRoutingContracts
             check("Malformed discovery cannot persist an unreadable routing cache or lose saved providers", !malformed.IsSuccessStatusCode && new ModelProviderStore(directory).Read().OpenAiModels.SequenceEqual(savedChoices) && manager.Settings.Providers.Count == 2);
         upstream.InvalidNativeLabel = false;
         using (var response = await client.GetAsync(manager.BaseUrl + "/models?client_version=0.167.0")) response.EnsureSuccessStatusCode();
-        manager.SelectRoute("fixture-openai");
-        using (var native = await Send("native-selection")) await native.Content.ReadAsStringAsync();
-        check("The virtual model can route to original OpenAI with its own authentication", upstream.Requests.Last().Host == "chatgpt.com" && upstream.Requests.Last().Token == "fictional-router-token" && upstream.Requests.Last().Account == "fictional-router-account" && JsonNode.Parse(upstream.Requests.Last().Body!)!["model"]!.GetValue<string>() == "fixture-openai");
+        check("Switch choices contain only registered custom models after OpenAI discovery", manager.RoutingChoices.Select(choice => choice.Id).SequenceEqual(new[] { aliasA, aliasB }));
+        refused = false;
+        try { manager.SelectRoute("fixture-openai"); } catch (InvalidOperationException) { refused = true; }
+        check("Native OpenAI selection belongs to Codex and cannot replace the saved custom route", refused && manager.Settings.SelectedRoute == aliasB);
+        using (var native = await client.PostAsync(manager.BaseUrl + "/responses", new StringContent("{\"model\":\"fixture-openai\",\"stream\":true,\"input\":[]}", Encoding.UTF8, "application/json")))
+            native.EnsureSuccessStatusCode();
+        check("Native OpenAI requests keep their own model and authentication independent of the Switch choice", upstream.Requests.Last().Host == "chatgpt.com" && upstream.Requests.Last().Token == "fictional-router-token" && upstream.Requests.Last().Account == "fictional-router-account" && JsonNode.Parse(upstream.Requests.Last().Body!)!["model"]!.GetValue<string>() == "fixture-openai" && manager.Settings.SelectedRoute == aliasB);
         manager.SelectRoute(aliasB); await manager.RemoveAsync(b.Id, CancellationToken.None); start = upstream.Requests.Count;
         using (var removed = await Send("removed-selection"))
             check("Deleting the selected provider refuses explicitly without a fallback", removed.StatusCode == HttpStatusCode.BadRequest && manager.Settings.SelectedRoute == aliasB && upstream.Requests.Skip(start).All(request => request.Method != "POST"));

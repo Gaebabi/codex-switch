@@ -228,18 +228,20 @@ try:
     before_login_vault = (root / 'share/CodexAccountDesk/accounts.vault').read_bytes()
     # Add/Refresh/Settings are the final three 28px titlebar actions.
     run(['xdotool', 'mousemove', '--window', window, '430', '17', 'click', '1'])
+    login_control_left = 8 + 30 + 4
     def login_controls(pending):
         raw = root / 'login-controls-private.xwd'
         png = root / 'login-controls-private.png'
         run(['xwd', '-silent', '-id', window, '-out', str(raw)])
         run(['convert', str(raw), str(png)])
         with Image.open(png) as current, Image.open(results / 'ordinary-dark-500x360.png') as before:
-            changed = current.convert('RGB').crop((8, 4, 55, 30)).tobytes() != before.convert('RGB').crop((8, 4, 55, 30)).tobytes()
+            control = (login_control_left, 4, login_control_left + 47, 30)
+            changed = current.convert('RGB').crop(control).tobytes() != before.convert('RGB').crop(control).tobytes()
             return changed == pending
     wait_for(lambda: login_controls(True), 40)
     check('Ordinary account addition exposes native pending-login cancellation at minimum size', not (ordinary_home / 'auth.json').exists())
     capture(window, pid, 'ordinary-pending-login-500x360')
-    run(['xdotool', 'mousemove', '--window', window, '32', '17', 'click', '1'])
+    run(['xdotool', 'mousemove', '--window', window, str(login_control_left + 24), '17', 'click', '1'])
     # The title-update button becomes visible beneath the pointer when Cancel
     # disappears. Compare the restored toolbar with the same unhovered state.
     run(['xdotool', 'mousemove', '--window', window, '250', '180'])

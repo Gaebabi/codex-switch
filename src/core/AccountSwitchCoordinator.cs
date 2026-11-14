@@ -11,6 +11,7 @@ namespace CodexAccountDesk;
 
 internal enum SwitchPhase { BackingUp, Closing, Applying, Launching, Resuming, Finished, CreditPaused }
 internal enum ChatResumeState { Pending, Sending, Resumed, AlreadyRunning, Completed, Unconfirmed, Failed }
+internal enum CodexModelProfile { Native, Switch }
 
 internal sealed class SwitchChat
 {
@@ -34,6 +35,8 @@ internal sealed class AccountSwitchPlan
     public SwitchPhase Phase { get; set; }
     public bool AccountApplied { get; set; }
     public bool RestartOnly { get; set; }
+    public CodexModelProfile? ModelProfile { get; set; }
+    public bool ModelProfileApplied { get; set; }
     public bool Automatic { get; set; }
     public int AutomaticRecoveryAttempts { get; set; }
     public bool DesktopRestartRequired { get; set; }
@@ -47,6 +50,7 @@ internal static class SwitchRecovery
 {
     public static AccountSwitchPlan? Active(AccountSwitchPlan? plan) =>
         plan is { Phase: SwitchPhase.Finished, AccountApplied: true, DesktopRestartRequired: false, CreditProtectionPause: false } &&
+        (plan.ModelProfile == null || plan.ModelProfileApplied) &&
         plan.Chats != null && plan.Chats.All(chat => chat != null && chat.ResumeState is ChatResumeState.Resumed or ChatResumeState.AlreadyRunning or ChatResumeState.Completed)
             ? null : plan;
 }
@@ -95,8 +99,12 @@ internal sealed class AccountSwitchCoordinator
     private readonly Action<AccountSwitchPlan?> _save;
     private readonly Action<AccountSwitchPlan> _changed;
     private readonly Func<Exception, string> _describeError;
-    public AccountSwitchCoordinator(IAccountSwitchBackend backend, Action<AccountSwitchPlan?> save, Action<AccountSwitchPlan> changed, Func<Exception, string> describeError)
-    { _backend = backend; _save = save; _changed = changed; _describeError = describeError; }
+    private readonly Func<CodexModelProfile, CancellationToken, Task>? _applyModelProfile;
+    private readonly Func<CodexModelProfile, CancellationToken, Task>? _validateModelProfile;
+    public AccountSwitchCoordinator(IAccountSwitchBackend backend, Action<AccountSwitchPlan?> save, Action<AccountSwitchPlan> changed, Func<Exception, string> describeError,
+        Func<CodexModelProfile, CancellationToken, Task>? applyModelProfile = null,
+        Func<CodexModelProfile, CancellationToken, Task>? validateModelProfile = null)
+    { _backend = backend; _save = save; _changed = changed; _describeError = describeError; _applyModelProfile = applyModelProfile; _validateModelProfile = validateModelProfile; }
     public async Task<AccountSwitchPlan> PrepareAsync(string target, DateTimeOffset at, CancellationToken cancellation, bool creditPause = false)
     {
         var source = await _backend.CurrentAccountAsync(cancellation);
@@ -106,14 +114,14 @@ internal sealed class AccountSwitchCoordinator
         var plan = new AccountSwitchPlan { SourceAccountKey = source, TargetAccountKey = target, RequestedAt = at, Chats = chats.ToList(), CreditProtectionPause = creditPause, PreventDepletedSourceRelaunch = creditPause };
         Checkpoint(plan, SwitchPhase.BackingUp); return plan;
     }
-    public async Task<AccountSwitchPlan> PrepareRestartAsync(string account, DateTimeOffset at, CancellationToken cancellation)
+    public async Task<AccountSwitchPlan> PrepareRestartAsync(string account, DateTimeOffset at, CancellationToken cancellation, CodexModelProfile? modelProfile = null)
     {
         var source = await _backend.CurrentAccountAsync(cancellation);
         if (source == null || source != account) throw new InvalidOperationException(Loc.T("restart.login_changed"));
         var chats = await _backend.CaptureAsync(cancellation);
         foreach (var chat in chats) { chat.BackupTitle = chat.OriginalTitle; chat.NameSaved = true; }
         if (await _backend.CurrentAccountAsync(cancellation) != source) throw new InvalidOperationException(Loc.T("restart.login_changed"));
-        var plan = new AccountSwitchPlan { SourceAccountKey = source, TargetAccountKey = source, RequestedAt = at, Chats = chats.ToList(), RestartOnly = true };
+        var plan = new AccountSwitchPlan { SourceAccountKey = source, TargetAccountKey = source, RequestedAt = at, Chats = chats.ToList(), RestartOnly = true, ModelProfile = modelProfile };
         Checkpoint(plan, SwitchPhase.BackingUp); return plan;
     }
     public async Task RetargetCreditPauseAsync(AccountSwitchPlan plan, string target, CancellationToken cancellation)
@@ -161,11 +169,16 @@ internal sealed class AccountSwitchCoordinator
         plan.AutomaticRecoveryAttempts = Math.Clamp(plan.AutomaticRecoveryAttempts, 0, MaximumRecoveryAttempts);
         var shutdownConfirmed = plan.AccountApplied || plan.Phase is SwitchPhase.Applying or SwitchPhase.Launching or SwitchPhase.Resuming;
         var launchAttempted = false;
+        var closedThisRun = false;
         try
         {
+            if (plan.ModelProfile != null && (!plan.RestartOnly || plan.CreditProtectionPause || _applyModelProfile == null || !Enum.IsDefined(plan.ModelProfile.Value)))
+                throw new InvalidOperationException("The saved Codex model profile restart cannot be applied by this client.");
             var current = await _backend.CurrentAccountAsync(cancellation);
             if (plan.RestartOnly && (plan.SourceAccountKey == null || plan.SourceAccountKey != plan.TargetAccountKey || current != plan.SourceAccountKey))
                 throw new InvalidOperationException(Loc.T("restart.login_changed"));
+            if (plan.ModelProfile is { } requestedProfile && !plan.ModelProfileApplied && _validateModelProfile != null)
+                await _validateModelProfile(requestedProfile, cancellation);
             if (plan.CreditProtectionPause && (plan.SourceAccountKey == null || plan.SourceAccountKey != plan.TargetAccountKey || current != plan.SourceAccountKey))
                 throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
             if (plan.CreditProtectionPause && plan.Phase == SwitchPhase.CreditPaused) return false;
@@ -198,6 +211,7 @@ internal sealed class AccountSwitchCoordinator
                     await _backend.CloseDesktopAsync(cancellation);
                 }, cancellation);
                 shutdownConfirmed = true;
+                closedThisRun = true;
                 cancellation.ThrowIfCancellationRequested();
                 if (await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
                     throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
@@ -220,6 +234,21 @@ internal sealed class AccountSwitchCoordinator
                 }, cancellation);
                 }
                 plan.AccountApplied = true; Checkpoint(plan, SwitchPhase.Launching);
+            }
+            if (plan.ModelProfile is { } modelProfile && !plan.ModelProfileApplied)
+            {
+                if (!closedThisRun)
+                {
+                    plan.DesktopRestartRequired = true; Checkpoint(plan, SwitchPhase.Closing);
+                    await _backend.CloseDesktopAsync(cancellation);
+                    shutdownConfirmed = true;
+                }
+                cancellation.ThrowIfCancellationRequested();
+                if (await _backend.CurrentAccountAsync(cancellation) != plan.SourceAccountKey)
+                    throw new InvalidOperationException(Loc.T("restart.login_changed"));
+                Checkpoint(plan, SwitchPhase.Applying);
+                await _applyModelProfile!(modelProfile, cancellation);
+                plan.ModelProfileApplied = true; Checkpoint(plan, SwitchPhase.Launching);
             }
             while (true)
             {

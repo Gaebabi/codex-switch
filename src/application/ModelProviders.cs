@@ -29,8 +29,11 @@ internal sealed class ProviderModel
 {
     public string UpstreamId { get; set; } = "";
     public bool GenericMetadata { get; set; }
+    public bool EnabledInCodex { get; set; } = true;
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public ProviderReasoningOptions? ReasoningOverride { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public ModelContextOptions? ContextOverride { get; set; }
     public JsonObject Metadata { get; set; } = new();
     public string Alias(string providerId) => "cs_" + providerId + "_" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(UpstreamId)))[..16].ToLowerInvariant();
 }
@@ -43,9 +46,21 @@ internal sealed class ModelProviderSettings
     public bool Connected { get; set; }
     public bool ConnectionWriteConfirmed { get; set; }
     public bool RouterEnabled { get; set; }
+    public bool IsolatedProfile { get; set; }
+    public bool DesktopProfile { get; set; }
+    public bool DesktopBackendEnabled { get; set; }
+    public string? DesktopBackendExecutable { get; set; }
+    public Dictionary<string, JsonNode?>? DesktopOriginalConfig { get; set; }
+    public Dictionary<string, JsonNode?>? DesktopAppliedConfig { get; set; }
+    public bool RootMigrationCompleted { get; set; }
+    public string? CustomProfilePath { get; set; }
+    public string? CustomProfileContent { get; set; }
+    public string? CustomExecutablePath { get; set; }
+    public string? CustomExecutableSha256 { get; set; }
     public string? SelectedRoute { get; set; }
     public List<ModelRouteChoice> OpenAiModels { get; set; } = new();
     public List<ModelProvider> Providers { get; set; } = new();
+    public ModelContextOptions? NativeContext { get; set; }
     public string? EditorSelection { get; set; }
     public Dictionary<string, ProviderEditorDraft> EditorDrafts { get; set; } = new();
     public Dictionary<string, JsonNode?>? OriginalConfig { get; set; }
@@ -57,6 +72,8 @@ internal sealed class GatewayConversationRoute
 {
     public string Route { get; set; } = "";
     public bool Mixed { get; set; }
+    public string? Model { get; set; }
+    public string? ProviderId { get; set; }
 }
 
 internal sealed class ModelProviderStore
@@ -69,6 +86,11 @@ internal sealed class ModelProviderStore
     {
         _directory = Path.GetFullPath(directory); _path = Path.Combine(_directory, "model-providers.vault");
         _settings = new();
+        Reload();
+    }
+    private void Reload()
+    {
+        _settings = new();
         if (!File.Exists(_path)) return;
         var plaintext = VaultProtection.Unprotect(SecureFiles.ReadPrivateBytes(_path), _directory);
         try { _settings = JsonSerializer.Deserialize<ModelProviderSettings>(plaintext) ?? throw new InvalidDataException("The model provider store is empty."); }
@@ -77,6 +99,7 @@ internal sealed class ModelProviderStore
             _settings.Providers.Select(p => p.Id).Distinct(StringComparer.Ordinal).Count() != _settings.Providers.Count)
             throw new InvalidDataException("The model provider store is invalid.");
         foreach (var provider in _settings.Providers) ProviderCatalog.Validate(provider);
+        ModelContextOptions.Validate(_settings.NativeContext);
         if (_settings.SelectedRoute?.Length > 256 || _settings.SelectedRoute != null && (string.IsNullOrWhiteSpace(_settings.SelectedRoute) || _settings.SelectedRoute.Any(char.IsControl)))
             throw new InvalidDataException("The saved model routing choices are invalid.");
         ModelRouting.ValidateChoices(_settings.OpenAiModels);
@@ -90,7 +113,7 @@ internal sealed class ModelProviderStore
             draft.Validate();
         }
     }
-    public ModelProviderSettings Read() { lock (_gate) return Clone(_settings); }
+    public ModelProviderSettings Read() { lock (_gate) { Reload(); return Clone(_settings); } }
     internal bool RequiresPortableHistory(string? session, GatewayIdentity identity, string route)
     {
         // Refused requests must not alter the source route: the owner still needs it
@@ -99,23 +122,24 @@ internal sealed class ModelProviderStore
         if (key == null) return true;
         lock (_gate)
         {
+            Reload();
             _settings.ConversationRoutes.TryGetValue(key, out var previous);
             if (previous == null && _settings.ConversationRoutes.Count >= 10000) return true;
             return IsMixed(previous, route);
         }
     }
-    internal void RecordSuccessfulRoute(string? session, GatewayIdentity identity, string route)
+    internal void RecordSuccessfulRoute(string? session, GatewayIdentity identity, string route, string? model = null, string? providerId = null)
     {
         var key = ConversationKey(session, identity);
         if (key == null) return;
-        lock (_gate)
+        Update(next =>
         {
-            _settings.ConversationRoutes.TryGetValue(key, out var previous);
-            if (previous == null && _settings.ConversationRoutes.Count >= 10000) return;
+            next.ConversationRoutes.TryGetValue(key, out var previous);
+            if (previous == null && next.ConversationRoutes.Count >= 10000) return;
             var mixed = IsMixed(previous, route);
-            if (previous?.Route == route && previous.Mixed == mixed) return;
-            Update(next => next.ConversationRoutes[key] = new GatewayConversationRoute { Route = route, Mixed = mixed });
-        }
+            if (previous?.Route == route && previous.Mixed == mixed && previous.Model == model && previous.ProviderId == providerId) return;
+            next.ConversationRoutes[key] = new GatewayConversationRoute { Route = route, Mixed = mixed, Model = model, ProviderId = providerId };
+        });
     }
     internal static string? RecoveryConversationKey(string? session, string auth)
     {
@@ -136,6 +160,8 @@ internal sealed class ModelProviderStore
     {
         lock (_gate)
         {
+            using var transaction = new VaultTransaction(_path);
+            Reload();
             var next = Clone(_settings); update(next);
             var plaintext = JsonSerializer.SerializeToUtf8Bytes(next);
             try { SecureFiles.CreatePrivateDirectory(_directory); SecureFiles.AtomicWrite(_path, VaultProtection.Protect(plaintext, _directory)); }
@@ -183,8 +209,10 @@ internal static class ProviderCatalog
         foreach (var model in provider.Models)
         {
             ProviderReasoning.Validate(model.ReasoningOverride);
+            ModelContextOptions.Validate(model.ContextOverride);
             var metadata = model.Metadata;
             if (!validateMetadata) continue;
+            ProviderReasoning.ValidateMetadata(metadata);
             foreach (var key in new[] { "slug", "display_name", "shell_type", "visibility" })
                 if (metadata[key] is not System.Text.Json.Nodes.JsonValue value || !value.TryGetValue<string>(out _)) throw new InvalidDataException("The provider's Codex catalog has an invalid required field.");
             if (metadata["supported_reasoning_levels"] is not JsonArray || metadata["experimental_supported_tools"] is not JsonArray || metadata["truncation_policy"] is not JsonObject ||
@@ -247,6 +275,18 @@ internal static class ProviderCatalog
         ["context_window"] = null, ["experimental_supported_tools"] = new JsonArray(), ["input_modalities"] = new JsonArray("text"),
         ["model_messages"] = new JsonObject { ["instructions_template"] = FallbackInstructions.Value }, ["service_tiers"] = new JsonArray(), ["additional_speed_tiers"] = new JsonArray()
     };
+    internal static byte[] Serialize(JsonObject catalog)
+    {
+        if (catalog["models"] is not JsonArray models) throw new InvalidDataException("The model catalog has no model list.");
+        foreach (var entry in models)
+        {
+            if (entry is not JsonObject model) throw new InvalidDataException("The model catalog contains an invalid entry.");
+            ProviderReasoning.ValidateMetadata(model);
+        }
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(catalog);
+        if (bytes.Length > MaximumCatalogBytes) throw new InvalidDataException("The combined model catalog exceeds the client limit.");
+        return bytes;
+    }
     internal static async Task<byte[]> ReadLimitedAsync(HttpContent content, int maximum, CancellationToken cancellation)
     {
         if (content.Headers.ContentLength > maximum) throw new InvalidDataException("The provider response is too large.");

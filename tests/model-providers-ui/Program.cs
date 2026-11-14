@@ -34,6 +34,12 @@ internal static class ProviderUiEvidence
     [STAThread]
     private static int Main(string[] args)
     {
+        if (args.SequenceEqual(new[] { "--no-daemon", "--profile", "codex-switch" }) && Environment.GetEnvironmentVariable("CODEX_SWITCH_TEST_ENV_REPORT") is string environmentReport)
+        {
+            var clean = new[] { "OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN", "OPENAI_BASE_URL", "OPENAI_IDENTITY_TOKEN_FILE", "OPENAI_IDENTITY_TOKEN_AUDIENCE" }.All(name => Environment.GetEnvironmentVariable(name) == null);
+            File.WriteAllText(environmentReport, JsonSerializer.Serialize(new { clean, home = Environment.GetEnvironmentVariable("CODEX_HOME") }));
+            return 0;
+        }
         if (args.Length != 1 || !Path.IsPathFullyQualified(args[0])) throw new ArgumentException("Provide an absolute evidence directory.");
         Directory.CreateDirectory(args[0]);
         var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
@@ -41,7 +47,7 @@ internal static class ProviderUiEvidence
         Directory.CreateDirectory(temporary);
         var fixtureProvider = new ModelProvider { Name = "Fictional GPT API", BaseUrl = "https://fixture.example.invalid/v1", ApiKey = "fictional-ui-key", Models = new() { new ProviderModel { UpstreamId = "gpt-fixture", GenericMetadata = true, Metadata = ProviderCatalog.Generic("gpt-fixture") } } };
         var data = Path.Combine(temporary, "data");
-        new ModelProviderStore(data).Update(settings => settings.Providers.Add(fixtureProvider));
+        new ModelProviderStore(data).Update(settings => { settings.Providers.Add(fixtureProvider); settings.OpenAiModels.Add(new ModelRouteChoice("fixture-openai", "Native OpenAI")); });
         var service = new AccountService(new AccountVault(data), Path.Combine(temporary, "absent-home"));
         var manager = new ModelProviderManager(data, (_, _) => null, new System.Net.Http.HttpClient(new ProviderUiHttp()));
         typeof(AccountService).GetField("_modelProviders", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(service, manager);
@@ -84,10 +90,31 @@ internal static class ProviderUiEvidence
                 if (editor.Draft.Step != 1 || ready.Visibility != Visibility.Visible || entry.Visibility != Visibility.Collapsed || (string)primary.Content != Loc.T("providers.connect") || key.Password != copied)
                     throw new Exception("The real Save action must retain fields and advance to Connect.");
                 var routePicker = Field<ModelRoutePicker>(window, "_routePicker");
-                routePicker.CreateMenu().Items.OfType<MenuItem>().Single(item => item.Tag as string == manager.Settings.Providers.Single().Models.Single().Alias(saved.Id)).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
-                if (manager.Settings.SelectedRoute != routePicker.Models.Tag as string || !primary.IsEnabled || manager.Settings.Connected)
-                    throw new Exception("The actual routing dropdown must save the selected model without connecting Codex.");
-                checks.Add(language + "/" + dark + ": routing dropdown persists the actual choice and enables initial connection without changing Codex");
+                var refreshStatus = typeof(ModelProviderManager).GetField("_catalogRefreshStatus", BindingFlags.NonPublic | BindingFlags.Instance)!;
+                foreach (var state in new[] { ModelCatalogRefreshState.Pending, ModelCatalogRefreshState.Failed })
+                {
+                    var status = new ModelCatalogRefreshStatus(state, state == ModelCatalogRefreshState.Failed ? "fixture-live-refresh-error" : null);
+                    refreshStatus.SetValue(manager, status); routePicker.Refresh();
+                    var expected = state == ModelCatalogRefreshState.Failed ? Loc.F("router.refresh_failed", "fixture-live-refresh-error") : Loc.T("router.refresh_pending");
+                    if (routePicker.Models.ToolTip is not string tooltip || !tooltip.Contains(expected) || tooltip.Contains("router.refresh_"))
+                        throw new Exception("The routing picker must render localized pending and failed live-refresh statuses.");
+                }
+                refreshStatus.SetValue(manager, new ModelCatalogRefreshStatus(ModelCatalogRefreshState.None)); routePicker.Refresh();
+                checks.Add(language + "/" + dark + ": pending and failed live-refresh statuses render without unresolved localization keys");
+                if (routePicker.CreateMenu().Items.OfType<MenuItem>().Any(item => item.Tag as string == "fixture-openai") || routePicker.CreateMenu().Items.OfType<MenuItem>().Count(item => item.Tag is string) != 1)
+                    throw new Exception("Provider setup must show only registered custom models, never cached native OpenAI choices.");
+                checks.Add(language + "/" + dark + ": provider setup keeps native OpenAI models out of the custom picker");
+                var visibilityMenu = routePicker.CreateMenu();
+                var toggle = visibilityMenu.Items.OfType<MenuItem>().Single(item => item.Tag is string);
+                toggle.IsChecked = false; toggle.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                if (manager.Settings.Providers.Single().Models.Single().EnabledInCodex || !primary.IsEnabled || manager.Settings.Connected || !toggle.StaysOpenOnClick)
+                    throw new Exception("The actual model menu must persist visibility without changing the route or connecting Codex.");
+                toggle.IsChecked = true; toggle.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                Layout(routePicker, 32, 32);
+                if (routePicker.Models.ActualWidth != 30 || routePicker.Models.Content is not System.Windows.Shapes.Path)
+                    throw new Exception("The model control must use a compact vector icon.");
+                Capture(visibilityMenu, Path.Combine(args[0], "model-menu-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"), 350, 180);
+                checks.Add(language + "/" + dark + ": compact icon and persistent popup toggle retain independent model visibility");
                 Capture(root, Path.Combine(args[0], "saved-connection-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"));
                 checks.Add(language + "/" + dark + ": failed and successful saves preserve input and advance only after persistence");
                 Field<Button>(window, "_back").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -101,6 +128,30 @@ internal static class ProviderUiEvidence
                     throw new Exception("Explicit Load must restore the persisted provider values.");
                 checks.Add(language + "/" + dark + ": close/reopen preserves drafts and explicit Load restores saved values");
                 Field<Button>(reopened, "_primary").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                var contextPanel = Field<StackPanel>(reopened, "_contextPanel");
+                void PickContext(int index) => reopened.CreateContextMenu().Items.OfType<MenuItem>().ElementAt(index).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                var contextWindow = Field<TextBox>(reopened, "_contextWindow");
+                var contextCompact = Field<TextBox>(reopened, "_contextCompact");
+                var contextSave = contextPanel.Children.OfType<Button>().Single();
+                contextWindow.Text = "128000"; contextCompact.Text = "100000";
+                contextSave.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (manager.Settings.NativeContext != new ModelContextOptions(128000, 100000)) throw new Exception("The OpenAI context controls must persist independently of provider credentials.");
+                PickContext(1); contextWindow.Text = "64000"; contextCompact.Text = "48000";
+                contextSave.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (manager.Settings.Providers.Single().Models.Single().ContextOverride != new ModelContextOptions(64000, 48000)) throw new Exception("The custom context controls must persist per model.");
+                contextCompact.Text = "64001"; contextSave.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (manager.Settings.Providers.Single().Models.Single().ContextOverride?.AutoCompactTokenLimit != 48000 || !Field<TextBlock>(reopened, "_status").Text.Contains(Loc.T("context.invalid")))
+                    throw new Exception("Invalid context input must remain visible and preserve the saved value.");
+                PickContext(0);
+                if (contextWindow.Text != "128000" || contextCompact.Text != "100000") throw new Exception("Changing the context target must restore its own values.");
+                contextWindow.Text = ""; contextCompact.Text = ""; contextSave.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (manager.Settings.NativeContext != null) throw new Exception("Blank context fields must restore native defaults.");
+                PickContext(1);
+                var contextExpander = ((StackPanel)Field<StackPanel>(reopened, "_ready").Parent).Children.OfType<Expander>().Single(item => item.Name == "ContextSettings");
+                contextExpander.IsExpanded = true; Layout(reopenedRoot); Field<ScrollViewer>(reopened, "_scroll").ScrollToEnd();
+                Capture(reopenedRoot, Path.Combine(args[0], "context-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"));
+                contextExpander.IsExpanded = false; Field<ScrollViewer>(reopened, "_scroll").ScrollToTop();
+                checks.Add(language + "/" + dark + ": context controls save independent native/custom values, reject invalid input and restore defaults");
                 var advanced = Field<StackPanel>(reopened, "_ready").Children.OfType<Expander>().Single(); advanced.IsExpanded = true;
                 var advancedPanel = (StackPanel)advanced.Content;
                 var reasoning = advancedPanel.Children.OfType<Expander>().Single(control => control.Name == "ReasoningSettings"); reasoning.IsExpanded = true;
@@ -124,11 +175,15 @@ internal static class ProviderUiEvidence
                 var main = new MainWindow(service, new Program.Options { DataDirectory = data, CodexHome = Path.Combine(temporary, "absent-home"), UiEvidenceDirectory = args[0] });
                 var mainRoot = Surface(main); Layout(mainRoot, 500, 360);
                 var mainPicker = Field<ModelRoutePicker>(main, "_routePicker");
-                if (mainPicker.Visibility != Visibility.Visible || mainPicker.Models.Tag as string != manager.Settings.SelectedRoute ||
+                if (mainPicker.CreateMenu().Items.OfType<MenuItem>().Count(item => item.Tag is string) != 1 ||
+                    !mainPicker.CreateMenu().Items.OfType<MenuItem>().Any(item => item.Header as string == Loc.T("providers.title")))
+                    throw new Exception("Home must retain custom model toggles and the provider settings action.");
+                checks.Add(language + "/" + dark + ": Home reopens with saved custom model visibility and provider settings");
+                if (mainPicker.Visibility != Visibility.Visible || mainPicker.Models.ActualWidth != 30 ||
                     mainPicker.Models.TranslatePoint(new Point(), mainRoot).X + mainPicker.Models.ActualWidth > 500)
-                    throw new Exception("The Home dropdown must retain the selection and fit the minimum width.");
+                    throw new Exception("The Home icon must fit the minimum width.");
                 Capture(mainRoot, Path.Combine(args[0], "router-home-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"), 500, 360);
-                checks.Add(language + "/" + dark + ": the Home dropdown retains selection and fits the minimum client layout");
+                checks.Add(language + "/" + dark + ": the Home icon fits the minimum client layout without a separate model row");
                 main.Close();
             }
             var fixtureClaims = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"sub\":\"home-ui-fixture\",\"email\":\"home@example.invalid\"}")).TrimEnd('=').Replace('+', '-').Replace('/', '_');
@@ -146,6 +201,10 @@ internal static class ProviderUiEvidence
                 var restart = (MenuItem)typeof(MainWindow).GetField("_restartCodex", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
                 var models = (MenuItem)typeof(MainWindow).GetField("_providers", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
                 var settings = main.HomeActionsMenu();
+                var profiles = settings.Items.OfType<MenuItem>().Single(item => item.Name == "CodexModelProfileMenuItem");
+                if (!profiles.IsEnabled || profiles.Items.Count != 1 || profiles.Items.OfType<MenuItem>().Single().Name != "NativeModelProfileMenuItem")
+                    throw new Exception("Settings must offer native restoration without an action that redirects OpenAI through Switch.");
+                checks.Add(language + ": settings expose native restoration and cannot activate the retired combined profile");
                 var gear = (Button)typeof(MainWindow).GetField("_homeActions", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
                 if (!restart.IsEnabled || !models.IsEnabled || !settings.Items.Contains(restart) || !settings.Items.Contains(models) || gear.ActualWidth < 28 || gear.TranslatePoint(new Point(), root).X + gear.ActualWidth > 500)
                     throw new Exception("Settings gear must expose enabled model and restart actions at the minimum width.");
@@ -184,10 +243,53 @@ internal static class ProviderUiEvidence
                 typeof(MainWindow).GetField("_switching", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(main, true);
                 typeof(MainWindow).GetMethod("UpdateControls", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(main, null);
                 if (restart.IsEnabled) throw new Exception("Restart must be disabled while a handoff is in progress.");
+                if (main.BuildModelProfileMenu().IsEnabled) throw new Exception("Profile switching must be disabled while another handoff is in progress.");
                 checks.Add(language + ": duplicate restart action disabled while busy");
             }
+            CustomTerminalUiContracts.Verify(temporary, checks, (window, name) => Capture(Surface(window), Path.Combine(args[0], name + ".png"), window.Background));
+            var backendData = Path.Combine(temporary, "backend-ui");
+            new ModelProviderStore(backendData).Update(settings => { settings.Providers.Add(fixtureProvider); settings.DesktopBackendEnabled = true; });
+            var backendService = new AccountService(new AccountVault(backendData), Path.Combine(temporary, "backend-home"));
+            var backendManager = backendService.ModelProviders;
+            foreach (var language in new[] { "en", "ko" })
+            foreach (var dark in new[] { true, false })
+            {
+                Loc.SetLanguage(language);
+                var draft = ProviderEditorDraft.From(fixtureProvider); draft.Step = 1;
+                backendManager.RememberEditorDraft(fixtureProvider.Id, draft);
+                var window = new ModelProvidersWindow(new Window(), new Burn0Theme(dark), backendService);
+                var surface = Surface(window); Layout(surface);
+                if ((string)Field<Button>(window, "_primary").Content != Loc.T("providers.close") ||
+                    Field<TextBlock>(window, "_status").Text != Loc.T("providers.desktop_ready"))
+                    throw new Exception("Integrated models must lead to the current Codex picker without a separate-terminal setup step.");
+                Capture(surface, Path.Combine(args[0], "backend-models-" + language + "-" + (dark ? "dark" : "light") + ".png"), window.Background);
+                window.Close();
+            }
+            backendService.StopAsync().GetAwaiter().GetResult();
+            checks.Add("Integrated model readiness renders in both languages and themes with the existing native picker as the next action.");
             HomeLayoutContracts.Verify(service, args[0], checks);
             SessionCounterContracts.Verify(args[0], checks);
+            var menuData = Path.Combine(temporary, "menu-matrix");
+            new ModelProviderStore(menuData).Update(settings => settings.Providers.Add(new ModelProvider
+            {
+                Name = "Local models", BaseUrl = "https://menu.example.invalid/v1", ApiKey = "fictional-menu-key",
+                Models = new() {
+                    new ProviderModel { UpstreamId = "qwen-fixture", Metadata = ProviderCatalog.Generic("qwen-fixture") },
+                    new ProviderModel { UpstreamId = "gemma-fixture", EnabledInCodex = false, Metadata = ProviderCatalog.Generic("gemma-fixture") },
+                    new ProviderModel { UpstreamId = "long-model-name-with-a-large-context-window-and-quantization-details", Metadata = ProviderCatalog.Generic("long-model-name-with-a-large-context-window-and-quantization-details") }
+                }
+            }));
+            var menuManager = new ModelProviderManager(menuData, (_, _) => null);
+            foreach (var dark in new[] { true, false })
+            {
+                var theme = new Burn0Theme(dark);
+                var picker = new ModelRoutePicker(theme, menuManager, error => throw error, manage: () => { });
+                var menu = picker.CreateMenu(); Capture(menu, Path.Combine(args[0], "model-menu-mixed-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"), 350, 300);
+                if (menu.Items.OfType<MenuItem>().Count(item => item.IsCheckable && item.IsChecked) != 2 || menu.Items.OfType<MenuItem>().Count(item => item.IsCheckable && !item.IsChecked) != 1)
+                    throw new Exception("The popup must retain independent enabled and disabled model states.");
+            }
+            menuManager.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            checks.Add("Mixed model visibility and long labels render in both themes through the production popup.");
             File.WriteAllText(Path.Combine(args[0], "ui-verification.json"), JsonSerializer.Serialize(new
             {
                 checks,

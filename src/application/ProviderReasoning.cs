@@ -42,11 +42,24 @@ internal static class ProviderReasoning
         return result;
     }
 
+    internal static void ValidateMetadata(JsonObject metadata)
+    {
+        if (metadata.TryGetPropertyValue("supports_reasoning_summary_parameter", out var summary) &&
+            (summary is not System.Text.Json.Nodes.JsonValue flag || !flag.TryGetValue<bool>(out _)))
+            throw new InvalidDataException("The model's supports_reasoning_summary_parameter must be a boolean when supplied.");
+        if (metadata["supported_reasoning_levels"] is not JsonArray levels || levels.Any(level =>
+            level is not JsonObject item || item["effort"] is not System.Text.Json.Nodes.JsonValue effort || !effort.TryGetValue<string>(out _) ||
+            item["description"] is not System.Text.Json.Nodes.JsonValue description || !description.TryGetValue<string>(out _)))
+            throw new InvalidDataException("The model's supported reasoning levels must contain effort and description strings.");
+        if (metadata["default_reasoning_level"] is { } selected &&
+            (selected is not System.Text.Json.Nodes.JsonValue value || !value.TryGetValue<string>(out _)))
+            throw new InvalidDataException("The model's default reasoning level must be a string when supplied.");
+    }
+
     // A generic Responses route supports the standard effort field. Other optional
     // reasoning fields still require catalog support; never discard a chosen effort.
     internal static string? PrepareRequest(ProviderModel model, JsonObject metadata, JsonObject body, bool nativeMatch)
     {
-        if (!model.GenericMetadata && model.ReasoningOverride == null) return null;
         if (body["reasoning"] == null) return null;
         if (body["reasoning"] is not JsonObject reasoning) return "Reasoning must contain a supported effort. Refresh the model list or configure this model's reasoning levels in Switch > Models.";
         if (reasoning["effort"] != null)

@@ -40,6 +40,59 @@ async Task Refuses(string name, Func<Task> action)
 { try { await action(); } catch (Exception e) when (e is ArgumentException or InvalidOperationException or IOException or InvalidDataException) { Check(name, true); return; } throw new Exception(name); }
 var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp", "CodexSwitchModelProviders", Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
+if (args.Length == 5 && args[0] == "--backend-only" && args[1] == "--codex" && args[3] == "--backend")
+{
+    try
+    {
+        await DesktopBackendContracts.Run(args[2], args[4], root, Check);
+        Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks }));
+    }
+    finally { Directory.Delete(root, true); }
+    return;
+}
+if (args.Contains("--recovery-only"))
+{
+    try
+    {
+        await NativeRecoveryContracts.Run(root, Check);
+        if (args.Length == 3 && args[1] == "--codex") await NativeRecoveryContracts.RunNative(args[2], root, Check);
+        Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks }));
+    }
+    finally { Directory.Delete(root, true); }
+    return;
+}
+if (args.Contains("--reasoning-only"))
+{
+    try
+    {
+        await ReasoningControlContracts.Run(root, Check);
+        if (args.Length == 3 && args[1] == "--codex") await ReasoningNativeContracts.Run(args[2], root, Check);
+        Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, scope = "Native reasoning metadata and exact selected-strength forwarding; fictional providers." }));
+    }
+    finally { Directory.Delete(root, true); }
+    return;
+}
+if (args.Contains("--history-only"))
+{
+    try
+    {
+        await HistoryTransferContracts.Run(root, Check);
+        if (args.Length == 3 && args[1] == "--codex") await HistoryNativeContracts.Run(args[2], root, Check);
+        Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, scope = "Protected portable history and source-only summary contracts; disposable conversations." }));
+    }
+    finally { Directory.Delete(root, true); }
+    return;
+}
+if (args.Length == 2 && args[0] == "--desktop-profiles-only")
+{
+    try
+    {
+        await DesktopProfileContracts.Run(args[1], root, Check);
+        Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, scope = "Isolated native desktop-profile contracts with fictional upstreams." }));
+    }
+    finally { Directory.Delete(root, true); }
+    return;
+}
 if (args.Contains("--retry-only"))
 {
     try
@@ -178,10 +231,11 @@ try
     }
     using (var chunked = new HttpRequestMessage(HttpMethod.Post, manager.BaseUrl + "/responses/compact"))
     {
+        chunked.Headers.Add("session_id", "large-portable-compaction");
         chunked.Headers.TransferEncodingChunked = true;
         chunked.Content = new StringContent(largeBody, Encoding.UTF8, "application/json");
         using var result = await client.SendAsync(chunked); await result.Content.ReadAsStringAsync();
-        Check("Chunked compaction above 64 MiB preserves the entire original input", result.IsSuccessStatusCode && handler.Requests.Last().Body == largeBody && handler.Requests.Last().Path.EndsWith("/compact"));
+        Check("Chunked native compaction above 64 MiB preserves the complete request and native compact endpoint", result.IsSuccessStatusCode && handler.Requests.Last().Body == largeBody && handler.Requests.Last().Path.EndsWith("/responses/compact"));
     }
     using (var result = await client.PostAsync(manager.BaseUrl + "/images/edits", new StringContent(largeBody, Encoding.UTF8, "application/json")))
     {
@@ -338,7 +392,13 @@ try
     var reloaded = new ModelProviderStore(Path.Combine(root, "providers")).Read();
     Check("Encrypted provider updates and mixed-route state survive reload", reloaded.Providers.Single(p => p.Id == a.Id).ApiKey == "fictional-key-a-new" && reloaded.ConversationRoutes.Values.Any(route => route.Mixed));
     if (args.Length == 2 && args[0] == "--codex")
+    {
         await NativeClient.Run(args[1], nativeHome, manager, handler, Check);
+        await DesktopProfileContracts.Run(args[1], root, Check);
+        await HistoryNativeContracts.Run(args[1], root, Check);
+        await NativeRecoveryContracts.RunNative(args[1], root, Check);
+        await ReasoningNativeContracts.Run(args[1], root, Check);
+    }
     await manager.RemoveAsync(b.Id, CancellationToken.None);
     using (var result = await Send(aliasB, "removed")) Check("Removing a provider fails stale choices explicitly", result.StatusCode == HttpStatusCode.NotFound);
     var cancellationHandler = new Upstreams { BlockDiscovery = true };
@@ -354,6 +414,10 @@ try
     await GatewayRetryContracts.Run(root, Check);
     await ProviderEditorContracts.Run(root, Check);
     await ModelRoutingContracts.Run(root, Check);
+    await IsolatedProfileContracts.Run(root, Check);
+    await HistoryTransferContracts.Run(root, Check);
+    await NativeRecoveryContracts.Run(root, Check);
+    await ReasoningControlContracts.Run(root, Check);
     Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, nativeClient = args.Contains("--codex"), framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription, scope = "Disposable encrypted storage, loopback gateway and fictional upstreams; no owner home, account or desktop." }, new JsonSerializerOptions { WriteIndented = true }));
 }
 finally
@@ -374,6 +438,9 @@ internal sealed class Upstreams : HttpMessageHandler
     internal int StorageFailures;
     internal int StreamFailures;
     internal bool InvalidNativeLabel;
+    internal bool AllowNativeCompaction;
+    internal int InputTokens = 1;
+    internal JsonObject? NativeMetadata;
     internal Func<Task>? BeforeNextResponse;
     internal TaskCompletionSource DiscoveryEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     internal GatedStream? Slow;
@@ -395,7 +462,7 @@ internal sealed class Upstreams : HttpMessageHandler
         if (request.Method == HttpMethod.Get)
         {
             if (BlockDiscovery) { DiscoveryEntered.TrySetResult(); await Task.Delay(Timeout.Infinite, cancellation); }
-            var data = request.RequestUri.Host == "chatgpt.com" ? new JsonObject { ["models"] = new JsonArray(ProviderCatalog.Generic("fixture-openai")) } : new JsonObject { ["data"] = new JsonArray(new JsonObject { ["id"] = "shared-model" }) };
+            var data = request.RequestUri.Host == "chatgpt.com" ? new JsonObject { ["models"] = new JsonArray(NativeMetadata?.DeepClone() ?? ProviderCatalog.Generic("fixture-openai")) } : new JsonObject { ["data"] = new JsonArray(new JsonObject { ["id"] = "shared-model" }) };
             if (InvalidNativeLabel && request.RequestUri.Host == "chatgpt.com") data["models"]![0]!["display_name"] = new string('x', 513);
             if (MatchingReasoning && request.RequestUri.Host == "chatgpt.com")
             {
@@ -422,14 +489,24 @@ internal sealed class Upstreams : HttpMessageHandler
             return new(HttpStatusCode.OK) { Content = content };
         }
         var model = JsonNode.Parse(body!)!["model"]!.GetValue<string>();
-        return new(HttpStatusCode.OK) { Content = new StringContent(Stream(model), Encoding.UTF8, "text/event-stream") };
+        if (AllowNativeCompaction && (request.RequestUri.AbsolutePath.EndsWith("/compact", StringComparison.Ordinal) ||
+            JsonNode.Parse(body!)?["input"] is JsonArray compactInput && compactInput.Any(item => item?["type"]?.GetValue<string>() == "compaction_trigger")))
+        {
+            var legacy = request.RequestUri.AbsolutePath.EndsWith("/compact", StringComparison.Ordinal);
+            return new(HttpStatusCode.OK) { Content = new StringContent(legacy ? NativeRecoveryContracts.RecoveryUpstream.CompactJson : NativeRecoveryContracts.RecoveryUpstream.Stream,
+                Encoding.UTF8, legacy ? "application/json" : "text/event-stream") };
+        }
+        if (NativeMetadata != null && request.RequestUri.Host == "chatgpt.com" && JsonNode.Parse(body!)?["reasoning"]?["effort"]?.GetValue<string>() is string effort &&
+            !NativeMetadata["supported_reasoning_levels"]!.AsArray().Any(level => level!["effort"]!.GetValue<string>() == effort))
+            return new(HttpStatusCode.BadRequest) { Content = new StringContent("{\"error\":{\"message\":\"Unsupported reasoning effort\",\"param\":\"reasoning.effort\"}}", Encoding.UTF8, "application/json") };
+        return new(HttpStatusCode.OK) { Content = new StringContent(Stream(model, InputTokens), Encoding.UTF8, "text/event-stream") };
     }
-    private static string Stream(string model)
+    internal static string Stream(string model, int inputTokens = 1)
     {
         var id = "fixture_" + Guid.NewGuid().ToString("N"); var itemId = "message_" + Guid.NewGuid().ToString("N");
         var part = new { type = "output_text", text = "fixture-ok", annotations = Array.Empty<object>() };
         var item = new { id = itemId, type = "message", role = "assistant", status = "completed", content = new[] { part } };
-        var response = new { id, @object = "response", status = "completed", model, output = new[] { item }, usage = new { input_tokens = 1, output_tokens = 1, total_tokens = 2, input_tokens_details = new { cached_tokens = 0 }, output_tokens_details = new { reasoning_tokens = 0 } } };
+        var response = new { id, @object = "response", status = "completed", model, output = new[] { item }, usage = new { input_tokens = inputTokens, output_tokens = 1, total_tokens = inputTokens + 1, input_tokens_details = new { cached_tokens = 0 }, output_tokens_details = new { reasoning_tokens = 0 } } };
         string Event(object value) => "data: " + JsonSerializer.Serialize(value) + "\n\n";
         return Event(new { type = "response.created", response = new { id, status = "in_progress", model, output = Array.Empty<object>() } }) +
             Event(new { type = "response.output_item.added", output_index = 0, item = new { id = itemId, type = "message", role = "assistant", status = "in_progress", content = Array.Empty<object>() } }) +
@@ -441,130 +518,6 @@ internal sealed class Upstreams : HttpMessageHandler
 
 internal static class NativeClient
 {
-    internal static async Task Run(string executable, string home, ModelProviderManager manager, Upstreams upstreams, Action<string, bool> check)
-    {
-        var reasoningProvider = manager.Settings.Providers[0];
-        await manager.SaveReasoningAsync(reasoningProvider.Id, reasoningProvider.Models.Single().UpstreamId, new ProviderReasoningOptions { Levels = new() { "low", "medium", "high", "xhigh" }, Default = "medium" }, CancellationToken.None);
-        await using var control = new WorkspaceFixture();
-        var jwtPayload = Convert.ToBase64String(Encoding.UTF8.GetBytes("{\"email\":\"fictional@example.invalid\",\"exp\":4102444800,\"https://api.openai.com/auth\":{\"chatgpt_account_id\":\"fictional-account\",\"chatgpt_plan_type\":\"plus\"}}")).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-        await File.WriteAllTextAsync(Path.Combine(home, "auth.json"), JsonSerializer.Serialize(new { auth_mode = "chatgpt", tokens = new { access_token = "fictional-openai-token", refresh_token = "fictional-refresh", id_token = "eyJhbGciOiJub25lIn0." + jwtPayload + ".fixture", account_id = "fictional-account" }, last_refresh = DateTimeOffset.UtcNow }));
-        await File.WriteAllTextAsync(Path.Combine(home, "config.toml"), "# Fictional isolated native client\nmodel_provider = \"openai\"\nmodel = \"fixture-openai\"\ncli_auth_credentials_store = \"file\"\nopenai_base_url = \"" + manager.BaseUrl + "\"\nchatgpt_base_url = \"" + control.BaseUrl + "\"\n[features]\nresponses_websockets_v2 = false\nenable_request_compression = false\nshell_tool = false\ncode_mode = false\n");
-        await manager.ConnectAsync(executable, home, CancellationToken.None, router: false);
-        var connectedConfig = await File.ReadAllTextAsync(Path.Combine(home, "config.toml"));
-        check("Connection preserves OpenAI provider identity for existing chats", connectedConfig.Contains("model_provider = \"openai\"") && !connectedConfig.Contains("[model_providers.codex_switch_router]"));
-        var catalogPath = manager.Settings.AppliedConfig!["model_catalog_json"]!.GetValue<string>();
-        var catalogText = await File.ReadAllTextAsync(catalogPath);
-        check("Connection supplies an explicit private catalog without credentials", File.Exists(catalogPath) && !catalogText.Contains("fictional-openai-token") && manager.Settings.Providers.All(provider => !catalogText.Contains(provider.ApiKey)));
-        await using var rpc = new CodexRpc(executable, home, preserveProvider: true);
-        var diagnostics = new ConcurrentQueue<string>();
-        rpc.DiagnosticMessage += line => { if (line.Contains("models", StringComparison.OrdinalIgnoreCase) && diagnostics.Count < 20) diagnostics.Enqueue(line); };
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(150)); var cancellation = timeout.Token;
-        await rpc.InitializeAsync(cancellation);
-        var listed = await rpc.RequestAsync("model/list", new { includeHidden = true }, cancellation);
-        var models = listed.GetProperty("data").EnumerateArray().Select(m => m.GetProperty("model").GetString()).ToArray();
-        var aliases = manager.Settings.Providers.Select(p => p.Models.Single().Alias(p.Id)).ToArray();
-        if (!aliases.All(alias => models.Contains(alias)))
-        {
-            var account = await rpc.RequestAsync("account/read", new { refreshToken = false }, cancellation);
-            Console.WriteLine(JsonSerializer.Serialize(new { nativeFixtureModels = models, account, gatewayError = manager.LastError, catalogRequests = upstreams.Requests.Count(r => r.Method == "GET" && r.Host == "chatgpt.com"), diagnostics }));
-        }
-        check("Actual Codex app-server discovers both providers through the loopback catalog", aliases.All(alias => models.Contains(alias)) && models.Contains("fixture-openai"));
-        var visible = await rpc.RequestAsync("model/list", new { includeHidden = false }, cancellation);
-        check("Custom models are present in the ordinary visible Codex model list", aliases.All(alias => visible.GetProperty("data").EnumerateArray().Any(model => model.GetProperty("model").GetString() == alias && !model.GetProperty("hidden").GetBoolean())));
-        var effective = await rpc.RequestAsync("config/read", new { includeLayers = false }, cancellation);
-        check("Desktop config recognizes the explicit model catalog while retaining OpenAI", effective.GetProperty("config").GetProperty("model_catalog_json").GetString() == catalogPath && effective.GetProperty("config").GetProperty("model_provider").GetString() == "openai");
-        await manager.SaveReasoningAsync(reasoningProvider.Id, reasoningProvider.Models.Single().UpstreamId, new ProviderReasoningOptions { Levels = new() { "low", "medium", "high", "xhigh" }, Default = "high" }, cancellation);
-        var refreshedCatalog = JsonNode.Parse(await File.ReadAllTextAsync(catalogPath))!["models"]!.AsArray();
-        check("Editing a connected provider refreshes its persisted picker metadata", refreshedCatalog.Single(model => model!["slug"]!.GetValue<string>() == aliases[0])!["default_reasoning_level"]!.GetValue<string>() == "high");
-        var reasoningModel = listed.GetProperty("data").EnumerateArray().Single(m => m.GetProperty("model").GetString() == aliases[0]);
-        check("Actual Codex model list exposes custom reasoning levels and default", reasoningModel.GetProperty("defaultReasoningEffort").GetString() == "medium" && reasoningModel.GetProperty("supportedReasoningEfforts").EnumerateArray().Select(l => l.GetProperty("reasoningEffort").GetString()).SequenceEqual(new[] { "low", "medium", "high", "xhigh" }));
-        check("Actual Codex retains the original OpenAI display name", listed.GetProperty("data").EnumerateArray().Single(m => m.GetProperty("model").GetString() == "fixture-openai").GetProperty("displayName").GetString() == "fixture-openai");
-        var thread = await rpc.RequestAsync("thread/start", new { model = "fixture-openai", cwd = home, ephemeral = true, approvalPolicy = "never", sandbox = "read-only", config = new Dictionary<string, object> { ["mcp_servers"] = new Dictionary<string, object>() } }, cancellation);
-        var threadId = thread.GetProperty("thread").GetProperty("id").GetString()!;
-        async Task<JsonElement> Turn(string target, string? model, string name, string? effort = null, bool expectedFailure = false, CodexRpc? actualClient = null)
-        {
-            var client = actualClient ?? rpc;
-            var complete = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
-            void Notification(string method, JsonElement value) { if (method == "turn/completed" && value.GetProperty("threadId").GetString() == target) complete.TrySetResult(value.Clone()); }
-            client.Notification += Notification;
-            try
-            {
-                await client.RequestAsync("turn/start", new { threadId = target, model, effort, input = new[] { new { type = "text", text = "Reply with fixture-ok." } } }, cancellation);
-                var result = await complete.Task.WaitAsync(cancellation);
-                var expected = expectedFailure ? "failed" : "completed";
-                if (result.GetProperty("turn").GetProperty("status").GetString() != expected) Console.WriteLine(JsonSerializer.Serialize(new { nativeFixtureTurn = result, gatewayError = manager.LastError, lastRoute = upstreams.Requests.Last().Host }));
-                check(name, result.GetProperty("turn").GetProperty("status").GetString() == expected);
-                return result;
-            }
-            finally { client.Notification -= Notification; }
-        }
-        foreach (var model in new[] { "fixture-openai", aliases[0], aliases[1], "fixture-openai" })
-            await Turn(threadId, model, "Same running Codex client and chat completes selected route: " + (model.StartsWith("cs_", StringComparison.Ordinal) ? model[..10] : model));
-        foreach (var effort in new[] { "low", "medium", "high", "xhigh" })
-        {
-            await Turn(threadId, aliases[0], "Actual Codex custom turn completes with reasoning: " + effort, effort);
-            check("Actual Codex effort reaches the selected custom Responses route: " + effort, upstreams.Requests.Last().Host == "a.example.invalid" && JsonNode.Parse(upstreams.Requests.Last().Body!)!["reasoning"]!["effort"]!.GetValue<string>() == effort);
-        }
-        var oldProvider = await rpc.RequestAsync("thread/start", new { model = "fixture-openai", modelProvider = "openai", cwd = home, ephemeral = true, approvalPolicy = "never", sandbox = "read-only" }, cancellation);
-        var oldId = oldProvider.GetProperty("thread").GetProperty("id").GetString()!;
-        await Turn(oldId, aliases[0], "Existing openai-provider thread identity can use a custom route");
-        await Turn(oldId, null, "The next native turn retains the selected custom model without an override");
-        check("Upstream response model names cannot redirect the next turn to OpenAI", upstreams.Requests.Last().Host == "a.example.invalid");
-        await Turn(threadId, "fixture-openai", "Changing another chat leaves the original chat on OpenAI");
-        check("Actual native follow-up requests reach all three upstream routes", upstreams.Requests.Any(r => r.Method == "POST" && r.Host == "a.example.invalid") && upstreams.Requests.Any(r => r.Method == "POST" && r.Host == "b.example.invalid"));
-        upstreams.StorageFailures = 3; var beforeRecovery = upstreams.Requests.Count(r => r.Method == "POST");
-        await Turn(threadId, "fixture-openai", "Actual Codex completes the same turn after three gateway HTTP 507 retries");
-        check("Actual Codex does not create another turn or duplicate gateway requests after recovery", upstreams.Requests.Count(r => r.Method == "POST") - beforeRecovery == 4);
-        upstreams.StorageFailures = 10; var beforeExhaustion = upstreams.Requests.Count(r => r.Method == "POST");
-        await Turn(threadId, "fixture-openai", "Actual Codex receives terminal failure after gateway recovery is exhausted", expectedFailure: true);
-        check("Actual Codex cannot multiply the exhausted three-retry budget", upstreams.Requests.Count(r => r.Method == "POST") - beforeExhaustion == 4);
-        upstreams.StorageFailures = 0;
-        upstreams.StreamFailures = 1;
-        var streamFailed = await Turn(threadId, "fixture-openai", "Actual Codex persists an explicit post-response stream failure", expectedFailure: true);
-        check("Actual post-response failure is eligible for guarded same-chat continuation", StreamRecoveryPolicy.Failed(CodexAccountDesk.JsonValue.String(streamFailed.GetProperty("turn"), "status")!));
-        await Turn(threadId, null, "Actual Codex completes a following turn in the same chat after stream failure");
-        manager.SelectRoute(aliases[0]);
-        await manager.ConnectAsync(executable, home, cancellation);
-        var fixedCatalog = await File.ReadAllTextAsync(catalogPath);
-        check("The upgraded catalog contains one stable Codex Switch model", JsonNode.Parse(fixedCatalog)!["models"]!.AsArray().Single()!["slug"]!.GetValue<string>() == ModelRouting.Model);
-        await using (var routerClient = new CodexRpc(executable, home, preserveProvider: true))
-        {
-            await routerClient.InitializeAsync(cancellation);
-            var fixedList = await routerClient.RequestAsync("model/list", new { includeHidden = false }, cancellation);
-            check("The actual native picker exposes exactly the fixed model", fixedList.GetProperty("data").GetArrayLength() == 1 && fixedList.GetProperty("data")[0].GetProperty("model").GetString() == ModelRouting.Model);
-            var routedThread = await routerClient.RequestAsync("thread/start", new { cwd = home, ephemeral = true, approvalPolicy = "never", sandbox = "read-only", config = new Dictionary<string, object> { ["mcp_servers"] = new Dictionary<string, object>() } }, cancellation);
-            var routedId = routedThread.GetProperty("thread").GetProperty("id").GetString()!;
-            check("New native chats default to the fixed model while retaining OpenAI identity", routedThread.GetProperty("model").GetString() == ModelRouting.Model && routedThread.GetProperty("modelProvider").GetString() == "openai");
-            foreach (var selection in new[] { aliases[0], aliases[1], "fixture-openai", aliases[0] })
-            {
-                manager.SelectRoute(selection);
-                await Turn(routedId, null, "Same native client and chat completes a changed Switch selection: " + selection[..Math.Min(10, selection.Length)], actualClient: routerClient);
-                var expectedHost = selection == aliases[0] ? "a.example.invalid" : selection == aliases[1] ? "b.example.invalid" : "chatgpt.com";
-                check("The saved selection controls the actual native upstream without changing its model", upstreams.Requests.Last().Host == expectedHost && JsonNode.Parse(upstreams.Requests.Last().Body!)!["model"]!.GetValue<string>() == (selection == "fixture-openai" ? selection : "shared-model"));
-            }
-            var added = await manager.SaveAsync(null, "Provider added after startup", "https://c.example.invalid/v1", "fictional-added-provider-key", cancellation);
-            manager.SelectRoute(added.Models.Single().Alias(added.Id));
-            await Turn(routedId, null, "The same native process can use a provider added after its catalog loaded", actualClient: routerClient);
-            check("New provider discovery does not require a native model-menu reload", upstreams.Requests.Last().Host == "c.example.invalid" && upstreams.Requests.Last().Token == "fictional-added-provider-key" && await File.ReadAllTextAsync(catalogPath) == fixedCatalog);
-            manager.SelectRoute(aliases[0]);
-            await manager.SaveReasoningAsync(reasoningProvider.Id, reasoningProvider.Models.Single().UpstreamId, new ProviderReasoningOptions { Levels = new() { "low", "high" }, Default = "low" }, cancellation);
-            await Turn(routedId, null, "Selected model reasoning changes apply in the same native process", actualClient: routerClient);
-            check("Saved actual-model default reaches the native routed request", JsonNode.Parse(upstreams.Requests.Last().Body!)!["reasoning"]!["effort"]!.GetValue<string>() == "low");
-            check("Route and reasoning selection leave the fixed native catalog untouched", await File.ReadAllTextAsync(catalogPath) == fixedCatalog);
-            var unchangedList = await routerClient.RequestAsync("model/list", new { includeHidden = false }, cancellation);
-            check("The native model list stays fixed after live backend model changes", unchangedList.GetProperty("data").GetArrayLength() == 1 && unchangedList.GetProperty("data")[0].GetProperty("model").GetString() == ModelRouting.Model);
-        }
-        var config = await File.ReadAllTextAsync(Path.Combine(home, "config.toml"));
-        check("Connection preserves unrelated TOML comments and settings", config.Contains("# Fictional isolated native client") && config.Contains("shell_tool = false"));
-        var outsideEdit = config.Replace(manager.BaseUrl!, manager.BaseUrl + "/owner-change");
-        await File.WriteAllTextAsync(Path.Combine(home, "config.toml"), outsideEdit);
-        var rejected = false;
-        try { await manager.DisconnectAsync(executable, home, cancellation); } catch (InvalidOperationException) { rejected = true; }
-        check("Restore refuses divergent user edits without overwriting them", rejected && await File.ReadAllTextAsync(Path.Combine(home, "config.toml")) == outsideEdit);
-        await File.WriteAllTextAsync(Path.Combine(home, "config.toml"), config + "\n# Independent owner comment\n");
-        await manager.DisconnectAsync(executable, home, cancellation);
-        check("Connection restoration preserves the original configured route", (await File.ReadAllTextAsync(Path.Combine(home, "config.toml"))).Contains("openai_base_url"));
-        check("Connection restoration retains the original OpenAI provider identity", (await File.ReadAllTextAsync(Path.Combine(home, "config.toml"))).Contains("model_provider = \"openai\""));
-        check("Restore preserves concurrent unrelated owner comments", (await File.ReadAllTextAsync(Path.Combine(home, "config.toml"))).Contains("# Independent owner comment"));
-    }
+    internal static Task Run(string executable, string home, ModelProviderManager manager, Upstreams upstreams, Action<string, bool> check)
+        => IsolatedNativeClientContracts.Run(executable, home, manager, upstreams, check);
 }

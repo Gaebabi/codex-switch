@@ -3,11 +3,15 @@
 
 **Codex Switch (`codex-switch`) is an open-source desktop account switcher and usage quota monitor for OpenAI Codex.** See your accounts together, choose the next one, and recover an interrupted handoff. Optional quota-based switching starts **Off**.
 
-Windows · macOS15+ · Linux preview · MIT open source · **1.44.0**
+[Native desktop model integration](docs/DESKTOP_MODEL_BACKEND.md) places registered custom models in the same Codex model picker while OpenAI connects directly. One initial backend installation restart is required; normal model edits and selection need no restart. The former combined HTTP profile remains retired.
+
+Windows · macOS15+ · Linux preview · MIT open source · **1.45.0**
+
+Windows model settings include **Context and auto compaction**: edit native OpenAI defaults or individual external models, save, and use the new values on the next request without restarting Codex. Empty fields restore defaults; actual model limits and native safety margins remain in effect.
 
 [English](README.md) / [한국어](docs/README.ko.md) / [日本語](docs/README.ja.md) / [简体中文](docs/README.zh-CN.md)
 
-[Download](#download) · [Get started](#get-started) · [What's new](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0)
+[Download](#download) · [Get started](#get-started) · [What's new](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.0)
 
 <p align="center"><img src="docs/evidence/home-simplification/native-after-windows.png" width="500" height="350" alt="Codex Switch1.44.0 with quota tanks and one Settings gear" /></p>
 
@@ -15,7 +19,7 @@ Actual Windows app with fictional account inputs. [Native screenshots and source
 
 **Find it useful?** Star this repository or share it with another Codex user.
 
-Release1.44.0 keeps the quota tanks and direct account switching while gathering models, automatic switching, restart, language and appearance in one Settings gear. Image-heavy chats also gain corrected built-in image routes and bounded concurrent request handling. [What's changed and compatibility](docs/development/RELEASE_1_44_0.md).
+Release1.45.0 adds an opt-in Windows backend that places native OpenAI and external models in the same Codex menu. After one initial setup/restart, model edits apply live and OpenAI remains direct when Switch is closed. Native encrypted history recovery and deferred tool discovery prevent incompatible checkpoints and oversized custom-model requests. [Setup, changes and platform limits](docs/development/RELEASE_1_45_0.md).
 
 Release1.42.2 adds account-specific browser sign-in from warnings, default-Off quota-based account switching, optimal/custom priority, durable reopening/recovery, labeled subscription dates and official Pro 100/200/500 tiers. [Behavior and verification scope](docs/development/ACCOUNT_AUTOMATION.md) / [release gates](docs/development/RELEASE_1_42_2.md).
 
@@ -43,19 +47,19 @@ Complete packages include the .NET runtime; no source build or .NET installation
 
 | Platform | Download |
 | --- | --- |
-| Windows x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-win-x64.zip) |
-| macOS15+ Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-osx-arm64.zip) |
-| macOS15+ Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-osx-x64.zip) |
-| Linux x64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-x64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-x64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-x64.tar.gz) |
-| Linux ARM64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-arm64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-arm64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-preview-linux-arm64.tar.gz) |
+| Windows x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.0/CodexSwitch-v1.45.0-win-x64.zip) |
+| macOS15+ Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.0/CodexSwitch-v1.45.0-osx-arm64.zip) |
+| macOS15+ Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.0/CodexSwitch-v1.45.0-osx-x64.zip) |
+| Linux x64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.0/CodexSwitch-v1.45.0-preview-linux-x64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.0/CodexSwitch-v1.45.0-preview-linux-x64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.0/CodexSwitch-v1.45.0-preview-linux-x64.tar.gz) |
+| Linux ARM64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.0/CodexSwitch-v1.45.0-preview-linux-arm64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.0/CodexSwitch-v1.45.0-preview-linux-arm64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.0/CodexSwitch-v1.45.0-preview-linux-arm64.tar.gz) |
 
-[Release notes and SHA256 checksums](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0). Windows/Linux packages are unsigned. Mac bundles are ad-hoc signed and **not Apple-notarized**; follow [Mac setup](docs/MACOS.md).
+[Release notes and SHA256 checksums](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.0). Windows/Linux packages are unsigned. Mac bundles are ad-hoc signed and **not Apple-notarized**; follow [Mac setup](docs/MACOS.md).
 
 Linux is an integration preview. Native storage, installed UI and package tests are distinct from supported account handoff and full desktop acceptance. Desktop integration requires approved OpenAI Linux client26.1007.71326, an existing file credential policy and X11/XWayland; newer clients require review. CLI-only mode needs an explicit executable checksum and does not resume desktop chats. [Requirements and limits](docs/development/LINUX.md) / [Linux installation](docs/development/LINUX_PACKAGES.md)
 
 Warning icons retain full hover details; activate one to sign in again for the selected account. [Actual application evidence](docs/evidence/account-automation/README.md).
 
-**Linux1.44.0 downloads include terminal account switching and saved CLI-session resumption, introduced in source1.41.0.** `CodexSwitch cli` manages the existing encrypted accounts without DISPLAY; `cli switch <account> --resume <CLI-session-UUID>` combines manual switching and official CLI resumption. `--continue` explicitly submits a follow-up; `--exec --continue` selects noninteractive continuation. A verified native CLI and an unlocked supported Secret Service are required. Real two-account contextual CLI resumption is verified on Linux x64; native ARM64/offline tests and full desktop acceptance have separate scopes. [Commands, actual screenshots and exact verification limits](docs/development/LINUX_TERMINAL.md).
+**Linux1.45.0 downloads include terminal account switching and saved CLI-session resumption, introduced in source1.41.0.** `CodexSwitch cli` manages the existing encrypted accounts without DISPLAY; `cli switch <account> --resume <CLI-session-UUID>` combines manual switching and official CLI resumption. `--continue` explicitly submits a follow-up; `--exec --continue` selects noninteractive continuation. A verified native CLI and an unlocked supported Secret Service are required. Real two-account contextual CLI resumption is verified on Linux x64; native ARM64/offline tests and full desktop acceptance have separate scopes. [Commands, actual screenshots and exact verification limits](docs/development/LINUX_TERMINAL.md).
 
 ## Get started
 
@@ -65,7 +69,7 @@ Warning icons retain full hover details; activate one to sign in again for the s
 
 ## Features
 
-- **Models from your providers:** save a compatible provider and key, connect Codex, and choose a model for each chat. Keep Switch running while connected. [Provider setup and compatibility](docs/MODEL_PROVIDERS.md)
+- **Models from your providers:** save a compatible Responses provider and key. Unreleased source prepares a separate custom CLI profile while leaving normal Codex models independent of Switch. Keep Switch running for custom requests, choose their actual model in Switch, and explicitly open the custom terminal. Published downloads retain the earlier connection behavior. [Provider setup and compatibility](docs/MODEL_PROVIDERS.md)
 - **Manual switch, automatic continuation:** back up the current login and verify date-prefixed chat names, normally close Codex, apply the selected account, reopen the same chat IDs/folders/models/permissions, and send one **Continue** to eligible idle unfinished chats. Running or completed work is left alone.
 - **Recover interrupted handoffs:** encrypted checkpoints retain progress. **Resume chats** continues pending work; uncertain sends are never automatically repeated. Naming/shutdown failures stop the login change. Windows waits for child processes so one Switch click can finish the flow. [Switching details](docs/SWITCHING.md)
 - **Quota and history:** remaining usage, resets, plans, subscription expiry, reset allowances, credits and consumption forecasts. Open **History** in an account's **...** menu. Card dates use your local time zone; the shared history view explicitly labels its KST axes. Expiry within72hours and reset within48hours use warning colors.

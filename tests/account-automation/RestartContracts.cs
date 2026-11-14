@@ -55,6 +55,47 @@ internal static class RestartContracts
         var cancelled = false;
         try { await coordinator.RunAsync(plan, backend.CancelAfterClose.Token); } catch (OperationCanceledException) { cancelled = true; }
         check("Cancellation after shutdown safely reopens without sending Continue", cancelled && backend.Launched == 1 && backend.Resumed == 0 && backend.Applied == 0);
+        backend = new Backend { FailLaunchOnce = true };
+        var profileApplications = 0; var profileValidations = 0;
+        coordinator = new AccountSwitchCoordinator(backend, value => saved = value, _ => { }, e => e.Message, (profile, _) =>
+        {
+            check("Profile restoration runs after shutdown and before launch", backend.Closed == 1 && backend.Launched == 0 && profile == CodexModelProfile.Native);
+            profileApplications++; return Task.CompletedTask;
+        }, (profile, _) =>
+        {
+            check("Profile preflight runs before closing or launching the owner desktop", backend.Closed == 0 && backend.Launched == 0);
+            profileValidations++; return Task.CompletedTask;
+        });
+        plan = await coordinator.PrepareRestartAsync("same-account", DateTimeOffset.UtcNow, CancellationToken.None, CodexModelProfile.Native);
+        restored = JsonSerializer.Deserialize<AccountSwitchPlan>(JsonSerializer.Serialize(plan))!;
+        check("Requested model profile survives restart-plan serialization", restored.ModelProfile == CodexModelProfile.Native && !restored.ModelProfileApplied);
+        check("Profile restart applies once across a transient launch retry", await coordinator.RunAsync(restored, CancellationToken.None) && profileApplications == 1 && restored.ModelProfileApplied && backend.Launched == 2 && backend.Applied == 0);
+        check("A launch retry does not repeat profile preflight", profileValidations == 1);
+        backend = new Backend();
+        coordinator = new AccountSwitchCoordinator(backend, value => saved = value, _ => { }, e => e.Message,
+            (_, _) => Task.CompletedTask, (_, _) => throw new InvalidDataException("Fictional catalog schema failure"));
+        plan = await coordinator.PrepareRestartAsync("same-account", DateTimeOffset.UtcNow, CancellationToken.None, CodexModelProfile.Switch);
+        refused = false;
+        try { await coordinator.RunAsync(plan, CancellationToken.None); } catch (InvalidDataException) { refused = true; }
+        check("A rejected candidate leaves the desktop and chats running without any shutdown or Continue", refused && backend.Closed == 0 && backend.Launched == 0 && backend.Applied == 0 && backend.Resumed == 0 && !plan.DesktopRestartRequired);
+        backend = new Backend();
+        coordinator = new AccountSwitchCoordinator(backend, value => saved = value, _ => { }, e => e.Message,
+            (_, _) => throw new InvalidOperationException("Fictional profile conflict"));
+        plan = await coordinator.PrepareRestartAsync("same-account", DateTimeOffset.UtcNow, CancellationToken.None, CodexModelProfile.Switch);
+        refused = false;
+        try { await coordinator.RunAsync(plan, CancellationToken.None); } catch (InvalidOperationException) { refused = true; }
+        check("Profile conflict reopens the original desktop without applying credentials or continuing chats", refused && !plan.ModelProfileApplied && backend.Closed == 1 && backend.Launched == 1 && backend.Resumed == 0 && saved?.ModelProfile == CodexModelProfile.Switch);
+        coordinator = new AccountSwitchCoordinator(backend, value => saved = value, _ => { }, e => e.Message, (_, _) =>
+        {
+            check("Recovering a failed profile closes the reopened desktop before writing", backend.Closed == 2 && backend.Launched == 1);
+            return Task.CompletedTask;
+        });
+        check("A saved profile conflict can be recovered without losing its intent", await coordinator.RunAsync(plan, CancellationToken.None) && plan.ModelProfileApplied && backend.Resumed == 1 && backend.Applied == 0);
+        backend = new Backend(); coordinator = new AccountSwitchCoordinator(backend, value => saved = value, _ => { }, e => e.Message);
+        plan = await coordinator.PrepareRestartAsync("same-account", DateTimeOffset.UtcNow, CancellationToken.None, CodexModelProfile.Switch);
+        refused = false;
+        try { await coordinator.RunAsync(plan, CancellationToken.None); } catch (InvalidOperationException) { refused = true; }
+        check("A client without profile support refuses before shutting down", refused && backend.Closed == 0 && backend.Launched == 0);
     }
     private sealed class Backend : IAccountSwitchBackend
     {

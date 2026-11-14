@@ -1,5 +1,7 @@
 # Binary releases
 
+[Release1.45.0](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.0) adds live Windows native/custom model selection, native encrypted-history recovery and deferred custom tool discovery. It retains native OpenAI operation with the Switch editor closed after explicit initial backend setup. macOS/Linux retain their existing support scope. [Changes, setup and publication gates](development/RELEASE_1_45_0.md). The release verification manifest records package provenance and publication checks.
+
 [Release1.44.0](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0) simplifies Home around the existing quota tanks: Add/Refresh remain visible while one Settings gear groups global actions. It includes the corrected built-in image endpoints and bounded concurrent handling for image-heavy chats. Windows x64, macOS15+ Apple Silicon/Intel and Linux x64/ARM64 integration preview packages are published; all twelve public assets match their sizes/SHA256, and the Windows ZIP passes99self-tests. [Verification and installation gates](development/RELEASE_1_44_0.md).
 
 [Release1.43.3](https://github.com/Gaebabi/codex-switch/releases/tag/v1.43.3) provides complete Windows x64 and macOS15+ Apple Silicon/Intel ZIPs, plus unsigned Linux x64/ARM64 DEB/RPM/tar.gz integration previews. Keep the entire folder/app bundle. No source build or global .NET installation is required; Codex desktop/CLI is installed separately. [Downloads](../README.md#download) / [latest published Release](https://github.com/Gaebabi/codex-switch/releases/latest).

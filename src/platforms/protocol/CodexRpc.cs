@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -24,15 +25,15 @@ internal sealed class CodexRpc : IAsyncDisposable
     internal event Action<string>? DiagnosticMessage;
     public JsonElement? Initialization { get; private set; }
     internal int OwnedProcessId => _process.Id;
-    public CodexRpc(string executable, string home, bool preserveProvider = false)
-        : this(CreateStart(executable, home, preserveProvider, true)) { }
+    public CodexRpc(string executable, string home, bool preserveProvider = false, IReadOnlyDictionary<string, string>? configOverrides = null)
+        : this(CreateStart(executable, home, preserveProvider, true, configOverrides)) { }
     public static CodexRpc InspectLinuxConfiguration(LinuxExecutable executable, string home)
     {
         var start = CreateStart(executable.ExecutionPath, home, true, false);
         foreach (var name in new[] { "LD_PRELOAD", "LD_LIBRARY_PATH", "LD_AUDIT", "LD_DEBUG", "GLIBC_TUNABLES", "GCONV_PATH" }) start.Environment.Remove(name);
         return new CodexRpc(start);
     }
-    private static ProcessStartInfo CreateStart(string executable, string home, bool preserveProvider, bool isolatedFileCredentials)
+    private static ProcessStartInfo CreateStart(string executable, string home, bool preserveProvider, bool isolatedFileCredentials, IReadOnlyDictionary<string, string>? configOverrides = null)
     {
         var start = new ProcessStartInfo(executable) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true,
             RedirectStandardOutput = true, RedirectStandardError = true, StandardInputEncoding = new UTF8Encoding(false),
@@ -41,6 +42,8 @@ internal sealed class CodexRpc : IAsyncDisposable
         if (isolatedFileCredentials) { start.ArgumentList.Add("-c"); start.ArgumentList.Add("cli_auth_credentials_store=\"file\""); }
         start.ArgumentList.Add("-c"); start.ArgumentList.Add("analytics.enabled=false");
         if (!preserveProvider) { start.ArgumentList.Add("-c"); start.ArgumentList.Add("model_provider=\"openai\""); }
+        if (configOverrides != null)
+            foreach (var pair in configOverrides) { start.ArgumentList.Add("-c"); start.ArgumentList.Add(pair.Key + "=" + pair.Value); }
         start.Environment["CODEX_HOME"] = home;
         start.Environment["RUST_LOG"] = "error";
         start.Environment.Remove("CODEX_ACCESS_TOKEN");

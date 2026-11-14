@@ -179,6 +179,8 @@ internal static class NativeUiEvidence
                 await AccountWarningEvidence.CaptureAsync(window, service, directory);
                 await AccountAutomationEvidence.CaptureAsync(window, service, directory);
                 await CreditEvidence.CaptureAsync(window, service, Path.Combine(directory, "credits"));
+                await ModelContextEvidence.CaptureAsync(window, service, directory);
+                cases.Add(new { name = "context-settings", passed = true, nativeAndCustomSaved = true, languages = new[] { "en", "ko" }, themes = new[] { "dark", "light" } });
             }
             catch (Exception error)
             {

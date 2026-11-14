@@ -16,6 +16,7 @@ internal sealed class ModelProvidersWindow : Window
     private readonly ModelProviderManager _manager;
     private readonly Burn0Theme _theme;
     private readonly Action<string> _copyText;
+    private readonly Action<string> _openTerminal;
     private ProviderEditorSession _editor;
     private readonly TextBox _name = new() { MaxLength = 80 }, _url = new() { MaxLength = 32768 };
     private readonly TextBox _included = new() { AcceptsReturn = true, MaxLength = 65536, Height = 76, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
@@ -24,6 +25,10 @@ internal sealed class ModelProvidersWindow : Window
     private readonly StackPanel _entry = new(), _ready = new(), _reasoningPanel = new();
     private readonly TextBlock _stepTitle = new(), _models = new() { TextWrapping = TextWrapping.Wrap }, _status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly ComboBox _reasoningModel = new(), _reasoningDefault = new() { ItemsSource = ProviderReasoning.Efforts };
+    private readonly Button _contextModel;
+    private string _contextTarget = ModelProviderManager.NativeContextTarget;
+    private readonly TextBox _contextWindow = new() { MaxLength = 18 }, _contextCompact = new() { MaxLength = 18 };
+    private readonly StackPanel _contextPanel = new();
     private readonly CheckBox _reasoningOverride = new();
     private readonly Dictionary<string, CheckBox> _reasoningLevels = new();
     private readonly CancellationTokenSource _stop = new();
@@ -32,13 +37,14 @@ internal sealed class ModelProvidersWindow : Window
     private readonly ModelRoutePicker _routePicker;
     private bool _busy, _loading, _syncingKey, _keyVisible, _closed;
     private string? _message;
-    internal bool RestartRequested { get; private set; }
 
-    internal ModelProvidersWindow(Window owner, Burn0Theme theme, AccountService service, Action<string>? copyHandoff = null)
+    internal ModelProvidersWindow(Window owner, Burn0Theme theme, AccountService service, Action<string>? copyHandoff = null, Action<string>? terminalHandoff = null)
     {
         if (PresentationSource.FromVisual(owner) != null) Owner = owner;
         _theme = theme; _service = service; _manager = service.ModelProviders; _editor = new(_manager);
+        _contextModel = Button(""); _contextModel.HorizontalContentAlignment = HorizontalAlignment.Left;
         _copyText = copyHandoff ?? Clipboard.SetText;
+        _openTerminal = terminalHandoff ?? CustomTerminalLauncher.OpenWindows;
         Title = Loc.T("providers.title"); Width = 540; Height = 560; MinWidth = 440; MinHeight = 440;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         if (owner.Left < -10000) { WindowStartupLocation = WindowStartupLocation.Manual; Left = owner.Left; Top = owner.Top; ShowInTaskbar = false; }
@@ -66,6 +72,7 @@ internal sealed class ModelProvidersWindow : Window
         _routePicker = new ModelRoutePicker(theme, _manager, error => { _message = error.Message; Render(); }, Render);
         _routePicker.Margin = new Thickness(0, 0, 0, 16); _ready.Children.Add(_routePicker);
         _models.FontSize = 14; _models.LineHeight = 23; _models.Margin = new Thickness(0, 0, 0, 18); _ready.Children.Add(_models); BuildAdvanced(_ready); form.Children.Add(_ready);
+        BuildContext(form);
         _scroll = new ScrollViewer { Content = form, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
         Grid.SetRow(_scroll, 1); root.Children.Add(_scroll);
         var footer = new StackPanel(); _status.FontSize = 12; _status.Margin = new Thickness(0, 6, 0, 12); footer.Children.Add(_status);
@@ -78,7 +85,7 @@ internal sealed class ModelProvidersWindow : Window
         Closing += (_, args) =>
         {
             try { _editor.Persist(); _closed = true; _stop.Cancel(); }
-            catch (Exception error) { RestartRequested = false; args.Cancel = true; _message = Loc.T("providers.failed") + " " + error.Message; Render(); }
+            catch (Exception error) { args.Cancel = true; _message = Loc.T("providers.failed") + " " + error.Message; Render(); }
         };
         LoadFields();
     }
@@ -130,9 +137,10 @@ internal sealed class ModelProvidersWindow : Window
             _key.Password = _editor.ApiKey; _plainKey.Text = _editor.ApiKey; _keyVisible = false;
             var provider = _manager.Settings.Providers.FirstOrDefault(item => item.Id == _editor.SelectedId);
             _reasoningModel.ItemsSource = provider?.Models.Select(item => item.UpstreamId).ToArray(); _reasoningModel.SelectedIndex = provider == null ? -1 : 0;
+            if (!_manager.ContextChoices.Any(item => item.Id == _contextTarget)) _contextTarget = ModelProviderManager.NativeContextTarget;
         }
         finally { _loading = false; }
-        SelectReasoning(); UpdateKeyVisibility(); Render();
+        SelectReasoning(); SelectContext(); UpdateKeyVisibility(); Render();
     }
     private void UpdateKeyVisibility()
     {
@@ -174,16 +182,19 @@ internal sealed class ModelProvidersWindow : Window
             Add("providers.reset", true, () => { _editor.LoadSaved(); _message = null; LoadFields(); return Task.CompletedTask; });
             Add("providers.remove", true, async () => { await _manager.RemoveAsync(_editor.SelectedId!, _stop.Token); _editor = new(_manager); _message = null; LoadFields(); });
         }
-        if (_manager.Settings.Connected) Add("providers.disconnect", true, async () => { await _service.DisconnectModelProvidersAsync(_stop.Token); _message = null; });
+        if (_manager.Settings.Connected && !_manager.Settings.DesktopProfile) Add("providers.disconnect", true, async () => { await _service.DisconnectModelProvidersAsync(_stop.Token); _message = null; });
+        if (_manager.Settings.IsolatedProfile && _manager.Settings.ConnectionWriteConfirmed)
+            Add("providers.terminal_copy", true, () => { Copy(_service.GetCustomTerminalCommand(), "providers.terminal_copied"); return Task.CompletedTask; });
         return menu;
     }
     private async Task PrimaryAsync()
     {
         if (_busy) return;
         if (_editor.Draft.Step == 0) await RunAsync(async () => { await _editor.SaveAsync(_stop.Token); _message = null; LoadFields(); });
-        else if (!_manager.Settings.Connected || !_manager.Settings.RouterEnabled) await RunAsync(async () => { await _service.ConnectModelProvidersAsync(_stop.Token); _message = null; });
+        else if (_manager.Settings.DesktopBackendEnabled || _manager.Settings.DesktopProfile) { _editor.Persist(); Close(); }
+        else if (!_manager.Settings.Connected || !_manager.Settings.IsolatedProfile) await RunAsync(async () => { await _service.ConnectModelProvidersAsync(_stop.Token); _message = null; });
         else if (!_manager.Settings.ConnectionWriteConfirmed) await RunAsync(async () => { await _service.DisconnectModelProvidersAsync(_stop.Token); _message = null; });
-        else { _editor.Persist(); RestartRequested = true; Close(); }
+        else await RunAsync(() => { _editor.Persist(); _openTerminal(_service.GetCustomTerminalCommand()); _message = Loc.T("providers.terminal_opened"); return Task.CompletedTask; });
     }
     private async Task RunAsync(Func<Task> action)
     {
@@ -195,20 +206,21 @@ internal sealed class ModelProvidersWindow : Window
     }
     private void Render()
     {
+        _contextPanel.IsEnabled = !_busy;
         _routePicker.Refresh();
         var settings = _manager.Settings; var ready = _editor.Draft.Step == 1;
         var provider = settings.Providers.FirstOrDefault(item => item.Id == _editor.SelectedId);
         _providerPicker.Content = (provider?.Name ?? Loc.T("providers.new")) + "  ▾"; _providerPicker.IsEnabled = _more.IsEnabled = !_busy;
         _more.Visibility = _editor.IsSaved || settings.Connected ? Visibility.Visible : Visibility.Collapsed;
         AutomationProperties.SetName(_providerPicker, Loc.T("providers.select") + ": " + (provider?.Name ?? Loc.T("providers.new")));
-        _stepTitle.Text = Loc.T(ready ? "providers.step_connect" : "providers.step_details");
+        _stepTitle.Text = Loc.T(ready ? settings.DesktopBackendEnabled ? "providers.step_models" : "providers.step_connect" : "providers.step_details");
         _entry.Visibility = ready ? Visibility.Collapsed : Visibility.Visible; _ready.Visibility = ready ? Visibility.Visible : Visibility.Collapsed; _entry.IsEnabled = _ready.IsEnabled = !_busy;
         _reveal.IsEnabled = _copyKey.IsEnabled = _editor.ApiKey.Length != 0;
         _models.Text = provider == null ? "" : Loc.F("providers.model_count", provider.Models.Count) + "\n" + string.Join("\n", provider.Models.Take(3).Select(item => item.UpstreamId));
         _back.Content = Loc.T(ready ? "providers.edit" : "providers.close"); _back.IsEnabled = !_busy;
-        _primary.Content = Loc.T(!ready ? "providers.save_next" : !settings.Connected || !settings.RouterEnabled ? "providers.connect" : !settings.ConnectionWriteConfirmed ? "providers.disconnect" : "restart.title");
-        _primary.IsEnabled = !_busy && (ready ? settings.Connected && settings.RouterEnabled || ModelRouting.Registered(settings, settings.SelectedRoute) : !string.IsNullOrWhiteSpace(_editor.Draft.Name) && !string.IsNullOrWhiteSpace(_editor.Draft.BaseUrl) && _editor.ApiKey.Length != 0);
-        _status.Text = _message ?? (ready ? Loc.T(settings.Connected && !settings.RouterEnabled ? "router.first_connection" : settings.Connected ? settings.ConnectionWriteConfirmed ? "providers.prepared" : "providers.incomplete" : "providers.not_connected") : "");
+        _primary.Content = Loc.T(!ready ? "providers.save_next" : settings.DesktopBackendEnabled || settings.DesktopProfile ? "providers.close" : !settings.Connected || !settings.IsolatedProfile ? "providers.connect" : !settings.ConnectionWriteConfirmed ? "providers.disconnect" : "providers.terminal_open");
+        _primary.IsEnabled = !_busy && (ready ? settings.DesktopBackendEnabled || settings.DesktopProfile || settings.Connected && settings.IsolatedProfile && !settings.ConnectionWriteConfirmed || ModelRouting.Registered(settings, settings.SelectedRoute) : !string.IsNullOrWhiteSpace(_editor.Draft.Name) && !string.IsNullOrWhiteSpace(_editor.Draft.BaseUrl) && _editor.ApiKey.Length != 0);
+        _status.Text = _message ?? (ready && settings.DesktopBackendEnabled ? Loc.T("providers.desktop_ready") : ready && settings.DesktopProfile ? Loc.T("profiles.next_request") : ready && !ModelRouting.Registered(settings, settings.SelectedRoute) && !(settings.Connected && settings.IsolatedProfile && !settings.ConnectionWriteConfirmed) ? Loc.T("router.choose") : ready ? Loc.T(settings.Connected && !settings.IsolatedProfile ? "router.first_connection" : settings.Connected ? settings.ConnectionWriteConfirmed ? "providers.prepared" : "providers.incomplete" : "providers.not_connected") : "");
         _status.Visibility = _status.Text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
     private void BuildAdvanced(Panel parent)
@@ -226,6 +238,49 @@ internal sealed class ModelProvidersWindow : Window
         parent.Children.Add(new Expander { Name = "AdvancedSettings", Header = Loc.T("providers.advanced"), Foreground = _theme.Color("muted"), Content = advanced });
         _reasoningModel.SelectionChanged += (_, _) => { if (!_loading) SelectReasoning(); };
         _reasoningOverride.Checked += (_, _) => UpdateReasoningControls(); _reasoningOverride.Unchecked += (_, _) => UpdateReasoningControls();
+    }
+    private void BuildContext(Panel parent)
+    {
+        Field(_contextPanel, "context.target", _contextModel);
+        var limits = new Grid(); limits.ColumnDefinitions.Add(new()); limits.ColumnDefinitions.Add(new());
+        var window = new StackPanel { Margin = new Thickness(0, 0, 6, 0) };
+        var compact = new StackPanel { Margin = new Thickness(6, 0, 0, 0) };
+        Field(window, "context.window", _contextWindow); Field(compact, "context.compact", _contextCompact);
+        foreach (var label in window.Children.OfType<TextBlock>().Concat(compact.Children.OfType<TextBlock>()))
+        { label.TextWrapping = TextWrapping.Wrap; label.MinHeight = 32; }
+        limits.Children.Add(window); Grid.SetColumn(compact, 1); limits.Children.Add(compact); _contextPanel.Children.Add(limits);
+        _contextPanel.Children.Add(new TextBlock { Text = Loc.T("context.hint"), TextWrapping = TextWrapping.Wrap,
+            Foreground = _theme.Color("muted"), FontSize = 12, Margin = new Thickness(0, 0, 0, 12) });
+        var save = Button(Loc.T("context.save")); save.Name = "SaveContext";
+        save.Click += async (_, _) => await RunAsync(async () =>
+        {
+            await _manager.SaveContextAsync(_contextTarget, ModelContextOptions.Parse(_contextWindow.Text, _contextCompact.Text), _stop.Token);
+            _message = Loc.T(_manager.ContextLiveAvailable ? "context.saved_live" : "context.saved_setup");
+        });
+        _contextPanel.Children.Add(save);
+        parent.Children.Add(new Expander { Name = "ContextSettings", Header = Loc.T("context.title"), Foreground = _theme.Color("text"),
+            Content = _contextPanel, Margin = new Thickness(0, 16, 0, 8) });
+        _contextModel.Click += (_, _) => { var menu = CreateContextMenu(); _contextModel.ContextMenu = menu; menu.IsOpen = true; };
+    }
+    internal ContextMenu CreateContextMenu()
+    {
+        var menu = DropdownTheme.Create(_contextModel, _theme);
+        foreach (var choice in _manager.ContextChoices)
+        {
+            var item = new MenuItem { Header = choice.Label, IsCheckable = true, IsChecked = choice.Id == _contextTarget, Tag = choice.Id };
+            item.Click += (_, _) => { menu.IsOpen = false; _contextTarget = choice.Id; SelectContext(); };
+            menu.Items.Add(item);
+        }
+        return menu;
+    }
+    private void SelectContext()
+    {
+        var label = _manager.ContextChoices.Single(item => item.Id == _contextTarget).Label;
+        _contextModel.Content = new TextBlock { Text = label + "  ▾", TextTrimming = TextTrimming.CharacterEllipsis };
+        AutomationProperties.SetName(_contextModel, Loc.T("context.target") + ": " + label);
+        var options = _manager.ContextOptions(_contextTarget);
+        _contextWindow.Text = options?.ContextWindow?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "";
+        _contextCompact.Text = options?.AutoCompactTokenLimit?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "";
     }
     private void SelectReasoning()
     {
