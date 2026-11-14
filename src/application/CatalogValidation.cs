@@ -14,7 +14,7 @@ internal static class CatalogValidation
     internal static async Task<JsonElement> ReadModelListAsync(string executable, byte[]? catalog, string? model, CancellationToken cancellation, bool desktopBackend = false)
     {
         await using var home = CreateHome();
-        var config = model == null ? "" : "model=" + JsonSerializer.Serialize(model) + "\n";
+        var config = "features.plugins=false\n" + (model == null ? "" : "model=" + JsonSerializer.Serialize(model) + "\n");
         if (catalog != null)
         {
             if (catalog.Length > ProviderCatalog.MaximumCatalogBytes) throw new InvalidDataException("The model catalog exceeds the client limit.");
