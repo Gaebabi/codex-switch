@@ -26,7 +26,7 @@ internal static class ModelCatalogNotificationContracts
         }
         checks.Add("Cancelled model refresh is not reported as a completed notification");
 
-        var pipeName = "CodexSwitch.ModelNotification.Contract." + Guid.NewGuid().ToString("N");
+        var pipeName = Guid.NewGuid().ToString("N");
         await using var peer = new NamedPipeServerStream(pipeName, PipeDirection.In, 1,
             PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
         await using var connection = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.Asynchronous);
