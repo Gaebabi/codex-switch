@@ -27,7 +27,7 @@ internal static class IsolatedProfileContracts
         client.DefaultRequestHeaders.Add("ChatGPT-Account-ID", "fictional-isolated-account");
         var before = upstream.Requests.Count;
         var catalog = JsonNode.Parse(await client.GetStringAsync(manager.BaseUrl + "/models?client_version=0.167.0"))!["models"]!.AsArray();
-        check("Isolated catalog exposes only the virtual custom model", catalog.Count == 1 && catalog[0]!["slug"]!.GetValue<string>() == ModelRouting.Model);
+        check("Isolated catalog contains the hidden legacy ID and registered custom models", catalog.Count == manager.Settings.Providers.Sum(p => p.Models.Count) + 1 && catalog[0]!["slug"]!.GetValue<string>() == ModelRouting.Model);
         check("Isolated model discovery does not request the native OpenAI catalog", upstream.Requests.Count == before);
         foreach (var endpoint in new[] { "responses", "images/generations", "images/edits" })
         {

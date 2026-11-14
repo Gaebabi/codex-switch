@@ -1,0 +1,8 @@
+{
+  "name": "codex-switch-desktop-ci-client",
+  "private": true,
+  "description": "Pinned official Codex CLI for isolated Windows desktop-provider contracts; not shipped with the application.",
+  "dependencies": {
+    "@openai/codex": "0.167.0-alpha.4.1"
+  }
+}

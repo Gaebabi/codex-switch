@@ -103,6 +103,7 @@ try
     }
 }
 finally { await monitor.DisposeAsync(); }
+await ModelCatalogNotificationContracts.RunAsync(checks);
 ClientCredentialPolicy Policy(string store, string? forced = null, string? workspace = null, string requirements = "null")
 {
     using var config = JsonDocument.Parse(JsonSerializer.Serialize(new { config = new { cli_auth_credentials_store = store, forced_login_method = forced, forced_chatgpt_workspace_id = workspace } }));
@@ -128,4 +129,4 @@ Check("Unknown backends and inconsistent or missing managed policy contracts ref
     Rejected<InvalidDataException>(() => Policy("file", requirements: "{\"cliAuthCredentialsStore\":null,\"allowedLoginMethods\":[\"unknown\"]}"));
 });
 Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, failed = 0, checks,
-    scope = "Production protocol/database assembly and refusal/unknown contracts with synthetic corrupt bytes only; no personal home, installed IPC/client, authentication or native switch acceptance." }));
+    scope = "Production protocol/database assembly, isolated named-pipe model invalidation frames and refusal/unknown contracts; no personal home, installed IPC/client, authentication or native switch acceptance." }));

@@ -20,18 +20,27 @@ internal static class ModelRoutingContracts
         using var client = ProviderCatalog.CreateHttpClient(); client.Timeout = TimeSpan.FromSeconds(30);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "fictional-router-token");
         client.DefaultRequestHeaders.Add("ChatGPT-Account-ID", "fictional-router-account");
-        async Task<HttpResponseMessage> Send(string session, Guid? turn = null, JsonArray? input = null)
+        async Task<HttpResponseMessage> Send(string session, Guid? turn = null, JsonArray? input = null, string? model = null)
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, manager.BaseUrl + "/responses");
             request.Headers.Add("session_id", session);
-            var body = new JsonObject { ["model"] = ModelRouting.Model, ["stream"] = true,
+            var body = new JsonObject { ["model"] = model ?? ModelRouting.Model, ["stream"] = true,
                 ["input"] = input ?? new JsonArray(new JsonObject { ["role"] = "user", ["content"] = "fictional-router-input" }) };
             if (turn != null) body["client_metadata"] = new JsonObject { ["x-codex-turn-metadata"] = JsonSerializer.Serialize(new { turn_id = turn }) };
             request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
             return await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
         }
-        using (var missing = await Send("unset"))
-            check("A fixed model without an explicit selection refuses before upstream inference", missing.StatusCode == HttpStatusCode.BadRequest && !upstream.Requests.Any(request => request.Method == "POST"));
+        check("Initial registration seeds a legacy default once without retargeting it on later additions", manager.Settings.SelectedRoute == aliasA);
+        manager.SelectRoute(aliasB);
+        await manager.SetModelEnabledAsync(aliasA, false, CancellationToken.None);
+        using (var fixedRoute = await Send("fixed-hidden-route", model: aliasA))
+        {
+            await fixedRoute.Content.ReadAsStringAsync();
+            check("A hidden fixed model still resumes its existing chat independently of the global legacy selection", fixedRoute.IsSuccessStatusCode && upstream.Requests.Last().Host == "a.example.invalid" && manager.Settings.SelectedRoute == aliasB);
+        }
+        await manager.SaveAsync(a.Id, a.Name, a.BaseUrl, "", CancellationToken.None);
+        check("Visibility survives same-model rediscovery and encrypted store reload", !new ModelProviderStore(directory).Read().Providers.Single(p => p.Id == a.Id).Models.Single().EnabledInCodex);
+        await manager.SetModelEnabledAsync(aliasA, true, CancellationToken.None);
         var catalog = Path.Combine(directory, "model-providers-catalog.json");
         await File.WriteAllTextAsync(catalog, "fictional-unchanged-catalog");
         manager.SelectRoute(aliasA);

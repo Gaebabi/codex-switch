@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "capturedDate": "2026-11-13",
+  "platform": "Windows",
+  "source": "Actual native Codex model menu; privacy-cropped capture from installed local candidate.",
+  "candidateSourceFingerprint": "d1264128198240fdeeddbfb5f1e4a18bb81930d05ef69c16f255d805098a7ae6",
+  "nativeCliVersion": "0.167.0-alpha.4.1",
+  "sourceCropSha256": "1e0da40b341033c6e0be43de8aa64ace2654bbbbf2bcf3aed6affe9aa5b4b5f6",
+  "publicImageSha256": "489341472a4d15a007ca00b2c3fe07461675b14430a3411e5acaa9e961bb3e60",
+  "size": [
+    249,
+    317
+  ],
+  "redactedRectangle": [
+    6,
+    116,
+    239,
+    316
+  ],
+  "replacement": "Seven private registration labels replaced with numbered generic text; native labels, order, scrolling and menu frame retained.",
+  "scope": "Observed native and seven custom entries in one menu; not a full desktop screenshot, final release-package capture or independent proof of inference."
+}

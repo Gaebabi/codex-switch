@@ -26,6 +26,8 @@ internal sealed partial class ModelGateway : IAsyncDisposable
     private readonly Func<string?, string?, GatewayIdentity?> _authenticate;
     private readonly HttpClient _http;
     private readonly GatewayHistoryBridge _history;
+    private readonly NativeHistoryRecovery.Candidate? _nativeRecovery;
+    private readonly bool _customOnly;
     private readonly HttpListener _listener = new();
     private readonly CancellationTokenSource _stop = new();
     private readonly ConcurrentDictionary<int, Task> _requests = new();
@@ -37,16 +39,19 @@ internal sealed partial class ModelGateway : IAsyncDisposable
     private readonly Dictionary<string, DateTimeOffset> _requestReceipts = new();
     private Task? _accept;
     private int _nextRequest;
-    private sealed record NativeCatalog(Dictionary<string, JsonObject> Models, DateTimeOffset Expires);
+    private sealed record NativeCatalog(Dictionary<string, JsonObject> Models, DateTimeOffset Expires, JsonObject Document, string Version);
     private readonly ConcurrentDictionary<string, NativeCatalog> _nativeCatalogs = new();
     public int Port { get; private set; }
     public bool Running => _listener.IsListening;
     public string? LastError { get; private set; }
     public DateTimeOffset? LastRequestAt { get; private set; }
     public string BaseUrl => "http://127.0.0.1:" + Port + "/backend-api/codex";
-    internal ModelGateway(ModelProviderStore store, Func<string?, string?, GatewayIdentity?> authenticate, HttpClient http, string directory, Func<string?> home)
+    internal ModelGateway(ModelProviderStore store, Func<string?, string?, GatewayIdentity?> authenticate, HttpClient http, string directory, Func<string?> home,
+        NativeHistoryRecovery.Candidate? nativeRecovery = null, bool customOnly = false)
     {
         _store = store; _authenticate = authenticate; _http = http;
+        _nativeRecovery = nativeRecovery;
+        _customOnly = customOnly;
         _history = new(directory, store, http, home, identity =>
         {
             var current = authenticate("Bearer " + identity.Token, identity.AccountId);
@@ -56,7 +61,7 @@ internal sealed partial class ModelGateway : IAsyncDisposable
     public void Start()
     {
         if (_accept != null) return;
-        Port = _store.Read().Port;
+        Port = _nativeRecovery == null && !_customOnly ? _store.Read().Port : 0;
         if (Port == 0)
         {
             var reservation = new TcpListener(IPAddress.Loopback, 0);
@@ -66,7 +71,7 @@ internal sealed partial class ModelGateway : IAsyncDisposable
         _listener.Prefixes.Add(BaseUrl + "/");
         // A failed bind stays visible; never request URL ACL/elevation changes or bind a wildcard.
         _listener.Start();
-        _store.Update(settings => settings.Port = Port);
+        if (_nativeRecovery == null && !_customOnly) _store.Update(settings => settings.Port = Port);
         _accept = AcceptAsync();
     }
     private async Task AcceptAsync()
@@ -109,13 +114,14 @@ internal sealed partial class ModelGateway : IAsyncDisposable
             if (path == "/backend-api/codex/models" && request.HttpMethod == "GET")
             {
                 var catalog = await CatalogAsync(identity, request, cancellation).ConfigureAwait(false);
-                var bytes = JsonSerializer.SerializeToUtf8Bytes(catalog);
-                if (bytes.Length > ProviderCatalog.MaximumCatalogBytes) throw new InvalidDataException("The combined model catalog exceeds the client limit.");
+                var bytes = ProviderCatalog.Serialize(catalog);
                 response.ContentType = "application/json"; response.Headers["Cache-Control"] = "no-store"; response.ContentLength64 = bytes.Length;
                 await response.OutputStream.WriteAsync(bytes, cancellation).ConfigureAwait(false); return;
             }
             var imageRequest = path is "/backend-api/codex/images/generations" or "/backend-api/codex/images/edits";
-            if (imageRequest && routingSettings.IsolatedProfile && !routingSettings.DesktopProfile)
+            if (imageRequest && _nativeRecovery != null)
+            { await ErrorAsync(response, 400, "History recovery accepts compaction only.", cancellation).ConfigureAwait(false); return; }
+            if (imageRequest && (_customOnly || routingSettings.IsolatedProfile && !routingSettings.DesktopProfile))
             { await ErrorAsync(response, 400, "Built-in OpenAI images belong to native Codex. This process supports custom models only.", cancellation).ConfigureAwait(false); return; }
             if (request.HttpMethod != "POST" || path == null || !imageRequest && path is not ("/backend-api/codex/responses" or "/backend-api/codex/responses/compact"))
             { await ErrorAsync(response, 404, "This model gateway endpoint is not supported.", cancellation).ConfigureAwait(false); return; }
@@ -177,6 +183,9 @@ internal sealed partial class ModelGateway : IAsyncDisposable
             // Snapshot a route and its key before the first upstream byte. Settings edits never retarget an in-flight request.
             var settings = routingSettings; var routed = model == ModelRouting.Model;
             var session = ConversationIdentity(request, original);
+            if (_nativeRecovery != null && (session != _nativeRecovery.ThreadId || model != _nativeRecovery.Model ||
+                !(path.EndsWith("/compact", StringComparison.Ordinal) || original.HasInputType("compaction_trigger"))))
+            { await ErrorAsync(response, 400, "History recovery accepts only the prepared native conversation's compaction.", cancellation).ConfigureAwait(false); return; }
             if (routed)
             {
                 if (!ModelRouting.Registered(settings, settings.SelectedRoute))
@@ -187,7 +196,7 @@ internal sealed partial class ModelGateway : IAsyncDisposable
             var route = providers.SelectMany(p => p.Models.Select(m => (Provider: p, Model: m))).FirstOrDefault(pair => pair.Model.Alias(pair.Provider.Id) == model);
             if (model.StartsWith("cs_", StringComparison.Ordinal) && route.Provider == null)
             { await ErrorAsync(response, 404, "The selected custom model is no longer registered. Select another model.", cancellation).ConfigureAwait(false); return; }
-            if (settings.IsolatedProfile && !settings.DesktopProfile && route.Provider == null)
+            if ((_customOnly || settings.IsolatedProfile && !settings.DesktopProfile) && route.Provider == null && _nativeRecovery == null)
             { await ErrorAsync(response, 400, "This is the custom-only Switch process. Use native Codex for OpenAI models.", cancellation).ConfigureAwait(false); return; }
             JsonObject? openAiModel = null;
             if (route.Provider == null && (openAiModel = await NativeModelAsync(model, identity, request, cancellation).ConfigureAwait(false)) == null)
@@ -264,7 +273,7 @@ internal sealed partial class ModelGateway : IAsyncDisposable
                     return;
                 }
             }
-            if (compaction)
+            if (compaction && route.Provider != null)
             {
                 var checkpoint = await _history.CompactAsync(history, session, identity, source, settings, request, historyOperation, cancellation).ConfigureAwait(false);
                 ReleaseInput();
@@ -325,7 +334,7 @@ internal sealed partial class ModelGateway : IAsyncDisposable
                 LastError = "The selected upstream did not return the requested event stream after HTTP 507 recovery.";
                 await RetryFailureAsync(response, LastError, cancellation).ConfigureAwait(false); return;
             }
-            _store.RecordSuccessfulRoute(session, identity, routeIdentity, source.Model, source.ProviderId);
+            if (_nativeRecovery == null) _store.RecordSuccessfulRoute(session, identity, routeIdentity, source.Model, source.ProviderId);
             if (!started)
             {
                 response.StatusCode = (int)result.StatusCode; response.ContentType = result.Content.Headers.ContentType?.ToString() ?? responseMediaType;
@@ -360,20 +369,33 @@ internal sealed partial class ModelGateway : IAsyncDisposable
     private async Task<JsonObject> CatalogAsync(GatewayIdentity identity, HttpListenerRequest? incoming, CancellationToken cancellation, string? clientVersion = null, bool? router = null, bool desktop = false)
     {
         var profile = _store.Read();
-        if (profile.IsolatedProfile && !profile.DesktopProfile && !desktop) return new JsonObject { ["models"] = new JsonArray(ModelRouting.Metadata(profile)) };
+        if ((_customOnly || profile.IsolatedProfile && !profile.DesktopProfile) && !desktop && _nativeRecovery == null) return new JsonObject { ["models"] = ModelRouting.Catalog(profile) };
         var version = clientVersion ?? incoming?.QueryString["client_version"] ?? "";
         if (version.Length is < 1 or > 80 || version.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '.' or '-' or '+')))
             throw new InvalidDataException("The model catalog request has no valid client version.");
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://chatgpt.com/backend-api/codex/models?client_version=" + Uri.EscapeDataString(version));
-        if (incoming != null) CopyOpenAiHeaders(incoming, request, identity);
+        JsonObject? result;
+        var reused = false;
+        var expires = DateTimeOffset.UtcNow.AddMinutes(5);
+        if (incoming != null && LiveModelCatalog.Enabled(profile) && _nativeCatalogs.TryGetValue(IdentityKey(identity), out var cached) &&
+            cached.Expires > DateTimeOffset.UtcNow && cached.Version == version)
+        {
+            result = (JsonObject)cached.Document.DeepClone();
+            expires = cached.Expires;
+            reused = true;
+        }
         else
         {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", identity.Token);
-            if (identity.AccountId != null) request.Headers.TryAddWithoutValidation("ChatGPT-Account-ID", identity.AccountId);
+            using var request = new HttpRequestMessage(HttpMethod.Get, "https://chatgpt.com/backend-api/codex/models?client_version=" + Uri.EscapeDataString(version));
+            if (incoming != null) CopyOpenAiHeaders(incoming, request, identity);
+            else
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", identity.Token);
+                if (identity.AccountId != null) request.Headers.TryAddWithoutValidation("ChatGPT-Account-ID", identity.AccountId);
+            }
+            using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode) throw new IOException("The current account's OpenAI model catalog is unavailable.");
+            result = JsonNode.Parse(await ProviderCatalog.ReadLimitedAsync(response.Content, ProviderCatalog.MaximumCatalogBytes, cancellation).ConfigureAwait(false)) as JsonObject;
         }
-        using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode) throw new IOException("The current account's OpenAI model catalog is unavailable.");
-        var result = JsonNode.Parse(await ProviderCatalog.ReadLimitedAsync(response.Content, ProviderCatalog.MaximumCatalogBytes, cancellation).ConfigureAwait(false)) as JsonObject;
         if (result?["models"] is not JsonArray models || models.Count == 0) throw new InvalidDataException("OpenAI did not return a usable Codex model catalog.");
         var slugs = new HashSet<string>(StringComparer.Ordinal);
         foreach (var model in models)
@@ -386,17 +408,21 @@ internal sealed partial class ModelGateway : IAsyncDisposable
             (!identity.ApiKey || model["supported_in_api"]?.GetValue<bool>() == true)).Select(model => new ModelRouteChoice(model["slug"]!.GetValue<string>(),
                 (model["display_name"]?.GetValue<string>() ?? model["slug"]!.GetValue<string>()) + " (OpenAI)")).ToList();
         ModelRouting.ValidateChoices(choices);
-        if (_nativeCatalogs.Count >= 64) _nativeCatalogs.Clear();
         var nativeModels = models.Cast<JsonObject>().ToDictionary(m => m["slug"]!.GetValue<string>(), m => (JsonObject)m.DeepClone(), StringComparer.Ordinal);
-        _nativeCatalogs[IdentityKey(identity)] = new NativeCatalog(nativeModels, DateTimeOffset.UtcNow.AddMinutes(5));
-        _store.Update(settings =>
+        if (!reused)
         {
-            settings.LastClientVersion = version;
-            settings.OpenAiModels = choices;
-        });
+            if (_nativeCatalogs.Count >= 64) _nativeCatalogs.Clear();
+            _nativeCatalogs[IdentityKey(identity)] = new NativeCatalog(nativeModels, expires, (JsonObject)result!.DeepClone(), version);
+            if (_nativeRecovery == null) _store.Update(settings =>
+            {
+                settings.LastClientVersion = version;
+                settings.OpenAiModels = choices;
+            });
+        }
+        if (_nativeRecovery != null) return result!;
         if (router ?? _store.Read().RouterEnabled)
         {
-            models.Add(ModelRouting.Metadata(_store.Read(), nativeModels));
+            foreach (var entry in ModelRouting.Catalog(_store.Read(), nativeModels)) models.Add(entry!.DeepClone());
             return result!;
         }
         foreach (var provider in _store.Read().Providers)

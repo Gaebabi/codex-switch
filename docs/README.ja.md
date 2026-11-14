@@ -3,13 +3,13 @@
 
 **Codex Switch（`codex-switch`）は、OpenAI Codexのアカウント切替と使用量確認のためのオープンソースのデスクトップアプリです。** 各アカウントの残量を比較して次のアカウントを選択し、中断した切替は保存された記録から復旧できます。任意の残量基準による自動切替は初期状態で**オフ**です。
 
-Windows · macOS15以降 · Linuxプレビュー · MITオープンソース · **1.44.0**
+Windows · macOS15以降 · Linuxプレビュー · MITオープンソース · **1.45.0**
 
 [English](../README.md) / [한국어](README.ko.md) / 日本語 / [简体中文](README.zh-CN.md)
 
-[ダウンロード](#ダウンロード) · [使い始める](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0)
+[ダウンロード](#ダウンロード) · [使い始める](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.0)
 
-1.44.0では残量タンクと直接のアカウント切替を保ち、モデル、自動切替、再起動、言語と外観を一つの設定メニューにまとめました。画像の多い会話の中継と同時リクエスト処理も改善しています。[変更内容と互換性](development/RELEASE_1_44_0.md)。
+1.45.0では、Windowsの同じCodexメニューにOpenAIと外部モデルを表示する任意設定のバックエンドを追加しました。初回の設定と再起動後はモデル変更を即時反映し、Switchを終了してもOpenAIへの直接接続を維持します。暗号化された会話の復旧とツールの遅延検出も改善しました。[設定・変更内容・対応範囲](development/RELEASE_1_45_0.md)。
 
 <p align="center"><img src="evidence/home-simplification/native-after-windows.png" width="500" height="350" alt="残量タンクと一つの設定メニューを備えたCodex Switch1.44.0" /></p>
 
@@ -39,9 +39,9 @@ Windows · macOS15以降 · Linuxプレビュー · MITオープンソース · 
 
 ## ダウンロード
 
-- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-win-x64.zip)
-- macOS15以降：[Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.44.0/CodexSwitch-v1.44.0-osx-x64.zip)
-- Linux **プレビュー** x64・ARM64：[DEB・RPM・tar.gzとSHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0)
+- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.0/CodexSwitch-v1.45.0-win-x64.zip)
+- macOS15以降：[Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.0/CodexSwitch-v1.45.0-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.0/CodexSwitch-v1.45.0-osx-x64.zip)
+- Linux **プレビュー** x64・ARM64：[DEB・RPM・tar.gzとSHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.0)
 
 .NETを同梱しており、ビルドやランタイムのインストールは不要です。フォルダー・アプリ全体を保持してください。Windows/Linuxは未署名、Macはアドホック署名で**Apple未公証**です。[インストール](INSTALL.md) / [Mac初回起動](MACOS.md)
 
@@ -51,7 +51,7 @@ Linuxは統合プレビューです。キーストア・インストール済み
 
 警告にホバーすると原因を表示し、押すと対象アカウントでブラウザーに再ログインできます。[実際のアプリ検証](evidence/account-automation/README.md)。
 
-**Linux1.44.0の配布物には、ソース1.41.0で追加した端末のアカウント切り替えと保存済みCLIセッションの再開が含まれます。** `CodexSwitch cli`で画面サーバーなしに既存の暗号化アカウントを管理し、`cli switch <account> --resume <CLI-session-UUID>`で手動切り替えと公式CLIの再開を実行します。`--continue`は追加メッセージ送信を明示し、`--exec --continue`は非対話実行です。検証済みのネイティブCLI・チェックサムと、ロック解除済みの対応Secret Serviceが必要です。Linux x64で実際の2アカウント切り替え後に元の文脈を保持したCLI再開を確認しました。ARM64・オフライン検証と完全なデスクトップ対応は別の範囲です。[コマンド・実際の画像・検証範囲](development/LINUX_TERMINAL.md)。
+**Linux1.45.0の配布物には、ソース1.41.0で追加した端末のアカウント切り替えと保存済みCLIセッションの再開が含まれます。** `CodexSwitch cli`で画面サーバーなしに既存の暗号化アカウントを管理し、`cli switch <account> --resume <CLI-session-UUID>`で手動切り替えと公式CLIの再開を実行します。`--continue`は追加メッセージ送信を明示し、`--exec --continue`は非対話実行です。検証済みのネイティブCLI・チェックサムと、ロック解除済みの対応Secret Serviceが必要です。Linux x64で実際の2アカウント切り替え後に元の文脈を保持したCLI再開を確認しました。ARM64・オフライン検証と完全なデスクトップ対応は別の範囲です。[コマンド・実際の画像・検証範囲](development/LINUX_TERMINAL.md)。
 
 1. Windowsは`CodexSwitch.exe`、Macは`Install.command`でインストールした**Codex Switch.app**を開きます。Linuxは完全なプレビューパッケージと対応するSecret Serviceが必要です。
 2. **+**で公式ブラウザー画面から各アカウントをログインします。以前のアカウントが自動選択される場合は、別のブラウザープロファイル・プライベートウィンドウを使います。**設定 > 現在のアカウントを取り込む**で現在のログインを取り込めます。

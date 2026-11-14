@@ -28,6 +28,7 @@ internal static class DropdownTheme
         thumb.SetValue(Border.CornerRadiusProperty, new CornerRadius(7)); thumb.SetValue(Border.BackgroundProperty, theme.Color("surface"));
         thumb.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Left); track.AppendChild(thumb); panel.AppendChild(track);
         var text = new FrameworkElementFactory(typeof(TextBlock)); text.SetBinding(TextBlock.TextProperty, ParentBinding("Header"));
+        text.SetValue(TextBlock.TextWrappingProperty, TextWrapping.Wrap);
         text.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center); panel.AppendChild(text); surface.AppendChild(panel); template.VisualTree = surface;
         var on = new Trigger { Property = MenuItem.IsCheckedProperty, Value = true };
         on.Setters.Add(new Setter(Border.BackgroundProperty, theme.Color("accent"), "track"));

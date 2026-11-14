@@ -1,12 +1,12 @@
 using System;
 using System.Linq;
+using System.Threading;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
-using Avalonia.Media;
 
 namespace CodexAccountDesk;
 
@@ -14,47 +14,60 @@ internal sealed class DeskModelRoutePicker : Grid
 {
     private readonly ModelProviderManager _manager;
     private readonly DeskTheme _theme;
-    private readonly Button _models = new() { MinHeight = 30, MinWidth = 0, HorizontalContentAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(10, 5, 10, 5), CornerRadius = new CornerRadius(7) };
-    private readonly TextBlock _caption = new() { TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _label;
+    private readonly Button _models;
     private readonly Action<Exception> _failed;
-    private readonly Action? _selected;
-    internal DeskModelRoutePicker(DeskTheme theme, ModelProviderManager manager, Action<Exception> failed, Action? selected = null)
+    private readonly Action? _selected, _manage;
+    internal DeskModelRoutePicker(DeskTheme theme, ModelProviderManager manager, Action<Exception> failed, Action? selected = null, Action? manage = null)
     {
-        _theme = theme; _manager = manager; _failed = failed; _selected = selected; ColumnDefinitions = new ColumnDefinitions("Auto,*"); Margin = new Thickness(0, 0, 0, 6);
-        _label = theme.Text("", 12, "muted"); _label.Margin = new Thickness(0, 0, 10, 0); _label.VerticalAlignment = VerticalAlignment.Center;
-        Children.Add(_label); _models.Name = "ModelRoutePicker"; _models.FontSize = 12;
-        _models.Foreground = _caption.Foreground = theme.Brush("text"); _models.Background = theme.Brush("surface");
-        var content = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") }; content.Children.Add(_caption);
-        var arrow = theme.Text("▾", 12); arrow.Margin = new Thickness(10, 0, 0, 0); arrow.VerticalAlignment = VerticalAlignment.Center;
-        Grid.SetColumn(arrow, 1); content.Children.Add(arrow); _models.Content = content;
-        Grid.SetColumn(_models, 1); Children.Add(_models);
-        void Open()
+        _theme = theme; _manager = manager; _failed = failed; _selected = selected; _manage = manage;
+        HorizontalAlignment = HorizontalAlignment.Left;
+        _models = theme.IconButton(DeskButtonIconKind.Models, Loc.T("router.visible"), Open);
+        _models.Width = _models.Height = 30; _models.Padding = new Thickness(6); _models.Name = "ModelRoutePicker";
+        Children.Add(_models);
+        _models.KeyDown += (_, args) => { if (args.Key == Key.Down) { Open(); args.Handled = true; } };
+        Refresh();
+    }
+    private void Open()
+    {
+        var menu = _theme.Menu(_models);
+        foreach (var provider in _manager.Settings.Providers)
         {
-            var menu = _theme.Menu(_models); var selectedId = _manager.Settings.SelectedRoute;
-            foreach (var choice in _manager.RoutingChoices)
+            menu.Items.Add(new MenuItem { Header = provider.Name, IsEnabled = false });
+            foreach (var model in provider.Models)
             {
-                var item = new MenuItem { Header = choice.Label, ToggleType = MenuItemToggleType.Radio, IsChecked = choice.Id == selectedId };
-                item.Click += (_, _) =>
+                var id = model.Alias(provider.Id);
+                var item = new MenuItem { Header = model.UpstreamId, ToggleType = MenuItemToggleType.CheckBox, IsChecked = model.EnabledInCodex, StaysOpenOnClick = true };
+                ToolTip.SetTip(item, Loc.T("router.visibility_help"));
+                item.Click += async (_, _) =>
                 {
-                    try { _manager.SelectRoute(choice.Id); menu.Close(); Refresh(); _selected?.Invoke(); }
-                    catch (Exception error) { menu.Close(); Refresh(); _failed(error); }
+                    var enabled = item.IsChecked; menu.IsEnabled = false;
+                    try { await _manager.SetModelEnabledAsync(id, enabled, CancellationToken.None); _selected?.Invoke(); }
+                    catch (Exception error) { _failed(error); }
+                    finally
+                    {
+                        item.IsChecked = _manager.Settings.Providers.SelectMany(p => p.Models.Select(m => (p, m))).Single(pair => pair.m.Alias(pair.p.Id) == id).m.EnabledInCodex;
+                        menu.IsEnabled = true; Refresh();
+                    }
                 };
                 menu.Items.Add(item);
             }
-            _models.ContextMenu = menu; menu.Open(_models);
         }
-        _models.Click += (_, _) => Open(); _models.KeyDown += (_, args) => { if (args.Key == Key.Down) { Open(); args.Handled = true; } };
-        Refresh();
+        if (_manage != null)
+        {
+            if (menu.Items.Count > 0) menu.Items.Add(new Separator());
+            var settings = new MenuItem { Header = Loc.T("providers.title") };
+            settings.Click += (_, _) => { menu.Close(); _manage(); }; menu.Items.Add(settings);
+        }
+        _models.ContextMenu = menu; menu.Open(_models);
     }
     internal void Refresh()
     {
-        if (_models.ContextMenu?.IsOpen == true) return;
-        var settings = _manager.Settings; var choices = _manager.RoutingChoices;
-        IsVisible = choices.Count != 0 || settings.SelectedRoute != null;
-        _label.Text = Loc.T(settings.Connected && (settings.IsolatedProfile || settings.DesktopProfile) ? "router.model" : "router.setup_model");
-        _caption.Text = choices.FirstOrDefault(choice => choice.Id == settings.SelectedRoute)?.Label ?? Loc.T(settings.SelectedRoute == null ? "router.choose" : "router.unavailable");
-        AutomationProperties.SetName(_models, Loc.T("router.model") + ": " + _caption.Text);
-        ToolTip.SetTip(_models, _caption.Text + "\n" + Loc.T(settings.DesktopProfile ? "profiles.next_request" : settings.Connected && settings.IsolatedProfile ? "router.next_request" : "router.first_connection"));
+        var settings = _manager.Settings; var count = settings.Providers.SelectMany(provider => provider.Models).Count(model => model.EnabledInCodex);
+        IsVisible = settings.Providers.Count != 0 || _manage != null;
+        _models.Content = new DeskButtonIcon(DeskButtonIconKind.Models, _theme.Brush(count == 0 ? "muted" : "text")) { Width = 18, Height = 18 };
+        var label = Loc.F("router.visible_count", count);
+        AutomationProperties.SetName(_models, label);
+        ToolTip.SetTip(_models, label + "\n" + Loc.T("router.visibility_help") +
+            (_manager.CatalogRefreshStatus.DisplayMessage is string status ? "\n" + status : ""));
     }
 }

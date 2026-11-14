@@ -184,7 +184,7 @@ internal sealed class ModelProvidersWindow : Window
     {
         if (_busy) return;
         if (_editor.Draft.Step == 0) await RunAsync(async () => { await _editor.SaveAsync(_stop.Token); _message = null; LoadFields(); });
-        else if (_manager.Settings.DesktopProfile) { _editor.Persist(); Close(); }
+        else if (_manager.Settings.DesktopBackendEnabled || _manager.Settings.DesktopProfile) { _editor.Persist(); Close(); }
         else if (!_manager.Settings.Connected || !_manager.Settings.IsolatedProfile) await RunAsync(async () => { await _service.ConnectModelProvidersAsync(_stop.Token); _message = null; });
         else if (!_manager.Settings.ConnectionWriteConfirmed) await RunAsync(async () => { await _service.DisconnectModelProvidersAsync(_stop.Token); _message = null; });
         else await RunAsync(() => { _editor.Persist(); _openTerminal(_service.GetCustomTerminalCommand()); _message = Loc.T("providers.terminal_opened"); return Task.CompletedTask; });
@@ -205,14 +205,14 @@ internal sealed class ModelProvidersWindow : Window
         _providerPicker.Content = (provider?.Name ?? Loc.T("providers.new")) + "  ▾"; _providerPicker.IsEnabled = _more.IsEnabled = !_busy;
         _more.Visibility = _editor.IsSaved || settings.Connected ? Visibility.Visible : Visibility.Collapsed;
         AutomationProperties.SetName(_providerPicker, Loc.T("providers.select") + ": " + (provider?.Name ?? Loc.T("providers.new")));
-        _stepTitle.Text = Loc.T(ready ? "providers.step_connect" : "providers.step_details");
+        _stepTitle.Text = Loc.T(ready ? settings.DesktopBackendEnabled ? "providers.step_models" : "providers.step_connect" : "providers.step_details");
         _entry.Visibility = ready ? Visibility.Collapsed : Visibility.Visible; _ready.Visibility = ready ? Visibility.Visible : Visibility.Collapsed; _entry.IsEnabled = _ready.IsEnabled = !_busy;
         _reveal.IsEnabled = _copyKey.IsEnabled = _editor.ApiKey.Length != 0;
         _models.Text = provider == null ? "" : Loc.F("providers.model_count", provider.Models.Count) + "\n" + string.Join("\n", provider.Models.Take(3).Select(item => item.UpstreamId));
         _back.Content = Loc.T(ready ? "providers.edit" : "providers.close"); _back.IsEnabled = !_busy;
-        _primary.Content = Loc.T(!ready ? "providers.save_next" : settings.DesktopProfile ? "providers.close" : !settings.Connected || !settings.IsolatedProfile ? "providers.connect" : !settings.ConnectionWriteConfirmed ? "providers.disconnect" : "providers.terminal_open");
-        _primary.IsEnabled = !_busy && (ready ? settings.DesktopProfile || settings.Connected && settings.IsolatedProfile && !settings.ConnectionWriteConfirmed || ModelRouting.Registered(settings, settings.SelectedRoute) : !string.IsNullOrWhiteSpace(_editor.Draft.Name) && !string.IsNullOrWhiteSpace(_editor.Draft.BaseUrl) && _editor.ApiKey.Length != 0);
-        _status.Text = _message ?? (ready && settings.DesktopProfile ? Loc.T("profiles.next_request") : ready && !ModelRouting.Registered(settings, settings.SelectedRoute) && !(settings.Connected && settings.IsolatedProfile && !settings.ConnectionWriteConfirmed) ? Loc.T("router.choose") : ready ? Loc.T(settings.Connected && !settings.IsolatedProfile ? "router.first_connection" : settings.Connected ? settings.ConnectionWriteConfirmed ? "providers.prepared" : "providers.incomplete" : "providers.not_connected") : "");
+        _primary.Content = Loc.T(!ready ? "providers.save_next" : settings.DesktopBackendEnabled || settings.DesktopProfile ? "providers.close" : !settings.Connected || !settings.IsolatedProfile ? "providers.connect" : !settings.ConnectionWriteConfirmed ? "providers.disconnect" : "providers.terminal_open");
+        _primary.IsEnabled = !_busy && (ready ? settings.DesktopBackendEnabled || settings.DesktopProfile || settings.Connected && settings.IsolatedProfile && !settings.ConnectionWriteConfirmed || ModelRouting.Registered(settings, settings.SelectedRoute) : !string.IsNullOrWhiteSpace(_editor.Draft.Name) && !string.IsNullOrWhiteSpace(_editor.Draft.BaseUrl) && _editor.ApiKey.Length != 0);
+        _status.Text = _message ?? (ready && settings.DesktopBackendEnabled ? Loc.T("providers.desktop_ready") : ready && settings.DesktopProfile ? Loc.T("profiles.next_request") : ready && !ModelRouting.Registered(settings, settings.SelectedRoute) && !(settings.Connected && settings.IsolatedProfile && !settings.ConnectionWriteConfirmed) ? Loc.T("router.choose") : ready ? Loc.T(settings.Connected && !settings.IsolatedProfile ? "router.first_connection" : settings.Connected ? settings.ConnectionWriteConfirmed ? "providers.prepared" : "providers.incomplete" : "providers.not_connected") : "");
         _status.Visibility = _status.Text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     }
     private void BuildAdvanced(Panel parent)

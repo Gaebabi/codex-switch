@@ -90,13 +90,31 @@ internal static class ProviderUiEvidence
                 if (editor.Draft.Step != 1 || ready.Visibility != Visibility.Visible || entry.Visibility != Visibility.Collapsed || (string)primary.Content != Loc.T("providers.connect") || key.Password != copied)
                     throw new Exception("The real Save action must retain fields and advance to Connect.");
                 var routePicker = Field<ModelRoutePicker>(window, "_routePicker");
-                if (routePicker.CreateMenu().Items.OfType<MenuItem>().Any(item => item.Tag as string == "fixture-openai") || routePicker.CreateMenu().Items.Count != 1)
+                var refreshStatus = typeof(ModelProviderManager).GetField("_catalogRefreshStatus", BindingFlags.NonPublic | BindingFlags.Instance)!;
+                foreach (var state in new[] { ModelCatalogRefreshState.Pending, ModelCatalogRefreshState.Failed })
+                {
+                    var status = new ModelCatalogRefreshStatus(state, state == ModelCatalogRefreshState.Failed ? "fixture-live-refresh-error" : null);
+                    refreshStatus.SetValue(manager, status); routePicker.Refresh();
+                    var expected = state == ModelCatalogRefreshState.Failed ? Loc.F("router.refresh_failed", "fixture-live-refresh-error") : Loc.T("router.refresh_pending");
+                    if (routePicker.Models.ToolTip is not string tooltip || !tooltip.Contains(expected) || tooltip.Contains("router.refresh_"))
+                        throw new Exception("The routing picker must render localized pending and failed live-refresh statuses.");
+                }
+                refreshStatus.SetValue(manager, new ModelCatalogRefreshStatus(ModelCatalogRefreshState.None)); routePicker.Refresh();
+                checks.Add(language + "/" + dark + ": pending and failed live-refresh statuses render without unresolved localization keys");
+                if (routePicker.CreateMenu().Items.OfType<MenuItem>().Any(item => item.Tag as string == "fixture-openai") || routePicker.CreateMenu().Items.OfType<MenuItem>().Count(item => item.Tag is string) != 1)
                     throw new Exception("Provider setup must show only registered custom models, never cached native OpenAI choices.");
                 checks.Add(language + "/" + dark + ": provider setup keeps native OpenAI models out of the custom picker");
-                routePicker.CreateMenu().Items.OfType<MenuItem>().Single(item => item.Tag as string == manager.Settings.Providers.Single().Models.Single().Alias(saved.Id)).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
-                if (manager.Settings.SelectedRoute != routePicker.Models.Tag as string || !primary.IsEnabled || manager.Settings.Connected)
-                    throw new Exception("The actual routing dropdown must save the selected model without connecting Codex.");
-                checks.Add(language + "/" + dark + ": routing dropdown persists the actual choice and enables initial connection without changing Codex");
+                var visibilityMenu = routePicker.CreateMenu();
+                var toggle = visibilityMenu.Items.OfType<MenuItem>().Single(item => item.Tag is string);
+                toggle.IsChecked = false; toggle.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                if (manager.Settings.Providers.Single().Models.Single().EnabledInCodex || !primary.IsEnabled || manager.Settings.Connected || !toggle.StaysOpenOnClick)
+                    throw new Exception("The actual model menu must persist visibility without changing the route or connecting Codex.");
+                toggle.IsChecked = true; toggle.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                Layout(routePicker, 32, 32);
+                if (routePicker.Models.ActualWidth != 30 || routePicker.Models.Content is not System.Windows.Shapes.Path)
+                    throw new Exception("The model control must use a compact vector icon.");
+                Capture(visibilityMenu, Path.Combine(args[0], "model-menu-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"), 350, 180);
+                checks.Add(language + "/" + dark + ": compact icon and persistent popup toggle retain independent model visibility");
                 Capture(root, Path.Combine(args[0], "saved-connection-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"));
                 checks.Add(language + "/" + dark + ": failed and successful saves preserve input and advance only after persistence");
                 Field<Button>(window, "_back").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -133,14 +151,15 @@ internal static class ProviderUiEvidence
                 var main = new MainWindow(service, new Program.Options { DataDirectory = data, CodexHome = Path.Combine(temporary, "absent-home"), UiEvidenceDirectory = args[0] });
                 var mainRoot = Surface(main); Layout(mainRoot, 500, 360);
                 var mainPicker = Field<ModelRoutePicker>(main, "_routePicker");
-                if (mainPicker.CreateMenu().Items.Count != 1 || mainPicker.CreateMenu().Items.OfType<MenuItem>().Single().Tag as string != manager.Settings.SelectedRoute)
-                    throw new Exception("Home must retain one custom-only choice after reopening and native catalog discovery.");
-                checks.Add(language + "/" + dark + ": Home reopens with the same custom-only model choice");
-                if (mainPicker.Visibility != Visibility.Visible || mainPicker.Models.Tag as string != manager.Settings.SelectedRoute ||
+                if (mainPicker.CreateMenu().Items.OfType<MenuItem>().Count(item => item.Tag is string) != 1 ||
+                    !mainPicker.CreateMenu().Items.OfType<MenuItem>().Any(item => item.Header as string == Loc.T("providers.title")))
+                    throw new Exception("Home must retain custom model toggles and the provider settings action.");
+                checks.Add(language + "/" + dark + ": Home reopens with saved custom model visibility and provider settings");
+                if (mainPicker.Visibility != Visibility.Visible || mainPicker.Models.ActualWidth != 30 ||
                     mainPicker.Models.TranslatePoint(new Point(), mainRoot).X + mainPicker.Models.ActualWidth > 500)
-                    throw new Exception("The Home dropdown must retain the selection and fit the minimum width.");
+                    throw new Exception("The Home icon must fit the minimum width.");
                 Capture(mainRoot, Path.Combine(args[0], "router-home-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"), 500, 360);
-                checks.Add(language + "/" + dark + ": the Home dropdown retains selection and fits the minimum client layout");
+                checks.Add(language + "/" + dark + ": the Home icon fits the minimum client layout without a separate model row");
                 main.Close();
             }
             var fixtureClaims = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"sub\":\"home-ui-fixture\",\"email\":\"home@example.invalid\"}")).TrimEnd('=').Replace('+', '-').Replace('/', '_');
@@ -159,10 +178,9 @@ internal static class ProviderUiEvidence
                 var models = (MenuItem)typeof(MainWindow).GetField("_providers", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
                 var settings = main.HomeActionsMenu();
                 var profiles = settings.Items.OfType<MenuItem>().Single(item => item.Name == "CodexModelProfileMenuItem");
-                if (!profiles.IsEnabled || profiles.Items.Count != 2 || profiles.Items.OfType<MenuItem>().Any(item => !item.IsEnabled) ||
-                    profiles.Items.OfType<MenuItem>().Select(item => item.Header as string).Distinct().Count() != 2)
-                    throw new Exception("Settings must offer exactly the two explicit restore/apply-and-restart profile actions.");
-                checks.Add(language + ": settings expose Default and Codex Switch profile actions without invoking a real restart");
+                if (!profiles.IsEnabled || profiles.Items.Count != 1 || profiles.Items.OfType<MenuItem>().Single().Name != "NativeModelProfileMenuItem")
+                    throw new Exception("Settings must offer native restoration without an action that redirects OpenAI through Switch.");
+                checks.Add(language + ": settings expose native restoration and cannot activate the retired combined profile");
                 var gear = (Button)typeof(MainWindow).GetField("_homeActions", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(main)!;
                 if (!restart.IsEnabled || !models.IsEnabled || !settings.Items.Contains(restart) || !settings.Items.Contains(models) || gear.ActualWidth < 28 || gear.TranslatePoint(new Point(), root).X + gear.ActualWidth > 500)
                     throw new Exception("Settings gear must expose enabled model and restart actions at the minimum width.");
@@ -205,8 +223,49 @@ internal static class ProviderUiEvidence
                 checks.Add(language + ": duplicate restart action disabled while busy");
             }
             CustomTerminalUiContracts.Verify(temporary, checks, (window, name) => Capture(Surface(window), Path.Combine(args[0], name + ".png"), window.Background));
+            var backendData = Path.Combine(temporary, "backend-ui");
+            new ModelProviderStore(backendData).Update(settings => { settings.Providers.Add(fixtureProvider); settings.DesktopBackendEnabled = true; });
+            var backendService = new AccountService(new AccountVault(backendData), Path.Combine(temporary, "backend-home"));
+            var backendManager = backendService.ModelProviders;
+            foreach (var language in new[] { "en", "ko" })
+            foreach (var dark in new[] { true, false })
+            {
+                Loc.SetLanguage(language);
+                var draft = ProviderEditorDraft.From(fixtureProvider); draft.Step = 1;
+                backendManager.RememberEditorDraft(fixtureProvider.Id, draft);
+                var window = new ModelProvidersWindow(new Window(), new Burn0Theme(dark), backendService);
+                var surface = Surface(window); Layout(surface);
+                if ((string)Field<Button>(window, "_primary").Content != Loc.T("providers.close") ||
+                    Field<TextBlock>(window, "_status").Text != Loc.T("providers.desktop_ready"))
+                    throw new Exception("Integrated models must lead to the current Codex picker without a separate-terminal setup step.");
+                Capture(surface, Path.Combine(args[0], "backend-models-" + language + "-" + (dark ? "dark" : "light") + ".png"), window.Background);
+                window.Close();
+            }
+            backendService.StopAsync().GetAwaiter().GetResult();
+            checks.Add("Integrated model readiness renders in both languages and themes with the existing native picker as the next action.");
             HomeLayoutContracts.Verify(service, args[0], checks);
             SessionCounterContracts.Verify(args[0], checks);
+            var menuData = Path.Combine(temporary, "menu-matrix");
+            new ModelProviderStore(menuData).Update(settings => settings.Providers.Add(new ModelProvider
+            {
+                Name = "Local models", BaseUrl = "https://menu.example.invalid/v1", ApiKey = "fictional-menu-key",
+                Models = new() {
+                    new ProviderModel { UpstreamId = "qwen-fixture", Metadata = ProviderCatalog.Generic("qwen-fixture") },
+                    new ProviderModel { UpstreamId = "gemma-fixture", EnabledInCodex = false, Metadata = ProviderCatalog.Generic("gemma-fixture") },
+                    new ProviderModel { UpstreamId = "long-model-name-with-a-large-context-window-and-quantization-details", Metadata = ProviderCatalog.Generic("long-model-name-with-a-large-context-window-and-quantization-details") }
+                }
+            }));
+            var menuManager = new ModelProviderManager(menuData, (_, _) => null);
+            foreach (var dark in new[] { true, false })
+            {
+                var theme = new Burn0Theme(dark);
+                var picker = new ModelRoutePicker(theme, menuManager, error => throw error, manage: () => { });
+                var menu = picker.CreateMenu(); Capture(menu, Path.Combine(args[0], "model-menu-mixed-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"), 350, 300);
+                if (menu.Items.OfType<MenuItem>().Count(item => item.IsCheckable && item.IsChecked) != 2 || menu.Items.OfType<MenuItem>().Count(item => item.IsCheckable && !item.IsChecked) != 1)
+                    throw new Exception("The popup must retain independent enabled and disabled model states.");
+            }
+            menuManager.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            checks.Add("Mixed model visibility and long labels render in both themes through the production popup.");
             File.WriteAllText(Path.Combine(args[0], "ui-verification.json"), JsonSerializer.Serialize(new
             {
                 checks,

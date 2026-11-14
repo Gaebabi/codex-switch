@@ -48,6 +48,31 @@ internal static class GatewayLoadContracts
             var parsed = JsonNode.Parse(text)!;
             check("Sliced custom rewrites retain exact history bytes and remove escaped opaque reasoning", !text.Contains("opaque") && text.Contains("한글\\u0020image-data") && text.Contains("{ \"kept\" : true }") && parsed["model"]!.GetValue<string>() == "load-model" && parsed["reasoning"]!["effort"]!.GetValue<string>() == "high" && parsed["prompt_cache_key"] == null);
         }
+        var tool = new JsonObject { ["type"] = "namespace", ["name"] = "fixture", ["tools"] = new JsonArray(new JsonObject { ["type"] = "function", ["name"] = "lookup", ["parameters"] = new JsonObject { ["type"] = "object" } }) };
+        var message = new JsonObject { ["type"] = "message", ["role"] = "user", ["content"] = "Keep the original conversation" };
+        var toolCall = new JsonObject { ["type"] = "function_call", ["name"] = "lookup", ["call_id"] = "fixture-call", ["arguments"] = "{}" };
+        var declaration = new JsonObject { ["type"] = "additional_tools", ["role"] = "developer", ["tools"] = new JsonArray(tool.DeepClone()) };
+        var input = new JsonObject { ["model"] = "alias", ["tools"] = new JsonArray(tool.DeepClone()),
+            ["input"] = new JsonArray(message.DeepClone(), declaration, toolCall.DeepClone(), declaration.DeepClone()) };
+        var inputBytes = JsonSerializer.SerializeToUtf8Bytes(input);
+        using (var routed = new GatewayRoutedContent(inputBytes, new JsonObject { ["model"] = "load-model" }, true, true, false))
+        {
+            var parsed = JsonNode.Parse(await routed.ReadAsStringAsync())!;
+            check("Native additional-tools events become standard declarations without duplicating tools or losing messages and calls",
+                parsed["tools"]!.AsArray().Count == 1 && JsonNode.DeepEquals(parsed["tools"]![0], tool) && parsed["input"]!.AsArray().Count == 2 &&
+                JsonNode.DeepEquals(parsed["input"]![0], message) && JsonNode.DeepEquals(parsed["input"]![1], toolCall));
+        }
+        input.Remove("tools");
+        using (var routed = new GatewayRoutedContent(JsonSerializer.SerializeToUtf8Bytes(input), new JsonObject { ["model"] = "load-model" }, true, true, false))
+            check("Additional tool schemas survive when the native request has no top-level tools array", JsonNode.DeepEquals(JsonNode.Parse(await routed.ReadAsStringAsync())!["tools"]![0], tool));
+        using (var native = new GatewayRoutedContent(inputBytes, new JsonObject(), false, false, false))
+            check("Native OpenAI transport retains additional-tools events unchanged", JsonNode.DeepEquals(JsonNode.Parse(await native.ReadAsStringAsync()), JsonNode.Parse(inputBytes)));
+        input["tools"] = new JsonArray(tool.DeepClone());
+        input["tools"]![0]!["description"] = "conflicting schema";
+        var conflict = false;
+        try { using var content = new GatewayRoutedContent(JsonSerializer.SerializeToUtf8Bytes(input), new JsonObject { ["model"] = "load-model" }, true, true, false); }
+        catch (InvalidDataException) { conflict = true; }
+        check("Conflicting historical and active tool definitions fail without guessing a schema", conflict);
         var handler = new LoadUpstream();
         var directory = Path.Combine(root, "load-providers");
         var store = new ModelProviderStore(directory);

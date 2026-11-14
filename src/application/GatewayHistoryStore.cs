@@ -28,10 +28,15 @@ internal sealed class GatewayHistoryStore
     internal GatewayHistoryStore(string directory)
     {
         _directory = directory; _path = Path.Combine(directory, "model-history.vault"); _items = new(StringComparer.Ordinal);
+        Reload();
+    }
+    private void Reload()
+    {
+        _items = new(StringComparer.Ordinal);
         if (!File.Exists(_path)) return;
         var encrypted = SecureFiles.ReadPrivateBytes(_path);
         if (encrypted.Length > MaximumVaultBytes + 1024) throw new InvalidDataException("The model history checkpoint store exceeds its bound.");
-        var plaintext = VaultProtection.Unprotect(encrypted, directory);
+        var plaintext = VaultProtection.Unprotect(encrypted, _directory);
         try { _items = JsonSerializer.Deserialize<Dictionary<string, GatewayHistoryCheckpoint>>(plaintext) ?? throw new InvalidDataException("The model history checkpoint store is empty."); }
         finally { CryptographicOperations.ZeroMemory(plaintext); }
         if (_items.Count > MaximumEntries || _items.Any(pair => pair.Key.Length > 160 || pair.Value.Conversation.Length != 64 || pair.Value.Summary != null && Encoding.UTF8.GetByteCount(pair.Value.Summary) > MaximumSummaryBytes))
@@ -45,16 +50,21 @@ internal sealed class GatewayHistoryStore
     {
         lock (_gate)
         {
+            Reload();
             if (!_items.TryGetValue(key, out var item)) return null;
             if (item.Conversation != conversation) throw new GatewayHistoryException("This compressed checkpoint belongs to another conversation or signed-in account. The original history was not sent.");
             return new() { Conversation = item.Conversation, Source = item.Source, Summary = item.Summary, PendingRequest = item.PendingRequest };
         }
     }
+    internal bool HasPortableConversation(string conversation)
+    { lock (_gate) { Reload(); return _items.Any(pair => pair.Key.StartsWith(Prefix, StringComparison.Ordinal) && pair.Value.Conversation == conversation); } }
     internal void RememberSource(string ciphertext, string conversation, GatewayHistorySource source)
     {
         var key = OpaqueKey(ciphertext);
         lock (_gate)
         {
+            using var transaction = new VaultTransaction(_path);
+            Reload();
             if (_items.TryGetValue(key, out var item))
             {
                 if (item.Conversation != conversation || item.Source != null && item.Source != source)
@@ -68,6 +78,7 @@ internal sealed class GatewayHistoryStore
     {
         lock (_gate)
         {
+            using var transaction = new VaultTransaction(_path);
             var existing = Read(key, conversation);
             if (existing?.Summary != null) return existing.Summary;
             if (existing?.PendingRequest == request) throw new GatewayHistoryException("The previous summary request has no confirmed result. It was not automatically sent again. Keep the source chat; send a new explicit turn to retry.");
@@ -85,6 +96,8 @@ internal sealed class GatewayHistoryStore
     }
     private void Save(string key, GatewayHistoryCheckpoint item)
     {
+        using var transaction = new VaultTransaction(_path);
+        Reload();
         if (item.Summary != null && (string.IsNullOrWhiteSpace(item.Summary) || Encoding.UTF8.GetByteCount(item.Summary) > MaximumSummaryBytes)) throw new GatewayHistoryException("The source summary is empty or exceeds the portable checkpoint limit. The original history is unchanged.");
         if (!_items.ContainsKey(key) && _items.Count >= MaximumEntries) throw new GatewayHistoryException("The protected model history store is full. Existing compressed checkpoints were preserved; use a readable handoff before creating another.");
         var next = new Dictionary<string, GatewayHistoryCheckpoint>(_items, StringComparer.Ordinal) { [key] = item };

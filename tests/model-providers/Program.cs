@@ -40,6 +40,27 @@ async Task Refuses(string name, Func<Task> action)
 { try { await action(); } catch (Exception e) when (e is ArgumentException or InvalidOperationException or IOException or InvalidDataException) { Check(name, true); return; } throw new Exception(name); }
 var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp", "CodexSwitchModelProviders", Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
+if (args.Length == 5 && args[0] == "--backend-only" && args[1] == "--codex" && args[3] == "--backend")
+{
+    try
+    {
+        await DesktopBackendContracts.Run(args[2], args[4], root, Check);
+        Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks }));
+    }
+    finally { Directory.Delete(root, true); }
+    return;
+}
+if (args.Contains("--recovery-only"))
+{
+    try
+    {
+        await NativeRecoveryContracts.Run(root, Check);
+        if (args.Length == 3 && args[1] == "--codex") await NativeRecoveryContracts.RunNative(args[2], root, Check);
+        Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks }));
+    }
+    finally { Directory.Delete(root, true); }
+    return;
+}
 if (args.Contains("--reasoning-only"))
 {
     try
@@ -214,7 +235,7 @@ try
         chunked.Headers.TransferEncodingChunked = true;
         chunked.Content = new StringContent(largeBody, Encoding.UTF8, "application/json");
         using var result = await client.SendAsync(chunked); await result.Content.ReadAsStringAsync();
-        Check("Chunked portable compaction above 64 MiB keeps the entire original input in the source summary request", result.IsSuccessStatusCode && JsonNode.Parse(handler.Requests.Last().Body!)!["input"]![0]!["content"]!.GetValue<string>() == JsonNode.Parse(largeBody)!["input"]!.GetValue<string>() && handler.Requests.Last().Path.EndsWith("/responses"));
+        Check("Chunked native compaction above 64 MiB preserves the complete request and native compact endpoint", result.IsSuccessStatusCode && handler.Requests.Last().Body == largeBody && handler.Requests.Last().Path.EndsWith("/responses/compact"));
     }
     using (var result = await client.PostAsync(manager.BaseUrl + "/images/edits", new StringContent(largeBody, Encoding.UTF8, "application/json")))
     {
@@ -375,6 +396,7 @@ try
         await NativeClient.Run(args[1], nativeHome, manager, handler, Check);
         await DesktopProfileContracts.Run(args[1], root, Check);
         await HistoryNativeContracts.Run(args[1], root, Check);
+        await NativeRecoveryContracts.RunNative(args[1], root, Check);
         await ReasoningNativeContracts.Run(args[1], root, Check);
     }
     await manager.RemoveAsync(b.Id, CancellationToken.None);
@@ -394,6 +416,7 @@ try
     await ModelRoutingContracts.Run(root, Check);
     await IsolatedProfileContracts.Run(root, Check);
     await HistoryTransferContracts.Run(root, Check);
+    await NativeRecoveryContracts.Run(root, Check);
     await ReasoningControlContracts.Run(root, Check);
     Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, nativeClient = args.Contains("--codex"), framework = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription, scope = "Disposable encrypted storage, loopback gateway and fictional upstreams; no owner home, account or desktop." }, new JsonSerializerOptions { WriteIndented = true }));
 }

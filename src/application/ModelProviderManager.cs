@@ -29,7 +29,7 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
     private DateTimeOffset _catalogUpdated;
     public ModelProviderSettings Settings => _store.Read();
     public bool Running => _gateway?.Running == true;
-    public string? LastError => _gateway?.LastError;
+    public string? LastError => CatalogRefreshStatus is { State: ModelCatalogRefreshState.Failed } status ? status.Error : _gateway?.LastError;
     public DateTimeOffset? LastRequestAt => _gateway?.LastRequestAt;
     public string? BaseUrl => _gateway?.BaseUrl;
     internal string GetCustomTerminalCommand(string executable, string home, bool windows)
@@ -83,10 +83,19 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
             var provider = await ProviderCatalog.DiscoverAsync(_http, id, name, url, key, deadline.Token, includedIds).ConfigureAwait(false);
             if (previous != null && ProviderCatalog.Endpoint(previous.BaseUrl) == ProviderCatalog.Endpoint(provider.BaseUrl))
                 foreach (var model in provider.Models)
-                    model.ReasoningOverride = previous.Models.FirstOrDefault(old => old.UpstreamId == model.UpstreamId)?.ReasoningOverride;
+                {
+                    var prior = previous.Models.FirstOrDefault(old => old.UpstreamId == model.UpstreamId);
+                    model.ReasoningOverride = prior?.ReasoningOverride;
+                    model.EnabledInCodex = prior?.EnabledInCodex ?? true;
+                }
             cancellation.ThrowIfCancellationRequested();
-            _store.Update(next => { var index = next.Providers.FindIndex(p => p.Id == provider.Id); if (index < 0) next.Providers.Add(provider); else next.Providers[index] = provider; RememberSavedEditor(next, provider, id); });
-            if (Settings.RouterEnabled) RefreshRoutingReasoning(Settings);
+            _store.Update(next => { var index = next.Providers.FindIndex(p => p.Id == provider.Id); if (index < 0) next.Providers.Add(provider); else next.Providers[index] = provider;
+                next.SelectedRoute ??= provider.Models.FirstOrDefault()?.Alias(provider.Id); RememberSavedEditor(next, provider, id); });
+            if (Settings.RouterEnabled)
+            {
+                RefreshRoutingReasoning(Settings);
+                await NotifyLiveCatalogAsync(cancellation).ConfigureAwait(false);
+            }
             else await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
             return provider;
         }
@@ -99,7 +108,11 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         try
         {
             _store.Update(next => { next.Providers.RemoveAll(p => p.Id == id); next.EditorDrafts.Remove(id); if (next.EditorSelection == id) next.EditorSelection = null; });
-            if (Settings.RouterEnabled) RefreshRoutingReasoning(Settings);
+            if (Settings.RouterEnabled)
+            {
+                RefreshRoutingReasoning(Settings);
+                await NotifyLiveCatalogAsync(cancellation).ConfigureAwait(false);
+            }
             else await RefreshCatalogCoreAsync(cancellation, true).ConfigureAwait(false);
         }
         finally { _changes.Release(); }
@@ -115,7 +128,11 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         {
             lifetime.Token.ThrowIfCancellationRequested();
             _store.Update(next => next.Providers.Single(p => p.Id == providerId).Models.Single(m => m.UpstreamId == modelId).ReasoningOverride = options);
-            if (Settings.RouterEnabled) RefreshRoutingReasoning(Settings);
+            if (Settings.RouterEnabled)
+            {
+                RefreshRoutingReasoning(Settings);
+                await NotifyLiveCatalogAsync(lifetime.Token).ConfigureAwait(false);
+            }
             else await RefreshCatalogCoreAsync(lifetime.Token, true).ConfigureAwait(false);
         }
         finally { _changes.Release(); }
@@ -152,13 +169,7 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
             Start();
             await using var rpc = new CodexRpc(executable, home, preserveProvider: true);
             await rpc.InitializeAsync(cancellation).ConfigureAwait(false);
-            var requirements = await rpc.RequestAsync("configRequirements/read", new { }, cancellation).ConfigureAwait(false);
-            if (requirements.TryGetProperty("requirements", out var required) && required.ValueKind == JsonValueKind.Object)
-            {
-                foreach (var key in new[] { "modelProvider", "model_provider", "modelCatalogJson", "model_catalog_json" })
-                    if (required.TryGetProperty(key, out var value) && value.ValueKind != JsonValueKind.Null)
-                        throw new InvalidOperationException("Managed policy controls the model connection. Ask its administrator to configure an approved gateway.");
-            }
+            await RequireUnmanagedRoutingAsync(rpc, cancellation).ConfigureAwait(false);
             var version = rpc.Initialization is JsonElement hello ? ModelGateway.ClientVersion(JsonValue.String(hello, "userAgent")) : null;
             if (version != null) _store.Update(next => next.LastClientVersion = version);
             var snapshot = await ReadUserConfigAsync(rpc, home, cancellation).ConfigureAwait(false);
@@ -166,6 +177,8 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
                 throw new InvalidOperationException("The isolated profile requires a reviewed Codex CLI version 0.167.0 or newer with V2 profile support.");
             _home = Path.GetFullPath(home);
             if (ExecutableHash(executablePath) != executableHash) throw new InvalidOperationException("The Codex CLI changed during profile preparation. No profile was written.");
+            var catalog = ProviderCatalog.Serialize(new JsonObject { ["models"] = ModelRouting.Catalog(settings) });
+            await CatalogValidation.ReadModelListAsync(executablePath, catalog, ModelRouting.Model, cancellation).ConfigureAwait(false);
             // Only migrate recorded app-owned root values. Never install a new root override.
             await RestoreRootAsync(rpc, home, snapshot, settings, cancellation).ConfigureAwait(false);
             VerifyProfile(settings, profilePath);
@@ -175,7 +188,7 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
                 "\n[features]\nresponses_websockets_v2 = false\nenable_request_compression = false\n";
             // Record ownership before writing, so uncertain completion remains recoverable.
             _store.Update(next => { next.IsolatedProfile = true; next.RootMigrationCompleted = true; next.CustomProfilePath = profilePath; next.CustomProfileContent = content; next.CustomExecutablePath = executablePath; next.CustomExecutableSha256 = executableHash; next.RouterEnabled = true; next.Connected = true; next.ConnectionWriteConfirmed = false; });
-            await WriteCatalogAsync(version, cancellation).ConfigureAwait(false);
+            SecureFiles.AtomicWrite(_catalogPath, catalog);
             SecureFiles.AtomicWrite(profilePath, Encoding.UTF8.GetBytes(content));
             _store.Update(next => next.ConnectionWriteConfirmed = true);
         }
@@ -240,28 +253,34 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         }
         finally { CryptographicOperations.ZeroMemory(bytes); }
     }
-    private async Task WriteCatalogAsync(string version, CancellationToken cancellation, bool force = true, bool? router = null, bool desktop = false)
+    private async Task<byte[]> WriteCatalogAsync(string version, CancellationToken cancellation, bool force = true, bool? router = null, bool desktop = false, bool publish = true)
     {
         if (Settings.IsolatedProfile && !Settings.DesktopProfile && !desktop)
         {
             cancellation.ThrowIfCancellationRequested();
-            SecureFiles.AtomicWrite(_catalogPath, JsonSerializer.SerializeToUtf8Bytes(new JsonObject { ["models"] = new JsonArray(ModelRouting.Metadata(Settings)) }));
-            return;
+            var isolated = ProviderCatalog.Serialize(new JsonObject { ["models"] = ModelRouting.Catalog(Settings) });
+            if (publish) SecureFiles.AtomicWrite(_catalogPath, isolated);
+            return isolated;
         }
         var identity = ReadIdentity();
-        var identityKey = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity.Token + "\n" + identity.AccountId + "\n" + ModelRouting.Metadata(Settings).ToJsonString())));
+        var identityKey = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity.Token + "\n" + identity.AccountId + "\n" + ModelRouting.Catalog(Settings).ToJsonString())));
         var catalogPath = desktop || Settings.DesktopProfile ? DesktopCatalogPath : _catalogPath;
-        if (!force && _catalogIdentity == identityKey && DateTimeOffset.UtcNow - _catalogUpdated < TimeSpan.FromMinutes(5) && File.Exists(catalogPath)) return;
+        if (!force && _catalogIdentity == identityKey && DateTimeOffset.UtcNow - _catalogUpdated < TimeSpan.FromMinutes(5) && File.Exists(catalogPath)) return SecureFiles.ReadPrivateBytes(catalogPath);
         Start();
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellation); deadline.CancelAfter(TimeSpan.FromSeconds(30));
         var catalog = await _gateway!.ReadCatalogAsync(identity, version, deadline.Token, router, desktop).ConfigureAwait(false);
         var current = ReadIdentity();
         if (current.Token != identity.Token || current.AccountId != identity.AccountId || current.ApiKey != identity.ApiKey)
             throw new InvalidOperationException("The OpenAI sign-in changed while refreshing the model catalog.");
-        var bytes = JsonSerializer.SerializeToUtf8Bytes(catalog);
-        if (bytes.Length > ProviderCatalog.MaximumCatalogBytes) throw new InvalidDataException("The combined model catalog exceeds the client limit.");
-        SecureFiles.AtomicWrite(catalogPath, bytes);
-        _catalogIdentity = identityKey; _catalogUpdated = DateTimeOffset.UtcNow;
+        var bytes = ProviderCatalog.Serialize(catalog);
+        if (publish)
+        {
+            var changed = !File.Exists(catalogPath) || !SecureFiles.ReadPrivateBytes(catalogPath).AsSpan().SequenceEqual(bytes);
+            if (changed) SecureFiles.AtomicWrite(catalogPath, bytes);
+            _catalogIdentity = identityKey; _catalogUpdated = DateTimeOffset.UtcNow;
+            if (changed) await NotifyLiveCatalogAsync(cancellation).ConfigureAwait(false);
+        }
+        return bytes;
     }
     public async Task DisconnectAsync(string executable, string home, CancellationToken cancellation)
     {
@@ -305,7 +324,15 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
         }
         throw new InvalidOperationException("The writable user configuration is unavailable. Create config.toml before connecting.");
     }
-    private static async Task WriteConfigAsync(CodexRpc rpc, string home, string version, Dictionary<string, JsonNode?> changes, CancellationToken cancellation)
+    private static async Task RequireUnmanagedRoutingAsync(CodexRpc rpc, CancellationToken cancellation)
+    {
+        var requirements = await rpc.RequestAsync("configRequirements/read", new { }, cancellation).ConfigureAwait(false);
+        if (requirements.TryGetProperty("requirements", out var required) && required.ValueKind == JsonValueKind.Object)
+            foreach (var key in new[] { "modelProvider", "model_provider", "modelCatalogJson", "model_catalog_json" })
+                if (required.TryGetProperty(key, out var value) && value.ValueKind != JsonValueKind.Null)
+                    throw new InvalidOperationException("Managed policy controls the model connection. Ask its administrator to configure an approved gateway.");
+    }
+    private static async Task WriteConfigAsync(CodexRpc rpc, string home, string version, Dictionary<string, JsonNode?> changes, CancellationToken cancellation, string? catalogControlPath = null)
     {
         JsonElement result;
         try { result = await rpc.RequestAsync("config/batchWrite", new
@@ -314,7 +341,12 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
             edits = changes.Select(pair => new { keyPath = pair.Key, value = pair.Value, mergeStrategy = "replace" }).ToArray()
         }, cancellation).ConfigureAwait(false); }
         catch (CodexRequestException) { throw new InvalidOperationException("Codex configuration could not be updated. Review concurrent edits, file access and managed policy; no automatic retry was attempted."); }
-        if (JsonValue.String(result, "status") != "ok") throw new InvalidOperationException("A higher-priority Codex policy overrides the connection settings. Review the configuration before using the gateway.");
+        if (JsonValue.String(result, "status") == "ok") return;
+        if (catalogControlPath != null && changes.ContainsKey("model_catalog_json") && JsonValue.String(result, "status") == "okOverridden" &&
+            result.TryGetProperty("overriddenMetadata", out var overridden) && overridden.ValueKind == JsonValueKind.Object &&
+            JsonValue.String(overridden, "effectiveValue") == catalogControlPath && overridden.TryGetProperty("overridingLayer", out var layer) &&
+            layer.TryGetProperty("name", out var name) && JsonValue.String(name, "type") == "sessionFlags") return;
+        throw new InvalidOperationException("A higher-priority Codex policy overrides the connection settings. Review the configuration before using the gateway.");
     }
     private static JsonNode? ValueAt(JsonObject config, string path)
     {
@@ -330,7 +362,12 @@ internal sealed partial class ModelProviderManager : IAsyncDisposable
     {
         _lifetime.Cancel();
         await _changes.WaitAsync().ConfigureAwait(false);
-        try { if (_gateway != null) await _gateway.DisposeAsync().ConfigureAwait(false); _http.Dispose(); }
+        try
+        {
+            await CancelLiveCatalogRefreshAsync().ConfigureAwait(false);
+            if (_gateway != null) await _gateway.DisposeAsync().ConfigureAwait(false);
+            _http.Dispose();
+        }
         finally { _changes.Release(); _changes.Dispose(); _lifetime.Dispose(); }
     }
 }

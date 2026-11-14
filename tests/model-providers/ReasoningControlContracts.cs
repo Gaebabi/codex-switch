@@ -9,6 +9,8 @@ internal static class ReasoningControlContracts
 {
     internal static async Task Run(string root, Action<string, bool> check)
     {
+        await LiveModelCatalogContracts.Run(root, check);
+        await LiveGatewayCatalogContracts.Run(root, check);
         var upstream = new ReasoningUpstream();
         var directory = Path.Combine(root, "reasoning-control");
         new ModelProviderStore(directory).Update(settings => settings.RouterEnabled = true);
@@ -47,11 +49,28 @@ internal static class ReasoningControlContracts
         check("Switching models exposes Gemma's declared None and Medium steps without invented levels", Levels(catalog).SequenceEqual(new[] { "none", "medium" }));
         using (var none = await Send(new JsonObject { ["effort"] = "none" }))
             check("A model that advertises None receives the explicitly selected None strength", none.IsSuccessStatusCode && upstream.Requests.Last()["reasoning"]!["effort"]!.GetValue<string>() == "none");
+        upstream.IncludeSummaryCapability = false;
+        await manager.SaveAsync(qwen.Id, "Qwen fixture", "https://qwen.example.invalid/v1", "fictional-qwen-key", CancellationToken.None);
+        manager.SelectRoute(qwen.Models.Single().Alias(qwen.Id));
+        catalog = await Catalog();
+        check("An omitted provider summary flag preserves the Switch boolean default instead of emitting null", catalog["supports_reasoning_summary_parameter"]!.GetValue<bool>() == false);
+        var saved = JsonSerializer.Serialize(manager.Settings);
+        foreach (var invalid in new JsonNode?[] { null, System.Text.Json.Nodes.JsonValue.Create("false"), System.Text.Json.Nodes.JsonValue.Create(0) })
+        {
+            upstream.IncludeSummaryCapability = true; upstream.SummaryCapability = invalid;
+            var refused = false;
+            try { await manager.SaveAsync(qwen.Id, "Qwen fixture", "https://qwen.example.invalid/v1", "fictional-qwen-key", CancellationToken.None); }
+            catch (InvalidDataException) { refused = true; }
+            check("Invalid explicit summary metadata is refused before changing saved providers", refused && JsonSerializer.Serialize(manager.Settings) == saved);
+        }
     }
 
     internal sealed class ReasoningUpstream : HttpMessageHandler
     {
         internal List<JsonObject> Requests { get; } = new();
+        internal bool IncludeSummaryCapability { get; set; } = true;
+        internal JsonNode? SummaryCapability { get; set; } = System.Text.Json.Nodes.JsonValue.Create(true);
+        internal bool InvalidNativeShell { get; set; }
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellation)
         {
             if (request.Method == HttpMethod.Get)
@@ -61,10 +80,12 @@ internal static class ReasoningControlContracts
                 if (!native)
                 {
                     model["default_reasoning_level"] = "medium";
-                    model["supports_reasoning_summary_parameter"] = true;
+                    if (IncludeSummaryCapability) model["supports_reasoning_summary_parameter"] = SummaryCapability?.DeepClone();
+                    else model.Remove("supports_reasoning_summary_parameter");
                     model["supported_reasoning_levels"] = new JsonArray((qwen ? new[] { "low", "medium", "xhigh" } : new[] { "none", "medium" })
                         .Select(level => (JsonNode)new JsonObject { ["effort"] = level, ["description"] = level == "xhigh" ? "Deep fixture reasoning" : level }).ToArray());
                 }
+                if (native && InvalidNativeShell) model["shell_type"] = false;
                 return new(HttpStatusCode.OK) { Content = new StringContent(new JsonObject { ["models"] = new JsonArray(model) }.ToJsonString(), Encoding.UTF8, "application/json") };
             }
             Requests.Add(JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancellation))!.AsObject());

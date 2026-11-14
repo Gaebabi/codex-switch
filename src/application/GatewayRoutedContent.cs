@@ -33,8 +33,43 @@ internal sealed class GatewayRoutedContent : HttpContent
     }
     internal GatewayRoutedContent(ReadOnlyMemory<byte> original, JsonObject options, bool custom, bool generic, bool removeReasoning, IReadOnlyDictionary<int, ReadOnlyMemory<byte>>? history = null)
     {
+        var fields = Fields(original);
+        var declarations = new HashSet<int>();
+        JsonArray? tools = null;
+        var input = fields.FirstOrDefault(field => field.Name == "input").Value;
+        if (custom && !input.IsEmpty && input.Span[0] == (byte)'[')
+        {
+            var index = 0;
+            foreach (var item in Items(input))
+            {
+                var current = index++;
+                if (item.Span[0] != (byte)'{') continue;
+                var itemFields = Fields(item);
+                if (GatewayJsonRequest.String(itemFields.FirstOrDefault(field => field.Name == "type").Value) != "additional_tools") continue;
+                var additional = itemFields.FirstOrDefault(field => field.Name == "tools").Value;
+                if (additional.IsEmpty || JsonNode.Parse(additional.Span) is not JsonArray added)
+                    throw new InvalidDataException("The native additional-tools declaration is invalid.");
+                if (tools == null)
+                {
+                    var existing = fields.FirstOrDefault(field => field.Name == "tools").Value;
+                    tools = existing.IsEmpty ? new JsonArray() : JsonNode.Parse(existing.Span) as JsonArray ??
+                        throw new InvalidDataException("The active tool declarations are invalid.");
+                }
+                foreach (var tool in added)
+                {
+                    if (tool is not JsonObject definition || definition["type"] is not System.Text.Json.Nodes.JsonValue type || !type.TryGetValue<string>(out _))
+                        throw new InvalidDataException("The native additional-tool definition is invalid.");
+                    var matches = tools.OfType<JsonObject>().Where(candidate => JsonNode.DeepEquals(candidate["type"], definition["type"]) &&
+                        JsonNode.DeepEquals(candidate["name"], definition["name"])).ToArray();
+                    if (matches.Any(candidate => !JsonNode.DeepEquals(candidate, definition)))
+                        throw new InvalidDataException("Conflicting native tool definitions cannot be transferred to the selected model.");
+                    if (matches.Length == 0) tools.Add(definition.DeepClone());
+                }
+                declarations.Add(current);
+            }
+        }
         Add("{"); var comma = false;
-        foreach (var field in Fields(original))
+        foreach (var field in fields)
         {
             if (custom && (field.Name == "prompt_cache_key" || generic && field.Name == "service_tier")) continue;
             if (custom && field.Name == "reasoning" && options["reasoning"] == null) continue;
@@ -42,10 +77,16 @@ internal sealed class GatewayRoutedContent : HttpContent
             _parts.Add(JsonSerializer.SerializeToUtf8Bytes(field.Name)); Add(":");
             if (custom && (field.Name is "model" or "reasoning" || generic && field.Name == "text"))
                 _parts.Add(JsonSerializer.SerializeToUtf8Bytes(options[field.Name]));
-            else if (field.Name == "input" && (removeReasoning || history?.Count > 0)) AddInput(field.Value, removeReasoning, history);
+            else if (field.Name == "tools" && tools != null) _parts.Add(JsonSerializer.SerializeToUtf8Bytes(tools));
+            else if (field.Name == "input" && (removeReasoning || history?.Count > 0 || declarations.Count > 0)) AddInput(field.Value, removeReasoning, history, declarations);
             else _parts.Add(field.Value);
         }
-        if (custom && !Fields(original).Any(field => field.Name == "reasoning") && options["reasoning"] != null)
+        if (tools != null && !fields.Any(field => field.Name == "tools"))
+        {
+            if (comma) Add(","); comma = true;
+            Add("\"tools\":"); _parts.Add(JsonSerializer.SerializeToUtf8Bytes(tools));
+        }
+        if (custom && !fields.Any(field => field.Name == "reasoning") && options["reasoning"] != null)
         {
             if (comma) Add(",");
             Add("\"reasoning\":"); _parts.Add(JsonSerializer.SerializeToUtf8Bytes(options["reasoning"]));
@@ -65,12 +106,13 @@ internal sealed class GatewayRoutedContent : HttpContent
         }
         return items;
     }
-    private void AddInput(ReadOnlyMemory<byte> json, bool removeReasoning, IReadOnlyDictionary<int, ReadOnlyMemory<byte>>? history)
+    private void AddInput(ReadOnlyMemory<byte> json, bool removeReasoning, IReadOnlyDictionary<int, ReadOnlyMemory<byte>>? history, HashSet<int> declarations)
     {
         Add("["); var comma = false; var index = 0;
         foreach (var value in Items(json))
         {
             var current = index++;
+            if (declarations.Contains(current)) continue;
             if (history != null && history.TryGetValue(current, out var replacement))
             {
                 if (comma) Add(","); comma = true; _parts.Add(replacement); continue;

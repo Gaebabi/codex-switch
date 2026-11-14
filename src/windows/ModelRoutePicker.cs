@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace CodexAccountDesk;
 
@@ -11,57 +13,79 @@ internal sealed class ModelRoutePicker : Grid
 {
     private readonly ModelProviderManager _manager;
     private readonly Burn0Theme _theme;
-    private readonly Button _models = new() { MinHeight = 30, MinWidth = 0, HorizontalContentAlignment = HorizontalAlignment.Stretch, Padding = new Thickness(10, 5, 10, 5) };
-    private readonly TextBlock _caption = new() { TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
-    private readonly TextBlock _label;
+    private readonly Button _models = new() { Width = 30, Height = 30, Padding = new Thickness(6), HorizontalAlignment = HorizontalAlignment.Left };
     private readonly Action<Exception> _failed;
-    private readonly Action? _selected;
+    private readonly Action? _selected, _manage;
     internal Button Models => _models;
-    internal ModelRoutePicker(Burn0Theme theme, ModelProviderManager manager, Action<Exception> failed, Action? selected = null)
+    internal ModelRoutePicker(Burn0Theme theme, ModelProviderManager manager, Action<Exception> failed, Action? selected = null, Action? manage = null)
     {
-        _theme = theme; _manager = manager; _failed = failed; _selected = selected; Margin = new Thickness(0, 0, 0, 6);
-        ColumnDefinitions.Add(new() { Width = GridLength.Auto }); ColumnDefinitions.Add(new());
-        _label = new TextBlock { Foreground = theme.Color("muted"), FontSize = 12, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
-        Children.Add(_label); _models.Name = "ModelRoutePicker"; _models.FontSize = 12;
-        _models.Foreground = _caption.Foreground = theme.Color("text"); _models.Background = theme.Color("surface"); _models.BorderBrush = theme.Color("divider"); _models.BorderThickness = new Thickness(1);
+        _theme = theme; _manager = manager; _failed = failed; _selected = selected; _manage = manage;
+        HorizontalAlignment = HorizontalAlignment.Left;
+        _models.Name = "ModelRoutePicker";
+        _models.BorderThickness = new Thickness(1);
         var border = new FrameworkElementFactory(typeof(Border)); border.SetValue(Border.CornerRadiusProperty, new CornerRadius(7));
         border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Control.BackgroundProperty)); border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Control.BorderBrushProperty));
         border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Control.BorderThicknessProperty)); border.SetValue(Border.PaddingProperty, new TemplateBindingExtension(Control.PaddingProperty));
         var presenter = new FrameworkElementFactory(typeof(ContentPresenter)); presenter.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ContentControl.ContentProperty));
         border.AppendChild(presenter); _models.Template = new ControlTemplate(typeof(Button)) { VisualTree = border };
-        var style = new Style(typeof(Button)); var disabled = new Trigger { Property = IsEnabledProperty, Value = false }; disabled.Setters.Add(new Setter(OpacityProperty, .55)); style.Triggers.Add(disabled);
+        var style = new Style(typeof(Button)); style.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent)); style.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Transparent));
+        var disabled = new Trigger { Property = IsEnabledProperty, Value = false }; disabled.Setters.Add(new Setter(OpacityProperty, .55)); style.Triggers.Add(disabled);
+        var hover = new Trigger { Property = IsMouseOverProperty, Value = true }; hover.Setters.Add(new Setter(Control.BackgroundProperty, theme.Color("hover"))); style.Triggers.Add(hover);
         var focus = new Trigger { Property = IsKeyboardFocusedProperty, Value = true }; focus.Setters.Add(new Setter(Control.BorderBrushProperty, theme.Color("accent"))); style.Triggers.Add(focus); _models.Style = style;
-        var content = new Grid(); content.ColumnDefinitions.Add(new()); content.ColumnDefinitions.Add(new() { Width = GridLength.Auto }); content.Children.Add(_caption);
-        var arrow = new TextBlock { Text = "▾", Foreground = theme.Color("muted"), Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center }; Grid.SetColumn(arrow, 1); content.Children.Add(arrow); _models.Content = content;
-        Grid.SetColumn(_models, 1); Children.Add(_models);
+        Children.Add(_models);
         void Open() { var menu = CreateMenu(); _models.ContextMenu = menu; menu.IsOpen = true; }
         _models.Click += (_, _) => Open(); _models.PreviewKeyDown += (_, args) => { if (args.Key == Key.Down) { Open(); args.Handled = true; } };
         Refresh();
     }
     internal ContextMenu CreateMenu()
     {
-        var menu = DropdownTheme.Create(_models, _theme); var selected = _manager.Settings.SelectedRoute;
-        foreach (var choice in _manager.RoutingChoices)
+        var menu = DropdownTheme.Create(_models, _theme);
+        foreach (var provider in _manager.Settings.Providers)
         {
-            var item = new MenuItem { Header = choice.Label, Tag = choice.Id, IsCheckable = true, IsChecked = choice.Id == selected };
-            item.Click += (_, _) =>
+            var heading = new MenuItem { Header = provider.Name, IsEnabled = false };
+            var section = new FrameworkElementFactory(typeof(TextBlock));
+            section.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding("Header") { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
+            section.SetValue(TextBlock.ForegroundProperty, _theme.Color("muted")); section.SetValue(TextBlock.FontSizeProperty, 11.0);
+            section.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis); section.SetValue(MarginProperty, new Thickness(8, 8, 8, 3));
+            heading.Template = new ControlTemplate(typeof(MenuItem)) { VisualTree = section }; menu.Items.Add(heading);
+            foreach (var model in provider.Models)
             {
-                try { _manager.SelectRoute(choice.Id); menu.IsOpen = false; Refresh(); _selected?.Invoke(); }
-                catch (Exception error) { menu.IsOpen = false; Refresh(); _failed(error); }
-            };
-            menu.Items.Add(item);
+                var id = model.Alias(provider.Id);
+                var item = DropdownTheme.Switch(model.UpstreamId, model.EnabledInCodex, _theme); item.Tag = id;
+                item.ToolTip = Loc.T("router.visibility_help"); AutomationProperties.SetName(item, model.UpstreamId + " — " + Loc.T("router.visible"));
+                item.Click += async (_, _) =>
+                {
+                    var enabled = item.IsChecked; menu.IsEnabled = false;
+                    try { await _manager.SetModelEnabledAsync(id, enabled, CancellationToken.None); _selected?.Invoke(); }
+                    catch (Exception error) { _failed(error); }
+                    finally
+                    {
+                        item.IsChecked = _manager.Settings.Providers.SelectMany(p => p.Models.Select(m => (p, m))).Single(pair => pair.m.Alias(pair.p.Id) == id).m.EnabledInCodex;
+                        menu.IsEnabled = true; Refresh();
+                    }
+                };
+                menu.Items.Add(item);
+            }
+        }
+        if (_manage != null)
+        {
+            if (menu.Items.Count > 0) menu.Items.Add(new Separator());
+            var settings = new MenuItem { Header = Loc.T("providers.title") };
+            settings.Click += (_, _) => { menu.IsOpen = false; _manage(); }; menu.Items.Add(settings);
         }
         return menu;
     }
     internal void Refresh()
     {
-        if (_models.ContextMenu?.IsOpen == true) return;
-        var settings = _manager.Settings; var choices = _manager.RoutingChoices;
-        Visibility = choices.Count == 0 && settings.SelectedRoute == null ? Visibility.Collapsed : Visibility.Visible;
-        _label.Text = Loc.T(settings.Connected && (settings.IsolatedProfile || settings.DesktopProfile) ? "router.model" : "router.setup_model");
-        _caption.Text = choices.FirstOrDefault(choice => choice.Id == settings.SelectedRoute)?.Label ?? Loc.T(settings.SelectedRoute == null ? "router.choose" : "router.unavailable");
-        _models.Tag = settings.SelectedRoute;
-        AutomationProperties.SetName(_models, Loc.T("router.model") + ": " + _caption.Text);
-        _models.ToolTip = _caption.Text + "\n" + Loc.T(settings.DesktopProfile ? "profiles.next_request" : settings.Connected && settings.IsolatedProfile ? "router.next_request" : "router.first_connection");
+        var settings = _manager.Settings; var count = settings.Providers.SelectMany(provider => provider.Models).Count(model => model.EnabledInCodex);
+        Visibility = settings.Providers.Count == 0 && _manage == null ? Visibility.Collapsed : Visibility.Visible;
+        var brush = _theme.Color(count == 0 ? "muted" : "text");
+        _models.Content = new System.Windows.Shapes.Path { Data = Geometry.Parse("M4 5H20M4 12H20M4 19H20 M9 3V7M15 10V14M9 17V21"),
+            Stroke = brush, StrokeThickness = 1.75, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
+            StrokeLineJoin = PenLineJoin.Round, Stretch = Stretch.Uniform, Width = 16, Height = 18, IsHitTestVisible = false };
+        var label = Loc.F("router.visible_count", count);
+        AutomationProperties.SetName(_models, label);
+        _models.ToolTip = label + "\n" + Loc.T("router.visibility_help") +
+            (_manager.CatalogRefreshStatus.DisplayMessage is string status ? "\n" + status : "");
     }
 }

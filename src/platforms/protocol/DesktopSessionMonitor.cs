@@ -71,6 +71,15 @@ internal sealed class DesktopSessionMonitor : IAsyncDisposable
         if (result.ValueKind != JsonValueKind.Object) throw new InvalidDataException("Codex 채팅 응답 형식이 올바르지 않습니다.");
         return result.Clone();
     }
+    internal async Task<bool> NotifyModelCatalogChangedAsync(CancellationToken cancellation)
+    {
+        cancellation.ThrowIfCancellationRequested();
+        var pipe = Volatile.Read(ref _pipe);
+        if (pipe == null) return false;
+        await SendAsync(pipe, new { type = "broadcast", method = "query-cache-invalidate", version = 0,
+            @params = new { queryKey = new[] { "models", "list", "local" } } }, cancellation).ConfigureAwait(false);
+        return true;
+    }
     private void Publish(SessionActivity activity)
     {
         if (activity == Current) return;

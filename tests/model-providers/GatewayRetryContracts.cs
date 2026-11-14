@@ -151,7 +151,7 @@ internal static class GatewayRetryContracts
         {
             var directory = Path.Combine(root, "retry-" + Guid.NewGuid().ToString("N"));
             Store = new ModelProviderStore(directory);
-            var model = new ProviderModel { UpstreamId = "fixture-openai" };
+            var model = new ProviderModel { UpstreamId = "fixture-openai", Metadata = ProviderCatalog.Generic("fixture-openai") };
             var provider = new ModelProvider { Name = "Retry fixture", BaseUrl = "https://retry.example.invalid/v1", ApiKey = "fictional-custom-retry-key", Models = new() { model } };
             if (custom) Store.Update(next => next.Providers.Add(provider));
             _model = custom ? model.Alias(provider.Id) : model.UpstreamId;

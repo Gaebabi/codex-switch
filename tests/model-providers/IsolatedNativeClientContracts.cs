@@ -35,7 +35,7 @@ internal static class IsolatedNativeClientContracts
         var catalogPath = JsonSerializer.Deserialize<string>(overrides["model_catalog_json"])!;
         var catalog = await File.ReadAllTextAsync(catalogPath, cancellation);
         var catalogModels = JsonNode.Parse(catalog)!["models"]!.AsArray();
-        check("Dedicated process catalog contains exactly one Switch model and no credentials", catalogModels.Count == 1 && catalogModels[0]!["slug"]!.GetValue<string>() == ModelRouting.Model && !catalog.Contains("fictional-openai-token") && manager.Settings.Providers.All(p => !catalog.Contains(p.ApiKey)));
+        check("Dedicated process catalog contains only Switch models and no credentials", catalogModels.Count == manager.Settings.Providers.Sum(p => p.Models.Count) + 1 && catalogModels[0]!["slug"]!.GetValue<string>() == ModelRouting.Model && !catalog.Contains("fictional-openai-token") && manager.Settings.Providers.All(p => !catalog.Contains(p.ApiKey)));
         await manager.ConnectAsync(executable, home, cancellation);
         check("Repeated connection leaves the profile and native configuration stable", profile == await File.ReadAllTextAsync(manager.Settings.CustomProfilePath!, cancellation) && config == await File.ReadAllTextAsync(configPath, cancellation));
         await using var normal = new CodexRpc(executable, home, preserveProvider: true);
@@ -46,7 +46,10 @@ internal static class IsolatedNativeClientContracts
         var customList = await custom.RequestAsync("model/list", new { includeHidden = false }, cancellation);
         string[] Models(JsonElement list) => list.GetProperty("data").EnumerateArray().Select(model => model.GetProperty("model").GetString()!).ToArray();
         check("Actual native picker remains native-only", Models(normalList).SequenceEqual(new[] { "fixture-openai" }));
-        check("Actual dedicated picker remains custom-only", Models(customList).SequenceEqual(new[] { ModelRouting.Model }));
+        var expectedVisible = manager.Settings.Providers.SelectMany(provider => provider.Models.Where(model => model.EnabledInCodex).Select(model => model.Alias(provider.Id))).Order().ToArray();
+        check("Actual dedicated picker contains exactly the enabled fixed custom aliases", Models(customList).Order().SequenceEqual(expectedVisible));
+        check("The legacy custom selector is hidden from new choices", !Models(customList).Contains(ModelRouting.Model) &&
+            Models(await custom.RequestAsync("model/list", new { includeHidden = true }, cancellation)).Contains(ModelRouting.Model));
         async Task<string> Thread(CodexRpc client, string expectedModel)
         {
             var result = await client.RequestAsync("thread/start", new { cwd = home, ephemeral = true, approvalPolicy = "never", sandbox = "read-only", config = new Dictionary<string, object> { ["mcp_servers"] = new Dictionary<string, object>() } }, cancellation);
@@ -89,7 +92,7 @@ internal static class IsolatedNativeClientContracts
         check("A reasoning choice from a stale native catalog is refused before inference", !await Turn(custom, customId) && upstreams.Requests.Count(request => request.Method == "POST") == beforeReasoningChange);
         check("An explicitly selected supported effort applies to the same dedicated chat", await Turn(custom, customId, effort: "low") && JsonNode.Parse(upstreams.Requests.Last().Body!)!["reasoning"]!["effort"]!.GetValue<string>() == "low");
         var updatedCatalog = JsonNode.Parse(await File.ReadAllTextAsync(catalogPath, cancellation))!["models"]!.AsArray();
-        check("Live reasoning changes update only the fixed Switch capability range and preserve the native catalog", updatedCatalog.Count == 1 && updatedCatalog[0]!["slug"]!.GetValue<string>() == ModelRouting.Model && updatedCatalog[0]!["supported_reasoning_levels"]!.AsArray().Select(level => level!["effort"]!.GetValue<string>()).SequenceEqual(new[] { "low", "high" }) && nativeCatalog == await File.ReadAllTextAsync(nativeCatalogPath, cancellation));
+        check("Live reasoning changes update only the fixed Switch capability range and preserve the native catalog", updatedCatalog.Count == manager.Settings.Providers.Sum(p => p.Models.Count) + 1 && updatedCatalog[0]!["slug"]!.GetValue<string>() == ModelRouting.Model && updatedCatalog[0]!["supported_reasoning_levels"]!.AsArray().Select(level => level!["effort"]!.GetValue<string>()).SequenceEqual(new[] { "low", "high" }) && nativeCatalog == await File.ReadAllTextAsync(nativeCatalogPath, cancellation));
         Console.WriteLine("Native isolation phase: bounded custom 507 and stream recovery");
         var nativeBeforeRecovery = native.Upstream.Requests.Count;
         var recoveryStart = upstreams.Requests.Count;

@@ -18,6 +18,19 @@ names=['CodexSwitch.dll','CodexSwitch.deps.json','System.Private.CoreLib.dll']+(
     ['CodexSwitch','libcoreclr.so','libhostfxr.so'] if args.rid.startswith('linux') else ['CodexSwitch','libcoreclr.dylib','libhostfxr.dylib'])
 if any(not(root/name).is_file() for name in names):raise SystemExit('Incomplete self-contained package')
 if args.rid.startswith('win'):
+    backend=root/'backend'
+    backend_names=['CodexSwitch.Backend.exe','CodexSwitch.Backend.dll','CodexSwitch.Backend.deps.json','CodexSwitch.Backend.runtimeconfig.json','System.Private.CoreLib.dll','coreclr.dll','hostfxr.dll']
+    if any(not (backend/name).is_file() for name in backend_names):raise SystemExit('The Windows desktop backend package is incomplete')
+    if (backend/'CodexSwitch.Backend.json').exists():raise SystemExit('An owner backend configuration must never be packaged')
+    backend_runtime=json.loads((backend/'CodexSwitch.Backend.runtimeconfig.json').read_text(encoding='utf-8'))['runtimeOptions']
+    if backend_runtime['tfm']!='net10.0' or {item['name']:item['version'] for item in backend_runtime.get('includedFrameworks',[])}!={'Microsoft.NETCore.App':args.runtime}:
+        raise SystemExit('Desktop backend does not contain the reviewed self-contained runtime')
+    backend_deps=json.loads((backend/'CodexSwitch.Backend.deps.json').read_text(encoding='utf-8'))
+    if not backend_deps['runtimeTarget']['name'].endswith('/win-x64'):raise SystemExit('Desktop backend runtime identifier differs')
+    backend_target=backend_deps['targets'][backend_deps['runtimeTarget']['name']]
+    backend_assets={asset for key,item in backend_deps['libraries'].items() if item['type']=='project' for asset in backend_target[key].get('runtime',{})}
+    if not {'CodexSwitch.Backend.dll','CodexSwitch.Application.dll','CodexSwitch.Core.dll','CodexSwitch.Protocol.dll'}.issubset(backend_assets) or any(not (backend/asset).is_file() for asset in backend_assets):
+        raise SystemExit('Desktop backend project dependencies are incomplete')
     for name in ['CodexSwitch.Sensors.exe','PawnIO-Modules.LGPL-2.1.txt','SOURCE.md','module-source/AMDFamily17.p','module-source/IntelMSR.p','module-source/pawnio.inc']:
         if not (root/'sensors'/name).is_file():raise SystemExit('Native CPU sensor worker or corresponding source/license missing')
     worker=(root/'sensors/CodexSwitch.Sensors.exe').read_bytes()

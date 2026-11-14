@@ -26,7 +26,7 @@ internal static class DesktopProfileContracts
         await File.WriteAllTextAsync(Path.Combine(home, "auth.json"), auth, cancellation);
         GatewayIdentity? Authenticate(string? token, string? account) => GatewayIdentity.Authenticate(token, account, () => auth);
         var directory = Path.Combine(root, "desktop-profile-store");
-        await using var manager = new ModelProviderManager(directory, Authenticate, new HttpClient(upstream));
+        await using var manager = new ModelProviderManager(directory, Authenticate, new HttpClient(upstream), home);
         var provider = await manager.SaveAsync(null, "Desktop custom", "https://a.example.invalid/v1", "fictional-desktop-key", cancellation);
         manager.SelectRoute(provider.Models.Single().Alias(provider.Id));
         var nativeCatalogPath = Path.Combine(home, "native-catalog.json");
@@ -36,20 +36,31 @@ internal static class DesktopProfileContracts
             "\nchatgpt_base_url = " + JsonSerializer.Serialize(control.BaseUrl) + "\nmodel_catalog_json = " + JsonSerializer.Serialize(nativeCatalogPath) +
             "\n[features]\nresponses_websockets_v2 = false\nenable_request_compression = false\nshell_tool = false\ncode_mode = false\n";
         await File.WriteAllTextAsync(configPath, config, cancellation);
-        await manager.ApplyDesktopProfileAsync(executable, home, CodexModelProfile.Switch, cancellation);
+        foreach (var validate in new[] { true, false })
+        {
+            var blocked = false;
+            try
+            {
+                if (validate) await manager.ValidateDesktopProfileAsync(executable, home, CodexModelProfile.Switch, cancellation);
+                else await manager.ApplyDesktopProfileAsync(executable, home, CodexModelProfile.Switch, cancellation);
+            }
+            catch (InvalidOperationException error) { blocked = error.Message.Contains("separate Codex Switch terminal"); }
+            check("Retired combined profile is rejected before " + (validate ? "restart preflight" : "application"), blocked &&
+                await File.ReadAllTextAsync(configPath, cancellation) == config && !manager.Running && !manager.Settings.Connected);
+        }
+        await SeedLegacyAsync(executable, home, directory, manager, metadata, cancellation);
         var connectedConfig = await File.ReadAllTextAsync(configPath, cancellation);
         check("Desktop profile retains the native default and unrelated TOML settings", connectedConfig.Contains("model = \"fixture-openai\"") && connectedConfig.Contains("# Native choices") && connectedConfig.Contains("shell_tool = false"));
         check("Desktop profile removes an effort unsupported by the selected native model", !connectedConfig.Contains("model_reasoning_effort"));
         var catalog = JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(directory, "model-providers-desktop-catalog.json"), cancellation))!["models"]!.AsArray();
-        check("Desktop picker preserves the complete native model document and appends exactly one Switch item", catalog.Count == 2 && JsonNode.DeepEquals(catalog[0], metadata) && catalog[1]!["slug"]!.GetValue<string>() == ModelRouting.Model);
+        check("Desktop catalog preserves the native document, hidden legacy ID and fixed Switch entry", catalog.Count == 3 && JsonNode.DeepEquals(catalog[0], metadata) && catalog[1]!["slug"]!.GetValue<string>() == ModelRouting.Model);
         check("The virtual entry uses the selected provider's own reasoning default", catalog[1]!["default_reasoning_level"]!.GetValue<string>() == ProviderReasoning.Metadata(provider.Models.Single(), null)["default_reasoning_level"]!.GetValue<string>());
-        await manager.ApplyDesktopProfileAsync(executable, home, CodexModelProfile.Switch, cancellation);
-        check("Repeated profile application retains the original native endpoint receipt", manager.Settings.DesktopOriginalConfig!["openai_base_url"]!.GetValue<string>() == native.BaseUrl);
+        check("Legacy recovery retains the original native endpoint receipt", manager.Settings.DesktopOriginalConfig!["openai_base_url"]!.GetValue<string>() == native.BaseUrl);
         await using (var rpc = new CodexRpc(executable, home, preserveProvider: true))
         {
             await rpc.InitializeAsync(cancellation);
             var list = await rpc.RequestAsync("model/list", new { includeHidden = false }, cancellation);
-            check("Actual Codex picker keeps native models before its sole Switch entry", list.GetProperty("data").EnumerateArray().Select(item => item.GetProperty("model").GetString()).SequenceEqual(new[] { "fixture-openai", ModelRouting.Model }));
+            check("Legacy picker keeps native models and the fixed custom alias", list.GetProperty("data").EnumerateArray().Select(item => item.GetProperty("model").GetString()).SequenceEqual(new[] { "fixture-openai", provider.Models.Single().Alias(provider.Id) }));
             check("Actual Codex catalog reports the selected provider's reasoning default", list.GetProperty("data").EnumerateArray().Last().GetProperty("defaultReasoningEffort").GetString() == ProviderReasoning.Metadata(provider.Models.Single(), null)["default_reasoning_level"]!.GetValue<string>());
             var thread = await rpc.RequestAsync("thread/start", new { cwd = home, ephemeral = true, model = ModelRouting.Model, approvalPolicy = "never", sandbox = "read-only",
                 config = new Dictionary<string, object> { ["mcp_servers"] = new Dictionary<string, object>() } }, cancellation);
@@ -67,6 +78,7 @@ internal static class DesktopProfileContracts
         check("Profile restoration refuses concurrent owner edits without replacing them", refused && await File.ReadAllTextAsync(configPath, cancellation) == divergent);
         await File.WriteAllTextAsync(configPath, originalConnected, cancellation);
         await manager.ApplyDesktopProfileAsync(executable, home, CodexModelProfile.Native, cancellation);
+        check("Restoration invalidates the combined native cache", !File.Exists(Path.Combine(home, "models_cache.json")));
         check("Profile changes retain authentication and the saved custom provider", await File.ReadAllTextAsync(Path.Combine(home, "auth.json"), cancellation) == auth && manager.Settings.Providers.Single().Id == provider.Id && manager.Settings.SelectedRoute == provider.Models.Single().Alias(provider.Id));
         await manager.DisposeAsync();
         await using var normal = new CodexRpc(executable, home, preserveProvider: true);
@@ -79,6 +91,46 @@ internal static class DesktopProfileContracts
         var nativeThread = await normal.RequestAsync("thread/start", new { cwd = home, ephemeral = true, approvalPolicy = "never", sandbox = "read-only",
             config = new Dictionary<string, object> { ["mcp_servers"] = new Dictionary<string, object>() } }, cancellation);
         check("Restored default completes with Switch stopped", await Turn(normal, nativeThread.GetProperty("thread").GetProperty("id").GetString()!, "fixture-openai", cancellation));
+    }
+
+    internal static async Task SeedLegacyAsync(string executable, string home, string directory, ModelProviderManager manager, JsonObject native, CancellationToken cancellation)
+    {
+        // Reproduce an installation made by the retired combined profile; production cannot create it.
+        manager.Start();
+        await using var rpc = new CodexRpc(executable, home, preserveProvider: true);
+        await rpc.InitializeAsync(cancellation);
+        var configPath = Path.Combine(home, "config.toml");
+        var read = await rpc.RequestAsync("config/read", new { includeLayers = true }, cancellation);
+        var layer = read.GetProperty("layers").EnumerateArray().Single(item =>
+            item.GetProperty("name").GetProperty("type").GetString() == "user" &&
+            CodexAccountDesk.JsonValue.String(item.GetProperty("name"), "profile") == null);
+        var config = JsonNode.Parse(layer.GetProperty("config").GetRawText())!.AsObject();
+        var applied = new Dictionary<string, JsonNode?>
+        {
+            ["model_provider"] = "openai", ["openai_base_url"] = manager.BaseUrl,
+            ["model_catalog_json"] = null, ["features.responses_websockets_v2"] = false,
+            ["features.enable_request_compression"] = false
+        };
+        JsonNode? Original(string key) => key.Split('.').Aggregate((JsonNode?)config, (node, part) => node?[part])?.DeepClone();
+        var store = (ModelProviderStore)typeof(ModelProviderManager).GetField("_store", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(manager)!;
+        store.Update(settings =>
+        {
+            settings.DesktopOriginalConfig = applied.Keys.ToDictionary(key => key, Original);
+            settings.DesktopAppliedConfig = applied; settings.DesktopProfile = true;
+            settings.Connected = true; settings.ConnectionWriteConfirmed = true; settings.RouterEnabled = true;
+            settings.LastClientVersion = ModelGateway.ClientVersion(CodexAccountDesk.JsonValue.String(rpc.Initialization!.Value, "userAgent"));
+        });
+        var catalog = new JsonArray(native.DeepClone());
+        foreach (var model in ModelRouting.Catalog(manager.Settings)) catalog.Add(model!.DeepClone());
+        await File.WriteAllBytesAsync(Path.Combine(directory, "model-providers-desktop-catalog.json"), ProviderCatalog.Serialize(new JsonObject { ["models"] = catalog }), cancellation);
+        var edits = applied.ToDictionary(pair => pair.Key, pair => pair.Value?.DeepClone());
+        if (config["model_reasoning_effort"]?.GetValue<string>() == "none") edits["model_reasoning_effort"] = null;
+        await rpc.RequestAsync("config/batchWrite", new
+        {
+            filePath = configPath, expectedVersion = layer.GetProperty("version").GetString(), reloadUserConfig = false,
+            edits = edits.Select(pair => new { keyPath = pair.Key, value = pair.Value, mergeStrategy = "replace" }).ToArray()
+        }, cancellation);
+        LiveModelCatalog.Invalidate(home);
     }
 
     private static async Task<bool> Turn(CodexRpc rpc, string id, string model, CancellationToken cancellation)

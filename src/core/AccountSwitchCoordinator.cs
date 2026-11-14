@@ -100,9 +100,11 @@ internal sealed class AccountSwitchCoordinator
     private readonly Action<AccountSwitchPlan> _changed;
     private readonly Func<Exception, string> _describeError;
     private readonly Func<CodexModelProfile, CancellationToken, Task>? _applyModelProfile;
+    private readonly Func<CodexModelProfile, CancellationToken, Task>? _validateModelProfile;
     public AccountSwitchCoordinator(IAccountSwitchBackend backend, Action<AccountSwitchPlan?> save, Action<AccountSwitchPlan> changed, Func<Exception, string> describeError,
-        Func<CodexModelProfile, CancellationToken, Task>? applyModelProfile = null)
-    { _backend = backend; _save = save; _changed = changed; _describeError = describeError; _applyModelProfile = applyModelProfile; }
+        Func<CodexModelProfile, CancellationToken, Task>? applyModelProfile = null,
+        Func<CodexModelProfile, CancellationToken, Task>? validateModelProfile = null)
+    { _backend = backend; _save = save; _changed = changed; _describeError = describeError; _applyModelProfile = applyModelProfile; _validateModelProfile = validateModelProfile; }
     public async Task<AccountSwitchPlan> PrepareAsync(string target, DateTimeOffset at, CancellationToken cancellation, bool creditPause = false)
     {
         var source = await _backend.CurrentAccountAsync(cancellation);
@@ -175,6 +177,8 @@ internal sealed class AccountSwitchCoordinator
             var current = await _backend.CurrentAccountAsync(cancellation);
             if (plan.RestartOnly && (plan.SourceAccountKey == null || plan.SourceAccountKey != plan.TargetAccountKey || current != plan.SourceAccountKey))
                 throw new InvalidOperationException(Loc.T("restart.login_changed"));
+            if (plan.ModelProfile is { } requestedProfile && !plan.ModelProfileApplied && _validateModelProfile != null)
+                await _validateModelProfile(requestedProfile, cancellation);
             if (plan.CreditProtectionPause && (plan.SourceAccountKey == null || plan.SourceAccountKey != plan.TargetAccountKey || current != plan.SourceAccountKey))
                 throw new InvalidOperationException("로그인 계정이 변경돼 전환을 중단했습니다.");
             if (plan.CreditProtectionPause && plan.Phase == SwitchPhase.CreditPaused) return false;
