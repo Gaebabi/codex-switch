@@ -7,7 +7,10 @@ namespace CodexAccountDesk;
 
 internal sealed class ResourceTrendSurface : FrameworkElement
 {
-    private Brush _track = Brushes.Transparent, _fill = Brushes.Transparent;
+    private Brush _track = Brushes.Transparent, _fill = Brushes.Transparent, _area = Brushes.Transparent;
+    private Pen _tick = new(Brushes.Transparent, 1);
+    private readonly bool _historyOnly;
+    public ResourceTrendSurface(bool historyOnly = false) => _historyOnly = historyOnly;
     private Pen _line = new(Brushes.Transparent, 1);
     private ResourceTrendPoint[] _points = Array.Empty<ResourceTrendPoint>();
     private ResourceTrendPoint[][] _segments = Array.Empty<ResourceTrendPoint[]>();
@@ -22,7 +25,10 @@ internal sealed class ResourceTrendSurface : FrameworkElement
         _track = theme.Color("surface");
         var color = theme.Color(pressure switch { ResourcePressure.Critical => "danger", ResourcePressure.Warning => "warning", ResourcePressure.Unknown => "muted", _ => "accent" }).Color;
         var fill = new SolidColorBrush(color) { Opacity = theme.Dark ? 0.26 : 0.19 };
-        fill.Freeze(); _fill = fill; InvalidateVisual();
+        fill.Freeze(); _area = fill;
+        _fill = new SolidColorBrush(color); _fill.Freeze();
+        _tick = new(new SolidColorBrush(theme.Color("muted").Color) { Opacity = 0.25 }, 1); _tick.Freeze();
+        InvalidateVisual();
         var stroke = new SolidColorBrush(color) { Opacity = 0.7 }; stroke.Freeze();
         _line = new(stroke, 1) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round }; _line.Freeze();
     }
@@ -31,6 +37,22 @@ internal sealed class ResourceTrendSurface : FrameworkElement
         var bounds = new Rect(RenderSize);
         context.PushClip(new RectangleGeometry(bounds, 3, 3));
         context.DrawRectangle(_track, null, bounds);
+        if (!_historyOnly)
+        {
+            for (var quarter = 1; quarter < 4; quarter++)
+                context.DrawLine(_tick, new Point(bounds.Width * quarter / 4, 0), new Point(bounds.Width * quarter / 4, bounds.Height));
+            if (Percent is double percent && double.IsFinite(percent) && percent > 0)
+            {
+                var width = bounds.Width * Math.Clamp(percent, 0, 100) / 100;
+                context.PushClip(new RectangleGeometry(new Rect(0, 0, width, bounds.Height)));
+                context.DrawRectangle(_fill, null, bounds);
+                var hatch = new Pen(new SolidColorBrush(Colors.White) { Opacity = 0.24 }, 2);
+                for (var x = -bounds.Height; x < width; x += 8)
+                    context.DrawLine(hatch, new Point(x, bounds.Height), new Point(x + bounds.Height, 0));
+                context.Pop();
+            }
+            context.Pop(); return;
+        }
         if (bounds.Width > 2 && bounds.Height > 2 && _points.Length > 0)
         {
             var duration = DurationSeconds;
@@ -47,7 +69,7 @@ internal sealed class ResourceTrendSurface : FrameworkElement
                     geometry.PolyLineTo(points, true, false);
                     geometry.LineTo(new(points[^1].X, bounds.Height - 1), true, false);
                 }
-                area.Freeze(); context.DrawGeometry(_fill, null, area);
+                area.Freeze(); context.DrawGeometry(_area, null, area);
                 var line = new StreamGeometry();
                 using (var geometry = line.Open()) { geometry.BeginFigure(points[0], false, false); geometry.PolyLineTo(points.Skip(1).ToArray(), true, false); }
                 line.Freeze(); context.DrawGeometry(null, _line, line);

@@ -1,5 +1,9 @@
 # Folder storage monitoring
 
+The Windows gauge keeps drive metadata above a separate12px allocation bar. Tracked folders use opaque colors with diagonal texture and visible separators; other used space is neutral and free space stays unfilled. Wide folder segments show their share directly. Small segments retain their measured width and expose the exact share on hover. Drives without tracked folders use the same used/free scale.
+
+CPU, memory, GPU and VRAM use the same separated metadata/current-percentage bars. Quarter marks help compare utilization; missing readings stay empty with an unavailable value. Historical trend graphs remain in the resource tooltip rather than behind the text.
+
 On Windows, open **Drive settings**, add folders below a drive, choose each color, and save. Local and mapped network drives are supported. The existing drive bar then partitions its total capacity into tracked folders, other used space, and free space. Hover over a colored segment for its path, allocated size, percentage of the drive, and measurement state. Click it to open that folder in File Explorer; other-used and free-space segments open the drive root. Segment controls remain stable during periodic refresh so an open tooltip does not disappear. Removing folders retains the other folders' colors. Settings survive application restart in the existing account vault.
 
 Up to eight folders can be tracked per drive. Paths must be absolute and inside that drive. Parent/child paths cannot overlap. Reparse points, including symbolic links and directory junctions, are excluded; selecting a linked root is reported as unavailable. File identities prevent hard links from being counted twice across the tracked folders. Sizes use Windows allocated file bytes, including hidden files, rather than summing logical file lengths. Filesystem metadata and untracked files remain in other used space.

@@ -48,12 +48,12 @@ internal static class FolderUiContracts
                 var tracked = reading with { Folders = new[] { new FolderReading(folders[0].Path, 0, 240 * gib, FolderState.Available), new FolderReading(folders[1].Path, 1, 120 * gib, FolderState.Partial, 1) } };
                 after.Refresh(new[] { tracked }, theme);
                 var surface = new StackPanel { Background = theme.Color("canvas"), Margin = new Thickness(16) };
-                surface.Children.Add(new TextBlock { Text = language == "ko" ? "기존 · 남은 공간" : "Before · free space", Foreground = theme.Color("text"), Margin = new Thickness(0, 0, 0, 6) }); surface.Children.Add(before);
-                surface.Children.Add(new TextBlock { Text = language == "ko" ? "개선 · 폴더별 점유량" : "After · tracked folders", Foreground = theme.Color("text"), Margin = new Thickness(0, 16, 0, 6) }); surface.Children.Add(after);
+                surface.Children.Add(new TextBlock { Text = language == "ko" ? "폴더 미등록 드라이브" : "Drive without tracked folders", Foreground = theme.Color("text"), Margin = new Thickness(0, 0, 0, 6) }); surface.Children.Add(before);
+                surface.Children.Add(new TextBlock { Text = language == "ko" ? "폴더별 점유량" : "Tracked folder allocation", Foreground = theme.Color("text"), Margin = new Thickness(0, 16, 0, 6) }); surface.Children.Add(after);
                 var tip = (ResourceToolTip)after.Children.OfType<Grid>().First().ToolTip;
                 var legend = (FrameworkElement)tip.Content; tip.Content = null; legend.Margin = new Thickness(8, 18, 8, 0); surface.Children.Add(legend);
                 Capture(surface, Path.Combine(output, $"folders-gauge-{language}-{dark}.png"), theme, 620, 600);
-                if (!before.Fits || !after.Fits || after.ActualHeight != 24) throw new Exception("Folder segments obscure the footer.");
+                if (!before.Fits || !after.Fits || after.ActualHeight != 34) throw new Exception("Folder segments obscure the footer.");
                 var text = string.Join("\n", Find<TextBlock>(legend).Select(t => t.Text));
                 if (!text.Contains(folders[0].Path) || !text.Contains("24.0%") || !text.Contains(Loc.T("folders.partial")) || !text.Contains(Loc.T("folders.other"))) throw new Exception("Folder legend lost paths, percentages or states.");
                 checks.Add($"{language}/{dark}: production gauge and tooltip render folder shares, partial state, other used space and free space.");
@@ -69,6 +69,22 @@ internal static class FolderUiContracts
                 after.Refresh(new[] { tracked with { Free = 299 * gib } }, theme);
                 if (!segments.SequenceEqual(Find<Button>(after).Where(b => b.Tag is string)) || !ReferenceEquals(folderTip, segments[0].ToolTip)) throw new Exception("Periodic updates replaced the hovered segment or tooltip.");
                 checks.Add($"{language}/{dark}: compact hover, exact folder/root click targets and stable controls survive periodic refresh.");
+                var now = DateTimeOffset.UtcNow;
+                foreach (var width in new[] { 500, 800 })
+                {
+                    var footer = new StackPanel { Margin = new Thickness(12), Background = theme.Color("canvas") };
+                    var hardware = new HardwareUsagePanel { Margin = new Thickness(0, 0, 0, 6) };
+                    hardware.Refresh(new(now, new(10), new(34), new(92), new(null), Array.Empty<GpuResource>(), 0,
+                        new[] { new HardwareObservation(now.AddSeconds(-2), 18, 32, 80, null), new HardwareObservation(now, 10, 34, 92, null) }), theme);
+                    var drives = new DriveUsagePanel(() => { }, _ => { });
+                    drives.Refresh(new[] {
+                        new DriveReading(@"C:\", "C:", 19 * gib, 250 * gib),
+                        new DriveReading(@"D:\", "D:", 118 * gib, 500 * gib, Folders: new[] { new FolderReading(@"D:\Git", 0, 310 * gib, FolderState.Available), new FolderReading(@"D:\Caches", 2, 40 * gib, FolderState.Available) }),
+                        new DriveReading(@"W:\", "W:", 620 * gib, 2000 * gib, Folders: new[] { new FolderReading(@"W:\Builds", 3, 760 * gib, FolderState.Available), new FolderReading(@"W:\Caches", 1, 21 * gib, FolderState.Available) }) }, theme);
+                    footer.Children.Add(hardware); footer.Children.Add(drives);
+                    Capture(footer, Path.Combine(output, $"gauges-footer-{language}-{dark}-{width}.png"), theme, width, 110);
+                    if (!drives.Fits || !Find<ResourceTrendSurface>(hardware).All(graph => graph.ActualHeight == 12)) throw new Exception("Resource bars overlap their metadata in the compact footer.");
+                }
                 dialog.Close(); owner.Close();
             }
         }
