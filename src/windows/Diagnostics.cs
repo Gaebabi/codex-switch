@@ -353,28 +353,28 @@ internal static class Diagnostics
             Assert(SubscriptionPresentation.Days(now.AddDays(-1), now) == Loc.F("subscription.expired_days", 1), "Elapsed date was shown as future");
             Assert(SubscriptionPresentation.Days(null, now) == "—", "Missing date became an invented countdown");
         });
-        Test("Subscription dates come from subscription claims rather than JWT expiration", () =>
+        Test("Login claims do not masquerade as current billing dates", () =>
         {
             var until = DateTimeOffset.Parse("2026-11-07T00:30:00+09:00");
             var checkedAt = until.AddDays(-20);
             var dated = AuthDocument.Parse(FakeAuth("subscription", "subscription@example.test", "workspace", until, checkedAt));
-            Assert(dated.SubscriptionActiveUntil == until && dated.SubscriptionLastChecked == checkedAt, "Subscription dates were lost");
-            Assert(dated.SubscriptionActiveUntil is DateTimeOffset actual && UsagePresentation.KoreanTime(actual).Day == 7, "Subscription day used the wrong timezone");
+            Assert(dated.SubscriptionActiveUntil == null && dated.SubscriptionLastChecked == null, "Cached login claims became authoritative billing dates");
             Assert(profileA.SubscriptionActiveUntil == null && profileA.SubscriptionLastChecked == null, "JWT expiration became a subscription or payment date");
         });
-        Test("Saved accounts derive subscription dates on load and update them with refreshed sign-in data", () =>
+        Test("Saved billing survives token refresh and supplies the UI snapshot", () =>
         {
             var until = DateTimeOffset.Parse("2026-11-07T00:30:00+09:00");
             var subscriptionVault = new AccountVault(Path.Combine(directory, "subscription-vault"));
             var dated = subscriptionVault.Upsert(FakeAuth("subscription", "subscription@example.test", "workspace", until, until.AddDays(-20)));
+            dated.SetSubscription(new SubscriptionSnapshot { AccountId = dated.AccountId, WillRenew = true, RenewsAt = until.AddMonths(1), CheckedAt = until.AddDays(1) });
             subscriptionVault.Save();
             var loaded = new AccountVault(subscriptionVault.DirectoryPath);
-            Assert(loaded.Data.Accounts.Single().SubscriptionActiveUntil == until, "Existing account did not load its subscription date");
-            loaded.Upsert(FakeAuth("subscription", "subscription@example.test", "workspace", until.AddMonths(1), until.AddDays(1)));
+            Assert(loaded.Data.Accounts.Single().SubscriptionActiveUntil == until.AddMonths(1), "Existing account did not load its billing date");
+            loaded.Upsert(FakeAuth("subscription", "subscription@example.test", "workspace", until, until.AddDays(-20)));
             var view = new AccountService(loaded, directory).Accounts.Single();
             Assert(view.SubscriptionActiveUntil == until.AddMonths(1) && view.SubscriptionLastChecked == until.AddDays(1), "Refreshed subscription date did not reach the UI snapshot");
             loaded.Upsert(FakeAuth("subscription", "subscription@example.test", "workspace"));
-            Assert(loaded.Data.Accounts.Single().SubscriptionActiveUntil == null, "Removed subscription date stayed cached");
+            Assert(loaded.Data.Accounts.Single().SubscriptionActiveUntil == until.AddMonths(1), "Absent token claims erased current billing");
         });
         Test("Different users in one workspace have separate profile identities", () => Assert(profileA.Key != profileB.Key, "Profile collision"));
         Test("API-key and incomplete login caches are rejected", () =>

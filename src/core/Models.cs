@@ -17,8 +17,10 @@ internal sealed class AccountProfile
     public string AccountId { get; set; } = "";
     public string Plan { get; set; } = "unknown";
     public string AuthJson { get; set; } = "";
+    public SubscriptionSnapshot? Subscription { get; set; }
     [JsonIgnore] public DateTimeOffset? SubscriptionActiveUntil { get; set; }
     [JsonIgnore] public DateTimeOffset? SubscriptionLastChecked { get; set; }
+    [JsonIgnore] public string? SubscriptionError { get; set; }
     public bool RequiresApply { get; set; }
     public UsageSnapshot? Usage { get; set; }
     public List<UsageTrack> History { get; set; } = new();
@@ -29,6 +31,11 @@ internal sealed class AccountProfile
     [JsonIgnore] public bool IsRefreshing { get; set; }
     [JsonIgnore] public long CredentialRevision { get; set; }
     [JsonIgnore] public string DisplayName => string.IsNullOrWhiteSpace(Alias) ? (Email.Length > 0 ? Email : Loc.T("이메일 정보 없음")) : Alias;
+    public void SetSubscription(SubscriptionSnapshot? value)
+    {
+        if (value != null && value.AccountId != AccountId) throw new InvalidOperationException("Subscription account does not match the saved account.");
+        Subscription = value; SubscriptionActiveUntil = value?.NextDate; SubscriptionLastChecked = value?.CheckedAt;
+    }
 }
 
 internal sealed class UsageSnapshot
@@ -137,16 +144,12 @@ internal static class AuthDocument
         if (string.IsNullOrWhiteSpace(subject)) throw new InvalidOperationException("로그인 정보에 사용자 식별자가 없습니다.");
         var email = JsonValue.String(claims, "email") ?? "";
         var plan = "unknown";
-        DateTimeOffset? subscriptionUntil = null, subscriptionLastChecked = null;
         if (claims.TryGetProperty("https://api.openai.com/auth", out var authClaims) && authClaims.ValueKind == JsonValueKind.Object)
         {
             plan = JsonValue.String(authClaims, "chatgpt_plan_type") ?? plan;
-            subscriptionUntil = JsonValue.Timestamp(authClaims, "chatgpt_subscription_active_until");
-            subscriptionLastChecked = JsonValue.Timestamp(authClaims, "chatgpt_subscription_last_checked");
         }
         var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(accountId + "\n" + subject))).ToLowerInvariant();
-        return new AccountProfile { Key = key, Email = email, AccountId = accountId, Plan = plan, AuthJson = json,
-            SubscriptionActiveUntil = subscriptionUntil, SubscriptionLastChecked = subscriptionLastChecked };
+        return new AccountProfile { Key = key, Email = email, AccountId = accountId, Plan = plan, AuthJson = json };
     }
     private static JsonDocument DecodeClaims(string jwt)
     {

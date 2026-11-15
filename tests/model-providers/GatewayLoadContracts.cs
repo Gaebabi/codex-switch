@@ -58,22 +58,55 @@ internal static class GatewayLoadContracts
         using (var routed = new GatewayRoutedContent(inputBytes, new JsonObject { ["model"] = "load-model" }, true, true, false))
         {
             var parsed = JsonNode.Parse(await routed.ReadAsStringAsync())!;
-            check("Native additional-tools events become standard declarations without duplicating tools or losing messages and calls",
+            check("Native additional-tools events are consumed while current declarations, messages and calls remain intact",
                 parsed["tools"]!.AsArray().Count == 1 && JsonNode.DeepEquals(parsed["tools"]![0], tool) && parsed["input"]!.AsArray().Count == 2 &&
                 JsonNode.DeepEquals(parsed["input"]![0], message) && JsonNode.DeepEquals(parsed["input"]![1], toolCall));
         }
         input.Remove("tools");
-        using (var routed = new GatewayRoutedContent(JsonSerializer.SerializeToUtf8Bytes(input), new JsonObject { ["model"] = "load-model" }, true, true, false))
-            check("Additional tool schemas survive when the native request has no top-level tools array", JsonNode.DeepEquals(JsonNode.Parse(await routed.ReadAsStringAsync())!["tools"]![0], tool));
+        var missingCatalog = false;
+        try { using var routed = new GatewayRoutedContent(JsonSerializer.SerializeToUtf8Bytes(input), new JsonObject { ["model"] = "load-model" }, true, true, false); }
+        catch (InvalidDataException) { missingCatalog = true; }
+        check("Historical partial updates cannot invent an active tool catalog when the current catalog is missing", missingCatalog);
         using (var native = new GatewayRoutedContent(inputBytes, new JsonObject(), false, false, false))
             check("Native OpenAI transport retains additional-tools events unchanged", JsonNode.DeepEquals(JsonNode.Parse(await native.ReadAsStringAsync()), JsonNode.Parse(inputBytes)));
         input["tools"] = new JsonArray(tool.DeepClone());
-        input["tools"]![0]!["description"] = "conflicting schema";
-        var conflict = false;
+        input["tools"]![0]!["description"] = "current schema";
+        input["tools"]![0]!["tools"]!.AsArray().Add(new JsonObject { ["type"] = "function", ["name"] = "current_only", ["parameters"] = new JsonObject { ["type"] = "object" } });
+        input["input"]![3]!["tools"]![0]!["tools"]![0]!["description"] = "historical incremental update";
+        using (var content = new GatewayRoutedContent(JsonSerializer.SerializeToUtf8Bytes(input), new JsonObject { ["model"] = "load-model" }, true, true, false))
+        {
+            var parsed = JsonNode.Parse(await content.ReadAsStringAsync())!;
+            check("Historical namespace schema updates cannot conflict with or replace the current complete catalog", JsonNode.DeepEquals(parsed["tools"], input["tools"]) && parsed["input"]!.AsArray().Count == 2);
+        }
+        input["tools"] = new JsonArray();
+        using (var content = new GatewayRoutedContent(JsonSerializer.SerializeToUtf8Bytes(input), new JsonObject { ["model"] = "load-model" }, true, true, false))
+            check("An explicitly empty active catalog never resurrects historical tools", JsonNode.Parse(await content.ReadAsStringAsync())!["tools"]!.AsArray().Count == 0);
+        input["input"]![3]!["tools"] = new JsonArray(17);
+        var malformed = false;
         try { using var content = new GatewayRoutedContent(JsonSerializer.SerializeToUtf8Bytes(input), new JsonObject { ["model"] = "load-model" }, true, true, false); }
-        catch (InvalidDataException) { conflict = true; }
-        check("Conflicting historical and active tool definitions fail without guessing a schema", conflict);
+        catch (InvalidDataException) { malformed = true; }
+        check("Malformed historical declarations remain rejected", malformed);
         var handler = new LoadUpstream();
+        var configured = Encoding.UTF8.GetBytes("{\"model\":\"alias\",\"reasoning\":{\"effort\":\"max\",\"summary\":\"none\"},\"input\":[{\"role\":\"user\",\"content\":\"한글\\u0020history\"},{\"type\":\"configuration_update\",\"reasoning\":{\"effort\":\"low\"}},{\"type\":\"function_call\",\"name\":\"fixture\",\"arguments\":\"{}\",\"call_id\":\"kept\"},{\"type\":\"configuration_update\",\"reasoning\":{\"effort\":\"medium\"}}]}");
+        var configuredOptions = new JsonObject { ["model"] = "load-model", ["reasoning"] = new JsonObject { ["effort"] = "max", ["summary"] = "none" } };
+        var consumed = GatewayRoutedContent.ApplyConfiguration(configured, configuredOptions);
+        using (var content = new GatewayRoutedContent(configured, configuredOptions, true, false, false, configurationUpdates: consumed))
+        {
+            var text = await content.ReadAsStringAsync(); var result = JsonNode.Parse(text)!;
+            check("The latest native reasoning update replaces the initial effort before custom validation and preserves other options",
+                consumed.SetEquals(new[] { 1, 3 }) && result["reasoning"]!["effort"]!.GetValue<string>() == "medium" && result["reasoning"]!["summary"]!.GetValue<string>() == "none");
+            check("Applied configuration controls leave every conversation message and tool call intact", result["input"]!.AsArray().Count == 2 &&
+                text.Contains("한글\\u0020history") && result["input"]![1]!["call_id"]!.GetValue<string>() == "kept");
+        }
+        using (var content = new GatewayRoutedContent(configured, new JsonObject(), false, false, false))
+            check("Native OpenAI requests retain their original configuration update protocol byte for byte", (await content.ReadAsByteArrayAsync()).SequenceEqual(configured));
+        foreach (var update in new[] { "{\"type\":\"configuration_update\",\"unknown\":true}", "{\"type\":\"configuration_update\",\"reasoning\":null}" })
+        {
+            var rejected = false;
+            try { GatewayRoutedContent.ApplyConfiguration(Encoding.UTF8.GetBytes("{\"input\":[" + update + "]}"), new JsonObject()); }
+            catch (InvalidDataException) { rejected = true; }
+            check("Unknown or malformed native configuration controls are not silently discarded: " + update, rejected);
+        }
         var directory = Path.Combine(root, "load-providers");
         var store = new ModelProviderStore(directory);
         var custom = new ModelProvider { Name = "Load fixture", BaseUrl = "https://load.example.invalid/v1", ApiKey = "fictional-load-key" };

@@ -14,6 +14,7 @@ DiskIoReading SampleIo(double read = 1024, double write = 512, double readMs = 2
     new(ioAt, DiskIoState.Available, profile, new(read, readMs), new(write, writeMs), busy);
 void Assert(bool value) { if (!value) throw new InvalidOperationException("Hardware service contract failed."); }
 void Check(string name, Action action) { action(); checks.Add(name); }
+await FolderContracts.Run(Check);
 void Unsupported(Action action)
 { try { action(); } catch (PlatformNotSupportedException) { return; } throw new InvalidOperationException("Wrong-OS native entry point did not reject."); }
 void Validate(HardwareUsage usage)

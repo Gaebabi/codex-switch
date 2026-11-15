@@ -64,7 +64,7 @@ internal sealed class MacAccountCard : Grid
         plan.FlowDirection = FlowDirection.LeftToRight; plan.HorizontalAlignment = HorizontalAlignment.Right; Put(plan, 0, 2);
         var resets = theme.Text(profile.Usage?.AvailableResets is int count ? Loc.F("초기화권 {0}장", count) : Loc.T("초기화권 —"), 11, "muted");
         resets.FlowDirection = FlowDirection.LeftToRight; resets.HorizontalAlignment = HorizontalAlignment.Right; Put(resets, 1, 2);
-        _subscription = theme.Text(Subscription(profile.SubscriptionActiveUntil, DateTimeOffset.UtcNow), 10, "muted"); Grid.SetColumnSpan(_subscription, 2); Put(_subscription, 2, 0);
+        _subscription = theme.Text(Subscription(profile, DateTimeOffset.UtcNow), 10, "muted"); Grid.SetColumnSpan(_subscription, 2); Put(_subscription, 2, 0);
         var bucket = profile.Usage?.Buckets.FirstOrDefault(b => b.Id == quota?.BucketId) ?? profile.Usage?.Buckets.FirstOrDefault();
         var credit = theme.Text(Credits(bucket), 10, "muted"); credit.FlowDirection = FlowDirection.LeftToRight; credit.HorizontalAlignment = HorizontalAlignment.Right; Put(credit, 2, 2);
         ToolTip.SetTip(credit, bucket?.CreditBalance ?? (bucket?.UnlimitedCredits == true ? Loc.T("크레딧 제한 없음") : Loc.T("크레딧 정보 없음")));
@@ -73,9 +73,9 @@ internal sealed class MacAccountCard : Grid
     public void Update(DateTimeOffset now)
     {
         _depletion.FlowDirection = FlowDirection.LeftToRight; _reset.FlowDirection = FlowDirection.LeftToRight; _subscription.FlowDirection = FlowDirection.LeftToRight;
-        _subscription.Text = Subscription(_profile.SubscriptionActiveUntil, now);
-        _subscription.IsVisible = _profile.SubscriptionActiveUntil.HasValue;
-        ToolTip.SetTip(_subscription, _profile.SubscriptionActiveUntil.HasValue ? _subscription.Text : Loc.T("구독 종료일 정보 없음"));
+        _subscription.Text = _profile.SubscriptionError != null && !_profile.SubscriptionActiveUntil.HasValue ? Loc.T("subscription.unavailable") : Subscription(_profile, now);
+        _subscription.IsVisible = _profile.SubscriptionActiveUntil.HasValue || _profile.SubscriptionError != null;
+        ToolTip.SetTip(_subscription, SubscriptionPresentation.Details(_profile));
         _subscription.Foreground = _theme.Brush(AccountDateWarnings.Subscription(_profile.SubscriptionActiveUntil, now) ? "warning" : "muted");
         _reset.Foreground = _theme.Brush(AccountDateWarnings.Reset(_quota?.Window.ResetsAt, now) ? "warning" : "text");
         if (_quota == null) { _depletion.Text = Loc.T(_profile.IsRefreshing ? "측정중" : "정보 없음"); _reset.Text = "—"; return; }
@@ -95,10 +95,11 @@ internal sealed class MacAccountCard : Grid
         return minutes <= 0 ? Loc.T("갱신 대기") : minutes >= 1440 ? Loc.F("{0}일 {1}시간", minutes / 1440, minutes % 1440 / 60) :
             minutes >= 60 ? Loc.F("{0}시간 {1}분", minutes / 60, minutes % 60) : Loc.F("{0}분", minutes);
     }
-    private static string Subscription(DateTimeOffset? until, DateTimeOffset at)
+    private static string Subscription(AccountProfile profile, DateTimeOffset at)
     {
+        var until = profile.SubscriptionActiveUntil;
         var date = until == null ? "—" : UsagePresentation.KoreanTime(until.Value).ToString("MM/dd", CultureInfo.InvariantCulture);
-        return Loc.T("subscription.ends") + " " + date + "  " + Loc.T("subscription.left") + " " + SubscriptionPresentation.Days(until, at);
+        return SubscriptionPresentation.Label(profile) + " " + date + "  " + Loc.T("subscription.left") + " " + SubscriptionPresentation.Days(until, at);
     }
     private static string Credits(UsageBucket? bucket)
     {

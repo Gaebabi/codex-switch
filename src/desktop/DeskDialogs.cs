@@ -71,7 +71,7 @@ internal static class DeskDialogs
         }
         root.Children.Add(new ScrollViewer { Content = rows });
         var save = theme.Button(Loc.T("저장"), () => window.Close(fields.Where(f => f.Enabled.IsChecked == true).Select(f =>
-            new DrivePreference { Root = f.Root, Label = string.IsNullOrWhiteSpace(f.Name.Text) ? f.Root : f.Name.Text.Trim() }).ToArray()));
+            new DrivePreference { Root = f.Root, Label = string.IsNullOrWhiteSpace(f.Name.Text) ? f.Root : f.Name.Text.Trim(), Folders = saved.FirstOrDefault(p => p.Root == f.Root)?.Folders }).ToArray()));
         var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Margin = new Thickness(0, 12, 0, 0) };
         var cancel = theme.Button(Loc.T("취소"), () => window.Close()); cancel.IsCancel = true; save.IsDefault = true;
         actions.Children.Add(cancel); actions.Children.Add(save); Grid.SetRow(actions, 1); root.Children.Add(actions); window.Content = root;

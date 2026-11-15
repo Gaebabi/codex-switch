@@ -210,13 +210,18 @@ internal sealed partial class ModelGateway : IAsyncDisposable
             var portableHistory = _store.RequiresPortableHistory(session, identity, routeIdentity);
             var source = route.Provider == null ? new GatewayHistorySource("openai", model) : GatewayHistoryBridge.Source(route.Provider, route.Model);
             history = new GatewayHistoryInput(original);
+            var providerReasoning = _nativeRecovery?.ForeignReasoning is { Length: > 0 } reasoningState
+                ? NativeReasoningHandoff.Match(history, reasoningState) : null;
+            var providerItemIds = _nativeRecovery?.ForeignItemIds is { Length: > 0 } itemIds
+                ? NativeReasoningHandoff.Match(history, itemIds, outputIds: true) : null;
             var historyOperation = RequestKey(bytesIn, identity, routed ? ModelRouting.Model : routeIdentity, path) ?? Convert.ToHexString(SHA256.HashData(bytesIn.Span));
-            if (portableHistory)
+            if (portableHistory && _nativeRecovery == null)
             {
                 removeReasoning = original.HasEncrypted("reasoning");
             }
             Uri destination;
             var rewrite = routed || route.Provider != null;
+            IReadOnlySet<int>? configurationUpdates = null;
             if (rewrite)
             {
                 body = new JsonObject { ["model"] = route.Provider == null ? model : route.Model.UpstreamId };
@@ -228,6 +233,7 @@ internal sealed partial class ModelGateway : IAsyncDisposable
             }
             if (route.Provider != null)
             {
+                configurationUpdates = GatewayRoutedContent.ApplyConfiguration(bytesIn, body!);
                 JsonObject? native = null;
                 if ((!settings.IsolatedProfile || settings.DesktopProfile) && route.Model.GenericMetadata && route.Model.ReasoningOverride == null &&
                     (routed ? settings.OpenAiModels.Any(choice => choice.Id == route.Model.UpstreamId) : body!["reasoning"] != null))
@@ -287,8 +293,8 @@ internal sealed partial class ModelGateway : IAsyncDisposable
                 var upstream = new HttpRequestMessage(HttpMethod.Post, destination);
                 if (route.Provider == null) CopyOpenAiHeaders(request, upstream, identity);
                 else upstream.Headers.Authorization = new AuthenticationHeaderValue("Bearer", route.Provider.ApiKey);
-                upstream.Content = rewrite || removeReasoning || history.Changed ?
-                    new GatewayRoutedContent(bytesIn, body ?? new JsonObject(), rewrite, route.Model?.GenericMetadata == true, removeReasoning, history.Replacements) :
+                upstream.Content = rewrite || removeReasoning || history.Changed || providerReasoning?.Count > 0 || providerItemIds?.Count > 0 ?
+                    new GatewayRoutedContent(bytesIn, body ?? new JsonObject(), rewrite, route.Model?.GenericMetadata == true, removeReasoning, history.Replacements, configurationUpdates, providerReasoning, providerItemIds) :
                     new ReadOnlyMemoryContent(bytesIn);
                 upstream.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 return upstream;

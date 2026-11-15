@@ -30,6 +30,7 @@ internal sealed class AccountService
     private readonly CancellationTokenSource _shutdown = new();
     private readonly LinuxClientSelection? _linuxClient;
     private readonly string _contextDirectory;
+    internal SubscriptionClient SubscriptionClient { get; set; } = new();
     private ModelProviderManager? _modelProviders;
     private readonly object _modelProvidersGate = new();
     internal ModelProviderManager ModelProviders
@@ -71,6 +72,7 @@ internal sealed class AccountService
             {
                 Key = p.Key, Alias = p.Alias, Email = p.Email, AccountId = p.AccountId, Plan = p.Plan,
                 SubscriptionActiveUntil = p.SubscriptionActiveUntil, SubscriptionLastChecked = p.SubscriptionLastChecked,
+                Subscription = p.Subscription, SubscriptionError = p.SubscriptionError,
                 IsCurrent = p.Key == CurrentKey, RequiresApply = p.RequiresApply, Usage = p.Usage, Error = p.Error,
                 IsRefreshing = _queries.IsRunning(p.Key), History = p.History.Select(t => t.Copy()).ToList(),
                 CreditHistory = p.CreditHistory.Select(t => t.Copy()).ToList(),
@@ -198,10 +200,23 @@ internal sealed class AccountService
                     }
                 }
             }
+            string subscriptionAuth;
+            lock (Vault.SyncRoot)
+            {
+                if (!IsCurrentRevision(profile, revision)) return;
+                subscriptionAuth = profile.AuthJson;
+            }
+            SubscriptionSnapshot? subscription = null;
+            string? subscriptionError = null;
+            try { subscription = await SubscriptionClient.ReadAsync(subscriptionAuth, cancellation).ConfigureAwait(false); }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { throw; }
+            catch (Exception error) { subscriptionError = UserErrors.Describe(error); }
             lock (Vault.SyncRoot)
             {
                 if (!IsCurrentRevision(profile, revision)) return;
                 profile.Usage = usage; profile.Error = null;
+                profile.SubscriptionError = subscriptionError;
+                if (subscription != null) profile.SetSubscription(subscription);
                 if (usage != null) UsageHistory.Record(profile, usage);
                 if (!string.IsNullOrEmpty(email)) profile.Email = email;
                 if (plan != null) profile.Plan = plan;

@@ -1,5 +1,11 @@
 # Current plan
 
+2026-11-15 subscription-date correction: query current account entitlements independently of token claims, persist identity-bound billing snapshots, distinguish renewal and expiration, and preserve quota updates on a billing failure. Verify stale-token/save/reload/failure behavior and both installed owner dates without restarting Codex.
+
+2026-11-15 folder explorer follow-up: host and VM installations, VM folder registration, mapped-drive capacity, compact hover and exact Explorer targets are implemented. The native collector batches allocation/file-ID metadata and handles long build/cache paths. Keep private measured folder inventories separate from public source evidence; preserve the owner Codex/backend processes during utility updates. See [current acceptance](STATUS.md).
+
+2026-11-15 folder monitoring is complete for the Windows utility: configurable paths and colors, independent allocated-space scans, total-capacity gauge segments and an explanatory legend. Real filesystem, production-control and installed-package checks are complete; the owner utility was updated without restarting Codex or its backend. Keep subsequent folder edits restart-free. Public delivery remains a separate tracked release step. See [acceptance](STATUS.md) and [behavior](../FOLDER_MONITORING.md).
+
 2026-11-15 release scope: Windows context size and auto-compaction controls for native OpenAI defaults and each registered external model are implemented and locally verified. Actual native context reporting, automatic compaction, edits during active inference, default restoration and production UI pass. Complete final-head protected CI, including native-window captures, and publish the reviewed tree. Preserve owner processes; code upgrade activation remains separate from subsequent restart-free setting changes.
 
 2026-11-14 owner delivery request: finish the existing live-model work, commit/push the current branch, publish version1.45.0 and provide verified download links. Use the existing branch and six protected checks, review and normal merge. Build all nine native release packages through CI, stage and verify a draft, then check anonymous downloads. Preserve running owner Codex processes and previous releases. This delivery authorization supersedes the earlier no-publication checkpoint below.

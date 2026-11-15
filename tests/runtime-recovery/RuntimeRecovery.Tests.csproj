@@ -8,5 +8,6 @@
     <ProjectReference Include="../../src/windows/CodexSwitch.Windows.csproj" />
     <Compile Include="Program.cs" />
     <Compile Include="WindowEvidence.cs" />
+    <Compile Include="SubscriptionRefreshContracts.cs" />
   </ItemGroup>
 </Project>

@@ -93,11 +93,12 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
             return _native.ExitCode;
         }
         var queue = Channel.CreateUnbounded<JsonObject>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = true });
+        using var clientInput = new StreamReader(Console.OpenStandardInput(), new UTF8Encoding(false, true), detectEncodingFromByteOrderMarks: false);
         var outputPump = ReadNativeAsync();
         var worker = ProcessRequestsAsync(queue.Reader);
         try
         {
-            while (await Console.In.ReadLineAsync(_stop.Token).ConfigureAwait(false) is string line)
+            while (await clientInput.ReadLineAsync(_stop.Token).ConfigureAwait(false) is string line)
             {
                 var message = JsonNode.Parse(line)?.AsObject() ?? throw new InvalidDataException("Invalid JSON-RPC input.");
                 if (message["method"] != null && message["id"] != null) await queue.Writer.WriteAsync(message, _stop.Token).ConfigureAwait(false);

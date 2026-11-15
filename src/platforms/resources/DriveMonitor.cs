@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CodexAccountDesk;
 
-internal sealed record DriveReading(string Root, string Label, long? Free, long? Total, TemperatureReading? Temperature = null, DiskIoReading? Io = null)
+internal sealed record DriveReading(string Root, string Label, long? Free, long? Total, TemperatureReading? Temperature = null, DiskIoReading? Io = null, FolderReading[]? Folders = null)
 {
     public double? FreePercent => Free.HasValue && Total > 0 ? 100.0 * Free.Value / Total.Value : null;
 }
@@ -15,24 +15,30 @@ internal sealed class DriveMonitor : IAsyncDisposable
 {
     internal static StringComparer RootComparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
     private readonly Func<string, TemperatureReading> _temperature;
-    public DriveMonitor(Func<string, TemperatureReading>? temperature = null) => _temperature = temperature ?? (_ => TemperatureReading.Missing(TemperatureState.PlatformUnsupported));
+    private readonly FolderMonitor _folders = new();
+    public DriveMonitor(Func<string, TemperatureReading>? temperature = null)
+    {
+        _temperature = temperature ?? (_ => TemperatureReading.Missing(TemperatureState.PlatformUnsupported));
+        _folders.Changed += () => Changed?.Invoke();
+    }
     private DrivePreference[] _configuration = Array.Empty<DrivePreference>();
     private DriveReading[] _current = Array.Empty<DriveReading>();
     private readonly CancellationTokenSource _stop = new();
     private readonly SemaphoreSlim _changed = new(0, 1);
     private Task? _run;
     public event Action? Changed;
-    public DriveReading[] Current => Volatile.Read(ref _current);
+    public DriveReading[] Current => Volatile.Read(ref _current).Select(r => r with { Folders = _folders.Read(r.Root) }).ToArray();
     public void Configure(DrivePreference[] preferences)
     {
         var comparison = RootComparer;
         if (preferences.Any(p => OperatingSystem.IsWindows() ? p.Root.Length != 3 || !char.IsAsciiLetter(p.Root[0]) || p.Root[1..] != ":\\" :
             !Path.IsPathFullyQualified(p.Root) || Path.GetFullPath(p.Root) != p.Root) || preferences.Select(p => p.Root).Distinct(comparison).Count() != preferences.Length)
             throw new InvalidDataException("드라이브 설정이 올바르지 않습니다.");
-        Volatile.Write(ref _configuration, preferences.Select(p => new DrivePreference { Root = OperatingSystem.IsWindows() ? p.Root.ToUpperInvariant() : p.Root, Label = p.Label }).ToArray());
+        var configuration = preferences.Select(p => new DrivePreference { Root = OperatingSystem.IsWindows() ? p.Root.ToUpperInvariant() : p.Root, Label = p.Label, Folders = FolderUsage.Validate(p.Root, p.Folders) }).ToArray();
+        Volatile.Write(ref _configuration, configuration); _folders.Configure(configuration);
         if (_changed.CurrentCount == 0) _changed.Release();
     }
-    public void Start() { _run ??= Task.Run(RunAsync); }
+    public void Start() { _folders.Start(); _run ??= Task.Run(RunAsync); }
     private async Task RunAsync()
     {
         using var io = OperatingSystem.IsWindows() ? new WindowsDiskIoSampler() : null;
@@ -61,11 +67,11 @@ internal sealed class DriveMonitor : IAsyncDisposable
         try
         {
             var drive = new DriveInfo(preference.Root);
-            if (drive.DriveType is not (DriveType.Fixed or DriveType.Removable) || !drive.IsReady) return new(preference.Root, preference.Label, null, null);
+            if (drive.DriveType is not (DriveType.Fixed or DriveType.Removable or DriveType.Network) || !drive.IsReady) return new(preference.Root, preference.Label, null, null);
             return new(preference.Root, preference.Label, drive.AvailableFreeSpace, drive.TotalSize, _temperature(preference.Root));
         }
         catch (IOException) { return new(preference.Root, preference.Label, null, null); }
         catch (UnauthorizedAccessException) { return new(preference.Root, preference.Label, null, null); }
     }
-    public async ValueTask DisposeAsync() { _stop.Cancel(); if (_run != null) await _run; _changed.Dispose(); _stop.Dispose(); }
+    public async ValueTask DisposeAsync() { _stop.Cancel(); await _folders.DisposeAsync(); if (_run != null) await _run; _changed.Dispose(); _stop.Dispose(); }
 }

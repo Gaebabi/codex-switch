@@ -31,6 +31,7 @@ internal static class ModelRouting
             ProviderReasoning.ValidateMetadata(actual);
             var metadata = ProviderCatalog.Generic(item.Alias(provider.Id));
             foreach (var field in actual) metadata[field.Key] = field.Value?.DeepClone();
+            metadata["use_responses_lite"] = false;
             metadata["slug"] = item.Alias(provider.Id);
             metadata["display_name"] = settings.DesktopBackendEnabled
                 ? item.UpstreamId + " (" + provider.Name + ")"

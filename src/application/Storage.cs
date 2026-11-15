@@ -25,8 +25,7 @@ internal sealed class AccountVault
         {
             var identity = AuthDocument.Parse(profile.AuthJson);
             if (identity.Key != profile.Key) throw new InvalidDataException("계정 저장소의 사용자 정보가 일치하지 않습니다.");
-            profile.SubscriptionActiveUntil = identity.SubscriptionActiveUntil;
-            profile.SubscriptionLastChecked = identity.SubscriptionLastChecked;
+            profile.SetSubscription(profile.Subscription);
             if (profile.Usage != null) UsageHistory.Record(profile, profile.Usage);
         }
         if (Data.Accounts.Select(a => a.Key).Distinct().Count() != Data.Accounts.Count)
@@ -42,8 +41,6 @@ internal sealed class AccountVault
         if (existing.AuthJson != authJson) { existing.AuthJson = authJson; existing.CredentialRevision++; }
         if (parsed.Email.Length > 0) existing.Email = parsed.Email;
         if (parsed.Plan != "unknown") existing.Plan = parsed.Plan;
-        existing.SubscriptionActiveUntil = parsed.SubscriptionActiveUntil;
-        existing.SubscriptionLastChecked = parsed.SubscriptionLastChecked;
         return existing;
         }
     }
