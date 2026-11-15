@@ -1,5 +1,7 @@
 # Current plan
 
+2026-11-15 gauge readability: local host/VM installation separates resource metadata from saturated12px bars, adds folder boundaries/direct shares, and retains history in tooltips. Narrow/wide production controls and installed package checks pass. See [current acceptance](STATUS.md); satisfaction-gated commit and future publication remain separate.
+
 2026-11-15 subscription-date correction: query current account entitlements independently of token claims, persist identity-bound billing snapshots, distinguish renewal and expiration, and preserve quota updates on a billing failure. Verify stale-token/save/reload/failure behavior and both installed owner dates without restarting Codex.
 
 2026-11-15 folder explorer follow-up: host and VM installations, VM folder registration, mapped-drive capacity, compact hover and exact Explorer targets are implemented. The native collector batches allocation/file-ID metadata and handles long build/cache paths. Keep private measured folder inventories separate from public source evidence; preserve the owner Codex/backend processes during utility updates. See [current acceptance](STATUS.md).

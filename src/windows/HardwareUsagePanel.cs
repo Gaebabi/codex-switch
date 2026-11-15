@@ -12,6 +12,7 @@ internal sealed class HardwareUsagePanel : Grid
     private readonly TextBlock[] _labels = new TextBlock[4], _values = new TextBlock[4], _temperatures = new TextBlock[4];
     private readonly Grid[] _cells = new Grid[4];
     private readonly ResourceTrendSurface[] _graphs = new ResourceTrendSurface[4];
+    private readonly ResourceTrendSurface[] _histories = new ResourceTrendSurface[4];
     private readonly ResourcePressure[] _pressures = new ResourcePressure[4];
     private readonly ResourcePressure[] _temperaturePressures = new ResourcePressure[4];
     private readonly Button _cpuSetup = new() { Name = "CpuTemperatureSetupButton", Width = 32, Height = 16, MinWidth = 0, MinHeight = 0,
@@ -21,17 +22,19 @@ internal sealed class HardwareUsagePanel : Grid
     public event Action? CpuTemperatureRequested;
     public HardwareUsagePanel()
     {
-        Height = 18; VerticalAlignment = VerticalAlignment.Center; HorizontalAlignment = HorizontalAlignment.Stretch;
+        Height = 30; VerticalAlignment = VerticalAlignment.Center; HorizontalAlignment = HorizontalAlignment.Stretch;
         for (var index = 0; index < 4; index++) ColumnDefinitions.Add(new());
         var names = new[] { "CPU", "MEM", "GPU", "VRAM" };
         for (var index = 0; index < 4; index++)
         {
             var cell = new Grid { Margin = new Thickness(0, 0, index < 3 ? 4 : 0, 0) };
-            var content = new Grid { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(5, 0, 4, 0) };
+            var content = new Grid { VerticalAlignment = VerticalAlignment.Top, Height = 16, Margin = new Thickness(5, 0, 4, 0) };
             content.ColumnDefinitions.Add(new()); content.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
             if (index == 0) content.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
             var primary = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            _graphs[index] = new(); cell.Children.Add(_graphs[index]); cell.Children.Add(content);
+            _graphs[index] = new() { Height = 12, VerticalAlignment = VerticalAlignment.Bottom };
+            _histories[index] = new(true) { Height = 52, Margin = new Thickness(0, 8, 0, 0) };
+            cell.Children.Add(_graphs[index]); cell.Children.Add(content);
             _labels[index] = new() { Text = names[index], FontSize = 10, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center };
             _values[index] = new() { FontSize = 13, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
             _temperatures[index] = new() { FontSize = 10, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0) };
@@ -64,6 +67,7 @@ internal sealed class HardwareUsagePanel : Grid
             var series = (usage.History ?? Array.Empty<HardwareObservation>()).Select(point => new ResourceTrendPoint(point.At,
                 index switch { 0 => point.Cpu, 1 => point.Memory, 2 => point.Gpu, _ => point.Vram })).ToArray();
             _graphs[index].Refresh(series, reading.Percent, pressure, theme);
+            _histories[index].Refresh(series, reading.Percent, pressure, theme);
             _labels[index].Foreground = theme.Color("muted");
             _values[index].Foreground = theme.Color(pressure switch { ResourcePressure.Critical => "danger", ResourcePressure.Warning => "warning", ResourcePressure.Unknown => "muted", _ => "text" });
             _values[index].Text = pressure == ResourcePressure.Unknown ? "—" : reading.Percent!.Value.ToString("0", Loc.Culture) + "%";
@@ -106,6 +110,7 @@ internal sealed class HardwareUsagePanel : Grid
             tooltip += "\n" + TemperatureColors.Tooltip(reading.Temperature, temperatureKind);
             ToolTipTheme.Resource(_cells[index], _labels[index].Text, pressure == ResourcePressure.Unknown ? "—" : reading.Percent!.Value.ToString("0.0", Loc.Culture) + "%", tooltip, theme,
                 pressure switch { ResourcePressure.Critical => "danger", ResourcePressure.Warning => "warning", ResourcePressure.Unknown => "muted", _ => "text" });
+            ((ResourceToolTip)_cells[index].ToolTip).SetSupplement(_histories[index]);
         }
     }
     internal object Probe() => new { width = ActualWidth, height = ActualHeight,

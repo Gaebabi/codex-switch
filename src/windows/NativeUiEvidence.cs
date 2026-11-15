@@ -161,7 +161,7 @@ internal static class NativeUiEvidence
                         window.UpdateLayout(); await Task.Delay(100);
                         var labels = Descendants<FrameworkElement>(diskPanel).Select(System.Windows.Automation.AutomationProperties.GetName).ToArray();
                         Assert(labels.Any(t => t.StartsWith(Loc.T("io.read"), StringComparison.Ordinal)) && labels.Any(t => t.StartsWith(Loc.T("io.write"), StringComparison.Ordinal)), "Disk bars have no accessible direction/rate names");
-                        Assert(diskPanel.ActualHeight == 24, "Disk throughput changed footer height");
+                        Assert(diskPanel.ActualHeight == 34, "Disk metadata and allocation bar overlap");
                         Assert(diskPanel.Fits, "Disk throughput obscures the disk text/temperature at this size");
                         Capture(window, Path.Combine(directory, name + "-disk-" + diskState + ".png"));
                         if (diskState == "pressure")
@@ -174,6 +174,19 @@ internal static class NativeUiEvidence
                         }
                     }
                     window.Width = 800; window.Height = 560;
+                    const long gib = 1073741824;
+                    diskPanel.Refresh(new[] { new DriveReading(@"C:\", "Data", 300 * gib, 1000 * gib, Folders: new[] {
+                        new FolderReading(@"C:\Projects", 0, 240 * gib, FolderState.Available),
+                        new FolderReading(@"C:\Caches", 2, 120 * gib, FolderState.Available) }) }, new Burn0Theme(dark));
+                    window.UpdateLayout(); await Task.Delay(100);
+                    Assert(diskPanel.Fits, "Tracked folder bars obscure drive metadata");
+                    Capture(window, Path.Combine(directory, name + "-folders.png"));
+                    var folderOwner = Descendants<Button>(diskPanel).Single(button => Equals(button.Tag, @"C:\Projects"));
+                    var folderTip = (ToolTip)folderOwner.ToolTip; folderTip.PlacementTarget = folderOwner; folderTip.IsOpen = true;
+                    await Task.Delay(150);
+                    var folderPopup = PresentationSource.FromVisual(folderTip) as HwndSource ?? throw new InvalidOperationException("Folder tooltip has no native popup");
+                    Capture(folderPopup.Handle, Path.Combine(directory, name + "-folders-hover.png")); folderTip.IsOpen = false;
+                    cases.Add(new { name = name + "-folder-confirmation", passed = true, scope = "Fictional allocated folders in the actual native window and popup; no personal paths or Explorer launch" });
                     cases.Add(new { name = name + "-disk-confirmation", passed = true, scope = "Fictional disk throughput/profile/latency in real native app; not manufacturer rating or physical benchmark" });
                 }
                 await AccountWarningEvidence.CaptureAsync(window, service, directory);
@@ -237,8 +250,8 @@ internal static class NativeUiEvidence
             drives.Refresh(new[] { new DriveReading("C:\\", "Synthetic disk", 80 * gib, 120 * gib) }, theme);
             var resources = panel.Children.OfType<FrameworkElement>().ToArray();
             var diskOwners = Descendants<FrameworkElement>(drives).Where(element => element.ToolTip is ResourceToolTip).ToArray();
-            Assert(resources.Length == 4 && diskOwners.Length == 2 && diskOwners.Count(element => element is Button) == 1,
-                "Expected four resource gauges, the disk summary and its compact clickable segment tooltip");
+            Assert(resources.Length == 4 && diskOwners.Length == 3 && diskOwners.Count(element => element is Button) == 2,
+                "Expected four resource gauges, the disk summary and its used/free clickable segment tooltips");
             var owners = resources.Concat(diskOwners).ToArray();
             foreach (var cell in owners)
             {

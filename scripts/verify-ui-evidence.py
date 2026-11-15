@@ -23,8 +23,9 @@ tooltip=re.compile(r'en-(dark|light)-tooltip'+('' if args.os=='Windows' else '-n
 cpu=re.compile(r'en-(dark|light)-cpu-(setup|denied|available|menu|setup-compact|denied-compact)\.png') if args.os=='Windows' else None
 disk=re.compile(r'en-(dark|light)-disk-(normal|pressure|unknown|compact|tooltip)\.png') if args.os=='Windows' else None
 context=re.compile(r'(en|ko)-(dark|light)-context\.png') if args.os=='Windows' else None
-paths=sorted(p for p in args.source.glob('*.png') if pattern.fullmatch(p.name) or extra.fullmatch(p.name) or tooltip and tooltip.fullmatch(p.name) or cpu and cpu.fullmatch(p.name) or disk and disk.fullmatch(p.name) or context and context.fullmatch(p.name))
-if len(paths)!=(42 if args.os=='Windows' else 12 if args.os=='Linux' else 20):raise SystemExit('Complete declared language/theme/size/settings/menu/history/tooltip/CPU/disk/context evidence required')
+folders=re.compile(r'en-(dark|light)-folders(-hover)?\.png') if args.os=='Windows' else None
+paths=sorted(p for p in args.source.glob('*.png') if pattern.fullmatch(p.name) or extra.fullmatch(p.name) or tooltip and tooltip.fullmatch(p.name) or cpu and cpu.fullmatch(p.name) or disk and disk.fullmatch(p.name) or context and context.fullmatch(p.name) or folders and folders.fullmatch(p.name))
+if len(paths)!=(46 if args.os=='Windows' else 12 if args.os=='Linux' else 20):raise SystemExit('Complete declared language/theme/size/settings/menu/history/tooltip/CPU/disk/context/folder evidence required')
 if args.os=='Windows' and not any(case.get('name')=='context-settings' and case.get('passed') is True and case.get('nativeAndCustomSaved') is True for case in data['cases']):
     raise SystemExit('Actual native and custom context-control persistence required')
 args.destination.mkdir(parents=True,exist_ok=True)
@@ -32,7 +33,7 @@ images=[]
 for path in paths:
     with Image.open(path) as raw:
         raw.load();rgb=raw.convert('RGB')
-        minimum=(160,25) if '-cpu-menu' in path.name else (60,25) if '-tooltip' in path.name else (160,160) if '-language' in path.name or '-settings' in path.name else (400,280)
+        minimum=(160,25) if '-cpu-menu' in path.name else (60,25) if '-tooltip' in path.name or '-hover' in path.name else (160,160) if '-language' in path.name or '-settings' in path.name else (400,280)
         if rgb.width<minimum[0] or rgb.height<minimum[1] or rgb.width>4000 or rgb.height>3000 or rgb.entropy()<1 or all(low==high for low,high in rgb.getextrema()):
             raise SystemExit('Blank or invalid native window image')
         clean=Image.new('RGB',rgb.size);clean.paste(rgb)
