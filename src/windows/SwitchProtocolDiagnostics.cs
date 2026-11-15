@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -18,25 +19,26 @@ internal static class SwitchProtocolDiagnostics
         var workspace = Path.Combine(home.Path, "workspace"); Directory.CreateDirectory(workspace);
         File.WriteAllText(Path.Combine(home.Path, "config.toml"), "model = \"protocol-fixture\"\nmodel_provider = \"protocol_local\"\nsandbox_mode = \"read-only\"\n[model_providers.protocol_local]\nname = \"Protocol fixture\"\nbase_url = \"http://127.0.0.1:9/v1\"\nwire_api = \"responses\"\nrequires_openai_auth = false\n", new UTF8Encoding(false));
         using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(50));
+        var overrides = new Dictionary<string, string> { ["features.plugins"] = "false" };
         var passed = false; string? error = null;
         try
         {
             string id;
             var name = "[261011] 테스트 채팅";
             var stamped = SwitchTitle.Stamp(name, DateTimeOffset.Parse("2026-10-12T01:00:00+09:00"));
-            await using (var owner = new CodexRpc(installation.CliPath, home.Path, true))
+            await using (var owner = new CodexRpc(installation.CliPath, home.Path, true, overrides))
             {
                 await owner.InitializeAsync(cancellation.Token);
                 var start = await owner.RequestAsync("thread/start", new { cwd = workspace }, cancellation.Token);
                 id = start.GetProperty("thread").GetProperty("id").GetString()!;
                 await owner.RequestAsync("thread/name/set", new { threadId = id, name }, cancellation.Token);
-                await using var metadata = new CodexRpc(installation.CliPath, home.Path, true);
+                await using var metadata = new CodexRpc(installation.CliPath, home.Path, true, overrides);
                 await metadata.InitializeAsync(cancellation.Token);
                 await metadata.RequestAsync("thread/name/set", new { threadId = id, name = stamped }, cancellation.Token);
                 var read = await metadata.RequestAsync("thread/read", new { threadId = id, includeTurns = false }, cancellation.Token);
                 if (JsonValue.String(read.GetProperty("thread"), "name") != stamped) throw new InvalidDataException("Cross-process name update did not persist.");
             }
-            await using var resumed = new CodexRpc(installation.CliPath, home.Path, true);
+            await using var resumed = new CodexRpc(installation.CliPath, home.Path, true, overrides);
             await resumed.InitializeAsync(cancellation.Token);
             var result = await resumed.RequestAsync("thread/resume", new { threadId = id, excludeTurns = true }, cancellation.Token);
             var thread = result.GetProperty("thread");
