@@ -235,8 +235,11 @@ internal static class NativeUiEvidence
             var drives = Descendants<DriveUsagePanel>(window).Single();
             const long gib = 1073741824;
             drives.Refresh(new[] { new DriveReading("C:\\", "Synthetic disk", 80 * gib, 120 * gib) }, theme);
-            var owners = panel.Children.OfType<FrameworkElement>().Concat(Descendants<FrameworkElement>(drives).Where(element => element.ToolTip is ResourceToolTip)).ToArray();
-            Assert(owners.Length == 5, "Expected four resource gauges and one synthetic disk gauge");
+            var resources = panel.Children.OfType<FrameworkElement>().ToArray();
+            var diskOwners = Descendants<FrameworkElement>(drives).Where(element => element.ToolTip is ResourceToolTip).ToArray();
+            Assert(resources.Length == 4 && diskOwners.Length == 2 && diskOwners.Count(element => element is Button) == 1,
+                "Expected four resource gauges, the disk summary and its compact clickable segment tooltip");
+            var owners = resources.Concat(diskOwners).ToArray();
             foreach (var cell in owners)
             {
                 var resource = Open(cell);
