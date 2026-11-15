@@ -98,6 +98,41 @@ internal static class NativeRecoveryContracts
         var count = upstream.Posts.Count;
         await NativeHistoryRecovery.RecoverAsync(executable, home, directory, store, Authenticate, http, candidates, cancellation);
         check("Native recovery rerun performs no inference after durable completion", count == upstream.Posts.Count);
+        var customModel = new ProviderModel { UpstreamId = "reasoning-fixture", Metadata = ProviderCatalog.Generic("reasoning-fixture") };
+        var customProvider = new ModelProvider { Name = "Reasoning fixture", BaseUrl = "https://custom.example.invalid/v1", ApiKey = "fictional-custom-key", Models = new() { customModel } };
+        store.Update(next => next.Providers.Add(customProvider));
+        string customThread;
+        upstream.ForeignReasoning = true;
+        upstream.ForeignTool = true;
+        await using (var gateway = new ModelGateway(store, Authenticate, http, directory, () => home))
+        {
+            gateway.Start();
+            await using var rpc = new CodexRpc(executable, home, true, new Dictionary<string, string> { ["openai_base_url"] = JsonSerializer.Serialize(gateway.BaseUrl) });
+            await rpc.InitializeAsync(cancellation);
+            customThread = (await rpc.RequestAsync("thread/start", new { cwd = home, model = customModel.Alias(customProvider.Id), approvalPolicy = "never", sandbox = "read-only" }, cancellation)).GetProperty("thread").GetProperty("id").GetString()!;
+            var done = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
+            rpc.Notification += (method, value) => { if (method == "turn/completed" && CodexAccountDesk.JsonValue.String(value, "threadId") == customThread) done.TrySetResult(value.Clone()); };
+            await rpc.RequestAsync("turn/start", new { threadId = customThread, effort = "none", input = new[] { new { type = "text", text = "Keep CUSTOM_VISIBLE_MESSAGE_71" } } }, cancellation);
+            check("The actual native engine persists a custom provider reasoning item", (await done.Task.WaitAsync(cancellation)).GetProperty("turn").GetProperty("status").GetString() == "completed");
+        }
+        upstream.ForeignReasoning = false;
+        var reasoningCandidates = NativeHistoryRecovery.Find(home, directory, cancellation, customThread, "native-model");
+        check("Native handoff detects provider-specific reasoning even without a portable checkpoint", reasoningCandidates.Count == 1 && reasoningCandidates[0].Checkpoints.Length == 0 && reasoningCandidates[0].ForeignReasoning?.Length == 1);
+        check("Native handoff identifies custom output IDs from the persisted provider turn", reasoningCandidates.Single().ForeignItemIds?.Length >= 1);
+        var reasoningFiles = Directory.EnumerateFiles(Path.Combine(home, "sessions"), "*.jsonl", SearchOption.AllDirectories).ToDictionary(path => path, File.ReadAllBytes);
+        upstream.OutputToken = "native-reasoning-fixture";
+        await NativeHistoryRecovery.RecoverAsync(executable, home, directory, store, Authenticate, http, reasoningCandidates, cancellation, "native-model");
+        check("Official native compaction converts the foreign reasoning boundary while preserving visible history", NativeHistoryRecovery.Find(home, directory, cancellation, customThread, "native-model").Count == 0 &&
+            upstream.Posts.Last()["input"]!.ToJsonString().Contains("CUSTOM_VISIBLE_MESSAGE_71") && !upstream.Posts.Last().ToJsonString().Contains("Fictional provider-specific reasoning fixture."));
+        var imported = upstream.Posts.Last()["input"]!.AsArray().OfType<JsonObject>().ToArray();
+        var importedCall = imported.Single(item => item["type"]?.GetValue<string>() == "custom_tool_call");
+        check("Actual native compaction imports the foreign call without its item ID and retains its result link", !importedCall.ContainsKey("id") && importedCall["call_id"]!.GetValue<string>() == "foreign-call" &&
+            imported.Any(item => item["type"]?.GetValue<string>() == "custom_tool_call_output" && item["call_id"]?.GetValue<string>() == "foreign-call"));
+        check("Reasoning handoff appends official history without changing original bytes, settings or authentication", reasoningFiles.All(pair => File.ReadAllBytes(pair.Key).AsSpan().StartsWith(pair.Value)) &&
+            File.ReadAllBytes(Path.Combine(home, "config.toml")).SequenceEqual(config) && File.ReadAllText(Path.Combine(home, "auth.json")) == auth);
+        count = upstream.Posts.Count;
+        await NativeHistoryRecovery.RecoverAsync(executable, home, directory, store, Authenticate, http, reasoningCandidates, cancellation, "native-model");
+        check("A completed reasoning handoff is durable and idempotent", upstream.Posts.Count == count);
     }
 
     internal static async Task Run(string root, Action<string, bool> check)
@@ -145,6 +180,44 @@ internal static class NativeRecoveryContracts
         using (var result = await Send(session, "native-model", true, true))
             check("Legacy native compact preserves the upstream response instead of inventing a checkpoint", result.IsSuccessStatusCode && await result.Content.ReadAsStringAsync() == RecoveryUpstream.CompactJson);
         check("Recovery does not change the provider profile, port or credentials", File.ReadAllBytes(Path.Combine(directory, "model-providers.vault")).SequenceEqual(snapshot));
+        using var foreign = JsonDocument.Parse("""{"type":"reasoning","id":"rs_foreign","summary":[],"content":[{"type":"reasoning_text","text":"fictional private provider state"}]}""");
+        using var foreignCall = JsonDocument.Parse("""{"type":"custom_tool_call","id":"fc_foreign","name":"exec","call_id":"retained","input":"visible program"}""");
+        var reasoningCandidate = new NativeHistoryRecovery.Candidate(session, "native-model", "fictional-rollout", Array.Empty<string>(), new[] { NativeReasoningHandoff.Key(foreign.RootElement) }, new[] { NativeReasoningHandoff.OutputKey(foreignCall.RootElement) });
+        await using (var reasoningGateway = new ModelGateway(store, Authenticate, client, directory, () => null, reasoningCandidate))
+        {
+            reasoningGateway.Start();
+            var input = new JsonArray(JsonNode.Parse(foreign.RootElement.GetRawText()),
+                JsonNode.Parse("""{"type":"reasoning","id":"rs_native","summary":[],"encrypted_content":"original-native-state"}"""),
+                JsonNode.Parse("""{"type":"message","role":"user","content":"visible task"}"""),
+                JsonNode.Parse(foreignCall.RootElement.GetRawText()),
+                JsonNode.Parse("""{"type":"custom_tool_call_output","call_id":"retained","output":"visible result"}"""),
+                JsonNode.Parse("""{"type":"function_call","id":"fc_native","name":"lookup","call_id":"native","arguments":"{}"}"""),
+                JsonNode.Parse("""{"type":"compaction_trigger"}"""));
+            async Task<HttpResponseMessage> ReasoningRequest()
+            {
+                var request = new HttpRequestMessage(HttpMethod.Post, reasoningGateway.BaseUrl + "/responses");
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", identity.Token);
+                request.Headers.Add("ChatGPT-Account-ID", identity.AccountId); request.Headers.Add("session_id", session); request.Headers.Add("version", "0.167.0");
+                request.Content = new StringContent(new JsonObject { ["model"] = "native-model", ["stream"] = true, ["input"] = input.DeepClone() }.ToJsonString(), Encoding.UTF8, "application/json");
+                return await local.SendAsync(request);
+            }
+            using (var result = await ReasoningRequest())
+            {
+                var forwarded = upstream.Posts.Last()["input"]!.AsArray();
+                var expectedCall = input[3]!.DeepClone().AsObject(); expectedCall.Remove("id");
+                check("Native compaction excludes only fingerprint-matched foreign state and preserves native reasoning, messages and tool pairs", result.IsSuccessStatusCode && forwarded.Count == 6 &&
+                    JsonNode.DeepEquals(forwarded[0], input[1]) && JsonNode.DeepEquals(forwarded[1], input[2]) && JsonNode.DeepEquals(forwarded[2], expectedCall) && JsonNode.DeepEquals(forwarded[3], input[4]) && JsonNode.DeepEquals(forwarded[4], input[5]));
+            }
+            input[3]!["input"] = "changed program";
+            var beforeCalls = upstream.Posts.Count;
+            using (var result = await ReasoningRequest())
+                check("Changed foreign tool content is rejected before native inference", result.StatusCode == HttpStatusCode.BadRequest && upstream.Posts.Count == beforeCalls);
+            input[3]!["input"] = "visible program";
+            input[0]!["content"]![0]!["text"] = "changed after preflight";
+            var beforePosts = upstream.Posts.Count;
+            using (var result = await ReasoningRequest())
+                check("Changed foreign reasoning is rejected before native inference", result.StatusCode == HttpStatusCode.BadRequest && upstream.Posts.Count == beforePosts);
+        }
         var sessions = Path.Combine(root, "recovery-chain", "sessions"); Directory.CreateDirectory(sessions);
         var home = Path.GetDirectoryName(sessions)!;
         var parent = Guid.NewGuid().ToString(); var file = Path.Combine(sessions, "rollout-" + session + "_" + parent + ".jsonl");
@@ -157,10 +230,58 @@ internal static class NativeRecoveryContracts
         check("Recovery follows the exact segmented history and excludes records after its boundary", found.Tokens.SequenceEqual(new[] { token }));
         File.AppendAllText(child, Compact("real-native-compaction"));
         check("A newer native checkpoint makes recovery idempotent without editing old history", NativeHistoryRecovery.ReadLatest(home, child, session, CancellationToken.None).Tokens.Length == 0);
+        var foreignRecord = JsonSerializer.Serialize(new { type = "response_item", payload = foreign.RootElement }) + "\n";
+        File.AppendAllText(child, JsonSerializer.Serialize(new { type = "turn_context", payload = new { model = "cs_fictional" } }) + "\n" + foreignRecord);
+        check("Foreign reasoning after the latest native checkpoint requires a new handoff", NativeHistoryRecovery.ReadLatest(home, child, session, CancellationToken.None).ForeignReasoning.SequenceEqual(new[] { NativeReasoningHandoff.Key(foreign.RootElement) }));
+        File.AppendAllText(child, Compact("next-native-compaction"));
+        check("Official replacement history retires only the previous active reasoning state", NativeHistoryRecovery.ReadLatest(home, child, session, CancellationToken.None).ForeignReasoning.Length == 0);
+        File.AppendAllText(child, JsonSerializer.Serialize(new { type = "response_item", payload = foreignCall.RootElement }) + "\n");
+        var onlyIds = NativeHistoryRecovery.ReadLatest(home, child, session, CancellationToken.None);
+        check("Foreign output IDs require handoff even with no foreign reasoning", onlyIds.ForeignReasoning.Length == 0 && onlyIds.ForeignItemIds.SequenceEqual(new[] { NativeReasoningHandoff.OutputKey(foreignCall.RootElement) }));
+        File.AppendAllText(child, Compact("ids-retired"));
+        check("Official compaction retires foreign item IDs without rewriting old records", NativeHistoryRecovery.ReadLatest(home, child, session, CancellationToken.None).ForeignItemIds.Length == 0);
         File.WriteAllText(child, Meta(new { thread_id = parent, end_byte_offset = Encoding.UTF8.GetByteCount(prefix) }, "different-account"));
         var refused = false;
         try { NativeHistoryRecovery.ReadLatest(home, child, session, CancellationToken.None); } catch (InvalidDataException) { refused = true; }
         check("A cross-account history chain is refused", refused);
+        var linkedHome = Path.Combine(root, "linked-recovery-home"); Directory.CreateDirectory(linkedHome);
+        var physical = Path.Combine(root, "linked-recovery-storage"); Directory.CreateDirectory(physical);
+        var alias = Path.Combine(linkedHome, "sessions"); LinkDirectory(alias, physical);
+        try
+        {
+            var stored = Path.Combine(physical, "rollout-" + session + ".jsonl"); File.WriteAllText(stored, Meta() + Compact(token));
+            check("Recovery accepts the native physical path beneath a configured history link", NativeHistoryRecovery.ReadLatest(linkedHome, stored, session, CancellationToken.None).Tokens.SequenceEqual(new[] { token }));
+            check("Recovery resolves the configured history alias to the same record", NativeHistoryRecovery.ReadLatest(linkedHome, Path.Combine(alias, Path.GetFileName(stored)), session, CancellationToken.None).Tokens.SequenceEqual(new[] { token }));
+            var linkedChild = Path.Combine(physical, "rollout-" + session + "_" + Guid.NewGuid() + ".jsonl");
+            File.WriteAllText(linkedChild, Meta(new { thread_id = session, end_byte_offset = new FileInfo(stored).Length }));
+            check("Recovery follows bounded parent segments through the configured linked root", NativeHistoryRecovery.ReadLatest(linkedHome, linkedChild, session, CancellationToken.None).Tokens.SequenceEqual(new[] { token }));
+            File.WriteAllText(stored, Meta() + JsonSerializer.Serialize(new { type = "response_item", payload = new { type = "message", content = token } }) + "\n");
+            check("Mentioning a checkpoint in a linked native chat is not a recovery checkpoint", NativeHistoryRecovery.ReadLatest(linkedHome, stored, session, CancellationToken.None).Tokens.Length == 0);
+            refused = false;
+            try { NativeHistoryRecovery.ReadLatest(linkedHome, file, session, CancellationToken.None); } catch (InvalidDataException) { refused = true; }
+            check("A history file outside the configured linked roots is still refused", refused);
+            var nested = Path.Combine(physical, "unconfigured-link"); LinkDirectory(nested, sessions);
+            try
+            {
+                refused = false;
+                try { NativeHistoryRecovery.ReadLatest(linkedHome, Path.Combine(nested, Path.GetFileName(file)), session, CancellationToken.None); } catch (InvalidDataException) { refused = true; }
+                check("A nested link cannot escape the configured history root", refused);
+            }
+            finally { Directory.Delete(nested); }
+        }
+        finally { Directory.Delete(alias); }
+    }
+
+    private static void LinkDirectory(string link, string target)
+    {
+        if (!OperatingSystem.IsWindows()) { Directory.CreateSymbolicLink(link, target); return; }
+        var start = new System.Diagnostics.ProcessStartInfo("powershell.exe") { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+        start.ArgumentList.Add("-NoProfile"); start.ArgumentList.Add("-Command");
+        start.ArgumentList.Add("New-Item -ItemType Junction -Path $env:CODEX_TEST_HISTORY_LINK -Value $env:CODEX_TEST_HISTORY_TARGET -ErrorAction Stop | Out-Null");
+        start.Environment["CODEX_TEST_HISTORY_LINK"] = link; start.Environment["CODEX_TEST_HISTORY_TARGET"] = target;
+        using var process = System.Diagnostics.Process.Start(start)!;
+        var error = process.StandardError.ReadToEnd(); process.WaitForExit();
+        if (process.ExitCode != 0) throw new IOException("History junction fixture creation failed: " + error);
     }
 
     internal sealed class RecoveryUpstream : HttpMessageHandler
@@ -170,13 +291,24 @@ internal static class NativeRecoveryContracts
         internal List<JsonObject> Posts { get; } = new();
         internal string OutputToken { get; set; } = "native-encrypted-fixture";
         internal bool FailCompaction { get; set; }
+        internal bool ForeignReasoning { get; set; }
+        internal bool ForeignTool { get; set; }
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellation)
         {
             if (request.Method == HttpMethod.Get) return new(HttpStatusCode.OK) { Content = new StringContent(new JsonObject { ["models"] = new JsonArray(ProviderCatalog.Generic("native-model")) }.ToJsonString(), Encoding.UTF8, "application/json") };
             Posts.Add(JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancellation))!.AsObject());
             var compact = request.RequestUri!.AbsolutePath.EndsWith("/compact");
             if (!compact && !Posts.Last()["input"]!.AsArray().OfType<JsonObject>().Any(item => item["type"]?.GetValue<string>() == "compaction_trigger"))
-                return new(HttpStatusCode.OK) { Content = new StringContent(Upstreams.Stream("native-model"), Encoding.UTF8, "text/event-stream") };
+            {
+                if (ForeignTool)
+                {
+                    ForeignTool = false;
+                    var item = new { type = "custom_tool_call", id = "fc_foreign", name = "fictional_unregistered_tool", call_id = "foreign-call", input = "fictional program" };
+                    var stream = "data: " + JsonSerializer.Serialize(new { type = "response.output_item.done", output_index = 0, item }) + "\n\ndata: " + JsonSerializer.Serialize(new { type = "response.completed", response = new { id = "resp_foreign_tool", status = "completed", output = new[] { item } } }) + "\n\n";
+                    return new(HttpStatusCode.OK) { Content = new StringContent(stream, Encoding.UTF8, "text/event-stream") };
+                }
+                return new(HttpStatusCode.OK) { Content = new StringContent(Upstreams.Stream(Posts.Last()["model"]!.GetValue<string>(), foreignReasoning: ForeignReasoning), Encoding.UTF8, "text/event-stream") };
+            }
             if (FailCompaction) return new(HttpStatusCode.BadRequest) { Content = new StringContent("Fictional compaction rejected") };
             return new(HttpStatusCode.OK) { Content = new StringContent((compact ? CompactJson : Stream).Replace("native-encrypted-fixture", OutputToken), Encoding.UTF8, compact ? "application/json" : "text/event-stream") };
         }

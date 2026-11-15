@@ -20,11 +20,12 @@ internal static class DesktopBackendContracts
         var nativeCatalog = Path.Combine(home, "native.json");
         var nativeMetadata = ProviderCatalog.Generic("fixture-native"); nativeMetadata["context_window"] = 256000;
         File.WriteAllText(nativeCatalog, new JsonObject { ["models"] = new JsonArray(nativeMetadata) }.ToJsonString());
-        var config = "model=\"fixture-native\"\nmodel_provider=\"openai\"\ncli_auth_credentials_store=\"file\"\nopenai_base_url=" + JsonSerializer.Serialize(native.BaseUrl) +
+        var config = "model=\"fixture-native\"\nmodel_reasoning_effort=\"max\"\nmodel_provider=\"openai\"\ncli_auth_credentials_store=\"file\"\nopenai_base_url=" + JsonSerializer.Serialize(native.BaseUrl) +
             "\nmodel_catalog_json=" + JsonSerializer.Serialize(nativeCatalog) + "\n[features]\nshell_tool=false\ncode_mode=false\nenable_request_compression=false\n";
         File.WriteAllText(Path.Combine(home, "auth.json"), auth); File.WriteAllText(Path.Combine(home, "config.toml"), config);
         var model = new ProviderModel { UpstreamId = "fixture-custom", Metadata = ProviderCatalog.Generic("fixture-custom") };
         model.Metadata["context_window"] = 96000;
+        model.Metadata["use_responses_lite"] = true;
         var provider = new ModelProvider { Name = "Fictional custom", BaseUrl = custom.BaseUrl, ApiKey = "fictional-custom-key", Models = new() { model } };
         var store = new ModelProviderStore(directory); store.Update(settings => { settings.Providers.Add(provider); settings.SelectedRoute = model.Alias(provider.Id); });
         var second = new ModelProviderStore(directory);
@@ -44,6 +45,7 @@ internal static class DesktopBackendContracts
         Environment.SetEnvironmentVariable("CODEX_SWITCH_BACKEND_CONFIG", bootstrap);
         try
         {
+            await BackendEncodingContracts.Run(backend, home, cancellation, check);
             await using var rpc = new CodexRpc(backend, home, preserveProvider: true);
             rpc.DiagnosticMessage += line => Console.Error.WriteLine(line);
             await rpc.InitializeAsync(cancellation);
@@ -60,13 +62,25 @@ internal static class DesktopBackendContracts
                 return results.ToArray();
             }
             var alias = model.Alias(provider.Id);
+            check("Custom catalogs request a complete standard Responses tool catalog even when provider metadata enables Lite", ModelRouting.Catalog(store.Read()).Single(item => item?["slug"]?.GetValue<string>() == alias)!["use_responses_lite"]!.GetValue<bool>() == false);
             var list = await Models();
             check("One paginated native picker contains the native model and fixed custom alias", list.Select(item => item.GetProperty("model").GetString()).SequenceEqual(new[] { "fixture-native", alias }));
             check("Custom entries never replace the native default", list.Single(item => item.GetProperty("isDefault").GetBoolean()).GetProperty("model").GetString() == "fixture-native");
             check("Catalog confirmation follows the completed native list response", await DesktopBackendCatalog.ConfirmAsync(directory, DesktopBackendCatalog.Revision(store.Read()), cancellation) == ModelCatalogRefreshState.Confirmed);
             var observed = JsonNode.Parse(File.ReadAllText(Path.Combine(directory, DesktopBackendCatalog.ObservedFileName)))!;
             var nativePid = observed["nativePid"]!.GetValue<int>();
-            var started = await rpc.RequestAsync("thread/start", new { model = "fixture-native", cwd = home, approvalPolicy = "never", sandbox = "read-only" }, cancellation);
+            // Responses Lite retains incremental namespace declarations from earlier turns.
+            // Resume a synthetic history through the official RPC, without editing a rollout.
+            var historical = JsonNode.Parse("""
+                [
+                  {"type":"message","role":"user","content":[{"type":"input_text","text":"Historical tool fixture"}]},
+                  {"type":"additional_tools","role":"developer","tools":[{"type":"namespace","name":"fixture_history","tools":[{"type":"function","name":"lookup","description":"old","parameters":{"type":"object"}}]}]},
+                  {"type":"function_call","name":"lookup","call_id":"historical-call","arguments":"{}"},
+                  {"type":"function_call_output","call_id":"historical-call","output":"historical-result"},
+                  {"type":"additional_tools","role":"developer","tools":[{"type":"namespace","name":"fixture_history","tools":[{"type":"function","name":"lookup","description":"updated","parameters":{"type":"object"}}]}]}
+                ]
+                """)!;
+            var started = await rpc.RequestAsync("thread/resume", new { threadId = "", history = historical, model = "fixture-native", cwd = home, approvalPolicy = "never", sandbox = "read-only" }, cancellation);
             var thread = started.GetProperty("thread").GetProperty("id").GetString()!;
             async Task Turn(string selected)
             {
@@ -89,6 +103,11 @@ internal static class DesktopBackendContracts
             check("Custom inference uses the custom credential and upstream ID", custom.Upstream.Requests.Single().Token == provider.ApiKey && JsonNode.Parse(custom.Upstream.Requests.Single().Body!)!["model"]!.GetValue<string>() == model.UpstreamId);
             var nativeBody = native.Upstream.Requests.Last().Body!;
             var customBody = custom.Upstream.Requests.Single().Body!;
+            var customRequest = JsonNode.Parse(customBody)!;
+            check("Actual native handoff consumes historical tool updates without reviving unavailable tools", !customRequest["input"]!.AsArray().Any(item => item?["type"]?.GetValue<string>() == "additional_tools") &&
+                !customRequest["tools"]!.AsArray().Any(tool => tool?["name"]?.GetValue<string>() == "fixture_history"));
+            check("Actual native handoff preserves historical tool calls and results", customRequest["input"]!.AsArray().Any(item => item?["call_id"]?.GetValue<string>() == "historical-call" && item?["type"]?.GetValue<string>() == "function_call") &&
+                customRequest["input"]!.AsArray().Any(item => item?["call_id"]?.GetValue<string>() == "historical-call" && item?["output"]?.GetValue<string>() == "historical-result"));
             bool CodeMode(string body) => JsonNode.Parse(body)!["tools"]!.AsArray().Any(tool => tool?["name"]?.GetValue<string>() == "exec" && tool?["type"]?.GetValue<string>() == "custom");
             check("Custom inference uses native code-mode execution while the native model keeps its original tool contract", !CodeMode(nativeBody) && CodeMode(customBody));
             await rpc.RequestAsync("thread/settings/update", new { threadId = thread, model = "fixture-native", effort = "low" }, cancellation);

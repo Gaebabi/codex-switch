@@ -31,6 +31,7 @@ internal static class HomeLayoutContracts
                         Usage = new() { CheckedAt = now, AvailableResets = i, Buckets = new() { new() { Id = "codex", CreditBalance = "1000",
                             Primary = new() { UsedPercent = i == 1 ? 95 : 30, Minutes = 10080, ResetsAt = now.AddDays(2).ToUnixTimeSeconds() } } } } };
                     service.Vault.Data.Accounts.Add(profile);
+                    if (i == 0) profile.SetSubscription(new SubscriptionSnapshot { AccountId = profile.AccountId, WillRenew = true, RenewsAt = now.AddDays(24), CheckedAt = now });
                 }
                 typeof(AccountService).GetProperty("CurrentKey")!.SetValue(service, count == 0 ? null : "home-0");
                 var window = new MainWindow(service, new Program.Options { DataDirectory = service.Vault.DirectoryPath, CodexHome = service.CodexHome, UiEvidenceDirectory = output });
@@ -46,6 +47,8 @@ internal static class HomeLayoutContracts
                     var cards = (List<AccountTankCard>)typeof(MainWindow).GetField("_tankCards", Private)!.GetValue(window)!;
                     var accountScroll = (ScrollViewer)typeof(MainWindow).GetField("_scroll", Private)!.GetValue(window)!;
                     if (cards.Count != count) throw new Exception("Account count changed in home layout.");
+                    if (count > 0 && !Descendants(cards[0]).OfType<TextBlock>().Any(text => text.Text == Loc.T("subscription.renews")))
+                        throw new Exception("An automatically renewing subscription must show the renewal heading.");
                     foreach (var card in cards)
                     {
                         var cardBounds = card.TransformToAncestor(accountScroll).TransformBounds(new Rect(card.RenderSize));
@@ -85,6 +88,10 @@ internal static class HomeLayoutContracts
                 }
                 if (count == 4)
                 {
+                    var homeRoot = (FrameworkElement)window.Content;
+                    var homeBitmap = new RenderTargetBitmap((int)homeRoot.ActualWidth, (int)homeRoot.ActualHeight, 96, 96, PixelFormats.Pbgra32); homeBitmap.Render(homeRoot);
+                    var homeEncoder = new PngBitmapEncoder(); homeEncoder.Frames.Add(BitmapFrame.Create(homeBitmap));
+                    using (var homeStream = File.Create(Path.Combine(output, "home-subscription-" + language + "-" + (dark ? "dark" : "light") + ".png"))) homeEncoder.Save(homeStream);
                     var menu = window.HomeActionsMenu();
                     menu.Measure(new Size(340, 520)); menu.Arrange(new Rect(menu.DesiredSize)); menu.UpdateLayout();
                     var bitmap = new RenderTargetBitmap((int)Math.Ceiling(menu.ActualWidth), (int)Math.Ceiling(menu.ActualHeight), 96, 96, PixelFormats.Pbgra32); bitmap.Render(menu);

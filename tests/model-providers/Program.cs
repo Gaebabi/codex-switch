@@ -501,18 +501,22 @@ internal sealed class Upstreams : HttpMessageHandler
             return new(HttpStatusCode.BadRequest) { Content = new StringContent("{\"error\":{\"message\":\"Unsupported reasoning effort\",\"param\":\"reasoning.effort\"}}", Encoding.UTF8, "application/json") };
         return new(HttpStatusCode.OK) { Content = new StringContent(Stream(model, InputTokens), Encoding.UTF8, "text/event-stream") };
     }
-    internal static string Stream(string model, int inputTokens = 1)
+    internal static string Stream(string model, int inputTokens = 1, bool foreignReasoning = false)
     {
         var id = "fixture_" + Guid.NewGuid().ToString("N"); var itemId = "message_" + Guid.NewGuid().ToString("N");
         var part = new { type = "output_text", text = "fixture-ok", annotations = Array.Empty<object>() };
         var item = new { id = itemId, type = "message", role = "assistant", status = "completed", content = new[] { part } };
-        var response = new { id, @object = "response", status = "completed", model, output = new[] { item }, usage = new { input_tokens = inputTokens, output_tokens = 1, total_tokens = inputTokens + 1, input_tokens_details = new { cached_tokens = 0 }, output_tokens_details = new { reasoning_tokens = 0 } } };
+        var reasoning = new { id = "rs_" + Guid.NewGuid().ToString("N"), type = "reasoning", summary = Array.Empty<object>(), content = new[] { new { type = "reasoning_text", text = "Fictional provider-specific reasoning fixture." } } };
+        var messageIndex = foreignReasoning ? 1 : 0;
+        var response = new { id, @object = "response", status = "completed", model, output = foreignReasoning ? new object[] { reasoning, item } : new object[] { item }, usage = new { input_tokens = inputTokens, output_tokens = 1, total_tokens = inputTokens + 1, input_tokens_details = new { cached_tokens = 0 }, output_tokens_details = new { reasoning_tokens = 0 } } };
         string Event(object value) => "data: " + JsonSerializer.Serialize(value) + "\n\n";
         return Event(new { type = "response.created", response = new { id, status = "in_progress", model, output = Array.Empty<object>() } }) +
-            Event(new { type = "response.output_item.added", output_index = 0, item = new { id = itemId, type = "message", role = "assistant", status = "in_progress", content = Array.Empty<object>() } }) +
-            Event(new { type = "response.content_part.added", output_index = 0, content_index = 0, item_id = itemId, part = new { type = "output_text", text = "", annotations = Array.Empty<object>() } }) +
-            Event(new { type = "response.output_text.delta", output_index = 0, content_index = 0, item_id = itemId, delta = "fixture-ok" }) +
-            Event(new { type = "response.output_item.done", output_index = 0, item }) + Event(new { type = "response.completed", response });
+            (foreignReasoning ? Event(new { type = "response.output_item.added", output_index = 0, item = new { id = reasoning.id, type = "reasoning", summary = Array.Empty<object>(), content = Array.Empty<object>() } }) +
+                Event(new { type = "response.output_item.done", output_index = 0, item = reasoning }) : "") +
+            Event(new { type = "response.output_item.added", output_index = messageIndex, item = new { id = itemId, type = "message", role = "assistant", status = "in_progress", content = Array.Empty<object>() } }) +
+            Event(new { type = "response.content_part.added", output_index = messageIndex, content_index = 0, item_id = itemId, part = new { type = "output_text", text = "", annotations = Array.Empty<object>() } }) +
+            Event(new { type = "response.output_text.delta", output_index = messageIndex, content_index = 0, item_id = itemId, delta = "fixture-ok" }) +
+            Event(new { type = "response.output_item.done", output_index = messageIndex, item }) + Event(new { type = "response.completed", response });
     }
 }
 

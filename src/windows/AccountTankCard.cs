@@ -91,18 +91,15 @@ internal sealed class AccountTankCard : Grid
         _plan.ToolTip = Loc.T("요금제") + " · " + (profile.Plan == "unknown" ? Loc.T("요금제 정보 없음") : _plan.Text);
         _subscriptionDate = Text(profile.SubscriptionActiveUntil is DateTimeOffset end
             ? UsagePresentation.KoreanTime(end).ToString("MM'/'dd", System.Globalization.CultureInfo.InvariantCulture) : "—", 11, "text", FontWeights.SemiBold);
-        _subscriptionDate.ToolTip = profile.SubscriptionActiveUntil is DateTimeOffset until
-            ? Loc.F("구독 종료 {0:yyyy/MM/dd HH:mm} (한국 시간)", UsagePresentation.KoreanTime(until)) : Loc.T("구독 종료일 정보 없음");
-        _subscriptionDate.ToolTip += "\n" + Loc.T("로그인 정보의 구독 기간 기준");
-        if (profile.SubscriptionLastChecked is DateTimeOffset checkedAt)
-            _subscriptionDate.ToolTip += "\n" + Loc.F("구독 정보 확인 {0:MM/dd HH:mm}", UsagePresentation.KoreanTime(checkedAt));
+        _subscriptionDate.ToolTip = SubscriptionPresentation.Details(profile);
+        if (profile.SubscriptionError != null) _plan.ToolTip += "\n" + SubscriptionPresentation.Details(profile);
         _plan.LineHeight = _subscriptionDate.LineHeight = 14;
         _plan.HorizontalAlignment = HorizontalAlignment.Right; _plan.Margin = new Thickness(8, 0, 0, 0); Grid.SetColumn(_plan, 2); footer.Children.Add(_plan);
         _subscriptionDays = Text("", 12, "text", FontWeights.SemiBold);
         _subscriptionDays.LineHeight = 14; _subscriptionDays.Margin = new Thickness(6, 0, 0, 0);
         _subscriptionDays.Visibility = Visibility.Visible;
         _subscriptionLine = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, ToolTip = _subscriptionDate.ToolTip };
-        _endsLabel = Text(Loc.T("subscription.ends"), 11, "muted"); _endsLabel.Margin = new Thickness(0, 0, 6, 0);
+        _endsLabel = Text(SubscriptionPresentation.Label(profile), 11, "muted"); _endsLabel.Margin = new Thickness(0, 0, 6, 0);
         _daysLabel = Text(Loc.T("subscription.left"), 11, "muted"); _daysLabel.Margin = new Thickness(8, 0, 0, 0);
         _subscriptionLine.Children.Add(_endsLabel); _subscriptionLine.Children.Add(_subscriptionDate);
         _subscriptionLine.Children.Add(_daysLabel); _subscriptionLine.Children.Add(_subscriptionDays);

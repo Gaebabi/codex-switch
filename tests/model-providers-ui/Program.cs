@@ -290,6 +290,7 @@ internal static class ProviderUiEvidence
             }
             menuManager.DisposeAsync().AsTask().GetAwaiter().GetResult();
             checks.Add("Mixed model visibility and long labels render in both themes through the production popup.");
+            FolderUiContracts.Verify(service, args[0], checks);
             File.WriteAllText(Path.Combine(args[0], "ui-verification.json"), JsonSerializer.Serialize(new
             {
                 checks,

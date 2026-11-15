@@ -25,7 +25,7 @@ with tarfile.open(fileobj=io.BytesIO(run('git','archive',baseline))) as archive:
 original={str(p.relative_to(source)).replace('\\','/'):sha(p) for p in (source/'src').rglob('*') if p.is_file()}
 shutil.copytree(root/'tests/runtime-recovery',source/'tests/runtime-recovery',ignore=shutil.ignore_patterns('bin','obj'))
 service=json.loads(run('dotnet','run','--project','tests/runtime-recovery/RuntimeRecovery.Tests.csproj','-c','Release','--no-launch-profile','-p:UseSharedCompilation=false').decode().strip().splitlines()[-1])
-assert service['passed']==9
+assert service['passed']==17 and len(service['checks'])==17
 for name,workspace,extra in [('before',source,['--baseline']),('after',root,[])]:
     run('dotnet','run','--project','tests/runtime-recovery/RuntimeRecovery.Tests.csproj','-c','Release','--no-launch-profile','-p:UseSharedCompilation=false','--','--evidence',str(output/name),*extra,cwd=workspace)
 assert all(sha(source/path)==value for path,value in original.items())
@@ -46,4 +46,4 @@ receipt={'baselineSource':baseline,'sourceRevision':os.environ.get('EVIDENCE_REV
     'scope':'Actual hosted Windows WPF button/timer and unchanged baseline with fictional authentication and offline disposable RPC. No live Store update, authenticated refresh, real account/client or owner input.'}
 assert receipt['before']['passed']==4 and receipt['after']['passed']==6
 (public/'verification.json').write_text(json.dumps(receipt,indent=2)+'\n','utf-8')
-print(json.dumps({'service':9,'nativeBefore':4,'nativeAfter':6,'originalProductionBaselineUnchanged':True,'sourceRevision':receipt['sourceRevision']}))
+print(json.dumps({'service':17,'nativeBefore':4,'nativeAfter':6,'originalProductionBaselineUnchanged':True,'sourceRevision':receipt['sourceRevision']}))

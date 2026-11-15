@@ -31,11 +31,36 @@ internal sealed class GatewayRoutedContent : HttpContent
         }
         return fields;
     }
-    internal GatewayRoutedContent(ReadOnlyMemory<byte> original, JsonObject options, bool custom, bool generic, bool removeReasoning, IReadOnlyDictionary<int, ReadOnlyMemory<byte>>? history = null)
+    internal static IReadOnlySet<int> ApplyConfiguration(ReadOnlyMemory<byte> original, JsonObject options)
+    {
+        var consumed = new HashSet<int>();
+        var input = Fields(original).FirstOrDefault(field => field.Name == "input").Value;
+        if (input.IsEmpty || input.Span[0] != (byte)'[') return consumed;
+        var index = 0;
+        foreach (var item in Items(input))
+        {
+            var current = index++;
+            if (item.Span[0] != (byte)'{') continue;
+            var fields = Fields(item);
+            if (GatewayJsonRequest.String(fields.FirstOrDefault(field => field.Name == "type").Value) != "configuration_update") continue;
+            if (item.Length > 65536 || fields.Any(field => field.Name is not ("type" or "reasoning")) ||
+                fields.FirstOrDefault(field => field.Name == "reasoning").Value.IsEmpty)
+                throw new InvalidDataException("The native configuration update is not supported by this custom model connection.");
+            var update = JsonNode.Parse(item.Span)!["reasoning"];
+            if (update is not JsonObject reasoning)
+                throw new InvalidDataException("The native reasoning update must be an object.");
+            if (options["reasoning"] is not JsonObject effective) options["reasoning"] = effective = new JsonObject();
+            foreach (var setting in reasoning) effective[setting.Key] = setting.Value?.DeepClone();
+            consumed.Add(current);
+        }
+        return consumed;
+    }
+    internal GatewayRoutedContent(ReadOnlyMemory<byte> original, JsonObject options, bool custom, bool generic, bool removeReasoning, IReadOnlyDictionary<int, ReadOnlyMemory<byte>>? history = null, IReadOnlySet<int>? configurationUpdates = null, IReadOnlySet<int>? providerReasoning = null, IReadOnlySet<int>? providerItemIds = null)
     {
         var fields = Fields(original);
-        var declarations = new HashSet<int>();
-        JsonArray? tools = null;
+        var declarations = custom && configurationUpdates != null ? new HashSet<int>(configurationUpdates) : new HashSet<int>();
+        if (providerReasoning != null) declarations.UnionWith(providerReasoning);
+        var tools = fields.FirstOrDefault(field => field.Name == "tools").Value;
         var input = fields.FirstOrDefault(field => field.Name == "input").Value;
         if (custom && !input.IsEmpty && input.Span[0] == (byte)'[')
         {
@@ -47,23 +72,17 @@ internal sealed class GatewayRoutedContent : HttpContent
                 var itemFields = Fields(item);
                 if (GatewayJsonRequest.String(itemFields.FirstOrDefault(field => field.Name == "type").Value) != "additional_tools") continue;
                 var additional = itemFields.FirstOrDefault(field => field.Name == "tools").Value;
-                if (additional.IsEmpty || JsonNode.Parse(additional.Span) is not JsonArray added)
+                if (additional.IsEmpty || additional.Span[0] != (byte)'[')
                     throw new InvalidDataException("The native additional-tools declaration is invalid.");
-                if (tools == null)
+                // Standard Responses carries the complete current catalog. Lite history
+                // contains partial updates, including tools that are no longer available.
+                // Replaying those updates into the current catalog revives stale tools.
+                if (tools.IsEmpty || tools.Span[0] != (byte)'[')
+                    throw new InvalidDataException("Historical tool updates require the current standard Responses tool catalog.");
+                foreach (var tool in Items(additional))
                 {
-                    var existing = fields.FirstOrDefault(field => field.Name == "tools").Value;
-                    tools = existing.IsEmpty ? new JsonArray() : JsonNode.Parse(existing.Span) as JsonArray ??
-                        throw new InvalidDataException("The active tool declarations are invalid.");
-                }
-                foreach (var tool in added)
-                {
-                    if (tool is not JsonObject definition || definition["type"] is not System.Text.Json.Nodes.JsonValue type || !type.TryGetValue<string>(out _))
+                    if (tool.Span[0] != (byte)'{' || GatewayJsonRequest.String(Fields(tool).FirstOrDefault(field => field.Name == "type").Value) == null)
                         throw new InvalidDataException("The native additional-tool definition is invalid.");
-                    var matches = tools.OfType<JsonObject>().Where(candidate => JsonNode.DeepEquals(candidate["type"], definition["type"]) &&
-                        JsonNode.DeepEquals(candidate["name"], definition["name"])).ToArray();
-                    if (matches.Any(candidate => !JsonNode.DeepEquals(candidate, definition)))
-                        throw new InvalidDataException("Conflicting native tool definitions cannot be transferred to the selected model.");
-                    if (matches.Length == 0) tools.Add(definition.DeepClone());
                 }
                 declarations.Add(current);
             }
@@ -77,14 +96,8 @@ internal sealed class GatewayRoutedContent : HttpContent
             _parts.Add(JsonSerializer.SerializeToUtf8Bytes(field.Name)); Add(":");
             if (custom && (field.Name is "model" or "reasoning" || generic && field.Name == "text"))
                 _parts.Add(JsonSerializer.SerializeToUtf8Bytes(options[field.Name]));
-            else if (field.Name == "tools" && tools != null) _parts.Add(JsonSerializer.SerializeToUtf8Bytes(tools));
-            else if (field.Name == "input" && (removeReasoning || history?.Count > 0 || declarations.Count > 0)) AddInput(field.Value, removeReasoning, history, declarations);
+            else if (field.Name == "input" && (removeReasoning || history?.Count > 0 || declarations.Count > 0 || providerItemIds?.Count > 0)) AddInput(field.Value, removeReasoning, history, declarations, providerItemIds);
             else _parts.Add(field.Value);
-        }
-        if (tools != null && !fields.Any(field => field.Name == "tools"))
-        {
-            if (comma) Add(","); comma = true;
-            Add("\"tools\":"); _parts.Add(JsonSerializer.SerializeToUtf8Bytes(tools));
         }
         if (custom && !fields.Any(field => field.Name == "reasoning") && options["reasoning"] != null)
         {
@@ -106,7 +119,7 @@ internal sealed class GatewayRoutedContent : HttpContent
         }
         return items;
     }
-    private void AddInput(ReadOnlyMemory<byte> json, bool removeReasoning, IReadOnlyDictionary<int, ReadOnlyMemory<byte>>? history, HashSet<int> declarations)
+    private void AddInput(ReadOnlyMemory<byte> json, bool removeReasoning, IReadOnlyDictionary<int, ReadOnlyMemory<byte>>? history, HashSet<int> declarations, IReadOnlySet<int>? providerItemIds)
     {
         Add("["); var comma = false; var index = 0;
         foreach (var value in Items(json))
@@ -124,7 +137,18 @@ internal sealed class GatewayRoutedContent : HttpContent
                 var encrypted = fields.FirstOrDefault(f => f.Name == "encrypted_content").Value;
                 if (GatewayJsonRequest.String(type) == "reasoning" && !encrypted.IsEmpty && !encrypted.Span.SequenceEqual("null"u8)) continue;
             }
-            if (comma) Add(","); comma = true; _parts.Add(value);
+            if (comma) Add(","); comma = true;
+            if (providerItemIds?.Contains(current) == true)
+            {
+                Add("{"); var fieldComma = false;
+                foreach (var field in Fields(value).Where(field => field.Name != "id"))
+                {
+                    if (fieldComma) Add(","); fieldComma = true;
+                    _parts.Add(JsonSerializer.SerializeToUtf8Bytes(field.Name)); Add(":"); _parts.Add(field.Value);
+                }
+                Add("}");
+            }
+            else _parts.Add(value);
         }
         Add("]");
     }

@@ -145,9 +145,7 @@ internal sealed class AccountDetailWindow : Window
             Extra(Loc.F("{0:MM/dd HH:mm:ss} 조회", UsagePresentation.KoreanTime(profile.Usage.CheckedAt)));
             if (profile.Usage.AvailableResets.HasValue) Extra(Loc.Count("초기화권 {0}개", profile.Usage.AvailableResets.Value));
         }
-        Extra(profile.SubscriptionActiveUntil is DateTimeOffset until ? Loc.F("구독 종료 {0:yyyy/MM/dd HH:mm} (한국 시간)", UsagePresentation.KoreanTime(until)) : Loc.T("구독 종료일 정보 없음"));
-        if (profile.SubscriptionLastChecked is DateTimeOffset checkedAt) Extra(Loc.F("구독 정보 확인 {0:MM/dd HH:mm}", UsagePresentation.KoreanTime(checkedAt)));
-        Extra(Loc.T("로그인 정보의 구독 기간 기준"));
+        Extra(SubscriptionPresentation.Details(profile));
         Extra(Loc.T("시각은 한국 시간 기준"));
         body.Children.Add(new ScrollViewer { Content = content, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
         Grid.SetRow(body, 1); root.Children.Add(body); Content = root;

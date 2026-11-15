@@ -23,7 +23,8 @@ if (args.FirstOrDefault() == "app-server")
 }
 
 if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException();
-var root = Path.Combine(Path.GetTempPath(), "switch-runtime-recovery-" + Guid.NewGuid().ToString("N"));
+var privateTemp = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp");
+var root = Path.Combine(privateTemp, "switch-runtime-recovery-" + Guid.NewGuid().ToString("N"));
 var binaries = Path.Combine(AppContext.BaseDirectory, "runtime-recovery-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
 var originalCli = Environment.GetEnvironmentVariable("CODEX_ACCOUNT_DESK_CLI");
@@ -58,6 +59,7 @@ try
     var authPath = Path.Combine(home, "auth.json"); File.WriteAllText(authPath, auth);
     var vault = Activator.CreateInstance(vaultType, Path.Combine(root, "vault"))!;
     service = Activator.CreateInstance(serviceType, new object?[] { vault, home, null, null, null })!;
+    using var billing = args.Contains("--baseline") ? null : SubscriptionRefreshContracts.InstallClient(service, _ => SubscriptionRefreshContracts.Response("fixture-workspace", null));
     await Call("InitializeAsync", CancellationToken.None);
     if (args.FirstOrDefault() == "--evidence")
     {
@@ -93,6 +95,7 @@ try
     var cancellationObserved = false;
     try { await Call("RefreshAllAsync", null, cancelled.Token); } catch (OperationCanceledException) { cancellationObserved = true; }
     Assert(cancellationObserved, "Cancellation is preserved");
+    await SubscriptionRefreshContracts.RunAsync(root, Assert);
     Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, checks, scope = "One live AccountService across disposable CLI removal/replacement and update gap; no personal accounts, network, desktop restart or account switch." }));
 }
 finally
@@ -100,7 +103,7 @@ finally
     if (service != null) await Call("StopAsync");
     Environment.SetEnvironmentVariable("CODEX_ACCOUNT_DESK_CLI", originalCli);
     Environment.SetEnvironmentVariable("CODEX_ACCOUNT_DESK_DESKTOP", originalDesktop);
-    if (Path.GetDirectoryName(Path.GetFullPath(root)) != Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar) ||
+    if (Path.GetDirectoryName(Path.GetFullPath(root)) != privateTemp.TrimEnd(Path.DirectorySeparatorChar) ||
         !Path.GetFileName(root).StartsWith("switch-runtime-recovery-", StringComparison.Ordinal)) throw new IOException("Unexpected cleanup path");
     Directory.Delete(root, true);
     if (Path.GetDirectoryName(Path.GetFullPath(binaries)) != AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar) ||

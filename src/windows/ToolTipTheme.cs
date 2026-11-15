@@ -83,12 +83,14 @@ internal sealed class ResourceToolTip : ToolTip
     private readonly TextBlock _title = new() { FontSize = 14, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
     private readonly TextBlock _value = new() { FontSize = 18, FontWeight = FontWeights.SemiBold, Margin = new Thickness(12, 0, 0, 0) };
     private readonly TextBlock _details = new() { FontSize = 12, LineHeight = 18, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) };
+    private readonly ContentControl _supplement = new();
     public ResourceToolTip()
     {
         Width = 320; UseLayoutRounding = true; SnapsToDevicePixels = true;
         var body = new StackPanel(); var heading = new Grid(); heading.ColumnDefinitions.Add(new()); heading.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
-        heading.Children.Add(_title); Grid.SetColumn(_value, 1); heading.Children.Add(_value); body.Children.Add(heading); body.Children.Add(_details); Content = body;
+        heading.Children.Add(_title); Grid.SetColumn(_value, 1); heading.Children.Add(_value); body.Children.Add(heading); body.Children.Add(_details); body.Children.Add(_supplement); Content = body;
     }
+    public void SetSupplement(object? content) => _supplement.Content = content;
     public void Refresh(string title, string value, string details, Burn0Theme theme, string valueColor)
     {
         Style = ToolTipTheme.StyleFor(theme); FontFamily = theme.Font;

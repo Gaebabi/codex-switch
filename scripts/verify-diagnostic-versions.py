@@ -30,7 +30,8 @@ with tempfile.TemporaryDirectory(prefix='codex-switch-diagnostic-version-', dir=
     receipt = {'schema': 1, 'version': value['version'], 'expectedVersion': expected, 'mode': args.mode, 'diagnosticExitCode': process.returncode}
     if args.mode == 'switch-protocol':
         if process.returncode != 0 or value.get('passed') is not True:
-            raise SystemExit('Disposable native protocol checks did not pass.')
+            detail = str(value.get('error') or process.stderr.decode('utf-8', errors='replace') or 'No diagnostic error was reported.').replace(directory, '<fixture>')
+            raise SystemExit('Disposable native protocol checks did not pass: ' + detail[:1200])
         receipt['nativeProtocolPassed'] = True
     else:
         checks = value['checks']
