@@ -213,6 +213,31 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
     private static string? Selected(JsonObject parameters) => parameters["collaborationMode"]?["settings"]?["model"]?.GetValue<string>() ?? parameters["model"]?.GetValue<string>();
     private async Task<JsonNode?> HandleAsync(string method, JsonObject parameters)
     {
+        if (method is "config/value/write" or "config/batchWrite" && DesktopModelDefaults.IsUserFile(parameters, _config.Home))
+        {
+            var store = new ModelProviderStore(_config.Directory);
+            var current = store.Read().DesktopModelDefaults;
+            var edits = DesktopModelDefaults.Edits(method, parameters);
+            var (defaults, nativeEdits) = DesktopModelDefaults.Partition(current, edits);
+            if (current == null && defaults == null) return await RequestAsync(method, parameters).ConfigureAwait(false);
+            if (defaults != null && !Catalog()["models"]!.AsArray().Any(item => item?["model"]?.GetValue<string>() == defaults["model"]!.GetValue<string>()))
+                throw new InvalidOperationException("The selected custom model was removed. Select a registered model; the conversation was preserved.");
+            var write = parameters.DeepClone().AsObject();
+            write.Remove("keyPath"); write.Remove("value"); write.Remove("mergeStrategy");
+            write["edits"] = nativeEdits;
+            var result = await RequestAsync("config/batchWrite", write).ConfigureAwait(false);
+            if (result?["status"]?.GetValue<string>() == "ok" && !JsonNode.DeepEquals(current, defaults))
+                store.Update(settings => settings.DesktopModelDefaults = defaults);
+            return result;
+        }
+        if (method == "config/read")
+        {
+            var result = await RequestAsync(method, parameters).ConfigureAwait(false);
+            var defaults = new ModelProviderStore(_config.Directory).Read().DesktopModelDefaults;
+            if (defaults != null && result?["config"] is JsonObject config)
+                foreach (var pair in defaults) config[pair.Key] = pair.Value?.DeepClone();
+            return result;
+        }
         if (method == "initialize")
         {
             var capabilities = parameters["capabilities"] as JsonObject ?? new();
@@ -222,6 +247,18 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
         var thread = parameters["threadId"]?.GetValue<string>();
         _sessions.TryGetValue(thread ?? "", out var session);
         var selected = Selected(parameters) ?? session?.Model;
+        if (method == "thread/start" && selected == null)
+        {
+            var defaults = new ModelProviderStore(_config.Directory).Read().DesktopModelDefaults;
+            selected = defaults?["model"]?.GetValue<string>();
+            if (defaults?.ContainsKey("model_reasoning_effort") == true)
+            {
+                var config = parameters["config"] as JsonObject ?? new();
+                if (!config.ContainsKey("model_reasoning_effort"))
+                    config["model_reasoning_effort"] = defaults["model_reasoning_effort"]?.DeepClone();
+                parameters["config"] = config;
+            }
+        }
         if (method is "thread/resume" or "thread/fork" && selected == null && thread != null && File.Exists(Path.Combine(_config.Home, "state_5.sqlite")))
             selected = NativeHistoryThreads.Read(_config.Home, thread).SingleOrDefault()?.Model;
         if (method is "thread/start" or "thread/resume" or "thread/fork")

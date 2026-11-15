@@ -62,6 +62,7 @@ internal static class DesktopBackendContracts
                 return results.ToArray();
             }
             var alias = model.Alias(provider.Id);
+            await DesktopModelDefaultContracts.Run(rpc, backend, nativeExecutable, home, directory, alias, cancellation, check);
             check("Custom catalogs request a complete standard Responses tool catalog even when provider metadata enables Lite", ModelRouting.Catalog(store.Read()).Single(item => item?["slug"]?.GetValue<string>() == alias)!["use_responses_lite"]!.GetValue<bool>() == false);
             var list = await Models();
             check("One paginated native picker contains the native model and fixed custom alias", list.Select(item => item.GetProperty("model").GetString()).SequenceEqual(new[] { "fixture-native", alias }));

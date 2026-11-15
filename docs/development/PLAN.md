@@ -1,5 +1,7 @@
 # Current plan
 
+2026-11-15 native default isolation: custom desktop model/effort persistence now belongs to the existing encrypted provider store, with native configuration writes retained for unrelated settings and native selections. The VM recovery and installed real Qwen/native responses pass; source/native contracts cover the persistence path that earlier turn-routing tests omitted. Preserve normal CLI defaults, existing chats and credentials. Publication and a satisfaction-gated commit remain separate from this local repair.
+
 2026-11-15 gauge readability: local host/VM installation separates resource metadata from saturated12px bars, adds folder boundaries/direct shares, and retains history in tooltips. Narrow/wide production controls and installed package checks pass. See [current acceptance](STATUS.md); satisfaction-gated commit and future publication remain separate.
 
 2026-11-15 subscription-date correction: query current account entitlements independently of token claims, persist identity-bound billing snapshots, distinguish renewal and expiration, and preserve quota updates on a billing failure. Verify stale-token/save/reload/failure behavior and both installed owner dates without restarting Codex.
