@@ -3,13 +3,13 @@
 
 **Codex Switch(`codex-switch`)는 OpenAI Codex 계정 전환과 사용량 확인을 위한 오픈소스 데스크톱 앱입니다.** 여러 계정의 잔여량을 비교하고 다음 계정을 선택하세요. 전환이 중단되면 저장된 기록으로 복구할 수 있습니다. 선택적 사용량 기준 자동 전환은 기본 **꺼짐**입니다.
 
-Windows · macOS15+ · Linux 미리보기 · MIT 오픈소스 · **1.45.2**
+Windows · macOS15+ · Linux 미리보기 · MIT 오픈소스 · **1.45.3**
 
 Windows 모델 설정의 **컨텍스트 및 자동 압축**에서 OpenAI 공통값과 외부 모델별 값을 조정할 수 있습니다. 저장하면 Codex 재실행 없이 다음 요청부터 적용하며, 빈 값은 기본값으로 복원합니다. 실제 모델 한도와 네이티브 안전 여유는 유지됩니다.
 
 [English](../README.md) / 한국어 / [日本語](README.ja.md) / [简体中文](README.zh-CN.md)
 
-[다운로드](#다운로드) · [시작하기](INSTALL.md) · [업데이트 내용](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.2)
+[다운로드](#다운로드) · [시작하기](INSTALL.md) · [업데이트 내용](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.3)
 
 <p align="center"><img src="evidence/home-simplification/native-after-windows-ko.png" width="500" height="350" alt="잔량 탱크와 톱니 설정 하나로 정리한 Codex Switch1.44.0" /></p>
 
@@ -17,7 +17,7 @@ Windows 모델 설정의 **컨텍스트 및 자동 압축**에서 OpenAI 공통�
 
 **유용하다면 GitHub Star로 저장하고 다른 Codex 사용자에게도 알려주세요.**
 
-1.45.2는 Windows의 자원·폴더 게이지를 개선합니다. 선명한 색상과 경계, 구간별 점유율 표시로 비율을 쉽게 구분하고, 추이 그래프는 호버에서 확인합니다. 기존 모델 연결과 계정 보호는 유지합니다. [변경·검증 범위](development/RELEASE_1_45_2.md).
+1.45.3은 Windows 데스크톱의 외부 모델 선택이 일반 Codex CLI의 기본 모델을 덮어쓰던 문제를 수정합니다. 외부 모델과 추론 강도는 Switch 전용 암호화 저장소에 보관하며 기존 대화·인증·기본 OpenAI 연결을 유지합니다. [변경·검증 범위](development/RELEASE_1_45_3.md).
 
 1.42.2에는 경고 버튼의 해당 계정 브라우저 재로그인, 기본 꺼짐인 계정 자동 전환, 최적 자동 선택/사용자 지정 순위, 재시작 복구 기록, 구독 날짜 제목과 공식 Pro 100/200/500 표기가 포함됩니다. [동작과 검증 범위](development/ACCOUNT_AUTOMATION.md) / [릴리즈 절차](development/RELEASE_1_42_2.md).
 
@@ -41,9 +41,9 @@ Windows 모델 설정의 **컨텍스트 및 자동 압축**에서 OpenAI 공통�
 
 ## 다운로드
 
-- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.2/CodexSwitch-v1.45.2-win-x64.zip)
-- macOS15+: [Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.2/CodexSwitch-v1.45.2-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.2/CodexSwitch-v1.45.2-osx-x64.zip)
-- Linux **미리보기** x64·ARM64: [DEB·RPM·tar.gz 및 SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.2)
+- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.3/CodexSwitch-v1.45.3-win-x64.zip)
+- macOS15+: [Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.3/CodexSwitch-v1.45.3-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.3/CodexSwitch-v1.45.3-osx-x64.zip)
+- Linux **미리보기** x64·ARM64: [DEB·RPM·tar.gz 및 SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.3)
 
 전체 실행 패키지에 .NET 런타임이 포함되어 소스 빌드나 .NET 설치가 필요 없습니다. 폴더·앱 번들 전체를 유지하세요. Windows·Linux는 미서명이며 Mac은 임시 서명으로 **Apple 공증은 없습니다**. [설치](INSTALL.md) / [Mac 최초 실행](MACOS.md)
 
@@ -53,7 +53,7 @@ Linux는 통합 미리보기입니다. 키 모음·설치 UI·패키지 검증�
 
 경고 아이콘에 마우스를 올리면 원인을 보고, 누르면 해당 계정으로 브라우저에서 다시 로그인할 수 있습니다. [실제 앱 검증 화면](evidence/account-automation/README.md).
 
-**Linux1.45.2 다운로드에는 소스1.41.0에서 추가한 CLI 계정 전환과 저장 세션 재개가 포함됩니다.** `CodexSwitch cli`로 화면 서버 없이 기존 암호화 계정을 관리하고, `cli switch <계정> --resume <CLI 세션 UUID>`로 수동 전환과 공식 CLI 재개를 연결합니다. `--continue`는 후속 메시지 전송을 명시하며, `--exec --continue`는 비대화형 실행입니다. 검증된 네이티브 CLI·체크섬과 잠금 해제된 지원 Secret Service가 필요합니다. Linux x64에서 실제 두 계정 전환 후 기존 문맥을 기억하는 CLI 재개를 확인했습니다. ARM64·오프라인 검증과 전체 데스크톱 수용 범위는 구분합니다. [명령·실제 스크린샷·정확한 검증 범위](development/LINUX_TERMINAL.md).
+**Linux1.45.3 다운로드에는 소스1.41.0에서 추가한 CLI 계정 전환과 저장 세션 재개가 포함됩니다.** `CodexSwitch cli`로 화면 서버 없이 기존 암호화 계정을 관리하고, `cli switch <계정> --resume <CLI 세션 UUID>`로 수동 전환과 공식 CLI 재개를 연결합니다. `--continue`는 후속 메시지 전송을 명시하며, `--exec --continue`는 비대화형 실행입니다. 검증된 네이티브 CLI·체크섬과 잠금 해제된 지원 Secret Service가 필요합니다. Linux x64에서 실제 두 계정 전환 후 기존 문맥을 기억하는 CLI 재개를 확인했습니다. ARM64·오프라인 검증과 전체 데스크톱 수용 범위는 구분합니다. [명령·실제 스크린샷·정확한 검증 범위](development/LINUX_TERMINAL.md).
 
 1. Windows는 `CodexSwitch.exe`, Mac은 `Install.command`로 설치한 **Codex Switch.app**을 실행하세요. Linux는 전체 미리보기 패키지와 지원하는 Secret Service 제공자가 필요합니다.
 2. **+**로 각 계정을 공식 브라우저 로그인합니다. 이전 계정이 자동 선택되면 별도 브라우저 프로필·비공개 창으로 다음 계정을 로그인하세요. **설정 > 현재 계정 가져오기**로 현재 로그인을 가져올 수 있습니다.

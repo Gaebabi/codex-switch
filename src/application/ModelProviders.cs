@@ -50,6 +50,7 @@ internal sealed class ModelProviderSettings
     public bool DesktopProfile { get; set; }
     public bool DesktopBackendEnabled { get; set; }
     public string? DesktopBackendExecutable { get; set; }
+    public JsonObject? DesktopModelDefaults { get; set; }
     public Dictionary<string, JsonNode?>? DesktopOriginalConfig { get; set; }
     public Dictionary<string, JsonNode?>? DesktopAppliedConfig { get; set; }
     public bool RootMigrationCompleted { get; set; }
@@ -100,6 +101,7 @@ internal sealed class ModelProviderStore
             throw new InvalidDataException("The model provider store is invalid.");
         foreach (var provider in _settings.Providers) ProviderCatalog.Validate(provider);
         ModelContextOptions.Validate(_settings.NativeContext);
+        DesktopModelDefaults.Validate(_settings.DesktopModelDefaults);
         if (_settings.SelectedRoute?.Length > 256 || _settings.SelectedRoute != null && (string.IsNullOrWhiteSpace(_settings.SelectedRoute) || _settings.SelectedRoute.Any(char.IsControl)))
             throw new InvalidDataException("The saved model routing choices are invalid.");
         ModelRouting.ValidateChoices(_settings.OpenAiModels);
