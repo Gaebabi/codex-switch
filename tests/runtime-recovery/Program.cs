@@ -59,7 +59,7 @@ try
     var authPath = Path.Combine(home, "auth.json"); File.WriteAllText(authPath, auth);
     var vault = Activator.CreateInstance(vaultType, Path.Combine(root, "vault"))!;
     service = Activator.CreateInstance(serviceType, new object?[] { vault, home, null, null, null })!;
-    using var billing = SubscriptionRefreshContracts.InstallClient(service, _ => SubscriptionRefreshContracts.Response("fixture-workspace", null));
+    using var billing = args.Contains("--baseline") ? null : SubscriptionRefreshContracts.InstallClient(service, _ => SubscriptionRefreshContracts.Response("fixture-workspace", null));
     await Call("InitializeAsync", CancellationToken.None);
     if (args.FirstOrDefault() == "--evidence")
     {
