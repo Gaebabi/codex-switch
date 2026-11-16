@@ -6,7 +6,7 @@ Folder allocation traversal pauses while the main window is hidden or minimized.
 
 ## Verification and delivery
 
-The hardware/folder suite passes52checks, including65seconds without an idle rescan, zero unchanged-root queries, one-directory invalidation, hard-link growth, rename/replacement, real filesystem notifications, hidden startup, active cancellation and resume. Both locally installed complete Windows packages pass100self-tests. A quiet editor-on/off/restart comparison observed zero volume reads and average activity below1%; longer observations contained concurrent VM workloads and do not establish permanent whole-disk idleness.
+The hardware/folder suite passes 52 checks, including 65 seconds without an idle rescan, zero unchanged-root queries, one-directory invalidation, hard-link growth, rename/replacement, real filesystem notifications, hidden startup, active cancellation and resume. Both locally installed complete Windows packages pass 100 self-tests. A quiet editor-on/off/restart comparison observed zero volume reads and average activity below 1%; longer observations contained concurrent VM workloads and do not establish permanent whole-disk idleness. [Native Windows before/after evidence](../evidence/folder-monitoring/README.md) verifies presentation with fictional inputs, separately from scheduling and disk observations.
 
 Require all six protected checks on the exact release head/current base, native application before/after evidence, reviewed-tree equality after merge and nine source/runtime-verified packages. Publish checksums and provenance, then verify anonymous downloads. Preserve existing releases and active owner Codex/backend processes. Public delivery does not restart an already running client.
 

@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "os": "Windows",
+  "scope": "Actual native app windows with fictional account and folder inputs; presentation only, not a disk benchmark.",
+  "before": {
+    "version": "1.45.3",
+    "sourceRevision": "1a896e508ed6a195b732d6616655932fb0b6d53a",
+    "file": "native-before-windows.png",
+    "sha256": "8de0b65e37341b83b97b8dc8baea6498867a8304d465970fde8a41b2b0717e0b"
+  },
+  "after": {
+    "version": "1.45.4",
+    "sourceRevision": "23ad7e5a14ae6524f7d961648c74bbaca0c6e43d",
+    "file": "native-after-windows.png",
+    "sha256": "aeb7b7419d6772e234f80e30d63596dabbdf44d9c61f44b0a92d31edc2ef5cf1",
+    "run": "https://github.com/Gaebabi/codex-switch/actions/runs/43804177489"
+  },
+  "metadataRemoved": true,
+  "personalDataUsed": false
+}
