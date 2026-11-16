@@ -8,15 +8,18 @@ Settings share caption/body/field/metric scales and surfaces. Provider details s
 
 ## Evidence boundaries
 
-The new images below are **production WPF components rendered offscreen with fictional data**. They are not owner screenshots, native Codex-picker acceptance or a disk benchmark. The before image is an actual prior hosted Windows app window. Native after confirmation is pending final-head CI. [Image hashes and local-source provenance](evidence.json).
+The settings/spinner images below are **production WPF components rendered offscreen with fictional data**. They are not owner screenshots, native Codex-picker acceptance or a disk benchmark. The native before/after images are actual hosted Windows app windows. The after capture is source `7aaffbb303358652f9b822240c453560e4377c29` from [native CI](https://github.com/Gaebabi/codex-switch/actions/runs/43921071415); only evidence/docs are added afterward, and final-head CI recaptures that unchanged UI code. [Image hashes and local-source provenance](evidence.json).
 
 | Provider connection | Drive/folder settings | Usage history |
 | --- | --- | --- |
 | ![Provider controls, Korean/light](settings-provider-ko-False.png) | ![Drive sections, Korean/light](settings-drives-ko-False.png) | ![History filters, metrics and gauge](settings-statistics-ko-False.png) |
 | ![Provider controls, English/dark](settings-provider-en-True.png) | ![Drive sections, English/dark](settings-drives-en-True.png) | ![History, English/dark](settings-statistics-en-True.png) |
 
-| Actual native baseline | Scan indicator / Settings action placement |
+| Actual native baseline | Actual native after |
 | --- | --- |
-| ![Actual prior native Windows window](native-before-windows.png) | ![Capacity-adjacent scan indicator](folders-scanning-ko-False.png) ![Date chats inside Settings](home-settings-ko-light.png) |
+| ![Actual prior native Windows window](native-before-windows.png) | ![Actual native window with Models above and Add/Refresh below](native-after-windows.png) |
+
+![Capacity-adjacent scan indicator, rendered component](folders-scanning-ko-False.png)
+![Date chats inside Settings, rendered component](home-settings-ko-light.png)
 
 Local validation passes58hardware/folder contracts,171production UI checks and100package self-tests. Read-only owner observation confirms status and settings RPC on both Windows systems while original Codex/backend processes and stable owner preferences remain intact. Raw diagnostics and personal data remain private. Public downloads still refer to the separately verified1.45.4 release.

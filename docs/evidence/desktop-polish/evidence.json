@@ -2,7 +2,7 @@
   "schema": 1,
   "sourceBase": "496391ccedfa37055304f7d1e7599a832c6107a9",
   "localInputFingerprint": "7529a6cf870075c06ad3e39c704ed6d1e829bccfc8e4116b13c4fc8016025c55",
-  "captureScope": "New settings/spinner images are production WPF controls rendered offscreen with fictional data. The before image is a prior actual hosted native window. Native after confirmation is pending hosted CI.",
+  "captureScope": "Settings/spinner images are offscreen production controls with fictional data. Native before/after are actual hosted Windows app windows; neither proves an owner account switch or a disk benchmark. Final-head protected CI recaptures the unchanged UI code.",
   "personalDataUsed": false,
   "metadataRemoved": true,
   "images": [
@@ -48,5 +48,12 @@
     "uiChecks": 171,
     "packageSelfTests": 100,
     "ownerConnectionObservedWithoutRestart": true
+  },
+  "nativeAfter": {
+    "file": "native-after-windows.png",
+    "sourceRevision": "7aaffbb303358652f9b822240c453560e4377c29",
+    "run": "https://github.com/Gaebabi/codex-switch/actions/runs/43921071415",
+    "artifactId": 14255151639,
+    "sha256": "c8d8e154eb3c8665503830a10600898baf8c45c7bda253584586f8a219934b97"
   }
 }
