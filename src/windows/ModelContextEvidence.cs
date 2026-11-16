@@ -34,7 +34,7 @@ internal static class ModelContextEvidence
                 {
                     window.Show(); window.UpdateLayout();
                     var panel = Field<StackPanel>(window, "_contextPanel");
-                    var expander = ((StackPanel)Field<StackPanel>(window, "_ready").Parent).Children.OfType<Expander>().Single(item => item.Name == "ContextSettings");
+                    var expander = ((StackPanel)Field<ScrollViewer>(window, "_scroll").Content).Children.OfType<Expander>().Single(item => item.Name == "ContextSettings");
                     expander.IsExpanded = true;
                     var target = Field<Button>(window, "_contextModel");
                     void PickContext(int index)
