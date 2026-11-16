@@ -4,5 +4,8 @@ contact_links:
     url: https://github.com/Gaebabi/codex-switch/security/advisories/new
     about: Use a private advisory for security issues; never post credentials or private chats.
   - name: Platform support roadmap
-    url: https://github.com/Gaebabi/codex-switch/issues/1
-    about: Current support, dependencies and native acceptance are tracked here.
+    url: https://github.com/Gaebabi/codex-switch/blob/main/docs/PLATFORM_SUPPORT_PLAN.md
+    about: Check supported capabilities and preview limitations before reporting an environment issue.
+  - name: Downloads and installation
+    url: https://github.com/Gaebabi/codex-switch/blob/main/docs/INSTALL.md
+    about: Complete packages, installation steps and platform requirements.

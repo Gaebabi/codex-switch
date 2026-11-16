@@ -23,6 +23,7 @@ internal sealed class ModelProvidersWindow : Window
     private readonly PasswordBox _key = new() { MaxLength = 16384 };
     private readonly TextBox _plainKey = new() { MaxLength = 16384, Visibility = Visibility.Collapsed };
     private readonly StackPanel _entry = new(), _ready = new(), _reasoningPanel = new();
+    private readonly StackPanel _modelTable = new();
     private readonly TextBlock _stepTitle = new(), _models = new() { TextWrapping = TextWrapping.Wrap }, _status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly ComboBox _reasoningModel = new(), _reasoningDefault = new() { ItemsSource = ProviderReasoning.Efforts };
     private readonly Button _contextModel;
@@ -50,15 +51,16 @@ internal sealed class ModelProvidersWindow : Window
         if (owner.Left < -10000) { WindowStartupLocation = WindowStartupLocation.Manual; Left = owner.Left; Top = owner.Top; ShowInTaskbar = false; }
         Resources = owner.Resources; Background = theme.Color("canvas"); Foreground = theme.Color("text"); FontFamily = theme.Font;
         FlowDirection = Loc.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
-        var root = new Grid { Margin = new Thickness(22) };
+        FontSize = PanelLayout.BodySize; UseLayoutRounding = true; SnapsToDevicePixels = true; WindowStyle = WindowStyle.None; WindowFrame.Apply(this);
+        var root = new Grid { Margin = new Thickness(16) };
         root.RowDefinitions.Add(new() { Height = GridLength.Auto }); root.RowDefinitions.Add(new()); root.RowDefinitions.Add(new() { Height = GridLength.Auto });
-        var header = new StackPanel(); header.Children.Add(Label("providers.select"));
+        var header = new StackPanel(); header.Children.Add(PanelLayout.Heading(Loc.T("providers.select"), theme));
         var picker = new Grid(); picker.ColumnDefinitions.Add(new()); picker.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
         _providerPicker = Button(""); _providerPicker.HorizontalContentAlignment = HorizontalAlignment.Left; _providerPicker.Click += (_, _) => ShowProviders();
         _more = IconButton("more", "providers.more"); _more.Margin = new Thickness(8, 0, 0, 0); _more.Click += (_, _) => ShowMore();
         picker.Children.Add(_providerPicker); Grid.SetColumn(_more, 1); picker.Children.Add(_more); header.Children.Add(picker); root.Children.Add(header);
-        var form = new StackPanel { Margin = new Thickness(0, 20, 0, 8) };
-        _stepTitle.FontSize = 21; _stepTitle.FontWeight = FontWeights.SemiBold; _stepTitle.Margin = new Thickness(0, 0, 0, 16); form.Children.Add(_stepTitle);
+        var form = new StackPanel { Margin = new Thickness(0, 12, 0, 8) };
+        _stepTitle.FontSize = 16; _stepTitle.FontWeight = FontWeights.SemiBold; _stepTitle.Margin = new Thickness(0, 0, 0, 12); form.Children.Add(_stepTitle);
         Field(_entry, "providers.name", _name); Field(_entry, "providers.url", _url); _entry.Children.Add(Label("providers.key"));
         var keyRow = new Grid(); keyRow.ColumnDefinitions.Add(new()); keyRow.ColumnDefinitions.Add(new() { Width = GridLength.Auto }); keyRow.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
         var keyInput = new Grid(); Input(_key); Input(_plainKey); keyInput.Children.Add(_key); keyInput.Children.Add(_plainKey); keyRow.Children.Add(Frame(keyInput));
@@ -68,18 +70,23 @@ internal sealed class ModelProvidersWindow : Window
         _entry.Children.Add(new TextBlock { Text = Loc.T("providers.key_hint"), Foreground = theme.Color("muted"), FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 12) });
         AutomationProperties.SetName(_key, Loc.T("providers.key")); AutomationProperties.SetName(_plainKey, Loc.T("providers.key"));
         var filters = new StackPanel(); Input(_included); filters.Children.Add(Frame(_included));
-        _entry.Children.Add(new Expander { Header = Loc.T("providers.include"), Foreground = _theme.Color("muted"), Content = filters, Margin = new Thickness(0, 0, 0, 8) }); form.Children.Add(_entry);
+        _entry.Children.Add(new Expander { Header = Loc.T("providers.include"), Foreground = _theme.Color("muted"), Content = filters, Margin = new Thickness(0, 0, 0, 8) });
+        var connection = PanelLayout.Surface(_entry, theme); connection.SetBinding(VisibilityProperty, new System.Windows.Data.Binding("Visibility") { Source = _entry }); form.Children.Add(connection);
         _routePicker = new ModelRoutePicker(theme, _manager, error => { _message = error.Message; Render(); }, Render);
         _routePicker.Margin = new Thickness(0, 0, 0, 16); _ready.Children.Add(_routePicker);
-        _models.FontSize = 14; _models.LineHeight = 23; _models.Margin = new Thickness(0, 0, 0, 18); _ready.Children.Add(_models); BuildAdvanced(_ready); form.Children.Add(_ready);
+        _models.FontSize = PanelLayout.BodySize; _models.LineHeight = 20; _models.Margin = new Thickness(0, 0, 0, 8); _ready.Children.Add(_models);
+        _ready.Children.Add(_modelTable); _ready.Children.Add(PanelLayout.Rule(theme)); BuildAdvanced(_ready);
+        var models = PanelLayout.Surface(_ready, theme); models.SetBinding(VisibilityProperty, new System.Windows.Data.Binding("Visibility") { Source = _ready }); form.Children.Add(models);
+        form.Children.Add(PanelLayout.Rule(theme));
         BuildContext(form);
         _scroll = new ScrollViewer { Content = form, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
         Grid.SetRow(_scroll, 1); root.Children.Add(_scroll);
-        var footer = new StackPanel(); _status.FontSize = 12; _status.Margin = new Thickness(0, 6, 0, 12); footer.Children.Add(_status);
+        var footer = new StackPanel(); footer.Children.Add(PanelLayout.Rule(theme, 8, 12)); _status.FontSize = PanelLayout.CaptionSize; _status.Margin = new Thickness(0, 0, 0, 10); footer.Children.Add(_status);
         var actions = new Grid(); actions.ColumnDefinitions.Add(new()); actions.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
         _back = Button(""); _back.HorizontalAlignment = HorizontalAlignment.Left; _back.Click += (_, _) => { if (_editor.Draft.Step == 1) { _editor.Edit(); _message = null; Render(); } else Close(); };
         _primary = Button("", true); _primary.IsDefault = true; _primary.Click += async (_, _) => await PrimaryAsync();
-        actions.Children.Add(_back); Grid.SetColumn(_primary, 1); actions.Children.Add(_primary); footer.Children.Add(actions); Grid.SetRow(footer, 2); root.Children.Add(footer); Content = root;
+        actions.Children.Add(_back); Grid.SetColumn(_primary, 1); actions.Children.Add(_primary); footer.Children.Add(actions); Grid.SetRow(footer, 2); root.Children.Add(footer);
+        var shell = new DockPanel(); var caption = PanelLayout.Caption(this, theme); DockPanel.SetDock(caption, Dock.Top); shell.Children.Add(caption); shell.Children.Add(root); Content = shell;
         _name.TextChanged += (_, _) => FieldsChanged(); _url.TextChanged += (_, _) => FieldsChanged(); _included.TextChanged += (_, _) => FieldsChanged();
         _key.PasswordChanged += (_, _) => KeyChanged(_key.Password); _plainKey.TextChanged += (_, _) => KeyChanged(_plainKey.Text);
         Closing += (_, args) =>
@@ -89,11 +96,11 @@ internal sealed class ModelProvidersWindow : Window
         };
         LoadFields();
     }
-    private TextBlock Label(string key) => new() { Text = Loc.T(key), Foreground = _theme.Color("muted"), FontSize = 12, Margin = new Thickness(0, 0, 0, 6) };
+    private TextBlock Label(string key) => new() { Text = Loc.T(key), Foreground = _theme.Color("muted"), FontSize = PanelLayout.CaptionSize, Margin = new Thickness(0, 0, 0, 6) };
     private void Input(Control control)
     {
-        control.MinHeight = 38; control.Padding = new Thickness(10, 8, 10, 8); control.BorderThickness = new Thickness(0);
-        control.Background = Brushes.Transparent; control.Foreground = _theme.Color("text"); control.FontSize = 14;
+        control.MinHeight = 34; control.Padding = new Thickness(8, 6, 8, 6); control.BorderThickness = new Thickness(0);
+        control.Background = Brushes.Transparent; control.Foreground = _theme.Color("text"); control.FontSize = PanelLayout.BodySize;
     }
     private Border Frame(UIElement child) => new() { Child = child, Background = _theme.Color("surface"), BorderBrush = _theme.Color("divider"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(7) };
     private void Field(Panel panel, string key, Control control)
@@ -216,7 +223,20 @@ internal sealed class ModelProvidersWindow : Window
         _stepTitle.Text = Loc.T(ready ? settings.DesktopBackendEnabled ? "providers.step_models" : "providers.step_connect" : "providers.step_details");
         _entry.Visibility = ready ? Visibility.Collapsed : Visibility.Visible; _ready.Visibility = ready ? Visibility.Visible : Visibility.Collapsed; _entry.IsEnabled = _ready.IsEnabled = !_busy;
         _reveal.IsEnabled = _copyKey.IsEnabled = _editor.ApiKey.Length != 0;
-        _models.Text = provider == null ? "" : Loc.F("providers.model_count", provider.Models.Count) + "\n" + string.Join("\n", provider.Models.Take(3).Select(item => item.UpstreamId));
+        _models.Text = provider == null ? "" : Loc.F("providers.model_count", provider.Models.Count);
+        _modelTable.Children.Clear();
+        if (provider != null)
+        {
+            _modelTable.Children.Add(PanelLayout.TableHeading(_theme, (Loc.T("providers.reasoning_model"), new GridLength(1, GridUnitType.Star)), (Loc.T("context.window"), new GridLength(130))));
+            foreach (var model in provider.Models)
+            {
+                var row = new Grid(); row.ColumnDefinitions.Add(new()); row.ColumnDefinitions.Add(new() { Width = new GridLength(130) });
+                row.Children.Add(new TextBlock { Text = model.UpstreamId, ToolTip = model.UpstreamId, FontSize = PanelLayout.BodySize, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(4, 7, 8, 7) });
+                var capacity = new TextBlock { Text = model.Metadata["context_window"]?.ToString() ?? "—", FontSize = PanelLayout.BodySize, Foreground = _theme.Color("muted"), Margin = new Thickness(4, 7, 4, 7), FlowDirection = FlowDirection.LeftToRight };
+                Grid.SetColumn(capacity, 1); row.Children.Add(capacity);
+                _modelTable.Children.Add(new Border { Child = row, BorderBrush = _theme.Color("divider"), BorderThickness = new Thickness(0, 0, 0, 1) });
+            }
+        }
         _back.Content = Loc.T(ready ? "providers.edit" : "providers.close"); _back.IsEnabled = !_busy;
         _primary.Content = Loc.T(!ready ? "providers.save_next" : settings.DesktopBackendEnabled || settings.DesktopProfile ? "providers.close" : !settings.Connected || !settings.IsolatedProfile ? "providers.connect" : !settings.ConnectionWriteConfirmed ? "providers.disconnect" : "providers.terminal_open");
         _primary.IsEnabled = !_busy && (ready ? settings.DesktopBackendEnabled || settings.DesktopProfile || settings.Connected && settings.IsolatedProfile && !settings.ConnectionWriteConfirmed || ModelRouting.Registered(settings, settings.SelectedRoute) : !string.IsNullOrWhiteSpace(_editor.Draft.Name) && !string.IsNullOrWhiteSpace(_editor.Draft.BaseUrl) && _editor.ApiKey.Length != 0);
@@ -235,7 +255,7 @@ internal sealed class ModelProvidersWindow : Window
         var handoff = new StackPanel(); handoff.Children.Add(new TextBlock { Text = Loc.T("providers.handoff_steps"), TextWrapping = TextWrapping.Wrap, FontSize = 12, Margin = new Thickness(0, 8, 0, 8) });
         var copy = Button(Loc.T("providers.handoff_copy")); copy.Name = "CopyHandoffPrompt"; copy.Click += (_, _) => Copy(ModelHistoryHandoff.Prompt, "providers.handoff_copied"); handoff.Children.Add(copy);
         advanced.Children.Add(new Expander { Name = "PortableHistoryHelp", Header = Loc.T("providers.handoff_title"), Foreground = _theme.Color("text"), Content = handoff, Margin = new Thickness(0, 12, 0, 0) });
-        parent.Children.Add(new Expander { Name = "AdvancedSettings", Header = Loc.T("providers.advanced"), Foreground = _theme.Color("muted"), Content = advanced });
+        parent.Children.Add(new Expander { Name = "AdvancedSettings", Header = Loc.T("providers.advanced"), Foreground = _theme.Color("text"), FontSize = PanelLayout.SectionSize, Content = advanced });
         _reasoningModel.SelectionChanged += (_, _) => { if (!_loading) SelectReasoning(); };
         _reasoningOverride.Checked += (_, _) => UpdateReasoningControls(); _reasoningOverride.Unchecked += (_, _) => UpdateReasoningControls();
     }
@@ -259,7 +279,8 @@ internal sealed class ModelProvidersWindow : Window
         });
         _contextPanel.Children.Add(save);
         parent.Children.Add(new Expander { Name = "ContextSettings", Header = Loc.T("context.title"), Foreground = _theme.Color("text"),
-            Content = _contextPanel, Margin = new Thickness(0, 16, 0, 8) });
+            FontSize = PanelLayout.SectionSize, Content = _contextPanel, Background = _theme.Color("surface"),
+            BorderBrush = _theme.Color("divider"), BorderThickness = new Thickness(1), Padding = new Thickness(12), Margin = new Thickness(0, 0, 0, 8) });
         _contextModel.Click += (_, _) => { var menu = CreateContextMenu(); _contextModel.ContextMenu = menu; menu.IsOpen = true; };
     }
     internal ContextMenu CreateContextMenu()

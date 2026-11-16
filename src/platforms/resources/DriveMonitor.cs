@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CodexAccountDesk;
 
-internal sealed record DriveReading(string Root, string Label, long? Free, long? Total, TemperatureReading? Temperature = null, DiskIoReading? Io = null, FolderReading[]? Folders = null)
+internal sealed record DriveReading(string Root, string Label, long? Free, long? Total, TemperatureReading? Temperature = null, DiskIoReading? Io = null, FolderReading[]? Folders = null, bool MeasuringFolders = false)
 {
     public double? FreePercent => Free.HasValue && Total > 0 ? 100.0 * Free.Value / Total.Value : null;
 }
@@ -27,7 +27,7 @@ internal sealed class DriveMonitor : IAsyncDisposable
     private readonly SemaphoreSlim _changed = new(0, 1);
     private Task? _run;
     public event Action? Changed;
-    public DriveReading[] Current => Volatile.Read(ref _current).Select(r => r with { Folders = _folders.Read(r.Root) }).ToArray();
+    public DriveReading[] Current => Volatile.Read(ref _current).Select(r => r with { Folders = _folders.Read(r.Root), MeasuringFolders = _folders.IsMeasuringRoot(r.Root) }).ToArray();
     public void Configure(DrivePreference[] preferences)
     {
         var comparison = RootComparer;

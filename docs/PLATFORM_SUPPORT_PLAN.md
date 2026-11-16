@@ -1,5 +1,7 @@
 # Platform support roadmap
 
+Current scope — 2026-11-17: published1.45.4 provides Windows/macOS packages and Linux integration previews. The owner archived the older expanded acceptance campaigns on2026-11-16; those closures do not promote unverified Linux desktop/client combinations to supported status. Use the concrete bug/feature forms for new reports. The sections below preserve capture-time implementation and verification history.
+
 Tracking [#1](https://github.com/Gaebabi/codex-switch/issues/1). Updated 2026-10-15. Resumed checkpoints and reviewed native evidence are tracked in [PR27](https://github.com/Gaebabi/codex-switch/pull/27). Account switching and safe automatic continuation are the core product; a window that launches is not evidence of either capability.
 
 Declared native GNOME/KWallet5 storage is verified in PR51/59, [KWallet6/KSecrets in PR61](evidence/linux-kde6/README.md), and [authenticated Linux IPC/controlled startup in merged PR63](evidence/linux-desktop-peer/README.md), all on actual x64/ARM64 with existing key/data preservation. The former PR58 incompatibility refusal is historical; declared KWallet storage is available. Source1.39.0/[PR67](https://github.com/Gaebabi/codex-switch/pull/67) adds controlled normal close and [complete unsigned installation/UI preview candidates](development/LINUX_PACKAGES.md). None of these checkpoints proves authenticated account switching/automatic continuation.

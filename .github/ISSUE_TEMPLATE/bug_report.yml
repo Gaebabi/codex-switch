@@ -12,7 +12,7 @@ body:
     id: version
     attributes:
       label: Codex Switch version and installation source
-      placeholder: 1.27.6, GitHub Release / source commit
+      placeholder: 1.45.4, GitHub Release / source commit
     validations:
       required: true
   - type: textarea

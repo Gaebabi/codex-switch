@@ -74,6 +74,17 @@ internal static class HomeLayoutContracts
                     var gear = (Button)typeof(MainWindow).GetField("_homeActions", Private)!.GetValue(window)!;
                     var gearBounds = gear.TransformToAncestor(root).TransformBounds(new Rect(gear.RenderSize));
                     if (gearBounds.Right > size.Width || gearBounds.Top < 0 || gearBounds.Bottom > 40 || gear.ActualWidth < 28) throw new Exception("Settings is outside the titlebar.");
+                    var add = (Button)typeof(MainWindow).GetField("_add", Private)!.GetValue(window)!;
+                    var refresh = (Button)typeof(MainWindow).GetField("_refresh", Private)!.GetValue(window)!;
+                    var models = Descendants(root).OfType<Button>().Single(b => b.Name == "ModelRoutePicker");
+                    Rect Bounds(FrameworkElement item) => item.TransformToAncestor(root).TransformBounds(new Rect(item.RenderSize));
+                    var addBounds = Bounds(add); var refreshBounds = Bounds(refresh); var modelBounds = Bounds(models);
+                    if (modelBounds.Top < 0 || modelBounds.Bottom > 40 || modelBounds.Right > gearBounds.Left ||
+                        addBounds.Top < 40 || refreshBounds.Top < 40 || addBounds.Right > refreshBounds.Left || addBounds.Top != refreshBounds.Top)
+                        throw new Exception("Models must replace titlebar Refresh; toolbar Add must precede Refresh.");
+                    if (Descendants(root).OfType<Button>().Any(b => b.Name == "StampActiveTitlesButton") ||
+                        window.HomeActionsMenu().Items.OfType<MenuItem>().Count(item => item.Name == "StampActiveTitlesMenuItem") != 1)
+                        throw new Exception("Date chats must appear once inside Settings, not on the toolbar.");
                     service.Vault.Data.AutomaticSwitchEnabled = true;
                     typeof(MainWindow).GetMethod("UpdateControls", Private)!.Invoke(window, null); root.UpdateLayout();
                     var state = (TextBlock)typeof(MainWindow).GetField("_automaticState", Private)!.GetValue(window)!;
@@ -89,7 +100,9 @@ internal static class HomeLayoutContracts
                 if (count == 4)
                 {
                     var homeRoot = (FrameworkElement)window.Content;
-                    var homeBitmap = new RenderTargetBitmap((int)homeRoot.ActualWidth, (int)homeRoot.ActualHeight, 96, 96, PixelFormats.Pbgra32); homeBitmap.Render(homeRoot);
+                    var homeBitmap = new RenderTargetBitmap((int)homeRoot.ActualWidth, (int)homeRoot.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+                    var background = new DrawingVisual(); using (var drawing = background.RenderOpen()) drawing.DrawRectangle(window.Background, null, new Rect(homeRoot.RenderSize));
+                    homeBitmap.Render(background); homeBitmap.Render(homeRoot);
                     var homeEncoder = new PngBitmapEncoder(); homeEncoder.Frames.Add(BitmapFrame.Create(homeBitmap));
                     using (var homeStream = File.Create(Path.Combine(output, "home-subscription-" + language + "-" + (dark ? "dark" : "light") + ".png"))) homeEncoder.Save(homeStream);
                     var menu = window.HomeActionsMenu();

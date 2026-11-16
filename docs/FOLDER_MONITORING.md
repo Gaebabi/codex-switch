@@ -2,6 +2,10 @@
 
 Windows measures folder allocation only while the main window is visible and not minimized. Tray startup does not start recursive folder measurement. Hiding or minimizing the window cancels the current traversal; reopening resumes using retained snapshots and queued changes. Existing values remain available while measurement is paused. Lightweight drive capacity and I/O counters continue independently.
 
+The visible scan shares one metadata budget across all configured drives: at most 32 query batches or allocation lookups per second, with a rest period of at least four times each query's elapsed work before the next query. Root metadata, watcher connection, directory batches and sparse/compressed or hard-link allocation reads use that budget. It also covers the initial scan and failed queries. Cancellation interrupts a budget wait. Cached directory/root reuse consumes no query budget. A single blocking filesystem call can finish after its requested window; this limits Switch's query scheduling rather than guaranteeing a whole-volume activity percentage. Large trees continue toward a complete allocated-size measurement instead of being truncated at an arbitrary file/depth limit.
+
+A spinner appears immediately to the right of a drive's capacity label while its folder measurement or watcher setup is active. It clears after completion/cancellation and does not spin for unrelated drives. Its animation stops when the indicator is hidden.
+
 The Windows gauge keeps drive metadata above a separate12px allocation bar. Tracked folders use opaque colors with diagonal texture and visible separators; other used space is neutral and free space stays unfilled. Wide folder segments show their share directly. Small segments retain their measured width and expose the exact share on hover. Drives without tracked folders use the same used/free scale.
 
 CPU, memory, GPU and VRAM use the same separated metadata/current-percentage bars. Quarter marks help compare utilization; missing readings stay empty with an unavailable value. Historical trend graphs remain in the resource tooltip rather than behind the text.

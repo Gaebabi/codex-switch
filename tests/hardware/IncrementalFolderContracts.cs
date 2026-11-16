@@ -32,6 +32,14 @@ internal static class IncrementalFolderContracts
         long Total() => FolderUsage.Scan(preferences, CancellationToken.None, cache: cache)[root].Sum(r => r.Bytes!.Value);
         try
         {
+            var time = TimeSpan.Zero;
+            var budget = new FolderScanBudget(() => time, (delay, _) => time += delay);
+            var limited = new FolderUsage.Cache(budget);
+            FolderUsage.Scan(preferences, CancellationToken.None, cache: limited);
+            var queries = budget.Queries; var spent = time;
+            FolderUsage.Scan(preferences, CancellationToken.None, cache: limited);
+            check("Production directory/root queries use the budget while unchanged cache hits use no query or wait", () =>
+                Assert(queries > 0 && budget.Queries == queries && spent == time && spent >= TimeSpan.FromSeconds((queries - 1.0) / FolderScanBudget.QueriesPerSecond)));
             var before = Total(); var reads = cache.DirectoryReads; var roots = cache.RootReads;
             check("Unchanged folder snapshots perform no repeated directory enumeration", () =>
             { Assert(Total() == before && cache.DirectoryReads == reads && cache.RootReads == roots); });
@@ -90,8 +98,12 @@ internal static class IncrementalFolderContracts
                 await Wait(() => canceled.Read(root).All(r => r.State == FolderState.Available));
                 check("Hiding during traversal cancels pending folders and reopening completes measurement", () => Assert(hidden));
             }
-            await using var monitor = new FolderMonitor(); monitor.Configure(preferences); monitor.Start();
-            await Wait(() => monitor.Read(root).All(r => r.State == FolderState.Available));
+            await using var monitor = new FolderMonitor(); var sawActivity = false; var wrongDriveActivity = false;
+            monitor.Changed += () => { sawActivity |= monitor.IsMeasuringRoot(root); wrongDriveActivity |= monitor.IsMeasuringRoot(@"Z:\"); };
+            monitor.Configure(preferences); monitor.Start();
+            await Wait(() => monitor.Read(root).All(r => r.State == FolderState.Available) && !monitor.IsMeasuring);
+            check("Scan activity identifies only the measured drive and clears after completion", () =>
+                Assert(sawActivity && !wrongDriveActivity && !monitor.IsMeasuringRoot(root)));
             var idle = monitor.Read(root).Select(r => r.CheckedAt).ToArray();
             await Task.Delay(TimeSpan.FromSeconds(65));
             check("An idle live monitor does not repeat the old sixty-second full scan", () => Assert(monitor.Read(root).Select(r => r.CheckedAt).SequenceEqual(idle)));

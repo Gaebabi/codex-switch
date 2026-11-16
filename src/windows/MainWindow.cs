@@ -42,7 +42,7 @@ internal sealed class MainWindow : Window
     private readonly Button _homeActions = new();
     private bool _providerEditing;
     private ModelRoutePicker? _routePicker;
-    private readonly Button _stampTitles = new();
+    private readonly MenuItem _stampTitles = new();
     private MenuItem? _importCurrent;
     private readonly Border _loginPanel = new();
     private readonly List<AccountTankCard> _tankCards = new();
@@ -137,7 +137,7 @@ internal sealed class MainWindow : Window
     }
     private void ApplyTheme()
     {
-        foreach (var element in new FrameworkElement[] { _stampTitles, _homeActions, _automaticState, _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _loginPanel, _scroll })
+        foreach (var element in new FrameworkElement[] { _homeActions, _automaticState, _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _loginPanel, _scroll })
         {
             if (element.Parent is Panel panel) panel.Children.Remove(element);
             else if (element.Parent is ContentControl control && ReferenceEquals(control.Content, element)) control.Content = null;
@@ -150,6 +150,7 @@ internal sealed class MainWindow : Window
         if (FlowDirection != direction) FlowDirection = direction;
         SetResources();
         ConfigureTitleAction(_add, "계정 추가", "plus"); ConfigureTitleAction(_refresh, "새로 고침", "refresh");
+        _add.Width = _refresh.Width = 30; _add.Height = _refresh.Height = 30;
         ConfigureTitleAction(_homeActions, "설정", "settings"); _homeActions.Name = "SettingsButton";
         _homeActions.Click -= OpenHomeActions; _homeActions.Click += OpenHomeActions;
         var refreshMenu = DropdownTheme.Create(_refresh, _theme);
@@ -170,7 +171,6 @@ internal sealed class MainWindow : Window
     private UIElement BuildRoot()
     {
         var root = new Grid(); root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(40) }); root.RowDefinitions.Add(new RowDefinition());
-        root.Children.Add(BuildTitleBar());
         var body = new Grid { Margin = new Thickness(12, 8, 12, 8) };
         body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         body.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
@@ -180,9 +180,8 @@ internal sealed class MainWindow : Window
         toolbarRow.ColumnDefinitions.Add(new ColumnDefinition());
         toolbarRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         toolbarRow.ColumnDefinitions.Add(new ColumnDefinition());
-        ConfigureButton(_stampTitles, "titles.button", null);
-        _stampTitles.Name = "StampActiveTitlesButton"; _stampTitles.HorizontalAlignment = HorizontalAlignment.Left;
-        _stampTitles.FontSize = 10; _stampTitles.Padding = new Thickness(5, 2, 5, 2);
+        _stampTitles.Header = Loc.T("titles.button");
+        _stampTitles.Name = "StampActiveTitlesMenuItem";
         _stampTitles.ToolTip = Loc.T("titles.help");
         var modelActions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Left };
         toolbarRow.Children.Add(modelActions);
@@ -205,7 +204,12 @@ internal sealed class MainWindow : Window
             });
         };
         _routePicker = new ModelRoutePicker(_theme, modelProviders, error => SetStatus(error.Message, true), manage: () => OpenModelProviders(this, new RoutedEventArgs()));
-        modelActions.Children.Add(_routePicker); modelActions.Children.Add(_stampTitles); body.Children.Add(modelHeader);
+        _routePicker.VerticalAlignment = VerticalAlignment.Center;
+        _routePicker.Models.Width = 32; _routePicker.Models.Height = 40;
+        WindowChrome.SetIsHitTestVisibleInChrome(_routePicker, true);
+        WindowChrome.SetIsHitTestVisibleInChrome(_routePicker.Models, true);
+        root.Children.Add(BuildTitleBar());
+        modelActions.Children.Add(_add); modelActions.Children.Add(_refresh); body.Children.Add(modelHeader);
         _providers.Header = Loc.T("providers.title"); _providers.Name = "ModelProvidersMenuItem";
         _providers.Click -= OpenModelProviders; _providers.Click += OpenModelProviders;
         _restartCodex.Header = Loc.T("restart.title"); _restartCodex.Name = "RestartCodexMenuItem";
@@ -225,14 +229,14 @@ internal sealed class MainWindow : Window
     }
     internal ContextMenu HomeActionsMenu()
     {
-        foreach (var item in new[] { _providers, _automaticSwitch, _restartCodex })
+        foreach (var item in new[] { _providers, _automaticSwitch, _restartCodex, _stampTitles })
             if (ItemsControl.ItemsControlFromItemContainer(item) is ItemsControl previous) previous.Items.Remove(item);
         var menu = DropdownTheme.Create(_homeActions, _theme);
         menu.Items.Add(_providers);
         _automaticSwitch.Items.Clear();
         var automatic = BuildAutomaticSwitchMenu();
         while (automatic.Items.Count > 0) { var item = automatic.Items[0]; automatic.Items.RemoveAt(0); _automaticSwitch.Items.Add(item); }
-        menu.Items.Add(_automaticSwitch); menu.Items.Add(_restartCodex); menu.Items.Add(BuildModelProfileMenu()); menu.Items.Add(new Separator());
+        menu.Items.Add(_automaticSwitch); menu.Items.Add(_restartCodex); menu.Items.Add(_stampTitles); menu.Items.Add(BuildModelProfileMenu()); menu.Items.Add(new Separator());
         var languages = new MenuItem { Name = "LanguageSettingsMenuItem", Header = Loc.T("언어 설정") + "  " + Loc.LanguageName };
         if (_options.LanguagePackProblems > 0) languages.ToolTip = Loc.F("pack.invalid_local_packs", _options.LanguagePackProblems);
         else if (_options.SavedLanguageUnavailable) languages.ToolTip = Loc.T("Saved language pack unavailable. Showing English.");
@@ -265,7 +269,7 @@ internal sealed class MainWindow : Window
         version.Name = "RunningVersionLabel"; version.Margin = new Thickness(6, 0, 0, 0); version.VerticalAlignment = VerticalAlignment.Center; version.FlowDirection = FlowDirection.LeftToRight;
         identity.Children.Add(version); bar.Children.Add(identity);
         var controls = new StackPanel { Name = "TitleBarActions", Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        controls.Children.Add(_add); controls.Children.Add(_refresh); controls.Children.Add(_homeActions);
+        controls.Children.Add(_routePicker!); controls.Children.Add(_homeActions);
         var minimize = CaptionButton("window-minimize", "최소화", () => SystemCommands.MinimizeWindow(this));
         var maximize = CaptionButton(WindowState == WindowState.Maximized ? "window-restore" : "window-maximize", "최대화 / 복원", () =>
         { if (WindowState == WindowState.Maximized) SystemCommands.RestoreWindow(this); else SystemCommands.MaximizeWindow(this); });

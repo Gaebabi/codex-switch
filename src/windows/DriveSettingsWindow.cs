@@ -26,20 +26,21 @@ internal sealed class DriveSettingsWindow : Window
         WindowStyle = WindowStyle.None; Title = Loc.T("드라이브 설정"); Background = theme.Color("canvas"); Foreground = theme.Color("text"); FontFamily = theme.Font;
         Language = System.Windows.Markup.XmlLanguage.GetLanguage(Loc.Culture.IetfLanguageTag);
         FlowDirection = Loc.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
-        WindowFrame.Apply(this); Resources = owner.Resources;
+        WindowFrame.Apply(this); Resources = owner.Resources; FontSize = PanelLayout.BodySize; UseLayoutRounding = true; SnapsToDevicePixels = true;
         var root = new DockPanel();
-        var title = new Border { Height = 40, Background = theme.Color("chrome"), Padding = new Thickness(14, 0, 0, 0), Child = new TextBlock { Text = Title, VerticalAlignment = VerticalAlignment.Center, FontWeight = FontWeights.SemiBold } };
+        var title = PanelLayout.Caption(this, theme);
         DockPanel.SetDock(title, Dock.Top); root.Children.Add(title);
         var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(12) };
         var cancel = new Button { Content = Loc.T("취소"), Margin = new Thickness(0, 0, 8, 0) }; cancel.Click += (_, _) => DialogResult = false;
-        var save = new Button { Content = Loc.T("저장") }; save.Click += (_, _) =>
+        var save = new Button { Content = Loc.T("저장"), Style = (Style)owner.Resources["PrimaryButton"], Background = theme.Color("accent"), Foreground = theme.Color("canvas") }; save.Click += (_, _) =>
         {
             try { _ = Selection; DialogResult = true; }
             catch (ArgumentException problem) { _error.Text = Loc.T(problem.Message.StartsWith("folders.", StringComparison.Ordinal) ? problem.Message : "folders.invalid"); }
             catch (NotSupportedException) { _error.Text = Loc.T("folders.invalid"); }
             catch (PathTooLongException) { _error.Text = Loc.T("folders.invalid"); }
         }; actions.Children.Add(cancel); actions.Children.Add(save);
-        DockPanel.SetDock(actions, Dock.Bottom); root.Children.Add(actions);
+        var footer = new Border { Child = actions, BorderBrush = theme.Color("divider"), BorderThickness = new Thickness(0, 1, 0, 0) };
+        DockPanel.SetDock(footer, Dock.Bottom); root.Children.Add(footer);
         _error.Foreground = theme.Color("danger"); DockPanel.SetDock(_error, Dock.Bottom); root.Children.Add(_error);
         var hint = new TextBlock { Text = Loc.T("folders.hint"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(14, 10, 14, 8), FontSize = 12 };
         DockPanel.SetDock(hint, Dock.Top); root.Children.Add(hint);
@@ -59,6 +60,7 @@ internal sealed class DriveSettingsWindow : Window
         _list.Children.Clear();
         foreach (var row in _rows.ToArray())
         {
+            var section = new StackPanel();
             var grid = new Grid { Margin = new Thickness(0, 0, 0, 6) }; grid.ColumnDefinitions.Add(new() { Width = GridLength.Auto }); grid.ColumnDefinitions.Add(new()); grid.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
             if (row.Enabled.Parent is Panel oldCheck) oldCheck.Children.Remove(row.Enabled);
             if (row.Name.Parent is Panel oldName) oldName.Children.Remove(row.Name);
@@ -69,10 +71,16 @@ internal sealed class DriveSettingsWindow : Window
                 var button = new Button { Content = direction == -1 ? "↑" : "↓", Width = 30, Padding = new Thickness(0), Margin = new Thickness(4, 0, 0, 0), IsEnabled = _rows.IndexOf(row) + direction >= 0 && _rows.IndexOf(row) + direction < _rows.Count };
                 button.Click += (_, _) => { var index = _rows.IndexOf(row); _rows.RemoveAt(index); _rows.Insert(index + direction, row); Render(); }; arrows.Children.Add(button);
             }
-            Grid.SetColumn(arrows, 2); grid.Children.Add(arrows); _list.Children.Add(grid);
+            Grid.SetColumn(arrows, 2); grid.Children.Add(arrows); section.Children.Add(grid);
+            PanelLayout.Input(row.Name, _theme); row.Enabled.FontSize = PanelLayout.BodySize; row.Enabled.FontWeight = FontWeights.SemiBold;
+            if (row.Folders.Count > 0)
+            {
+                section.Children.Add(PanelLayout.Rule(_theme, 8, 0));
+                section.Children.Add(PanelLayout.TableHeading(_theme, ("", new GridLength(48)), (Loc.T("folders.path"), new GridLength(1, GridUnitType.Star)), ("", new GridLength(68))));
+            }
             foreach (var folder in row.Folders.ToArray())
             {
-                var line = new Grid { Margin = new Thickness(20, 0, 0, 6) };
+                var line = new Grid { Margin = new Thickness(0, 0, 0, 8) };
                 line.ColumnDefinitions.Add(new() { Width = new GridLength(48) }); line.ColumnDefinitions.Add(new());
                 line.ColumnDefinitions.Add(new() { Width = GridLength.Auto }); line.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
                 if (folder.Color.Parent is Panel oldColor) oldColor.Children.Remove(folder.Color);
@@ -87,15 +95,16 @@ internal sealed class DriveSettingsWindow : Window
                 };
                 var remove = new Button { Content = "×", Width = 30, Margin = new Thickness(4, 0, 0, 0), ToolTip = Loc.T("삭제") };
                 AutomationProperties.SetName(remove, Loc.T("삭제")); remove.Click += (_, _) => { row.Folders.Remove(folder); Render(); };
-                Grid.SetColumn(browse, 2); line.Children.Add(browse); Grid.SetColumn(remove, 3); line.Children.Add(remove); _list.Children.Add(line);
+                Grid.SetColumn(browse, 2); line.Children.Add(browse); Grid.SetColumn(remove, 3); line.Children.Add(remove); section.Children.Add(line);
             }
-            var add = new Button { Content = Loc.T("folders.add"), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(20, 0, 0, 12), IsEnabled = row.Folders.Count < FolderUsage.Colors.Length };
+            var add = new Button { Content = Loc.T("folders.add"), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 0), IsEnabled = row.Folders.Count < FolderUsage.Colors.Length };
             add.Click += (_, _) =>
             {
                 var color = Enumerable.Range(0, FolderUsage.Colors.Length).FirstOrDefault(i => row.Folders.All(f => (int)f.Color.Tag != i));
                 row.Folders.Add(Folder(new() { Color = color })); row.Enabled.IsChecked = true; Render(); row.Folders[^1].Path.Focus();
             };
-            _list.Children.Add(add);
+            section.Children.Add(add);
+            var group = PanelLayout.Surface(section, _theme); group.Margin = new Thickness(0, 0, 0, 12); _list.Children.Add(group);
         }
     }
     private FolderRow Folder(FolderPreference preference)
@@ -103,6 +112,7 @@ internal sealed class DriveSettingsWindow : Window
         var path = new TextBox { Text = preference.Path, Padding = new Thickness(5), VerticalContentAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 0, 0),
             Background = _theme.Color("surface"), Foreground = _theme.Color("text"), FlowDirection = FlowDirection.LeftToRight, ToolTip = Loc.T("folders.path") };
         AutomationProperties.SetName(path, Loc.T("folders.path"));
+        PanelLayout.Input(path, _theme);
         var swatch = new Border { Width = 18, Height = 12, Background = FolderBrush(preference.Color), VerticalAlignment = VerticalAlignment.Center };
         var face = new StackPanel { Orientation = Orientation.Horizontal };
         face.Children.Add(swatch); face.Children.Add(new TextBlock { Text = "⌄", Margin = new Thickness(4, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center });
