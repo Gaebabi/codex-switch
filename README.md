@@ -1,6 +1,14 @@
 <p align="center"><img src="assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" /></p>
 <h1 align="center">Codex Switch: OpenAI Codex account switcher and quota monitor</h1>
 
+<p align="center">
+  <a href="https://github.com/Gaebabi/codex-switch/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Gaebabi/codex-switch?color=5189e8" /></a>
+  <a href="https://github.com/Gaebabi/codex-switch/actions/workflows/verify.yml"><img alt="Repository, Windows and Mac verification" src="https://github.com/Gaebabi/codex-switch/actions/workflows/verify.yml/badge.svg?branch=main" /></a>
+  <a href="https://github.com/Gaebabi/codex-switch/actions/workflows/linux-native.yml"><img alt="Linux preview verification" src="https://github.com/Gaebabi/codex-switch/actions/workflows/linux-native.yml/badge.svg?branch=main" /></a>
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/github/license/Gaebabi/codex-switch?color=45a58c" /></a>
+  <a href="SECURITY.md"><img alt="Security policy" src="https://img.shields.io/badge/security-policy-666" /></a>
+</p>
+
 **Codex Switch (`codex-switch`) is an open-source desktop account switcher and usage quota monitor for OpenAI Codex.** See your accounts together, choose the next one, and recover an interrupted handoff. Optional quota-based switching starts **Off**.
 
 [Native desktop model integration](docs/DESKTOP_MODEL_BACKEND.md) places registered custom models in the same Codex model picker while OpenAI connects directly. One initial backend installation restart is required; normal model edits and selection need no restart. The former combined HTTP profile remains retired.
@@ -11,7 +19,7 @@ Windows model settings include **Context and auto compaction**: edit native Open
 
 [English](README.md) / [한국어](docs/README.ko.md) / [日本語](docs/README.ja.md) / [简体中文](docs/README.zh-CN.md)
 
-[Download](#download) · [Get started](#get-started) · [What's new](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.4)
+[Download](#download) · [Get started](#get-started) · [Features](#features) · [Screenshots](#actual-app-screenshots) · [Contribute](#contribute) · [Release notes](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.4)
 
 <p align="center"><img src="docs/evidence/home-simplification/native-after-windows.png" width="500" height="350" alt="Codex Switch1.44.0 with quota tanks and one Settings gear" /></p>
 
@@ -20,6 +28,11 @@ Actual Windows app with fictional account inputs. [Native screenshots and source
 **Find it useful?** Star this repository or share it with another Codex user.
 
 Release1.45.4 reduces Windows folder-monitor disk reads. Hidden/minimized windows pause folder allocation traversal; visible windows reuse unchanged roots and directory snapshots and refresh affected directories from filesystem notifications. Lightweight drive counters remain active. [Changes and verification](docs/development/RELEASE_1_45_4.md).
+
+The local Windows source follow-up adds current desktop-status compatibility, a shared folder-query budget and more structured settings panels. These changes are separate from the published1.45.4 downloads until a new release is verified.
+
+<details>
+<summary>Earlier release highlights</summary>
 
 Release1.42.2 adds account-specific browser sign-in from warnings, default-Off quota-based account switching, optimal/custom priority, durable reopening/recovery, labeled subscription dates and official Pro 100/200/500 tiers. [Behavior and verification scope](docs/development/ACCOUNT_AUTOMATION.md) / [release gates](docs/development/RELEASE_1_42_2.md).
 
@@ -40,6 +53,8 @@ Release1.43.1 keeps Auto Switch available when a fresh report still shows 0% aft
 Release1.43.2 preserves browser-login cancellation when a temporary Windows database file stays briefly locked. Cleanup waits asynchronously for up to two seconds; persistent locks and permission failures remain explicit. [Verification](https://github.com/Gaebabi/codex-switch/issues/139).
 
 Release1.43.3 lets you add Responses-compatible model providers and choose their models alongside eligible OpenAI models. It also improves interrupted-switch recovery and adds clearer credit history ranges. The combined desktop picker and individual external providers still need separate compatibility confirmation. [Setup, limits and verification](docs/MODEL_PROVIDERS.md).
+
+</details>
 
 ## Download
 
@@ -69,7 +84,18 @@ Warning icons retain full hover details; activate one to sign in again for the s
 
 ## Features
 
-- **Models from your providers:** save a compatible Responses provider and key. Unreleased source prepares a separate custom CLI profile while leaving normal Codex models independent of Switch. Keep Switch running for custom requests, choose their actual model in Switch, and explicitly open the custom terminal. Published downloads retain the earlier connection behavior. [Provider setup and compatibility](docs/MODEL_PROVIDERS.md)
+| Your task | What Codex Switch provides | Guide |
+| --- | --- | --- |
+| Choose an account | Compare quota, reset times, credits and subscription dates; switch manually or enable quota-based selection | [Account switching](docs/SWITCHING.md) |
+| Work with external models on Windows | Keep native OpenAI models alongside registered custom models; edit per-model reasoning and context options | [Native model integration](docs/DESKTOP_MODEL_BACKEND.md) |
+| Understand consumption | Inspect account history, selected time ranges, observed use and explicitly labeled forecasts | [Forecasts and limits](docs/FORECAST.md) |
+| Monitor Windows resources and storage | Read supported hardware counters, disk I/O and allocated folder sizes with explicit unavailable states | [Folder monitoring](docs/FOLDER_MONITORING.md) |
+| Recover an interrupted handoff | Retain encrypted progress and original chat identities; preserve uncertain-send safeguards | [Recovery behavior](docs/development/ACCOUNT_AUTOMATION.md) |
+
+<details>
+<summary>Behavior, platform boundaries and optional features</summary>
+
+- **Models from your providers on Windows:** store provider keys locally using the existing protection identity. Registered models join the native picker through the desktop backend; ordinary OpenAI traffic stays direct. The optional separate-terminal profile has its own setup and limits. [Provider setup and compatibility](docs/MODEL_PROVIDERS.md)
 - **Manual switch, automatic continuation:** back up the current login and verify date-prefixed chat names, normally close Codex, apply the selected account, reopen the same chat IDs/folders/models/permissions, and send one **Continue** to eligible idle unfinished chats. Running or completed work is left alone.
 - **Recover interrupted handoffs:** encrypted checkpoints retain progress. **Resume chats** continues pending work; uncertain sends are never automatically repeated. Naming/shutdown failures stop the login change. Windows waits for child processes so one Switch click can finish the flow. [Switching details](docs/SWITCHING.md)
 - **Quota and history:** remaining usage, resets, plans, subscription expiry, reset allowances, credits and consumption forecasts. Open **History** in an account's **...** menu. Card dates use your local time zone; the shared history view explicitly labels its KST axes. Expiry within72hours and reset within48hours use warning colors.
@@ -81,7 +107,20 @@ Warning icons retain full hover details; activate one to sign in again for the s
 
 **Switching restarts Codex** and may affect CLI/IDE clients sharing the login. Remaining Linux authenticated cross-account/continuation and broader desktop/accessibility criteria are tracked in [the support roadmap](docs/PLATFORM_SUPPORT_PLAN.md).
 
+</details>
+
 ## Actual app screenshots
+
+### Windows source preview
+
+Provider, drive and history panels now share sections, typography and gauge rules. These previews are rendered from production WPF controls with fictional data; they are separate from the current release downloads and native account acceptance. [Source and verification scope](docs/evidence/desktop-polish/README.md).
+
+| Providers | Drives | History |
+| --- | --- | --- |
+| ![Provider settings, dark](docs/evidence/desktop-polish/settings-provider-en-True.png) | ![Drive settings, dark](docs/evidence/desktop-polish/settings-drives-en-True.png) | ![History, dark](docs/evidence/desktop-polish/settings-statistics-en-True.png) |
+
+<details>
+<summary>Published native app galleries and platform evidence</summary>
 
 Actual application titlebars/controls are preserved on a solid background. Captions and source/runtime/hash receipts distinguish fictional UI inputs, ordinary Linux execution and authenticated acceptance. [Current gallery](docs/media/release-1.42.2/README.md)
 
@@ -96,7 +135,18 @@ Actual application titlebars/controls are preserved on a solid background. Capti
 **MacBook screenshot:** reserved for the maintainer's real-device capture.
 <!-- MacBook screenshot slot: add docs/media/release-1.42.2/macbook.png and its privacy/provenance receipt, then embed here. Never substitute a different OS image or mockup. -->
 
+</details>
+
 ## Contribute
+
+| Start here | Include |
+| --- | --- |
+| [Report a bug](https://github.com/Gaebabi/codex-switch/issues/new?template=bug_report.yml) | App/client versions, platform, reproducible steps and sanitized evidence |
+| [Suggest an improvement](https://github.com/Gaebabi/codex-switch/issues/new?template=feature_request.yml) | The task that should improve, expected behavior and platform |
+| [Translate the UI](docs/LOCALIZATION.md) | A language pack using the existing message IDs and placeholders |
+| [Submit code](CONTRIBUTING.md) | A focused change, its behavior and appropriate verification |
+
+Security reports use [private advisories](https://github.com/Gaebabi/codex-switch/security/advisories/new). Please keep tokens, account stores and private chats out of public issues. [Maintainer workflow](docs/development/MAINTAINING.md) explains review and release boundaries.
 
 [Contributing](CONTRIBUTING.md) / [Security](SECURITY.md) / [Architecture](docs/ARCHITECTURE.md) / [CI](docs/CI.md) / [Operations](docs/development/OPERATIONS.md) / [Evidence](docs/evidence/README.md) / [Forecasts](docs/FORECAST.md)
 
