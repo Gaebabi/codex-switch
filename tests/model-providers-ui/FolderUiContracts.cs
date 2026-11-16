@@ -69,6 +69,16 @@ internal static class FolderUiContracts
                 after.Refresh(new[] { tracked with { Free = 299 * gib } }, theme);
                 if (!segments.SequenceEqual(Find<Button>(after).Where(b => b.Tag is string)) || !ReferenceEquals(folderTip, segments[0].ToolTip)) throw new Exception("Periodic updates replaced the hovered segment or tooltip.");
                 checks.Add($"{language}/{dark}: compact hover, exact folder/root click targets and stable controls survive periodic refresh.");
+                var busy = new DriveUsagePanel(() => { }, _ => { });
+                busy.Refresh(new[] { tracked with { MeasuringFolders = true } }, theme);
+                Capture(busy, Path.Combine(output, $"folders-scanning-{language}-{dark}.png"), theme, 500, 34);
+                var spinner = Find<System.Windows.Shapes.Ellipse>(busy).Single(e => e.Name == "FolderScanSpinner");
+                if (spinner.Visibility != Visibility.Visible || spinner.RenderSize.Width <= 0 || !busy.Fits)
+                    throw new Exception("A measured drive must show its capacity-adjacent scan indicator without clipping.");
+                busy.Refresh(new[] { tracked }, theme);
+                if (spinner.Visibility != Visibility.Collapsed || !ReferenceEquals(spinner, Find<System.Windows.Shapes.Ellipse>(busy).Single(e => e.Name == "FolderScanSpinner")))
+                    throw new Exception("A completed scan must hide its stable indicator.");
+                checks.Add($"{language}/{dark}: drive scan spinner appears during measurement and clears without replacing controls.");
                 var now = DateTimeOffset.UtcNow;
                 foreach (var width in new[] { 500, 800 })
                 {

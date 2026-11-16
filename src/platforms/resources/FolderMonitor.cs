@@ -18,11 +18,15 @@ internal sealed class FolderMonitor : IAsyncDisposable
     private int _version;
     private readonly HashSet<string> _dirty = new(DriveMonitor.RootComparer);
     private readonly HashSet<string> _reset = new(DriveMonitor.RootComparer);
-    private FolderUsage.Cache _cache = new();
+    private readonly FolderScanBudget _budget = new();
+    private FolderUsage.Cache _cache;
+    private string? _measuringRoot;
+    public FolderMonitor() { _cache = new(_budget); }
     private bool _active = true, _needsMeasurement = true;
     internal (long Roots, long Directories) QueryCounts
     { get { var cache = Volatile.Read(ref _cache); return (cache.RootReads, cache.DirectoryReads); } }
     internal bool IsMeasuring { get { lock (_sync) return _scan != null; } }
+    internal bool IsMeasuringRoot(string root) { lock (_sync) return _active && DriveMonitor.RootComparer.Equals(root, _measuringRoot); }
     public event Action? Changed;
     public FolderReading[] Read(string root)
     { lock (_sync) return _current.TryGetValue(root, out var rows) ? rows : Array.Empty<FolderReading>(); }
@@ -78,7 +82,7 @@ internal sealed class FolderMonitor : IAsyncDisposable
                     var measure = pending || cachedVersion != version || dirty.Length != 0 || reset.Length != 0;
                     if (cachedVersion != version)
                     {
-                        foreach (var watch in watches) watch.Dispose(); watches.Clear(); _cache = cache = new(); cachedVersion = version;
+                        foreach (var watch in watches) watch.Dispose(); watches.Clear(); _cache = cache = new(_budget); cachedVersion = version;
                         foreach (var folder in preferences.SelectMany(p => p.Folders ?? Array.Empty<FolderPreference>()))
                             watches.Add(new(folder.Path, (path, full) => Invalidate(version, path, full)));
                     }
@@ -87,7 +91,11 @@ internal sealed class FolderMonitor : IAsyncDisposable
                     foreach (var watch in watches)
                     {
                         scan.Token.ThrowIfCancellationRequested();
-                        if (watch.Connect()) { cache.Reset(watch.Path); measure = true; }
+                        if (watch.Available) continue;
+                        lock (_sync) _measuringRoot = System.IO.Path.GetPathRoot(watch.Path);
+                        Changed?.Invoke();
+                        try { if (_budget.Query(watch.Connect, scan.Token)) { cache.Reset(watch.Path); measure = true; } }
+                        finally { lock (_sync) _measuringRoot = null; Changed?.Invoke(); }
                     }
                     if (retry)
                     {
@@ -104,7 +112,11 @@ internal sealed class FolderMonitor : IAsyncDisposable
                                 _current[root] = _current[root].Select(f => DriveMonitor.RootComparer.Equals(f.Path, reading.Path) ? reading : f).ToArray();
                             }
                             Changed?.Invoke();
-                        }, cache);
+                        }, cache, (root, measuring) =>
+                        {
+                            lock (_sync) _measuringRoot = measuring ? root : null;
+                            Changed?.Invoke();
+                        });
                         if (OperatingSystem.IsWindows())
                             foreach (var root in result.Keys.ToArray())
                                 result[root] = result[root].Select(row => row.State == FolderState.Available && watches.Any(w => DriveMonitor.RootComparer.Equals(w.Path, row.Path) && !w.Available)
@@ -114,7 +126,7 @@ internal sealed class FolderMonitor : IAsyncDisposable
                     }
                 }
                 catch (OperationCanceledException) when (scan.IsCancellationRequested) { lock (_sync) _needsMeasurement = true; }
-                finally { lock (_sync) { _scan = null; scan.Dispose(); } }
+                finally { lock (_sync) { _measuringRoot = null; _scan = null; scan.Dispose(); } }
                 retry = !await _changed.WaitAsync(TimeSpan.FromSeconds(60), _stop.Token);
                 if (!retry) await Task.Delay(TimeSpan.FromSeconds(2), _stop.Token);
             }

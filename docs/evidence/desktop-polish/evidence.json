@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "sourceBase": "496391ccedfa37055304f7d1e7599a832c6107a9",
+  "localInputFingerprint": "7529a6cf870075c06ad3e39c704ed6d1e829bccfc8e4116b13c4fc8016025c55",
+  "captureScope": "New settings/spinner images are production WPF controls rendered offscreen with fictional data. The before image is a prior actual hosted native window. Native after confirmation is pending hosted CI.",
+  "personalDataUsed": false,
+  "metadataRemoved": true,
+  "images": [
+    {
+      "file": "settings-provider-ko-False.png",
+      "sha256": "0ceb27b258fbd39bbc7d58cff7f95792b1dcc2a9d12a1bff6ee1eb96061b2ee8"
+    },
+    {
+      "file": "settings-drives-ko-False.png",
+      "sha256": "a9c2b99ae1e16094adaacac6f291729e3666614c4b05c77fe0d8511f790fc92f"
+    },
+    {
+      "file": "settings-statistics-ko-False.png",
+      "sha256": "859d048f869a38f361cdf5c643a7be23458dc3f3251bb4a7f315da6b73efcc85"
+    },
+    {
+      "file": "settings-provider-en-True.png",
+      "sha256": "6950de3978e3241de5de07b8aa72c3f1d4d8ca255d0be41a21790fe35458dd32"
+    },
+    {
+      "file": "settings-drives-en-True.png",
+      "sha256": "af5ce8fdde8e7bbb6097b5c5e1fd67e7f8339daed84fc46fa817ab8cbef4d612"
+    },
+    {
+      "file": "settings-statistics-en-True.png",
+      "sha256": "8d8ac94380cd393ed6e9d469c6f89ca6587d4c278463116bf7d7834e13b6c161"
+    },
+    {
+      "file": "folders-scanning-ko-False.png",
+      "sha256": "294e36fe7a66c31a916e1ed7e20296f068bad324dd3b7724dc34d8f977d6cfbf"
+    },
+    {
+      "file": "home-settings-ko-light.png",
+      "sha256": "e7e06a752038a9685e0d819f9c174752dad7c2b34133db83813ea9dc73fa0802"
+    },
+    {
+      "file": "native-before-windows.png",
+      "sha256": "aeb7b7419d6772e234f80e30d63596dabbdf44d9c61f44b0a92d31edc2ef5cf1"
+    }
+  ],
+  "verification": {
+    "hardwareFolderChecks": 58,
+    "uiChecks": 171,
+    "packageSelfTests": 100,
+    "ownerConnectionObservedWithoutRestart": true
+  }
+}

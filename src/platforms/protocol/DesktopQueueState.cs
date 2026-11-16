@@ -46,11 +46,11 @@ internal static class DesktopQueueState
             if (message.ValueKind != JsonValueKind.Object) throw new InvalidDataException("Invalid queued message.");
             var id = JsonValue.String(message, "id");
             if (string.IsNullOrEmpty(id)) throw new InvalidDataException("Queued message ID missing.");
-            var host = ReadHost(message, "submission", "hostId");
-            var executionHost = ReadHost(message, "submissionOptions", "executionHostId");
+            var host = ReadMetadataString(message, "submission", "hostId");
+            var executionHost = ReadMetadataString(message, "submissionOptions", "executionHostId");
             if (host is not (null or "local") || executionHost is not (null or "local")) continue;
             var paused = JsonValue.String(message, "pausedReason") is { Length: > 0 } || result.GetValueOrDefault(id)?.Paused == true;
-            result[id] = new(id, JsonValue.String(message, "clientUserMessageId"), paused);
+            result[id] = new(id, ReadClientId(message), paused);
         }
         return result.Values.ToArray();
     }
@@ -64,12 +64,24 @@ internal static class DesktopQueueState
     }
     public static bool Same(DesktopQueueMessage[] a, DesktopQueueMessage[] b) =>
         a.OrderBy(m => m.Id, StringComparer.Ordinal).SequenceEqual(b.OrderBy(m => m.Id, StringComparer.Ordinal));
-    private static string? ReadHost(JsonElement message, string property, string key)
+    private static string? ReadClientId(JsonElement message)
+    {
+        var legacy = ReadOptionalString(message, "clientUserMessageId");
+        var current = ReadMetadataString(message, "submissionOptions", "clientUserMessageId");
+        if (legacy != null && current != null && legacy != current)
+            throw new InvalidDataException("Conflicting queued client message identities.");
+        return legacy ?? current;
+    }
+    private static string? ReadMetadataString(JsonElement message, string property, string key)
     {
         if (!message.TryGetProperty(property, out var metadata) || metadata.ValueKind == JsonValueKind.Null) return null;
-        if (metadata.ValueKind != JsonValueKind.Object) throw new InvalidDataException("Invalid queued host metadata.");
-        if (!metadata.TryGetProperty(key, out var host) || host.ValueKind == JsonValueKind.Null) return null;
-        if (host.ValueKind != JsonValueKind.String || string.IsNullOrEmpty(host.GetString())) throw new InvalidDataException("Invalid queued host.");
-        return host.GetString();
+        if (metadata.ValueKind != JsonValueKind.Object) throw new InvalidDataException("Invalid queued message metadata.");
+        return ReadOptionalString(metadata, key);
+    }
+    private static string? ReadOptionalString(JsonElement metadata, string key)
+    {
+        if (!metadata.TryGetProperty(key, out var value) || value.ValueKind == JsonValueKind.Null) return null;
+        if (value.ValueKind != JsonValueKind.String || string.IsNullOrEmpty(value.GetString())) throw new InvalidDataException("Invalid queued message metadata.");
+        return value.GetString();
     }
 }

@@ -51,7 +51,7 @@ internal static class FolderUsage
         result.Add(new("folders.other", remaining, null)); result.Add(new("folders.free", free, null));
         return result.ToArray();
     }
-    public static Dictionary<string, FolderReading[]> Scan(DrivePreference[] preferences, CancellationToken cancellation, Action<string, FolderReading>? measured = null, Cache? cache = null)
+    public static Dictionary<string, FolderReading[]> Scan(DrivePreference[] preferences, CancellationToken cancellation, Action<string, FolderReading>? measured = null, Cache? cache = null, Action<string, bool>? activity = null)
     {
         cache ??= new();
         cache.BeginScan();
@@ -62,7 +62,12 @@ internal static class FolderUsage
             result[drive.Root] = (drive.Folders ?? Array.Empty<FolderPreference>()).Select(folder =>
             {
                 if (cache.TryReuse(folder.Path, out var saved)) return saved;
-                var reading = Read(drive.Root, folder, linkedFiles, cancellation, cache); measured?.Invoke(drive.Root, reading); return reading;
+                activity?.Invoke(drive.Root, true);
+                try
+                {
+                    var reading = Read(drive.Root, folder, linkedFiles, cancellation, cache); measured?.Invoke(drive.Root, reading); return reading;
+                }
+                finally { activity?.Invoke(drive.Root, false); }
             }).ToArray();
         }
         cache.Complete(preferences, result, cancellation);
@@ -76,12 +81,19 @@ internal static class FolderUsage
         try
         {
             for (var directory = new DirectoryInfo(folder.Path); directory != null && !DriveMonitor.RootComparer.Equals(directory.FullName, root); directory = directory.Parent)
-                if ((File.GetAttributes(directory.FullName) & FileAttributes.ReparsePoint) != 0)
+            {
+                var path = directory.FullName;
+                if ((cache.Query(() => File.GetAttributes(path), cancellation) & FileAttributes.ReparsePoint) != 0)
                     return new(folder.Path, folder.Color, null, FolderState.Unavailable);
-            if ((File.GetAttributes(folder.Path) & FileAttributes.Directory) == 0) return new(folder.Path, folder.Color, null, FolderState.Unavailable);
-            using var handle = CreateFileW(NativePath(folder.Path), 0x80, 7, IntPtr.Zero, 3, 0x02200000, IntPtr.Zero);
-            if (handle.IsInvalid || !GetFileInformationByHandle(handle, out var info))
-                throw new IOException("Folder volume cannot be read.", new Win32Exception(Marshal.GetLastWin32Error()));
+            }
+            if ((cache.Query(() => File.GetAttributes(folder.Path), cancellation) & FileAttributes.Directory) == 0) return new(folder.Path, folder.Color, null, FolderState.Unavailable);
+            var info = cache.Query(() =>
+            {
+                using var handle = CreateFileW(NativePath(folder.Path), 0x80, 7, IntPtr.Zero, 3, 0x02200000, IntPtr.Zero);
+                if (handle.IsInvalid || !GetFileInformationByHandle(handle, out var value))
+                    throw new IOException("Folder volume cannot be read.", new Win32Exception(Marshal.GetLastWin32Error()));
+                return value;
+            }, cancellation);
             if ((info.Attributes & (uint)FileAttributes.ReparsePoint) != 0 || (info.Attributes & (uint)FileAttributes.Directory) == 0)
                 return new(folder.Path, folder.Color, null, FolderState.Unavailable);
             volume = info.Volume;
@@ -118,6 +130,13 @@ internal static class FolderUsage
 
     internal sealed class Cache
     {
+        private readonly FolderScanBudget? _budget;
+        internal Cache(FolderScanBudget? budget = null) { _budget = budget; }
+        internal T Query<T>(Func<T> query, CancellationToken cancellation)
+        {
+            if (_budget != null) return _budget.Query(query, cancellation);
+            cancellation.ThrowIfCancellationRequested(); return query();
+        }
         private readonly Dictionary<string, FolderEntry[]> _directories = new(DriveMonitor.RootComparer);
         private readonly Dictionary<string, (uint Volume, ulong Id)> _roots = new(DriveMonitor.RootComparer);
         private readonly Dictionary<string, List<string>> _visited = new(DriveMonitor.RootComparer);
@@ -155,18 +174,18 @@ internal static class FolderUsage
             _roots[path] = (volume, id);
         }
         internal void Visit(string folder, string directory) => _visited[folder].Add(directory);
-        private FolderEntry Resolve(FolderEntry entry, string directory, HashSet<(uint Volume, ulong Id)> seen)
+        private FolderEntry Resolve(FolderEntry entry, string directory, HashSet<(uint Volume, ulong Id)> seen, CancellationToken cancellation)
         {
             if ((entry.Attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0) return entry;
             try
             {
                 var allocation = entry.Bytes.HasValue && (entry.Attributes & (FileAttributes.Compressed | FileAttributes.SparseFile)) == 0
-                    ? (Bytes: entry.Bytes.Value, Volume: entry.Volume, Id: entry.Id, Links: 1u) : Allocation(entry.Path);
+                    ? (Bytes: entry.Bytes.Value, Volume: entry.Volume, Id: entry.Id, Links: 1u) : Query(() => Allocation(entry.Path), cancellation);
                 var root = Path.GetPathRoot(entry.Path)!;
                 if (!_allocation.TryGetValue(root, out var files)) _allocation[root] = files = new();
                 var key = (allocation.Volume, allocation.Id);
                 if (!seen.Add(key) || files.TryGetValue(key, out var previous) && !DriveMonitor.RootComparer.Equals(previous.Directory, directory))
-                    allocation = Allocation(entry.Path);
+                    allocation = Query(() => Allocation(entry.Path), cancellation);
                 files[(allocation.Volume, allocation.Id)] = (allocation.Bytes, directory);
                 return entry with { Path = "", Bytes = allocation.Bytes, Volume = allocation.Volume, Id = allocation.Id, Resolved = true };
             }
@@ -179,7 +198,7 @@ internal static class FolderUsage
             if (_directories.TryGetValue(path, out var saved) && !_dirty.Contains(path)) return saved;
             DirectoryReads++;
             var seen = new HashSet<(uint Volume, ulong Id)>();
-            var fresh = FolderUsage.Entries(directory, volume, cancellation).Select(entry => Resolve(entry, path, seen)).ToArray();
+            var fresh = FolderUsage.Entries(directory, volume, cancellation, this).Select(entry => Resolve(entry, path, seen, cancellation)).ToArray();
             if (saved != null)
             {
                 var children = fresh.Where(e => (e.Attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == FileAttributes.Directory)
@@ -238,12 +257,16 @@ internal static class FolderUsage
         [FieldOffset(60)] public uint NameBytes;
         [FieldOffset(96)] public ulong Id;
     }
-    private static IEnumerable<FolderEntry> Entries(DirectoryInfo directory, uint volume, CancellationToken cancellation)
+    private static IEnumerable<FolderEntry> Entries(DirectoryInfo directory, uint volume, CancellationToken cancellation, Cache cache)
     {
-        using var handle = CreateFileW(NativePath(directory.FullName), 0x81, 7, IntPtr.Zero, 3, 0x02200000, IntPtr.Zero);
-        if (handle.IsInvalid)
-            throw new IOException("Folder directory cannot be read.", new Win32Exception(Marshal.GetLastWin32Error()));
-        if (!GetAttributeTagInfo(handle, 9, out var attributes, 8) || (attributes.Attributes & FileAttributes.ReparsePoint) != 0 || (attributes.Attributes & FileAttributes.Directory) == 0)
+        using var handle = cache.Query(() =>
+        {
+            var opened = CreateFileW(NativePath(directory.FullName), 0x81, 7, IntPtr.Zero, 3, 0x02200000, IntPtr.Zero);
+            if (!opened.IsInvalid) return opened;
+            var error = Marshal.GetLastWin32Error(); opened.Dispose();
+            throw new IOException("Folder directory cannot be read.", new Win32Exception(error));
+        }, cancellation);
+        if (!cache.Query(() => GetAttributeTagInfo(handle, 9, out var attributes, 8) && (attributes.Attributes & FileAttributes.ReparsePoint) == 0 && (attributes.Attributes & FileAttributes.Directory) != 0, cancellation))
             throw new IOException("Folder directory changed during measurement.");
         const int size = 65536; var buffer = Marshal.AllocHGlobal(size); var first = true;
         try
@@ -251,16 +274,22 @@ internal static class FolderUsage
             while (true)
             {
                 cancellation.ThrowIfCancellationRequested();
-                if (!GetDirectoryInfo(handle, first ? 11 : 10, buffer, size))
+                var query = cache.Query(() =>
                 {
-                    var error = Marshal.GetLastWin32Error();
+                    var success = GetDirectoryInfo(handle, first ? 11 : 10, buffer, size);
+                    return (Success: success, Error: success ? 0 : Marshal.GetLastWin32Error());
+                }, cancellation);
+                if (!query.Success)
+                {
+                    var error = query.Error;
                     if (error == 18) yield break;
                     if (first && error is 1 or 50 or 87)
                     {
-                        if (!GetAttributeTagInfo(handle, 9, out var tag, 8) || (tag.Attributes & FileAttributes.ReparsePoint) != 0 || (tag.Attributes & FileAttributes.Directory) == 0)
+                        if (!cache.Query(() => GetAttributeTagInfo(handle, 9, out var tag, 8) && (tag.Attributes & FileAttributes.ReparsePoint) == 0 && (tag.Attributes & FileAttributes.Directory) != 0, cancellation))
                             throw new IOException("Folder directory changed during measurement.");
-                        foreach (var entry in directory.EnumerateFileSystemInfos("*", new EnumerationOptions { AttributesToSkip = 0, IgnoreInaccessible = false }))
-                        { cancellation.ThrowIfCancellationRequested(); yield return new(entry.FullName, entry.Attributes, null, 0, 0); }
+                        using var entries = cache.Query(() => directory.EnumerateFileSystemInfos("*", new EnumerationOptions { AttributesToSkip = 0, IgnoreInaccessible = false }).GetEnumerator(), cancellation);
+                        while (cache.Query(entries.MoveNext, cancellation))
+                        { var entry = entries.Current; yield return new(entry.FullName, entry.Attributes, null, 0, 0); }
                         yield break;
                     }
                     throw new IOException("Folder directory enumeration failed.", new Win32Exception(error));

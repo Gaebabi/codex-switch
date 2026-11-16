@@ -7,6 +7,9 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Automation;
+using System.Windows.Documents;
+using System.Windows.Media.Animation;
+using Ellipse = System.Windows.Shapes.Ellipse;
 
 namespace CodexAccountDesk;
 
@@ -48,6 +51,11 @@ internal sealed class DriveUsagePanel : Grid
         private readonly Grid _segments = new() { ClipToBounds = true, FlowDirection = FlowDirection.LeftToRight };
         private readonly TextBlock _text = new() { FontSize = 11, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(5, 0, 4, 0) };
+        private readonly Run _capacity = new();
+        private readonly Ellipse _spinner = new() { Name = "FolderScanSpinner", Width = 10, Height = 10, StrokeThickness = 1.8,
+            StrokeDashArray = new DoubleCollection { 11, 5 }, StrokeDashCap = PenLineCap.Round,
+            Margin = new Thickness(4, 0, 0, 0), RenderTransformOrigin = new Point(.5, .5),
+            RenderTransform = new RotateTransform(), Visibility = Visibility.Collapsed };
         private readonly TextBlock _temperature = new() { FontSize = 10, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 5, 0) };
         private ResourcePressure _temperaturePressure;
         private readonly Border[] _ioTracks = new Border[2], _ioFills = new Border[2];
@@ -56,6 +64,15 @@ internal sealed class DriveUsagePanel : Grid
         public DriveCell(string root, Action<string> openDirectory)
         {
             Root = root; _openDirectory = openDirectory; Margin = new Thickness(0, 2, 4, 2);
+            _text.Inlines.Add(_capacity);
+            _text.Inlines.Add(new InlineUIContainer(_spinner) { BaselineAlignment = BaselineAlignment.Center });
+            _spinner.IsVisibleChanged += (_, _) =>
+            {
+                var rotation = (RotateTransform)_spinner.RenderTransform;
+                rotation.BeginAnimation(RotateTransform.AngleProperty, _spinner.IsVisible
+                    ? new DoubleAnimation(0, 360, TimeSpan.FromSeconds(1)) { RepeatBehavior = RepeatBehavior.Forever }
+                    : null);
+            };
             UseLayoutRounding = true;
             RowDefinitions.Add(new() { Height = new GridLength(16) });
             RowDefinitions.Add(new() { Height = new GridLength(2) });
@@ -98,7 +115,11 @@ internal sealed class DriveUsagePanel : Grid
             }
             var label = string.IsNullOrWhiteSpace(reading.Label) ? reading.Root[..2] : reading.Label;
             var value = reading.Free.HasValue ? (reading.Free.Value / 1073741824.0).ToString("0.#", Loc.Culture) + " GiB" : "—";
-            _text.Text = label + " " + value; _text.FontFamily = theme.Font; _text.Foreground = theme.Color(color is "warning" or "danger" ? color : "text");
+            _capacity.Text = label + " " + value; _text.FontFamily = theme.Font; _text.Foreground = theme.Color(color is "warning" or "danger" ? color : "text");
+            _spinner.Stroke = theme.Color("accent");
+            _spinner.Visibility = reading.MeasuringFolders ? Visibility.Visible : Visibility.Collapsed;
+            AutomationProperties.SetName(_spinner, Loc.T("folders.scanning"));
+            AutomationProperties.SetName(_text, _capacity.Text + (reading.MeasuringFolders ? " · " + Loc.T("folders.scanning") : ""));
             var now = DateTimeOffset.UtcNow; _temperature.Text = TemperaturePresentation.Label(reading.Temperature, now); _temperature.FontFamily = theme.Font;
             _temperaturePressure = TemperatureColors.Pressure(reading.Temperature, TemperatureKind.Disk, _temperaturePressure, now);
             _temperature.Foreground = theme.Color(TemperatureColors.Color(_temperaturePressure));

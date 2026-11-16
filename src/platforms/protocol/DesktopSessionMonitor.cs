@@ -263,13 +263,13 @@ internal sealed class DesktopSessionMonitor : IAsyncDisposable
                         _ledger.OwnsClient(JsonValue.String(parameters, "clientId"))) throw new IOException("Desktop owner disconnected.");
                     if (method == "thread-queued-followups-changed" && JsonValue.String(parameters, "hostId") == "local")
                     {
-                        if (JsonValue.Int(message, "version") != 2) { _ledger.SetQueues(null, _ledger.BeginQueueRead(), "큐 상태 형식 변경"); Publish(_ledger.Read()); continue; }
+                        if (JsonValue.Int(message, "version") is not (2 or 3)) { _ledger.SetQueues(null, _ledger.BeginQueueRead(), "큐 상태 형식 변경"); Publish(_ledger.Read()); continue; }
                         _ledger.ApplyQueue(parameters.GetProperty("conversationId").GetString()!, JsonValue.String(message, "sourceClientId")!, parameters.GetProperty("messages"));
                         _queueChanges.Writer.TryWrite(true);
                         Publish(_ledger.Read()); continue;
                     }
                     if (method != "thread-stream-state-changed" || JsonValue.String(parameters, "hostId") != "local") continue;
-                    if (JsonValue.Int(message, "version") != 11) throw new InvalidDataException("Unsupported desktop protocol version.");
+                    if (JsonValue.Int(message, "version") is not (11 or 13)) throw new InvalidDataException("Unsupported desktop protocol version.");
                     var threadId = JsonValue.String(parameters, "conversationId") ?? throw new InvalidDataException("Desktop thread ID missing.");
                     var owner = JsonValue.String(message, "sourceClientId") ?? throw new InvalidDataException("Desktop owner missing.");
                     if (_ledger.Apply(threadId, owner, parameters.GetProperty("change")))

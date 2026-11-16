@@ -46,8 +46,9 @@ internal sealed class AccountDetailWindow : Window
         var close = new Button { Width = 46, Height = 40, Style = (Style)resources["CaptionButton"], Background = Brushes.Transparent,
             Content = Burn0Theme.Icon("window-close", theme.Color("muted"), 12, true), ToolTip = Loc.T("닫기") };
         close.Click += (_, _) => Close(); WindowChrome.SetIsHitTestVisibleInChrome(close, true); DockPanel.SetDock(close, Dock.Right); caption.Children.Add(close);
-        caption.Children.Add(new TextBlock { Text = Title, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 14, 0), TextTrimming = TextTrimming.CharacterEllipsis }); root.Children.Add(caption);
-        var body = new DockPanel { Margin = new Thickness(20, 16, 20, 16) };
+        caption.Children.Add(new TextBlock { Text = Title, FontSize = PanelLayout.BodySize, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(14, 0, 14, 0), TextTrimming = TextTrimming.CharacterEllipsis }); root.Children.Add(caption);
+        FontSize = PanelLayout.BodySize;
+        var body = new DockPanel { Margin = new Thickness(16) };
         var controls = new StackPanel { Margin = new Thickness(0, 0, 0, 16) };
         var choices = AccountTankCard.Choices(profile); var choice = AccountTankCard.SelectQuota(profile, _selectedQuota);
         var creditMode = CreditPresentation.Selected(_selectedQuota) || choice == null && profile.CreditHistory.Count > 0;
@@ -119,7 +120,8 @@ internal sealed class AccountDetailWindow : Window
             }
         }
         if (_customRange != null) controls.Children.Add(new TextBlock { Text = Loc.F("history.selected_range", UsagePresentation.KoreanTime(_customRange.Start), UsagePresentation.KoreanTime(_customRange.End.AddDays(-1))), Foreground = theme.Color("muted"), FontSize = 11, Margin = new Thickness(0, 6, 0, 0) });
-        DockPanel.SetDock(controls, Dock.Top); body.Children.Add(controls);
+        var filterPanel = PanelLayout.Surface(controls, theme); filterPanel.Margin = new Thickness(0, 0, 0, 12);
+        controls.Margin = new Thickness(0); DockPanel.SetDock(filterPanel, Dock.Top); body.Children.Add(filterPanel);
         var content = new StackPanel();
         if (creditMode) content.Children.Add(Credits(profile, creditTrack, theme, hours));
         else if (choice != null)
@@ -133,7 +135,7 @@ internal sealed class AccountDetailWindow : Window
         var extra = new StackPanel { Visibility = _moreOpen ? Visibility.Visible : Visibility.Collapsed };
         var more = Button(Loc.T("기타 정보") + (_moreOpen ? " ▴" : " ▾")); more.HorizontalAlignment = HorizontalAlignment.Left; more.Background = Brushes.Transparent; more.FontSize = 11; more.Margin = new Thickness(0, 6, 0, 0);
         more.Click += (_, _) => { _moreOpen = !_moreOpen; extra.Visibility = _moreOpen ? Visibility.Visible : Visibility.Collapsed; more.Content = Loc.T("기타 정보") + (_moreOpen ? " ▴" : " ▾"); };
-        content.Children.Add(more); content.Children.Add(extra);
+        content.Children.Add(PanelLayout.Rule(theme)); content.Children.Add(more); content.Children.Add(extra);
         foreach (var bucket in profile.Usage?.Buckets ?? new())
         {
             if (bucket.CreditBalance != null || bucket.UnlimitedCredits == true)
@@ -161,7 +163,7 @@ internal sealed class AccountDetailWindow : Window
         Metric(0, "credits.balance", CreditPresentation.Balance(profile, track));
         Metric(1, "credits.observed", CreditPresentation.Number(CreditHistory.ObservedUse(track, HistoryRange.Resolve(hours, _customRange, DateTimeOffset.UtcNow))));
         Metric(2, "credits.estimated", CreditPresentation.Number(CreditHistory.EstimatedUse(track, HistoryRange.Resolve(hours, _customRange, DateTimeOffset.UtcNow))));
-        panel.Children.Add(metrics);
+        panel.Children.Add(PanelLayout.Surface(metrics, theme)); panel.Children.Add(PanelLayout.Rule(theme)); panel.Children.Add(PanelLayout.Heading(Loc.T("credits.history"), theme));
         _creditChart = new(track, theme, hours) { Range = _customRange }; panel.Children.Add(_creditChart);
         panel.Children.Add(new TextBlock { Text = Loc.T("credits.history_help"), FontSize = 11, Foreground = theme.Color("muted"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 10, 0, 0) });
         return panel;
@@ -169,7 +171,7 @@ internal sealed class AccountDetailWindow : Window
         {
             var cell = new StackPanel { Margin = new Thickness(0, 0, 12, 0) };
             cell.Children.Add(new TextBlock { Text = Loc.T(label), FontSize = 11, Foreground = theme.Color("muted") });
-            var number = new TextBlock { Text = value, ToolTip = value, FontSize = 28, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, FlowDirection = FlowDirection.LeftToRight, Margin = new Thickness(0, 5, 0, 0) };
+            var number = new TextBlock { Text = value, ToolTip = value, FontSize = PanelLayout.ValueSize, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, FlowDirection = FlowDirection.LeftToRight, Margin = new Thickness(0, 6, 0, 0) };
             if (column == 1) _creditObserved = number;
             if (column == 2) { _creditEstimated = number; number.ToolTip = Loc.T("credits.estimated_help") + "\n" + value; }
             cell.Children.Add(number);

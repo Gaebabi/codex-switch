@@ -104,6 +104,7 @@ try
 }
 finally { await monitor.DisposeAsync(); }
 await ModelCatalogNotificationContracts.RunAsync(checks);
+await DesktopObservationContracts.RunAsync(checks);
 ClientCredentialPolicy Policy(string store, string? forced = null, string? workspace = null, string requirements = "null")
 {
     using var config = JsonDocument.Parse(JsonSerializer.Serialize(new { config = new { cli_auth_credentials_store = store, forced_login_method = forced, forced_chatgpt_workspace_id = workspace } }));

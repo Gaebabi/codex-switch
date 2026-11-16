@@ -147,7 +147,7 @@ internal static class ProviderUiEvidence
                 contextWindow.Text = ""; contextCompact.Text = ""; contextSave.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 if (manager.Settings.NativeContext != null) throw new Exception("Blank context fields must restore native defaults.");
                 PickContext(1);
-                var contextExpander = ((StackPanel)Field<StackPanel>(reopened, "_ready").Parent).Children.OfType<Expander>().Single(item => item.Name == "ContextSettings");
+                var contextExpander = ((StackPanel)Field<ScrollViewer>(reopened, "_scroll").Content).Children.OfType<Expander>().Single(item => item.Name == "ContextSettings");
                 contextExpander.IsExpanded = true; Layout(reopenedRoot); Field<ScrollViewer>(reopened, "_scroll").ScrollToEnd();
                 Capture(reopenedRoot, Path.Combine(args[0], "context-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"));
                 contextExpander.IsExpanded = false; Field<ScrollViewer>(reopened, "_scroll").ScrollToTop();
@@ -179,9 +179,10 @@ internal static class ProviderUiEvidence
                     !mainPicker.CreateMenu().Items.OfType<MenuItem>().Any(item => item.Header as string == Loc.T("providers.title")))
                     throw new Exception("Home must retain custom model toggles and the provider settings action.");
                 checks.Add(language + "/" + dark + ": Home reopens with saved custom model visibility and provider settings");
-                if (mainPicker.Visibility != Visibility.Visible || mainPicker.Models.ActualWidth != 30 ||
-                    mainPicker.Models.TranslatePoint(new Point(), mainRoot).X + mainPicker.Models.ActualWidth > 500)
-                    throw new Exception("The Home icon must fit the minimum width.");
+                var modelLocation = mainPicker.Models.TranslatePoint(new Point(), mainRoot);
+                if (mainPicker.Visibility != Visibility.Visible || mainPicker.Models.ActualWidth != 32 || mainPicker.Models.ActualHeight != 40 ||
+                    modelLocation.X + mainPicker.Models.ActualWidth > 500 || modelLocation.Y < 0 || modelLocation.Y + mainPicker.Models.ActualHeight > 40)
+                    throw new Exception("The model action must fit the titlebar at minimum width.");
                 Capture(mainRoot, Path.Combine(args[0], "router-home-" + language + "-" + (dark ? "dark" : "light") + ".png"), theme.Color("canvas"), 500, 360);
                 checks.Add(language + "/" + dark + ": the Home icon fits the minimum client layout without a separate model row");
                 main.Close();
@@ -209,8 +210,10 @@ internal static class ProviderUiEvidence
                 if (!restart.IsEnabled || !models.IsEnabled || !settings.Items.Contains(restart) || !settings.Items.Contains(models) || gear.ActualWidth < 28 || gear.TranslatePoint(new Point(), root).X + gear.ActualWidth > 500)
                     throw new Exception("Settings gear must expose enabled model and restart actions at the minimum width.");
                 var titleActions = ((Grid)((Grid)root).Children[0]).Children.OfType<StackPanel>().Single(panel => panel.Name == "TitleBarActions");
-                if (titleActions.Children.OfType<Button>().Count() != 6 || titleActions.Children.OfType<Button>().Any(button => button.Name is "LanguageButton" or "ThemeButton" or "ModelProvidersButton" or "RestartCodexButton"))
-                    throw new Exception("Titlebar must contain only add/refresh/settings and the three native caption controls.");
+                if (titleActions.Children.OfType<Button>().Count() != 4 || titleActions.Children.OfType<ModelRoutePicker>().Count() != 1 ||
+                    titleActions.Children[0] is not ModelRoutePicker || titleActions.Children.Contains(Field<Button>(main, "_add")) || titleActions.Children.Contains(Field<Button>(main, "_refresh")) ||
+                    titleActions.Children.OfType<Button>().Any(button => button.Name is "LanguageButton" or "ThemeButton" or "ModelProvidersButton" or "RestartCodexButton"))
+                    throw new Exception("Titlebar must contain Models, Settings and the three caption controls; Add/Refresh belong on the toolbar.");
                 var automatic = settings.Items.OfType<MenuItem>().Single(item => item.Name == "AutomaticSwitchMenuItem");
                 var languageSettings = settings.Items.OfType<MenuItem>().Single(item => item.Name == "LanguageSettingsMenuItem");
                 var themeSettings = settings.Items.OfType<MenuItem>().Single(item => item.Name == "ThemeSettingsMenuItem");
@@ -291,6 +294,7 @@ internal static class ProviderUiEvidence
             menuManager.DisposeAsync().AsTask().GetAwaiter().GetResult();
             checks.Add("Mixed model visibility and long labels render in both themes through the production popup.");
             FolderUiContracts.Verify(service, args[0], checks);
+            SettingsUiContracts.Verify(service, args[0], checks);
             File.WriteAllText(Path.Combine(args[0], "ui-verification.json"), JsonSerializer.Serialize(new
             {
                 checks,

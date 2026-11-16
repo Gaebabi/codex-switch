@@ -17,18 +17,20 @@ internal sealed class UsageOutlook : StackPanel
         _window = window; _theme = theme; _trend = UsagePredictor.Learn(window, history);
         var overview = new Grid(); overview.ColumnDefinitions.Add(new() { Width = new GridLength(0.95, GridUnitType.Star) });
         overview.ColumnDefinitions.Add(new() { Width = new GridLength(1.15, GridUnitType.Star) }); overview.ColumnDefinitions.Add(new() { Width = new GridLength(1.15, GridUnitType.Star) });
-        var remaining = Metric(Loc.T("잔여량"), out var percent); percent.Text = window.Remaining.ToString("0.#", Loc.Culture) + "%"; percent.FontSize = 52; overview.Children.Add(remaining);
+        var remaining = Metric(Loc.T("잔여량"), out var percent); percent.Text = window.Remaining.ToString("0.#", Loc.Culture) + "%"; percent.FontSize = PanelLayout.ValueSize; overview.Children.Add(remaining);
         var depletion = Metric(Loc.T("예상 소진"), out _depletion); Grid.SetColumn(depletion, 1); overview.Children.Add(depletion);
         _hint = Text("", 11, "muted"); _hint.Margin = new Thickness(0, 4, 0, 0); depletion.Children.Add(_hint);
         var reset = Metric(Loc.T("다음 리셋"), out _reset); Grid.SetColumn(reset, 2); overview.Children.Add(reset);
-        Children.Add(overview);
-        _chart = new UsageTrendChart(window, history, theme, hours, DateTimeOffset.UtcNow, true) { Range = range, Credits = credits, Margin = new Thickness(0, 16, 0, 0) }; Children.Add(_chart);
+        var summary = new StackPanel(); summary.Children.Add(overview); summary.Children.Add(PanelLayout.Gauge(window.Remaining, theme)); Children.Add(PanelLayout.Surface(summary, theme));
+        Children.Add(PanelLayout.Rule(theme));
+        Children.Add(PanelLayout.Heading(Loc.T("사용량 추이"), theme));
+        _chart = new UsageTrendChart(window, history, theme, hours, DateTimeOffset.UtcNow, true) { Range = range, Credits = credits }; Children.Add(_chart);
         Update(DateTimeOffset.UtcNow);
     }
     private StackPanel Metric(string title, out TextBlock value)
     {
-        var panel = new StackPanel { Margin = new Thickness(0, 0, 12, 0) }; panel.Children.Add(Text(title, 12, "muted"));
-        value = Text("", 28, "text", FontWeights.SemiBold); value.FlowDirection = FlowDirection.LeftToRight; value.Margin = new Thickness(0, 7, 0, 0); value.TextWrapping = TextWrapping.NoWrap; value.TextTrimming = TextTrimming.CharacterEllipsis;
+        var panel = new StackPanel { Margin = new Thickness(0, 0, 12, 0) }; panel.Children.Add(Text(title, PanelLayout.CaptionSize, "muted"));
+        value = Text("", PanelLayout.TimeValueSize, "text", FontWeights.SemiBold); value.FlowDirection = FlowDirection.LeftToRight; value.Margin = new Thickness(0, 6, 0, 0); value.TextWrapping = TextWrapping.NoWrap; value.TextTrimming = TextTrimming.CharacterEllipsis;
         panel.Children.Add(value); return panel;
     }
     private TextBlock Text(string text, double size, string color, FontWeight? weight = null) => new()
