@@ -90,6 +90,11 @@ internal static class FolderContracts
                 var expected = Directory.GetFiles(directory).Sum(p => { var low = GetCompressedFileSizeW(p, out var high); return ((long)high << 32) | low; });
                 var row = FolderUsage.Scan(new[] { new DrivePreference { Root = root, Folders = new[] { new FolderPreference { Path = directory } } } }, CancellationToken.None)[root][0];
                 Assert(row.State == FolderState.Available && row.Bytes == expected);
+                var cache = new FolderUsage.Cache();
+                var configuration = new[] { new DrivePreference { Root = root, Folders = new[] { new FolderPreference { Path = directory } } } };
+                Assert(FolderUsage.Scan(configuration, CancellationToken.None, cache: cache)[root][0].Bytes == expected);
+                var reads = cache.DirectoryReads;
+                Assert(FolderUsage.Scan(configuration, CancellationToken.None, cache: cache)[root][0].Bytes == expected && cache.DirectoryReads == reads);
             });
             check("Large directories match per-file allocation across every metadata page", () =>
             {

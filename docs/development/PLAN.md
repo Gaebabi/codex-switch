@@ -1,5 +1,7 @@
 # Current plan
 
+2026-11-16 folder I/O follow-up is implemented, tested and installed locally. Notification-driven directory snapshots and cached root readings replace recurring traversal; Windows hidden/minimized state pauses allocation work without stopping lightweight counters. The52hardware contracts, installed-package self-tests and editor-on/off volume comparison pass within their recorded scope. Concurrent external VM work prevents a permanent whole-machine idle claim. Public release and satisfaction-gated commits remain separate. See [acceptance and preservation limits](STATUS.md).
+
 2026-11-15 native default isolation: custom desktop model/effort persistence now belongs to the existing encrypted provider store, with native configuration writes retained for unrelated settings and native selections. The VM recovery and installed real Qwen/native responses pass; source/native contracts cover the persistence path that earlier turn-routing tests omitted. Preserve normal CLI defaults, existing chats and credentials. Publication and a satisfaction-gated commit remain separate from this local repair.
 
 2026-11-15 gauge readability: local host/VM installation separates resource metadata from saturated12px bars, adds folder boundaries/direct shares, and retains history in tooltips. Narrow/wide production controls and installed package checks pass. See [current acceptance](STATUS.md); satisfaction-gated commit and future publication remain separate.

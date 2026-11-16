@@ -97,6 +97,10 @@ internal sealed class MainWindow : Window
         _hardware.Changed += HardwareChanged;
         _hardwarePanel.CpuTemperatureRequested += async () => await EnableCpuTemperatureAsync();
         _drives.Changed += DrivesChanged;
+        void UpdateFolderMeasurement() => _drives.SetFolderMeasurementActive(IsVisible && WindowState != WindowState.Minimized);
+        UpdateFolderMeasurement();
+        IsVisibleChanged += (_, _) => UpdateFolderMeasurement();
+        StateChanged += (_, _) => UpdateFolderMeasurement();
         StateChanged += (_, _) => { if (_maximizeButton != null) _maximizeButton.Content = Burn0Theme.Icon(WindowState == WindowState.Maximized ? "window-restore" : "window-maximize", Color("muted"), 12, true); };
         _refreshTimer.Tick += async (_, _) => { if (CanRefresh) await RefreshAsync(); };
         _clockTimer.Tick += (_, _) => UpdateCountdowns();
