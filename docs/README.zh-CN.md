@@ -3,13 +3,13 @@
 
 **Codex Switch（`codex-switch`）是一款用于OpenAI Codex账号切换与用量监控的开源桌面应用。** 比较各账号的剩余额度、选择下一个账号，并通过已保存的记录恢复中断的切换。可选的额度阈值自动切换默认**关闭**。
 
-Windows · macOS15及以上 · Linux预览版 · MIT开源 · **1.45.3**
+Windows · macOS15及以上 · Linux预览版 · MIT开源 · **1.45.4**
 
 Windows模型设置中的**上下文与自动压缩**支持调整OpenAI通用值和各外部模型的独立值。保存后无需重启Codex，下次请求即生效；留空恢复默认值。模型的实际限制和原生安全余量保持有效。
 
 [English](../README.md) / [한국어](README.ko.md) / [日本語](README.ja.md) / 简体中文
 
-[下载](#下载) · [开始使用](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.3)
+[下载](#下载) · [开始使用](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.4)
 
 可选的Windows后端在同一个Codex菜单中显示OpenAI和外部模型。模型变更即时生效，并保留OpenAI直连。[设置与平台范围](DESKTOP_MODEL_BACKEND.md)。
 
@@ -19,7 +19,7 @@ Windows模型设置中的**上下文与自动压缩**支持调整OpenAI通用值
 
 **如果觉得有用，欢迎Star本仓库并分享给其他Codex用户。**
 
-1.45.3修复了桌面外部模型选择覆盖普通Codex CLI默认模型的问题。模型与推理设置保存在Switch专用加密存储中，保留现有对话和认证。[变更与验证范围](development/RELEASE_1_45_3.md)。
+1.45.4降低了Windows文件夹监控的磁盘读取负载。窗口隐藏或最小化时暂停容量遍历，再次显示时利用保留的结果和变更通知继续测量。未变化的根目录和子目录不会重复读取，轻量磁盘指标仍持续更新。[更新与验证](development/RELEASE_1_45_4.md)。
 
 1.42.2新增警告按钮的指定账号浏览器重新登录、默认关闭的额度阈值自动切换、最佳选择/自定义顺序、重启恢复记录、订阅日期标题及官方Pro 100/200/500名称。[行为与验证范围](development/ACCOUNT_AUTOMATION.md) / [发布流程](development/RELEASE_1_42_2.md)。
 
@@ -43,9 +43,9 @@ Windows模型设置中的**上下文与自动压缩**支持调整OpenAI通用值
 
 ## 下载
 
-- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.3/CodexSwitch-v1.45.3-win-x64.zip)
-- macOS15及以上：[Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.3/CodexSwitch-v1.45.3-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.3/CodexSwitch-v1.45.3-osx-x64.zip)
-- Linux **预览版** x64、ARM64：[DEB、RPM、tar.gz及SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.3)
+- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.4/CodexSwitch-v1.45.4-win-x64.zip)
+- macOS15及以上：[Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.4/CodexSwitch-v1.45.4-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.4/CodexSwitch-v1.45.4-osx-x64.zip)
+- Linux **预览版** x64、ARM64：[DEB、RPM、tar.gz及SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.4)
 
 完整程序包包含.NET运行时，无需构建或安装.NET。请保留完整文件夹或应用包。Windows/Linux未签名；Mac为临时签名，**未经Apple公证**。[安装](INSTALL.md) / [Mac首次启动](MACOS.md)
 
@@ -55,7 +55,7 @@ Linux仍为集成预览版。原生密钥环、已安装UI和程序包验证，�
 
 悬停警告图标可查看原因，点击可在浏览器中重新登录指定账号。[实际应用验证](evidence/account-automation/README.md)。
 
-**Linux1.45.3下载包含源码1.41.0新增的终端账号切换和已保存CLI会话恢复功能。** `CodexSwitch cli`无需显示服务器即可管理现有加密账号；`cli switch <account> --resume <CLI-session-UUID>`将手动切换与官方CLI恢复连接起来。`--continue`明确请求发送后续消息，`--exec --continue`选择非交互执行。需要经过验证的原生CLI、校验和以及已解锁的受支持Secret Service。已在Linux x64上验证真实双账号切换后保留原有上下文的CLI恢复。ARM64、离线验证及完整桌面支持仍分别记录。[命令、实际截图与验证范围](development/LINUX_TERMINAL.md)。
+**Linux1.45.4下载包含源码1.41.0新增的终端账号切换和已保存CLI会话恢复功能。** `CodexSwitch cli`无需显示服务器即可管理现有加密账号；`cli switch <account> --resume <CLI-session-UUID>`将手动切换与官方CLI恢复连接起来。`--continue`明确请求发送后续消息，`--exec --continue`选择非交互执行。需要经过验证的原生CLI、校验和以及已解锁的受支持Secret Service。已在Linux x64上验证真实双账号切换后保留原有上下文的CLI恢复。ARM64、离线验证及完整桌面支持仍分别记录。[命令、实际截图与验证范围](development/LINUX_TERMINAL.md)。
 
 1. Windows运行`CodexSwitch.exe`；Mac运行`Install.command`后打开已安装的**Codex Switch.app**。Linux需要完整预览包及受支持的Secret Service。
 2. **+**通过官方浏览器页面登录各账号。如果自动选择了之前的账号，请使用独立的浏览器配置或隐私窗口。通过**设置 > 导入当前账号**可导入当前登录。

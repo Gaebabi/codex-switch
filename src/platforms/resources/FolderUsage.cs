@@ -51,24 +51,28 @@ internal static class FolderUsage
         result.Add(new("folders.other", remaining, null)); result.Add(new("folders.free", free, null));
         return result.ToArray();
     }
-    public static Dictionary<string, FolderReading[]> Scan(DrivePreference[] preferences, CancellationToken cancellation, Action<string, FolderReading>? measured = null)
+    public static Dictionary<string, FolderReading[]> Scan(DrivePreference[] preferences, CancellationToken cancellation, Action<string, FolderReading>? measured = null, Cache? cache = null)
     {
+        cache ??= new();
+        cache.BeginScan();
         var result = new Dictionary<string, FolderReading[]>(DriveMonitor.RootComparer);
         foreach (var drive in preferences)
         {
             var linkedFiles = new HashSet<(uint Volume, ulong Id)>();
             result[drive.Root] = (drive.Folders ?? Array.Empty<FolderPreference>()).Select(folder =>
             {
-                var reading = Read(drive.Root, folder, linkedFiles, cancellation); measured?.Invoke(drive.Root, reading); return reading;
+                if (cache.TryReuse(folder.Path, out var saved)) return saved;
+                var reading = Read(drive.Root, folder, linkedFiles, cancellation, cache); measured?.Invoke(drive.Root, reading); return reading;
             }).ToArray();
         }
+        cache.Complete(preferences, result, cancellation);
         return result;
     }
-    private static FolderReading Read(string root, FolderPreference folder, HashSet<(uint Volume, ulong Id)> linkedFiles, CancellationToken cancellation)
+    private static FolderReading Read(string root, FolderPreference folder, HashSet<(uint Volume, ulong Id)> linkedFiles, CancellationToken cancellation, Cache cache)
     {
         if (!OperatingSystem.IsWindows()) return new(folder.Path, folder.Color, null, FolderState.Unsupported);
         cancellation.ThrowIfCancellationRequested();
-        uint volume;
+        uint volume; cache.Begin(folder.Path);
         try
         {
             for (var directory = new DirectoryInfo(folder.Path); directory != null && !DriveMonitor.RootComparer.Equals(directory.FullName, root); directory = directory.Parent)
@@ -81,6 +85,7 @@ internal static class FolderUsage
             if ((info.Attributes & (uint)FileAttributes.ReparsePoint) != 0 || (info.Attributes & (uint)FileAttributes.Directory) == 0)
                 return new(folder.Path, folder.Color, null, FolderState.Unavailable);
             volume = info.Volume;
+            cache.Root(folder.Path, volume, ((ulong)info.IdHigh << 32) | info.IdLow);
         }
         catch (FileNotFoundException) { return new(folder.Path, folder.Color, null, FolderState.Missing); }
         catch (DirectoryNotFoundException) { return new(folder.Path, folder.Color, null, FolderState.Missing); }
@@ -93,19 +98,15 @@ internal static class FolderUsage
             cancellation.ThrowIfCancellationRequested();
             try
             {
-                foreach (var entry in Entries(directory, volume, cancellation))
+                var entries = cache.Entries(directory, volume, cancellation);
+                cache.Visit(folder.Path, directory.FullName);
+                foreach (var entry in entries)
                 {
                     cancellation.ThrowIfCancellationRequested();
                     if ((entry.Attributes & FileAttributes.ReparsePoint) != 0) { skipped++; continue; }
                     if ((entry.Attributes & FileAttributes.Directory) != 0) { pending.Push(new(entry.Path)); continue; }
-                    try
-                    {
-                        var allocation = entry.Bytes.HasValue && (entry.Attributes & (FileAttributes.Compressed | FileAttributes.SparseFile)) == 0
-                            ? (Bytes: entry.Bytes.Value, Volume: entry.Volume, Id: entry.Id, Links: 1u) : Allocation(entry.Path);
-                        if (linkedFiles.Add((allocation.Volume, allocation.Id))) bytes = checked(bytes + allocation.Bytes);
-                    }
-                    catch (IOException) { skipped++; incomplete = true; }
-                    catch (UnauthorizedAccessException) { skipped++; incomplete = true; }
+                    if (entry.Failed) { skipped++; incomplete = true; continue; }
+                    if (linkedFiles.Add((entry.Volume, entry.Id))) bytes = checked(bytes + entry.Bytes!.Value);
                 }
             }
             catch (IOException) { skipped++; incomplete = true; }
@@ -113,7 +114,122 @@ internal static class FolderUsage
         }
         return new(folder.Path, folder.Color, bytes, incomplete ? FolderState.Partial : FolderState.Available, skipped, DateTimeOffset.UtcNow);
     }
-    private sealed record FolderEntry(string Path, FileAttributes Attributes, long? Bytes, uint Volume, ulong Id);
+    internal readonly record struct FolderEntry(string Path, FileAttributes Attributes, long? Bytes, uint Volume, ulong Id, bool Resolved = false, bool Failed = false);
+
+    internal sealed class Cache
+    {
+        private readonly Dictionary<string, FolderEntry[]> _directories = new(DriveMonitor.RootComparer);
+        private readonly Dictionary<string, (uint Volume, ulong Id)> _roots = new(DriveMonitor.RootComparer);
+        private readonly Dictionary<string, List<string>> _visited = new(DriveMonitor.RootComparer);
+        private readonly Dictionary<string, Dictionary<(uint Volume, ulong Id), (long Bytes, string Directory)>> _allocation = new(DriveMonitor.RootComparer);
+        private readonly HashSet<string> _dirty = new(DriveMonitor.RootComparer);
+        private readonly HashSet<string> _reset = new(DriveMonitor.RootComparer);
+        private readonly HashSet<string> _touchedDrives = new(DriveMonitor.RootComparer);
+        private readonly Dictionary<string, FolderReading> _readings = new(DriveMonitor.RootComparer);
+        private readonly Dictionary<string, List<string>> _previous = new(DriveMonitor.RootComparer);
+        internal long DirectoryReads { get; private set; }
+        internal long RootReads { get; private set; }
+        internal void BeginScan() { _touchedDrives.Clear(); _previous.Clear(); }
+        internal bool TryReuse(string folder, out FolderReading reading)
+        {
+            if (_readings.TryGetValue(folder, out reading!) && !_dirty.Concat(_reset).Any(path =>
+                DriveMonitor.RootComparer.Equals(path, folder) || Inside(folder, path) || Inside(path, folder))) return true;
+            return false;
+        }
+        internal void Invalidate(string directory) => _dirty.Add(Path.TrimEndingDirectorySeparator(directory));
+        internal void Reset(string path)
+        {
+            _reset.Add(path);
+            foreach (var directory in _directories.Keys.Where(p => DriveMonitor.RootComparer.Equals(p, path) || Inside(path, p)).ToArray())
+            { _directories.Remove(directory); _dirty.Remove(directory); }
+        }
+        internal void Begin(string folder)
+        {
+            RootReads++; _touchedDrives.Add(Path.GetPathRoot(folder)!);
+            if (_visited.TryGetValue(folder, out var previous)) _previous[folder] = previous;
+            _visited[folder] = new();
+        }
+        internal void Root(string path, uint volume, ulong id)
+        {
+            if (_roots.TryGetValue(path, out var previous) && previous != (volume, id)) Reset(path);
+            _roots[path] = (volume, id);
+        }
+        internal void Visit(string folder, string directory) => _visited[folder].Add(directory);
+        private FolderEntry Resolve(FolderEntry entry, string directory, HashSet<(uint Volume, ulong Id)> seen)
+        {
+            if ((entry.Attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0) return entry;
+            try
+            {
+                var allocation = entry.Bytes.HasValue && (entry.Attributes & (FileAttributes.Compressed | FileAttributes.SparseFile)) == 0
+                    ? (Bytes: entry.Bytes.Value, Volume: entry.Volume, Id: entry.Id, Links: 1u) : Allocation(entry.Path);
+                var root = Path.GetPathRoot(entry.Path)!;
+                if (!_allocation.TryGetValue(root, out var files)) _allocation[root] = files = new();
+                var key = (allocation.Volume, allocation.Id);
+                if (!seen.Add(key) || files.TryGetValue(key, out var previous) && !DriveMonitor.RootComparer.Equals(previous.Directory, directory))
+                    allocation = Allocation(entry.Path);
+                files[(allocation.Volume, allocation.Id)] = (allocation.Bytes, directory);
+                return entry with { Path = "", Bytes = allocation.Bytes, Volume = allocation.Volume, Id = allocation.Id, Resolved = true };
+            }
+            catch (IOException) { return entry with { Path = "", Failed = true }; }
+            catch (UnauthorizedAccessException) { return entry with { Path = "", Failed = true }; }
+        }
+        internal IEnumerable<FolderEntry> Entries(DirectoryInfo directory, uint volume, CancellationToken cancellation)
+        {
+            var path = directory.FullName;
+            if (_directories.TryGetValue(path, out var saved) && !_dirty.Contains(path)) return saved;
+            DirectoryReads++;
+            var seen = new HashSet<(uint Volume, ulong Id)>();
+            var fresh = FolderUsage.Entries(directory, volume, cancellation).Select(entry => Resolve(entry, path, seen)).ToArray();
+            if (saved != null)
+            {
+                var children = fresh.Where(e => (e.Attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == FileAttributes.Directory)
+                    .ToDictionary(e => e.Path, e => e.Id, DriveMonitor.RootComparer);
+                foreach (var child in saved.Where(e => (e.Attributes & FileAttributes.Directory) != 0))
+                    if (!children.TryGetValue(child.Path, out var id) || id == 0 || id != child.Id) Reset(child.Path);
+            }
+            _directories[path] = fresh; _dirty.Remove(path);
+            return fresh;
+        }
+        internal void RetryPartial()
+        {
+            foreach (var reading in _readings.Values)
+                if (reading.State == FolderState.Partial) _reset.Add(reading.Path);
+            foreach (var pair in _directories)
+                if (pair.Value.Any(e => e.Failed)) _dirty.Add(pair.Key);
+        }
+        internal void Complete(DrivePreference[] preferences, Dictionary<string, FolderReading[]> readings, CancellationToken cancellation)
+        {
+            foreach (var pair in _previous)
+            {
+                var retained = new HashSet<string>(_visited[pair.Key], DriveMonitor.RootComparer);
+                foreach (var path in pair.Value.Where(p => !retained.Contains(p))) _directories.Remove(path);
+            }
+            foreach (var drive in preferences)
+            {
+                if (!_touchedDrives.Contains(drive.Root)) continue;
+                var counted = new HashSet<(uint Volume, ulong Id)>();
+                readings[drive.Root] = readings[drive.Root].Select(row =>
+                {
+                    cancellation.ThrowIfCancellationRequested();
+                    if (!row.Bytes.HasValue) return row;
+                    long bytes = 0;
+                    foreach (var path in _visited[row.Path])
+                        if (_directories.TryGetValue(path, out var entries))
+                            foreach (var entry in entries.Where(e => e.Resolved && !e.Failed))
+                            {
+                                cancellation.ThrowIfCancellationRequested();
+                                var key = (entry.Volume, entry.Id);
+                                if (counted.Add(key)) bytes = checked(bytes + _allocation[drive.Root][key].Bytes);
+                            }
+                    return row with { Bytes = bytes };
+                }).ToArray();
+                if (_allocation.TryGetValue(drive.Root, out var files))
+                    foreach (var key in files.Keys.Where(k => !counted.Contains(k)).ToArray()) files.Remove(key);
+            }
+            foreach (var row in readings.Values.SelectMany(r => r)) _readings[row.Path] = row;
+            _dirty.Clear(); _reset.Clear();
+        }
+    }
     [StructLayout(LayoutKind.Explicit, Size = 104)] private struct DirectoryEntry
     {
         [FieldOffset(0)] public uint Next;
@@ -127,6 +243,8 @@ internal static class FolderUsage
         using var handle = CreateFileW(NativePath(directory.FullName), 0x81, 7, IntPtr.Zero, 3, 0x02200000, IntPtr.Zero);
         if (handle.IsInvalid)
             throw new IOException("Folder directory cannot be read.", new Win32Exception(Marshal.GetLastWin32Error()));
+        if (!GetAttributeTagInfo(handle, 9, out var attributes, 8) || (attributes.Attributes & FileAttributes.ReparsePoint) != 0 || (attributes.Attributes & FileAttributes.Directory) == 0)
+            throw new IOException("Folder directory changed during measurement.");
         const int size = 65536; var buffer = Marshal.AllocHGlobal(size); var first = true;
         try
         {

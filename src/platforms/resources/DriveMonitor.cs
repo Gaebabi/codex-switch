@@ -39,6 +39,7 @@ internal sealed class DriveMonitor : IAsyncDisposable
         if (_changed.CurrentCount == 0) _changed.Release();
     }
     public void Start() { _folders.Start(); _run ??= Task.Run(RunAsync); }
+    public void SetFolderMeasurementActive(bool active) => _folders.SetActive(active);
     private async Task RunAsync()
     {
         using var io = OperatingSystem.IsWindows() ? new WindowsDiskIoSampler() : null;
