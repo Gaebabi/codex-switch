@@ -22,4 +22,4 @@ The settings/spinner images below are **production WPF components rendered offsc
 ![Capacity-adjacent scan indicator, rendered component](folders-scanning-ko-False.png)
 ![Date chats inside Settings, rendered component](home-settings-ko-light.png)
 
-Local validation passes58hardware/folder contracts,171production UI checks and100package self-tests. Read-only owner observation confirms status and settings RPC on both Windows systems while original Codex/backend processes and stable owner preferences remain intact. Raw diagnostics and personal data remain private. Public downloads still refer to the separately verified1.45.4 release.
+Local validation passes58hardware/folder contracts,171production UI checks and100package self-tests. Read-only owner observation confirms status and settings RPC on both Windows systems while original Codex/backend processes and stable owner preferences remain intact. Raw diagnostics and personal data remain private. These changes now ship in the verified1.45.5 release; [the current gallery](../../media/release-1.45.5/README.md) distinguishes released-control illustrations from native-window captures.

@@ -1,0 +1,261 @@
+{
+  "schema": 1,
+  "version": "1.45.5",
+  "release": "https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.5",
+  "releasedSourceRevision": "8dc7342019c5fcb60f28a89f8b6272ef622ecc3d",
+  "releasedMergedRevision": "8f5060940cf8a6f6dbe9145546accd8f137752d6",
+  "renderHarness": {
+    "file": "tests/model-providers-ui/ShowcaseEvidence.cs",
+    "sha256": "04dc8dc6d387e254eeab655969cadc88ae2302afafb4cc9572ce4ca15978252d"
+  },
+  "productionModules": [
+    {
+      "path": "CodexSwitch.Application.dll",
+      "sha256": "727983c442ffc743ad5e3ac9b724bb06b1a1e598a9ddaf62b67140a10b6f5386",
+      "bytes": 505856
+    },
+    {
+      "path": "CodexSwitch.Core.dll",
+      "sha256": "336385e328da9a297eb87f91fd4f457ccef88f9a88fdba24494e3f0eb30ae5ff",
+      "bytes": 621568
+    },
+    {
+      "path": "CodexSwitch.DesktopClient.dll",
+      "sha256": "609ac7d8d9e0c95d2b896a72770eed48d2fd88d838a23c0422ae1b4e67ad93ed",
+      "bytes": 77312
+    },
+    {
+      "path": "CodexSwitch.dll",
+      "sha256": "c40d2d8a04a704d7d92c67bac16755be8fcaf781cefef09e3506dbf05fe7c130",
+      "bytes": 708608
+    },
+    {
+      "path": "CodexSwitch.Hardware.dll",
+      "sha256": "931c3601841b70ad74bcfed7468bc87eb2acbd484a664a757da1d8858a55c13a",
+      "bytes": 128000
+    },
+    {
+      "path": "CodexSwitch.PlatformSecurity.dll",
+      "sha256": "49d09636b159cd37f7335b71f2923509bc5fb95cd6bb2b44c68f21a7837dcaa7",
+      "bytes": 56832
+    },
+    {
+      "path": "CodexSwitch.Protocol.dll",
+      "sha256": "aff06fbad47e0b983e9d6edba05864819e71621d659ae0f30c7647d6f6818917",
+      "bytes": 103424
+    },
+    {
+      "path": "CodexSwitch.Sqlite.dll",
+      "sha256": "830114a9636bf54a3311fd7ac45e3c28a885a157c3872eac8690053e0799ce93",
+      "bytes": 7168
+    }
+  ],
+  "fictionalData": {
+    "accounts": 6,
+    "models": 5,
+    "usagePointsPerAccount": 2017,
+    "hardwarePoints": 61,
+    "trackedFolders": 5
+  },
+  "personalDataUsed": false,
+  "metadataRemoved": true,
+  "scope": "Released production Windows controls rendered offscreen with fictional data; no native OS window, actual Codex picker or provider/account acceptance.",
+  "images": [
+    {
+      "file": "dashboard-en-light.png",
+      "sha256": "9affe9da7387fbf7eba5b88e0a8de2fbd195481241f7805efa921d2771735dd5",
+      "originalCaptureSha256": "25a7b0e56995a49c56fb2fdef9eacb70d08200d00483337e9993450ed3dce4f5",
+      "kind": "offscreen production controls",
+      "width": 900,
+      "height": 600
+    },
+    {
+      "file": "models-en-light.png",
+      "sha256": "2eded3bf528015c2d3a4cc66690b6d746673cb84b12ada3daeeaca740cf52f83",
+      "originalCaptureSha256": "7ba117ca9b4bc8649c1ee42eb38bf7143ada52c9a782af93ece505d7eebd2cd2",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "history-en-light.png",
+      "sha256": "2637032b731f00ec859edaec177674ef130f0a7a5e4ab9b2050c5e58751097cb",
+      "originalCaptureSha256": "4fbd89a95d136ccbf5f63694dc967fac3b6ffd080f38f10d269da75a97f46e7c",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "credits-en-light.png",
+      "sha256": "0fb883526f3f71876e059abf700730577f856b59d0fc52a5f23307df30abcdf1",
+      "originalCaptureSha256": "70ee192cfb522cd1880856fa9afeacab99b2de473826d47dd9babd38dd2b6ca3",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "folders-en-light.png",
+      "sha256": "805c2c9f6970a80ef7cbf1998e770398be0328d6aeab45caccf55a29099ec3e0",
+      "originalCaptureSha256": "941905bb7b8e769b5e7e33a53018e5ac1ffa255f8098542e6f4a0c50205b88e7",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "dashboard-en-dark.png",
+      "sha256": "c8a6a7c4c537016a4988e938afd9e1658bf177be33b8d724d310caad09784433",
+      "originalCaptureSha256": "b794ccb17792f21c1d320c2f14ce7ac3eeff0d0e4697f0d3a24d1ebd7ed27c50",
+      "kind": "offscreen production controls",
+      "width": 900,
+      "height": 600
+    },
+    {
+      "file": "models-en-dark.png",
+      "sha256": "3ea2c9233766008414564ee8d15c879e739a8da3d8f0736758ebc7f442b8bbd9",
+      "originalCaptureSha256": "bafa29227ceac17e7665b5173d43842158233c5c499a90c1f40114dd169b3def",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "history-en-dark.png",
+      "sha256": "d48a70364b0752464cda224b81fb9c83768456c308eb421ace7f0000b13982ff",
+      "originalCaptureSha256": "08852fbce792b5916b78cd53f204c6dd1eda40ed92036c3fddb25f6444332e79",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "credits-en-dark.png",
+      "sha256": "49449711012e8ae2eb6b997c8f5732d2dffa14394bea377af7db7a5af67869a4",
+      "originalCaptureSha256": "39f65530d158bb290323b413baf5f4dd784ce7fb3f93f19b51c090f93fb34c01",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "folders-en-dark.png",
+      "sha256": "c89e940dc26d51528b626409b08ecea9ec41099bdbf48fcb694e76ebef4dc4b1",
+      "originalCaptureSha256": "094b946d7ac504ddca832e9a44fd27fbc7b4f9634bca860787e04d84cb002250",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "dashboard-ko-light.png",
+      "sha256": "96e911d0cd7cee18dc2f360f30ad21eebaf75114ae178b6d708f2c37b523f900",
+      "originalCaptureSha256": "6b20183abc23e3bfd7e14e5251c13cd121e4bdd63b53032c7495dfbbc2e17141",
+      "kind": "offscreen production controls",
+      "width": 900,
+      "height": 600
+    },
+    {
+      "file": "models-ko-light.png",
+      "sha256": "574adba33e8330499f2170a846bef12885ca9f5f3e8ff3a39506678cff663778",
+      "originalCaptureSha256": "dbb5b61240d51c89851d2c8f88b2508f8adde8d353632ab76a5cfe82775b5733",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "history-ko-light.png",
+      "sha256": "bf2565f59a835ea19c722eeea863c2b5512029444a055ff5a1c2fe53a9951b36",
+      "originalCaptureSha256": "2ad071f73224bcf9ce7e5d2cd9df2cb014079df8aa535d9a5a7891ced45bc5d1",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "credits-ko-light.png",
+      "sha256": "7c7fb1bc4bf3b58f1e2a8c5beb7db2b5f25bcb9b470ef7c37b163cafffa3ba43",
+      "originalCaptureSha256": "da3797b5241d2d37b005c37f1997e9e3a4763b8ea68d0d1e04cec923b7991d09",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "folders-ko-light.png",
+      "sha256": "023b778c8fd1f444c8d04b1e5ddaa684bc38815652dad592ff105291159b60f2",
+      "originalCaptureSha256": "ceb7dc7b789fc0c1e67e9a0f9d3f39e409af62351f6ebb9f9153f1b723f24833",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "dashboard-ko-dark.png",
+      "sha256": "bf6a3e8fa053663d16d14c7f90f4e5b1b45e788e1d244e6479ac4e0cb299a9c4",
+      "originalCaptureSha256": "018debe5c004a956be0622822981d9249a8e2727cf8f17161bcf637c54b5812a",
+      "kind": "offscreen production controls",
+      "width": 900,
+      "height": 600
+    },
+    {
+      "file": "models-ko-dark.png",
+      "sha256": "a494d0c68544812303c460fac0434947ca942e0232d69ef374a928e3eb0d2bc7",
+      "originalCaptureSha256": "790ae160f7986f6a46102d32ee5209073f8b97a13b74ddfe55fecbcd13620dc4",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "history-ko-dark.png",
+      "sha256": "aeae014ed2767f50dd6f0b49d385bf7b96da6466491fe31b6c91935442974b84",
+      "originalCaptureSha256": "b6383c0b00429f7681af4ca13f682915bcb8f0fa88010c01a6e8300090e707b1",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "credits-ko-dark.png",
+      "sha256": "0fa086d81d9344c5cad5bd3ff2f1220cb9d5a75a092a0fdb2a9b2c111572054f",
+      "originalCaptureSha256": "dc9e4064a29028a63a9d9d22b322288fb062cd5cdeaa95cb998262b8cd877859",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "folders-ko-dark.png",
+      "sha256": "fe7de25af950cfd49f2bb474e40df4aae968dacefde3d31b24353aec0b88d804",
+      "originalCaptureSha256": "849f763269b500140e1f1f64bde0be72236cd61f4700da778b6285f9619773af",
+      "kind": "offscreen production controls",
+      "width": 620,
+      "height": 660
+    },
+    {
+      "file": "native-windows-light.png",
+      "sha256": "e40c0b016eac5aee008852f35bd2bdc512dde853db7516868db12083f02265d8",
+      "kind": "actual native OS window",
+      "artifactId": 14288681979
+    },
+    {
+      "file": "native-windows-dark.png",
+      "sha256": "7492617bed556f08ba3441dd0068c5e0a6a26c42a1eeb38315cf875ac5f7342d",
+      "kind": "actual native OS window",
+      "artifactId": 14288681979
+    },
+    {
+      "file": "native-macos-light.png",
+      "sha256": "71699fc738b717ee4f7ae988d6615fdfdc699a05dc0b45fe83fd3f69da50aa85",
+      "kind": "actual native OS window",
+      "artifactId": 14287317528
+    },
+    {
+      "file": "native-macos-dark.png",
+      "sha256": "64e92b176d8c8de5dc52e6055957d86d64ced1c58ab3fdc6c68d336424039ff6",
+      "kind": "actual native OS window",
+      "artifactId": 14287317528
+    },
+    {
+      "file": "native-linux-light.png",
+      "sha256": "dc2174f2e3fee86c3f2460972471127dec277efbf867fee1875480015d312827",
+      "kind": "actual native OS window",
+      "artifactId": 14286954829
+    },
+    {
+      "file": "native-linux-dark.png",
+      "sha256": "21c00e2bb0a3a1c4b0403c64751b25ec777155c81dbadfde43df50b5e634d7d4",
+      "kind": "actual native OS window",
+      "artifactId": 14286954829
+    }
+  ]
+}
