@@ -1,17 +1,21 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 
 namespace CodexAccountDesk;
 
 internal sealed class FolderChanges : IDisposable
 {
     private readonly Action<string, bool> _changed;
+    private readonly Func<string, bool> _ignore;
     private readonly List<FileSystemWatcher> _watchers = new();
     private volatile bool _retry = true;
+    private int _identityChanged;
+    internal bool TakeIdentityChange() => Interlocked.Exchange(ref _identityChanged, 0) != 0;
     internal string Path { get; }
     internal bool Available => !_retry;
-    internal FolderChanges(string path, Action<string, bool> changed) { Path = path; _changed = changed; }
+    internal FolderChanges(string path, Action<string, bool> changed, Func<string, bool>? ignore = null) { Path = path; _changed = changed; _ignore = ignore ?? (_ => false); }
     internal bool Connect()
     {
         if (!_retry || !OperatingSystem.IsWindows()) return false;
@@ -51,11 +55,12 @@ internal sealed class FolderChanges : IDisposable
     }
     private void Notify(string path, bool recursive)
     {
+        if (_ignore(path)) return;
         if (!recursive)
         {
             var prefix = System.IO.Path.TrimEndingDirectorySeparator(path) + System.IO.Path.DirectorySeparatorChar;
             if (DriveMonitor.RootComparer.Equals(path, Path) || Path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            { _retry = true; _changed(Path, true); }
+            { _retry = true; Interlocked.Exchange(ref _identityChanged, 1); _changed(Path, true); }
             return;
         }
         var directory = System.IO.Path.GetDirectoryName(path);

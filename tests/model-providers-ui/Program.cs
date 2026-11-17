@@ -296,6 +296,7 @@ internal static class ProviderUiEvidence
             checks.Add("Mixed model visibility and long labels render in both themes through the production popup.");
             FolderUiContracts.Verify(service, args[0], checks);
             SettingsUiContracts.Verify(service, args[0], checks);
+            FolderIndexUiContracts.Verify(args[0], checks);
             File.WriteAllText(Path.Combine(args[0], "ui-verification.json"), JsonSerializer.Serialize(new
             {
                 checks,

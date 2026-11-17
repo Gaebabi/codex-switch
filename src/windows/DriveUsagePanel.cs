@@ -18,6 +18,14 @@ internal sealed class DriveUsagePanel : Grid
     private readonly Button _settings = new() { Width = 22, MinHeight = 20, Height = 22, Padding = new Thickness(0), Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
     private readonly List<DriveCell> _cells = new();
     private readonly Action<string> _openDirectory;
+    private readonly HashSet<string> _indexBusy = new(DriveMonitor.RootComparer);
+    public event Action<string>? IndexPermissionRequested;
+    public event Action<string>? IndexRebuildRequested;
+    internal void SetIndexPermissionBusy(string root, bool busy)
+    {
+        if (busy) _indexBusy.Add(root); else _indexBusy.Remove(root);
+        foreach (var cell in _cells.Where(c => DriveMonitor.RootComparer.Equals(c.Root, root))) cell.SetIndexBusy(busy);
+    }
     public DriveUsagePanel(Action settings, Action<string>? openDirectory = null)
     { Height = 34; Margin = new Thickness(0, 0, 8, 0); _settings.Click += (_, _) => settings(); _openDirectory = openDirectory ?? OpenDirectory; }
     private static void OpenDirectory(string path)
@@ -33,14 +41,14 @@ internal sealed class DriveUsagePanel : Grid
             Children.Clear(); ColumnDefinitions.Clear(); _cells.Clear();
             foreach (var reading in readings)
             {
-                ColumnDefinitions.Add(new()); var cell = new DriveCell(reading.Root, _openDirectory);
+                ColumnDefinitions.Add(new()); var cell = new DriveCell(reading.Root, _openDirectory, root => IndexPermissionRequested?.Invoke(root), root => IndexRebuildRequested?.Invoke(root));
                 SetColumn(cell, _cells.Count); _cells.Add(cell); Children.Add(cell);
             }
         }
         if (_settings.Parent == null)
         { ColumnDefinitions.Add(new() { Width = GridLength.Auto }); SetColumn(_settings, readings.Length); Children.Add(_settings); }
         _settings.Content = Burn0Theme.Icon("more", theme.Color("muted"), 14); _settings.Foreground = theme.Color("muted"); _settings.ToolTip = Loc.T("드라이브 설정");
-        for (var index = 0; index < readings.Length; index++) _cells[index].Refresh(readings[index], theme);
+        for (var index = 0; index < readings.Length; index++) { _cells[index].Refresh(readings[index], theme); _cells[index].SetIndexBusy(_indexBusy.Contains(readings[index].Root)); }
     }
 
     private sealed class DriveCell : Grid
@@ -52,6 +60,11 @@ internal sealed class DriveUsagePanel : Grid
         private readonly TextBlock _text = new() { FontSize = 11, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(5, 0, 4, 0) };
         private readonly Run _capacity = new();
+        private readonly Button _indexPermission = new() { Name = "FolderIndexPermissionButton", Width = 17, Height = 16, MinHeight = 0, Padding = new Thickness(1),
+            BorderThickness = new Thickness(0), Background = Brushes.Transparent, Visibility = Visibility.Collapsed };
+        private readonly Action<string> _rebuildIndex;
+        private bool _indexSetupBusy;
+        private string? _indexMenuTheme, _indexMenuLanguage;
         private readonly Ellipse _spinner = new() { Name = "FolderScanSpinner", Width = 10, Height = 10, StrokeThickness = 1.8,
             StrokeDashArray = new DoubleCollection { 11, 5 }, StrokeDashCap = PenLineCap.Round,
             Margin = new Thickness(4, 0, 0, 0), RenderTransformOrigin = new Point(.5, .5),
@@ -61,11 +74,11 @@ internal sealed class DriveUsagePanel : Grid
         private readonly Border[] _ioTracks = new Border[2], _ioFills = new Border[2];
         private readonly Action<string> _openDirectory;
         private readonly List<SegmentButton> _buttons = new();
-        public DriveCell(string root, Action<string> openDirectory)
+        public DriveCell(string root, Action<string> openDirectory, Action<string> enableIndex, Action<string> rebuildIndex)
         {
-            Root = root; _openDirectory = openDirectory; Margin = new Thickness(0, 2, 4, 2);
+            Root = root; _openDirectory = openDirectory; _rebuildIndex = rebuildIndex; Margin = new Thickness(0, 2, 4, 2);
             _text.Inlines.Add(_capacity);
-            _text.Inlines.Add(new InlineUIContainer(_spinner) { BaselineAlignment = BaselineAlignment.Center });
+            _indexPermission.Click += (_, _) => enableIndex(Root);
             _spinner.IsVisibleChanged += (_, _) =>
             {
                 var rotation = (RotateTransform)_spinner.RenderTransform;
@@ -78,8 +91,13 @@ internal sealed class DriveUsagePanel : Grid
             RowDefinitions.Add(new() { Height = new GridLength(2) });
             RowDefinitions.Add(new() { Height = new GridLength(12) });
             SetRow(_track, 2); SetRow(_segments, 2); Children.Add(_track); Children.Add(_segments);
-            var content = new Grid { IsHitTestVisible = false }; content.ColumnDefinitions.Add(new()); content.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
-            content.Children.Add(_text); Grid.SetColumn(_temperature, 1); content.Children.Add(_temperature); Children.Add(content);
+            var content = new Grid(); content.ColumnDefinitions.Add(new()); content.ColumnDefinitions.Add(new() { Width = GridLength.Auto }); content.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
+            _text.IsHitTestVisible = false; _temperature.IsHitTestVisible = false;
+            content.Children.Add(_text);
+            var indexActions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            indexActions.Children.Add(_spinner); indexActions.Children.Add(_indexPermission);
+            Grid.SetColumn(indexActions, 1); content.Children.Add(indexActions);
+            Grid.SetColumn(_temperature, 2); content.Children.Add(_temperature); Children.Add(content);
             content.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
             var throughput = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 5, 0) };
             for (var index = 0; index < 2; index++)
@@ -89,7 +107,7 @@ internal sealed class DriveUsagePanel : Grid
                 _ioFills[index] = new Border { CornerRadius = new CornerRadius(1), VerticalAlignment = VerticalAlignment.Bottom };
                 track.Children.Add(_ioTracks[index]); track.Children.Add(_ioFills[index]); throughput.Children.Add(track);
             }
-            Grid.SetColumn(throughput, 2); content.Children.Add(throughput);
+            Grid.SetColumn(throughput, 3); content.Children.Add(throughput);
             _segments.SizeChanged += (_, _) => _segments.Clip = new RectangleGeometry(new Rect(_segments.RenderSize), 4, 4);
         }
         public void Refresh(DriveReading reading, Burn0Theme theme)
@@ -119,6 +137,12 @@ internal sealed class DriveUsagePanel : Grid
             _spinner.Stroke = theme.Color("accent");
             _spinner.Visibility = reading.MeasuringFolders ? Visibility.Visible : Visibility.Collapsed;
             AutomationProperties.SetName(_spinner, Loc.T("folders.scanning"));
+            var needsPermission = reading.Index?.Access is FolderIndexAccess.PermissionRequired or FolderIndexAccess.JournalMissing;
+            _indexPermission.Visibility = needsPermission ? Visibility.Visible : Visibility.Collapsed;
+            _indexPermission.Content = Burn0Theme.Icon("lock", theme.Color("warning"), 12);
+            _indexPermission.ToolTip = Loc.T("folders.permission_hint");
+            AutomationProperties.SetName(_indexPermission, Loc.T("folders.enable_index"));
+            SetIndexBusy(_indexSetupBusy);
             AutomationProperties.SetName(_text, _capacity.Text + (reading.MeasuringFolders ? " · " + Loc.T("folders.scanning") : ""));
             var now = DateTimeOffset.UtcNow; _temperature.Text = TemperaturePresentation.Label(reading.Temperature, now); _temperature.FontFamily = theme.Font;
             _temperaturePressure = TemperatureColors.Pressure(reading.Temperature, TemperatureKind.Disk, _temperaturePressure, now);
@@ -135,12 +159,28 @@ internal sealed class DriveUsagePanel : Grid
             var details = reading.Root + "\n" + (reading.Free.HasValue ? Loc.F("남음 {0:0.##} / {1:0.##} GiB\n잔여 {2:0.0}%", reading.Free.Value / 1073741824.0, reading.Total!.Value / 1073741824.0, reading.FreePercent) : Loc.T("드라이브 조회 불가"));
             ToolTipTheme.Resource(this, label, value, details, theme, color is "warning" or "danger" ? color : "text");
             var legend = new StackPanel();
+            if (reading.Index != null)
+            {
+                legend.Children.Add(new TextBlock { Text = Loc.F("folders.index_progress", reading.Index.Directories, reading.Index.Files),
+                    FontSize = 11, Foreground = theme.Color("muted"), TextWrapping = TextWrapping.Wrap });
+                if (reading.Index.Access != FolderIndexAccess.Ready)
+                    legend.Children.Add(new TextBlock { Text = Loc.T(needsPermission ? "folders.permission_hint" : reading.Index.Access == FolderIndexAccess.Unsupported ? "folders.index_unsupported" : "folders.index_failed") +
+                        (reading.Index.Problem == null ? "" : " · " + reading.Index.Problem), FontSize = 11, Foreground = theme.Color("warning"), TextWrapping = TextWrapping.Wrap });
+                var menuTheme = theme.Color("canvas").ToString();
+                if (ContextMenu == null || _indexMenuTheme != menuTheme || _indexMenuLanguage != Loc.Language)
+                {
+                    var menu = DropdownTheme.Create(this, theme);
+                    var refresh = new MenuItem { Header = Loc.T("folders.rebuild_index") }; refresh.Click += (_, _) => _rebuildIndex(Root); menu.Items.Add(refresh); ContextMenu = menu;
+                    _indexMenuTheme = menuTheme; _indexMenuLanguage = Loc.Language;
+                }
+                ((MenuItem)ContextMenu.Items[0]).IsEnabled = !needsPermission;
+            }
             foreach (var folder in folders)
             {
                 var line = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 3, 0, 0) };
                 line.Children.Add(new Border { Width = 8, Height = 8, Background = DriveSettingsWindow.FolderBrush(folder.Color), Margin = new Thickness(0, 0, 6, 0) });
                 var amount = folder.Bytes.HasValue ? (folder.Bytes.Value / 1073741824.0).ToString("0.###", Loc.Culture) + " GiB" + (reading.Total > 0 ? " · " + (100.0 * folder.Bytes.Value / reading.Total.Value).ToString("0.0", Loc.Culture) + "%" : "") : "—";
-                var state = folder.State switch { FolderState.Scanning => "folders.scanning", FolderState.Partial => "folders.partial", FolderState.Missing => "folders.missing", FolderState.Unavailable => "folders.unavailable", FolderState.Unsupported => "folders.unsupported", _ => null };
+                var state = folder.State switch { FolderState.Scanning => "folders.scanning", FolderState.Partial => "folders.partial", FolderState.Missing => "folders.missing", FolderState.Unavailable => "folders.unavailable", FolderState.Unsupported => "folders.unsupported", FolderState.Cached => "folders.cached", _ => null };
                 var text = folder.Path + "\n" + amount + (state == null ? "" : " · " + Loc.T(state));
                 if (folder.Skipped > 0) text += " · " + Loc.F("folders.skipped", folder.Skipped);
                 line.Children.Add(new TextBlock { Text = text, Width = 258, TextWrapping = TextWrapping.Wrap, FontSize = 11, Foreground = theme.Color("text") }); legend.Children.Add(line);
@@ -155,6 +195,7 @@ internal sealed class DriveUsagePanel : Grid
             ((ResourceToolTip)ToolTip).SetSupplement(folders.Length == 0 ? null : legend);
             AutomationProperties.SetName(this, details + "\n" + string.Join("\n", folders.Select(f => f.Path + ": " + (f.Bytes?.ToString(Loc.Culture) ?? "—") + " " + f.State)));
         }
+        internal void SetIndexBusy(bool busy) { _indexSetupBusy = busy; _indexPermission.IsEnabled = !busy; }
     }
 
     private sealed class SegmentButton : Button

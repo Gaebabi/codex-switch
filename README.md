@@ -43,15 +43,15 @@ The first backend setup needs one normal Codex restart. Compatibility depends on
 
 | Platform | Architecture | Package |
 | --- | --- | --- |
-| Windows | x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-win-x64.zip) |
-| macOS 15+ | Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-osx-arm64.zip) |
-| macOS 15+ | Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-osx-x64.zip) |
-| Linux preview | x64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-x64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-x64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-x64.tar.gz) |
-| Linux preview | arm64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-arm64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-arm64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-arm64.tar.gz) |
+| Windows | x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-win-x64.zip) |
+| macOS 15+ | Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-osx-arm64.zip) |
+| macOS 15+ | Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-osx-x64.zip) |
+| Linux preview | x64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-preview-linux-x64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-preview-linux-x64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-preview-linux-x64.tar.gz) |
+| Linux preview | arm64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-preview-linux-arm64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-preview-linux-arm64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-preview-linux-arm64.tar.gz) |
 
 The .NET runtime is included. Keep the complete extracted folder or app bundle.
 
-[Release notes and SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.5) · [Mac setup](docs/MACOS.md) · [Linux requirements and terminal workflow](docs/development/LINUX_PACKAGES.md). Windows/Linux are unsigned; Mac is ad-hoc signed and not notarized.
+[Release notes and SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.6) · [Mac setup](docs/MACOS.md) · [Linux requirements and terminal workflow](docs/development/LINUX_PACKAGES.md). Windows/Linux are unsigned; Mac is ad-hoc signed and not notarized.
 
 ## Get started
 
