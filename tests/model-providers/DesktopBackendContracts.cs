@@ -83,21 +83,31 @@ internal static class DesktopBackendContracts
                 """)!;
             var started = await rpc.RequestAsync("thread/resume", new { threadId = "", history = historical, model = "fixture-native", cwd = home, approvalPolicy = "never", sandbox = "read-only" }, cancellation);
             var thread = started.GetProperty("thread").GetProperty("id").GetString()!;
-            async Task Turn(string selected)
+            async Task Turn(string selected, string? targetThread = null)
             {
+                var destination = targetThread ?? thread;
                 var done = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
                 void Notification(string method, JsonElement value)
-                { if (method == "turn/completed" && value.GetProperty("threadId").GetString() == thread) done.TrySetResult(value.Clone()); }
+                { if (method == "turn/completed" && value.GetProperty("threadId").GetString() == destination) done.TrySetResult(value.Clone()); }
                 rpc.Notification += Notification;
                 try
                 {
-                    await rpc.RequestAsync("turn/start", new { threadId = thread, model = selected, effort = ModelRouting.Owned(selected) ? "none" : "low", input = new[] { new { type = "text", text = "Reply with fixture-ok." } } }, cancellation);
+                    await rpc.RequestAsync("turn/start", new { threadId = destination, model = selected, effort = ModelRouting.Owned(selected) ? "none" : "low", input = new[] { new { type = "text", text = "Reply with fixture-ok." } } }, cancellation);
                     var result = await done.Task.WaitAsync(cancellation);
                     if (result.GetProperty("turn").GetProperty("status").GetString() != "completed") throw new Exception("Backend fixture turn failed: " + result.GetRawText());
                 }
                 finally { rpc.Notification -= Notification; }
             }
             await Turn("fixture-native");
+            var callsBeforeFork = native.Upstream.Requests.Count;
+            var forked = await rpc.RequestAsync("thread/fork", new { threadId = thread, model = "fixture-native", excludeTurns = true }, cancellation);
+            var forkId = forked.GetProperty("thread").GetProperty("id").GetString()!;
+            check("Actual native side-chat fork returns a distinct conversation through the backend", forkId != thread);
+            var forkRead = await rpc.RequestAsync("thread/read", new { threadId = forkId, includeTurns = false }, cancellation);
+            check("The forked native chat remains readable without recovery inference", forkRead.GetProperty("thread").GetProperty("id").GetString() == forkId && native.Upstream.Requests.Count == callsBeforeFork);
+            await Turn("fixture-native", forkId);
+            check("The forked side chat completes an actual native turn against the fictional upstream", native.Upstream.Requests.Count == callsBeforeFork + 1);
+            check("Fork creation preserves the backend and native process identities", rpc.OwnedProcessId == pid && !Process.GetProcessById(nativePid).HasExited);
             var nativeCalls = native.Upstream.Requests.Count;
             await Turn(alias);
             check("The same conversation changes to custom inference without routing through native HTTP", custom.Upstream.Requests.Count == 1 && native.Upstream.Requests.Count == nativeCalls);

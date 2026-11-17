@@ -244,6 +244,61 @@ internal static class NativeRecoveryContracts
         var refused = false;
         try { NativeHistoryRecovery.ReadLatest(home, child, session, CancellationToken.None); } catch (InvalidDataException) { refused = true; }
         check("A cross-account history chain is refused", refused);
+        var forkHome = Path.Combine(root, "fork-recovery-home");
+        var forkSessions = Path.Combine(forkHome, "sessions"); Directory.CreateDirectory(forkSessions);
+        var forkParent = Guid.NewGuid().ToString(); var forkId = Guid.NewGuid().ToString();
+        string ForkMeta(string id, object? historyBase = null, string account = "fictional-fork-account", string provider = "openai") =>
+            JsonSerializer.Serialize(new { type = "session_meta", payload = new { id, model_provider = provider, creator_account_id = account, history_base = historyBase } }) + "\n";
+        var forkParentPath = Path.Combine(forkSessions, "rollout-parent-" + forkParent + ".jsonl");
+        var forkPath = Path.Combine(forkSessions, "rollout-child-" + forkId + ".jsonl");
+        var parentPrefix = ForkMeta(forkParent);
+        File.WriteAllText(forkParentPath, parentPrefix + Compact(token));
+        var forkBound = Encoding.UTF8.GetByteCount(parentPrefix);
+        File.WriteAllText(forkPath, ForkMeta(forkId, new { thread_id = forkParent, end_byte_offset = forkBound }));
+        var originalFork = File.ReadAllBytes(forkPath); var originalParent = File.ReadAllBytes(forkParentPath);
+        check("A native side-chat fork follows its ordinary parent rollout without importing later checkpoints", NativeHistoryRecovery.ReadLatest(forkHome, forkPath, forkId, CancellationToken.None).Tokens.Length == 0);
+        check("Native fork preflight leaves parent and child history byte-identical", File.ReadAllBytes(forkPath).SequenceEqual(originalFork) && File.ReadAllBytes(forkParentPath).SequenceEqual(originalParent));
+        var grandchild = Guid.NewGuid().ToString(); var grandchildPath = Path.Combine(forkSessions, "rollout-grandchild-" + grandchild + ".jsonl");
+        File.WriteAllText(grandchildPath, ForkMeta(grandchild, new { thread_id = forkId, end_byte_offset = originalFork.Length }));
+        check("Recovery follows multiple native fork ancestors with their own verified IDs", NativeHistoryRecovery.ReadLatest(forkHome, grandchildPath, grandchild, CancellationToken.None).Tokens.Length == 0);
+        File.WriteAllText(forkPath, ForkMeta(forkId, new { thread_id = forkParent, end_byte_offset = originalParent.Length }));
+        check("Fork ancestry retains inherited checkpoint evidence for protected-store validation", NativeHistoryRecovery.ReadLatest(forkHome, forkPath, forkId, CancellationToken.None).Tokens.SequenceEqual(new[] { token }));
+        var competing = Path.Combine(forkSessions, "rollout-segment-" + forkId + "_" + forkParent + ".jsonl");
+        File.WriteAllText(competing, ForkMeta(forkId));
+        refused = false;
+        try { NativeHistoryRecovery.ReadLatest(forkHome, forkPath, forkId, CancellationToken.None); } catch (InvalidDataException) { refused = true; }
+        check("A parent reference matching both a rollover and a native fork remains ambiguous", refused); File.Delete(competing);
+        File.WriteAllText(forkParentPath, ForkMeta(forkParent, account: "another-account"));
+        File.WriteAllText(forkPath, ForkMeta(forkId, new { thread_id = forkParent, end_byte_offset = new FileInfo(forkParentPath).Length }));
+        refused = false;
+        try { NativeHistoryRecovery.ReadLatest(forkHome, forkPath, forkId, CancellationToken.None); } catch (InvalidDataException) { refused = true; }
+        check("Native fork ancestry still rejects another account", refused);
+        File.WriteAllText(forkParentPath, ForkMeta(Guid.NewGuid().ToString()));
+        File.WriteAllText(forkPath, ForkMeta(forkId, new { thread_id = forkParent, end_byte_offset = new FileInfo(forkParentPath).Length }));
+        refused = false;
+        try { NativeHistoryRecovery.ReadLatest(forkHome, forkPath, forkId, CancellationToken.None); } catch (InvalidDataException) { refused = true; }
+        check("A parent's filename cannot substitute for its verified metadata ID", refused);
+        File.WriteAllText(forkParentPath, ForkMeta(forkParent, provider: "foreign-provider"));
+        File.WriteAllText(forkPath, ForkMeta(forkId, new { thread_id = forkParent, end_byte_offset = new FileInfo(forkParentPath).Length }));
+        refused = false;
+        try { NativeHistoryRecovery.ReadLatest(forkHome, forkPath, forkId, CancellationToken.None); } catch (InvalidDataException) { refused = true; }
+        check("Native fork ancestry still rejects a foreign provider", refused);
+        File.WriteAllText(forkParentPath, parentPrefix);
+        File.WriteAllText(forkPath, ForkMeta(forkId, new { thread_id = forkParent, end_byte_offset = new FileInfo(forkParentPath).Length + 1 }));
+        refused = false;
+        try { NativeHistoryRecovery.ReadLatest(forkHome, forkPath, forkId, CancellationToken.None); } catch (InvalidDataException) { refused = true; }
+        check("Native fork references cannot extend beyond their parent's file", refused);
+        File.WriteAllText(forkPath, ForkMeta(forkId, new { thread_id = forkParent, end_byte_offset = Encoding.UTF8.GetByteCount(parentPrefix) }));
+        for (var iteration = 0; iteration < 4; iteration++)
+        {
+            File.WriteAllText(forkParentPath, ForkMeta(forkParent, new { thread_id = forkId, end_byte_offset = new FileInfo(forkPath).Length }));
+            File.WriteAllText(forkPath, ForkMeta(forkId, new { thread_id = forkParent, end_byte_offset = new FileInfo(forkParentPath).Length }));
+        }
+        if (JsonNode.Parse(File.ReadLines(forkParentPath).First())!["payload"]!["history_base"]!["end_byte_offset"]!.GetValue<long>() != new FileInfo(forkPath).Length)
+            throw new Exception("The cycle fixture must have valid byte boundaries.");
+        refused = false;
+        try { NativeHistoryRecovery.ReadLatest(forkHome, forkPath, forkId, CancellationToken.None); } catch (InvalidDataException) { refused = true; }
+        check("Cycles between native fork ancestors are refused", refused);
         var linkedHome = Path.Combine(root, "linked-recovery-home"); Directory.CreateDirectory(linkedHome);
         var physical = Path.Combine(root, "linked-recovery-storage"); Directory.CreateDirectory(physical);
         var alias = Path.Combine(linkedHome, "sessions"); LinkDirectory(alias, physical);

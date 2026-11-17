@@ -95,6 +95,7 @@ internal static class NativeHistoryRecovery
             .Select(root => (Alias: Path.GetFullPath(root), Target: Path.GetFullPath(new DirectoryInfo(root).ResolveLinkTarget(true)?.FullName ?? root))).ToArray();
         var roots = locations.Select(root => root.Target).Distinct(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal).ToArray();
         long? bound = null;
+        var segmentThread = thread;
         string? owner = null; var ownerRead = false;
         var foreignReasoning = new HashSet<string>(StringComparer.Ordinal);
         var foreignItemIds = new HashSet<string>(StringComparer.Ordinal);
@@ -107,7 +108,7 @@ internal static class NativeHistoryRecovery
                 { path = Path.Combine(location.Target, Path.GetRelativePath(location.Alias, path)); break; }
             var containingRoot = roots.FirstOrDefault(root => path.StartsWith(root + Path.DirectorySeparatorChar, comparison));
             if (containingRoot == null ||
-                !Path.GetFileName(path).Contains("-" + thread, StringComparison.Ordinal) || Path.GetExtension(path) != ".jsonl" ||
+                !Path.GetFileName(path).Contains("-" + segmentThread, StringComparison.Ordinal) || Path.GetExtension(path) != ".jsonl" ||
                 (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0 || !visited.Add(path) || visited.Count > 256)
                 throw new InvalidDataException("The native history segment chain could not be verified.");
             for (var directory = Path.GetDirectoryName(path)!; !directory.Equals(containingRoot, comparison); directory = Path.GetDirectoryName(directory)!)
@@ -131,7 +132,7 @@ internal static class NativeHistoryRecovery
                 var payload = record.GetProperty("payload"); var type = JsonValue.String(record, "type");
                 if (first)
                 {
-                    if (type != "session_meta" || JsonValue.String(payload, "id") != thread || JsonValue.String(payload, "model_provider") != "openai")
+                    if (type != "session_meta" || JsonValue.String(payload, "id") != segmentThread || JsonValue.String(payload, "model_provider") != "openai")
                         throw new InvalidDataException("The native history owner could not be verified.");
                     account = JsonValue.String(payload, "creator_account_id"); first = false;
                     if (ownerRead && account != owner) throw new InvalidDataException("The native history segment account changed.");
@@ -158,11 +159,18 @@ internal static class NativeHistoryRecovery
             foreignItemIds.UnionWith(segmentItemIds);
             if (tokens != null || parent == null) return (account, tokens ?? Array.Empty<string>(), foreignReasoning.OrderBy(value => value, StringComparer.Ordinal).ToArray(), foreignItemIds.OrderBy(value => value, StringComparer.Ordinal).ToArray());
             if (!Guid.TryParse(parent, out _)) throw new InvalidDataException("The native history parent is invalid.");
-            var suffix = parent == thread ? "-" + thread + ".jsonl" : "-" + thread + "_" + parent + ".jsonl";
+            var suffix = parent == segmentThread ? "-" + segmentThread + ".jsonl" : "-" + segmentThread + "_" + parent + ".jsonl";
             var candidates = roots.Where(Directory.Exists).SelectMany(root => Directory.EnumerateFiles(root, "*" + suffix,
-                new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint })).ToArray();
-            if (candidates.Length != 1) throw new InvalidDataException("The original native history segment is missing or ambiguous.");
-            path = candidates[0]; bound = parentBound;
+                new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint }))
+                .Select(file => (Path: file, Thread: segmentThread)).ToList();
+            // A native fork references its parent's ordinary rollout, whereas a rollover
+            // segment retains the current conversation ID in both filename and metadata.
+            if (parent != segmentThread)
+                candidates.AddRange(roots.Where(Directory.Exists).SelectMany(root => Directory.EnumerateFiles(root, "*-" + parent + ".jsonl",
+                    new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint }))
+                    .Select(file => (Path: file, Thread: parent)));
+            if (candidates.Count != 1) throw new InvalidDataException("The original native history segment is missing or ambiguous.");
+            path = candidates[0].Path; segmentThread = candidates[0].Thread; bound = parentBound;
         }
     }
 
