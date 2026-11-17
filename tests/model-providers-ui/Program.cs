@@ -34,6 +34,7 @@ internal static class ProviderUiEvidence
     [STAThread]
     private static int Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--showcase") return ShowcaseEvidence.Run(args[1]);
         if (args.SequenceEqual(new[] { "--no-daemon", "--profile", "codex-switch" }) && Environment.GetEnvironmentVariable("CODEX_SWITCH_TEST_ENV_REPORT") is string environmentReport)
         {
             var clean = new[] { "OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN", "OPENAI_BASE_URL", "OPENAI_IDENTITY_TOKEN_FILE", "OPENAI_IDENTITY_TOKEN_AUDIENCE" }.All(name => Environment.GetEnvironmentVariable(name) == null);

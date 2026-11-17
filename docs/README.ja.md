@@ -1,95 +1,85 @@
-<p align="center"><img src="../assets/macos/app-icon.png" width="88" height="88" alt="Codex Switch app icon" /></p>
-<h1 align="center">Codex Switch: OpenAI Codexのアカウント切替と使用量確認</h1>
+<p align="center"><img src="../assets/macos/app-icon.png" width="64" height="64" alt="Codex Switch" /></p>
+<h1 align="center">Codex Switch</h1>
+<p align="center"><strong>カスタムモデルをCodexへ。複数アカウントをひと目で。</strong></p>
 
 <p align="center">
   <a href="https://github.com/Gaebabi/codex-switch/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Gaebabi/codex-switch?color=5189e8" /></a>
-  <a href="https://github.com/Gaebabi/codex-switch/actions/workflows/verify.yml"><img alt="Windows and Mac checks" src="https://github.com/Gaebabi/codex-switch/actions/workflows/verify.yml/badge.svg?branch=main" /></a>
-  <a href="https://github.com/Gaebabi/codex-switch/actions/workflows/linux-native.yml"><img alt="Linux preview checks" src="https://github.com/Gaebabi/codex-switch/actions/workflows/linux-native.yml/badge.svg?branch=main" /></a>
+  <a href="https://github.com/Gaebabi/codex-switch/actions/workflows/verify.yml"><img alt="Windows and Mac CI" src="https://github.com/Gaebabi/codex-switch/actions/workflows/verify.yml/badge.svg?branch=main" /></a>
+  <a href="https://github.com/Gaebabi/codex-switch/actions/workflows/linux-native.yml"><img alt="Linux preview CI" src="https://github.com/Gaebabi/codex-switch/actions/workflows/linux-native.yml/badge.svg?branch=main" /></a>
   <a href="../LICENSE"><img alt="MIT" src="https://img.shields.io/github/license/Gaebabi/codex-switch?color=45a58c" /></a>
 </p>
 
-**Codex Switch（`codex-switch`）は、OpenAI Codexのアカウント切替と使用量確認のためのオープンソースのデスクトップアプリです。** 各アカウントの残量を比較して次のアカウントを選択し、中断した切替は保存された記録から復旧できます。任意の残量基準による自動切替は初期状態で**オフ**です。
+[English](../README.md) · [한국어](README.ko.md) · [日本語](README.ja.md) · [简体中文](README.zh-CN.md)
 
-Windows · macOS15以降 · Linuxプレビュー · MITオープンソース · **1.45.5**
+アカウント別の使用枠を比較・切り替え、WindowsのCodexへカスタムモデルをリアルタイムで統合するオープンソースのデスクトップアプリです。
 
-Windowsのモデル設定にある**コンテキストと自動圧縮**では、OpenAI共通値と外部モデルごとの値を調整できます。保存後はCodexを再起動せず次のリクエストから適用し、空欄で既定値に戻せます。モデルの実際の上限と安全余裕は維持されます。
+[ダウンロード](#ダウンロード) · [カスタムモデル](#codexへカスタムモデルをすぐに統合) · [スクリーンショット](#スクリーンショット) · [貢献](#貢献)
 
-[English](../README.md) / [한국어](README.ko.md) / 日本語 / [简体中文](README.zh-CN.md)
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="media/release-1.45.5/dashboard-en-dark.png" /><img src="media/release-1.45.5/dashboard-en-light.png" width="900" alt="架空データで描画したWindows 1.45.5の画面です（英語UI）。" /></picture></p>
 
-[ダウンロード](#ダウンロード) · [使い始める](INSTALL.md) · [更新内容](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.5)
+架空データで描画したWindows 1.45.5の画面です（英語UI）。 [画像の出典](media/release-1.45.5/README.md).
 
-Windowsの任意設定バックエンドは、同じCodexメニューにOpenAIと外部モデルを表示します。モデル変更は即時反映され、OpenAIへの直接接続を維持します。[設定と対応範囲](DESKTOP_MODEL_BACKEND.md)。
+## Codexへカスタムモデルをすぐに統合
 
-<p align="center"><img src="evidence/home-simplification/native-after-windows.png" width="500" height="350" alt="残量タンクと一つの設定メニューを備えたCodex Switch1.44.0" /></p>
+Responses互換のプロバイダーを登録すると、Windowsの**標準Codexモデル選択メニュー**でOpenAIモデルと一緒に選べます。
 
-架空のアカウントで検証した実際のWindowsアプリ画面です。[元の画面とソース検証](evidence/home-simplification/README.md)。認証情報はローカルで暗号化保存され、**アカウント切替時にCodexが再起動します。** OpenAIとは提携していない独立プロジェクトです。
+- 初期設定後は**Codexを再起動せずにモデルの登録・編集・選択**を反映。
+- 推論レベル、コンテキスト、自動圧縮をモデル別に設定。
+- OpenAI通信は直接接続を維持。Switchウィンドウを閉じてもモデル接続は継続。
 
-**役に立ったら、このリポジトリにStarを付けたり、他のCodexユーザーに紹介してください。**
+最初のバックエンド導入時のみ、Codexの通常再起動が1回必要です。Codexビルドとプロバイダーの互換性を確認してください。 [設定と互換性](DESKTOP_MODEL_BACKEND.md).
 
-1.45.5は最新Codexの状態接続を復旧し、フォルダーのメタデータ読み取りを制限して、プロバイダー・ドライブ・履歴パネルを整理します。モデルはタイトルバー、追加と更新はツールバー、Date chatsは設定へ移動し、計測中のドライブにはスピナーを表示します。[変更内容と検証](development/RELEASE_1_45_5.md)。
+<p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="media/release-1.45.5/models-en-dark.png" /><img src="media/release-1.45.5/models-en-light.png" width="520" alt="カスタムモデル" /></picture></p>
 
-1.42.2では警告から対象アカウントのブラウザー再ログイン、初期状態オフの自動切替、最適選択/優先順位、再起動の復旧記録、契約日付の見出し、公式Pro 100/200/500表記を追加しました。[動作と検証範囲](development/ACCOUNT_AUTOMATION.md) / [リリース手順](development/RELEASE_1_42_2.md)。
+## その他の主な機能
 
-1.42.3では、Codex更新で実行ファイルが置き換わった後もSwitchを再起動せずに使用量の取得を回復します。有効なパスはキャッシュし、インストール中の失敗を表示してリクエストを再送しません。[回復と検証](development/RELEASE_1_42_3.md)。
-
-1.42.4ではLinuxの最小ウィンドウでもアカウント自動切り替えの名前と状態を表示します。使用量カードの領域と最小サイズを保ち、依存関係を追加しません。[ネイティブ検証と配布](development/RELEASE_1_42_4.md)。
-
-1.42.5は期限が近い利用可能なアカウントを優先し、**Auto Switch**トグルと次のアカウントを表示します。一時的な切り替え失敗を最大2回追加で再試行し、操作中の表示を維持します。保存した回数とContinue識別子で無制限の復旧と重複送信を防ぎます。[動作と検証](development/RELEASE_1_42_5.md)。
-
-1.42.6は使用量IDの重複や欠落でAuto Switchが停止する問題を修正します。不明確な候補を除外し、現在の情報が不明確なら切り替えません。元データと有効期限・指定順位を維持します。[動作と検証](development/RELEASE_1_42_6.md)。
-
-1.42.7ではLinuxのターミナルアカウント操作が検証済みCodex CLI0.164.0に対応します。実行ファイルの整合性、認証情報、ワークスペースの確認は維持されます。[互換性と検証](development/RELEASE_1_42_7.md)。
-
-1.43.0では履歴にクレジット残高の減少グラフを追加しました。クレジット使用は既定で許可され、無効にすると通常枠の消尽時に安全な一時停止と再開を行います。利用可能な過去の期限の優先順位と診断バージョンも修正しました。 [Verification](https://github.com/Gaebabi/codex-switch/issues/132).
-
-1.43.1ではリセット時刻を過ぎても最新の取得値が0%なら、利用可能な別のアカウントへの自動切り替えを維持します。次の候補を表示し、クレジット保護の一時停止より利用可能な切り替えを優先します。 [Verification](https://github.com/Gaebabi/codex-switch/issues/136).
-
-1.43.2ではWindowsの一時データベースが短時間ロックされても、ログインのキャンセルを維持します。最大2秒間非同期で待機し、継続するロックや権限エラーは引き続き報告します。 [Verification](https://github.com/Gaebabi/codex-switch/issues/139).
-
-1.43.3ではResponses互換プロバイダーを追加し、利用可能なOpenAIモデルと一緒にチャットごとに選べます。中断した切り替えの復旧とクレジット履歴の期間表示も改善しました。実際のデスクトップ選択画面と外部プロバイダーの互換性は個別の検証が必要です。[設定と制限](MODEL_PROVIDERS.md)。
+| 目的 | 機能 |
+| --- | --- |
+| アカウント | 残量・リセット・クレジット・契約日を比較し、手動または使用枠に基づいて切り替え。 |
+| 履歴 | 使用量とクレジットの推移、期間別履歴、明示された予測を確認。 |
+| Windowsリソース | ハードウェア・ディスクI/O・フォルダー占有量を表示。フォルダー探索の負荷を制限。 |
 
 ## ダウンロード
 
-- [Windows x64 ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-win-x64.zip)
-- macOS15以降：[Apple Silicon ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-osx-arm64.zip) / [Intel ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-osx-x64.zip)
-- Linux **プレビュー** x64・ARM64：[DEB・RPM・tar.gzとSHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.5)
+| プラットフォーム | アーキテクチャ | パッケージ |
+| --- | --- | --- |
+| Windows | x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-win-x64.zip) |
+| macOS 15+ | Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-osx-arm64.zip) |
+| macOS 15+ | Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-osx-x64.zip) |
+| Linux プレビュー | x64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-x64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-x64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-x64.tar.gz) |
+| Linux プレビュー | arm64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-arm64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-arm64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-arm64.tar.gz) |
 
-.NETを同梱しており、ビルドやランタイムのインストールは不要です。フォルダー・アプリ全体を保持してください。Windows/Linuxは未署名、Macはアドホック署名で**Apple未公証**です。[インストール](INSTALL.md) / [Mac初回起動](MACOS.md)
+.NETランタイムを同梱しています。展開したフォルダー／アプリバンドル全体を保持してください。
 
-Linuxは統合プレビューです。キーストア・インストール済みUI・パッケージ検証と、認証済み2アカウントの引き継ぎ・完全なデスクトップ対応は区別します。デスクトップ統合には検証済みOpenAI Linuxクライアント26.1007.71326、既存のfile認証設定とX11/XWaylandが必要です。新しいクライアントは個別検証まで拒否します。明示的チェックサムのCLI専用モードはデスクトップチャットを再開しません。[要件](development/LINUX.md) / [パッケージ](development/LINUX_PACKAGES.md) / [対応計画](PLATFORM_SUPPORT_PLAN.md)
+[リリースノート・SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.5) · [Macの初回起動](MACOS.md) · [Linuxの要件とターミナル操作](development/LINUX_PACKAGES.md). Windows/Linuxは未署名、Macはアドホック署名でAppleの公証はありません。
 
-## 使い方と機能
+## 使い始める
 
-警告にホバーすると原因を表示し、押すと対象アカウントでブラウザーに再ログインできます。[実際のアプリ検証](evidence/account-automation/README.md)。
+1. 展開後、Windowsは`CodexSwitch.exe`、Macは`Install.command`を実行します。
+2. **+**から公式ブラウザログインを行うか、設定で現在のアカウントを取り込みます。
+3. アカウントは**Switch**、外部モデルはタイトルバーの**モデル**ボタンから設定します。
 
-**Linux1.45.5の配布物には、ソース1.41.0で追加した端末のアカウント切り替えと保存済みCLIセッションの再開が含まれます。** `CodexSwitch cli`で画面サーバーなしに既存の暗号化アカウントを管理し、`cli switch <account> --resume <CLI-session-UUID>`で手動切り替えと公式CLIの再開を実行します。`--continue`は追加メッセージ送信を明示し、`--exec --continue`は非対話実行です。検証済みのネイティブCLI・チェックサムと、ロック解除済みの対応Secret Serviceが必要です。Linux x64で実際の2アカウント切り替え後に元の文脈を保持したCLI再開を確認しました。ARM64・オフライン検証と完全なデスクトップ対応は別の範囲です。[コマンド・実際の画像・検証範囲](development/LINUX_TERMINAL.md)。
+アカウント切り替えはCodexを再起動します。使用枠に基づく自動切り替えは**初期状態ではオフ**です。 [インストール](INSTALL.md) · [切り替えと復旧](SWITCHING.md).
 
-1. Windowsは`CodexSwitch.exe`、Macは`Install.command`でインストールした**Codex Switch.app**を開きます。Linuxは完全なプレビューパッケージと対応するSecret Serviceが必要です。
-2. **+**で公式ブラウザー画面から各アカウントをログインします。以前のアカウントが自動選択される場合は、別のブラウザープロファイル・プライベートウィンドウを使います。**設定 > 現在のアカウントを取り込む**で現在のログインを取り込めます。
-3. 残量を比較して**Switch**を押します。**アカウント自動切替は初期状態オフで、設定から有効にできます。** Linuxでは作業前に**設定 > Start Codex**を使います。
+## スクリーンショット
 
-- 日付付きチャット名を保存・検証してログインをバックアップし、Codexを正常終了します。同じチャットID・フォルダー・モデル・権限を開いて、再開可能な未完了の待機中チャットに**Continueを一度だけ**送り、自動再開します。実行中・完了済みの作業は重複実行しません。
-- 暗号化された進行状況を**Resume chats**で再開できます。送信結果が不明なら自動再送せず、名前保存・正常終了の失敗時はログイン変更を停止します。Windowsでは子プロセス終了を待ち、一度のSwitchで処理を進めます。[切り替えの詳細](SWITCHING.md)
-- 残量、リセット、プラン、契約期限、クレジットと消費予測。**... → History**で履歴を確認できます。カードの日付は利用者のローカル時間帯で表示し、共通履歴画面の時間軸にはKSTを明記します。有効期限72時間・リセット48時間以内は警告色になります。
-- 実行・キュー・目標数、リソース履歴とディスク容量。Windowsは取得可能なリソース/ディスク温度を独立した色で表示します。不明な値は不明のままです。Linuxのリソース計測は未対応です。[温度の範囲](TEMPERATURES.md)
-- 常時60秒更新、**↻・F5**で即時取得。起動時にキーリングがロックされていても、解除後は同じ周期で初期化を自動再試行します。9言語のUI、英語フォールバック付きJSON言語パック、アイコンのテーマ操作、ダーク/ライトと共通スクロールバー。[翻訳への貢献](LOCALIZATION.md)
+<details>
+<summary>モデル・履歴・フォルダー設定と各OSの実行画面</summary>
 
-切り替えはCodexを再起動し、同じログインを共有するCLI/IDEにも影響する場合があります。残るLinux実アカウント・デスクトップ・アクセシビリティ検証は対応計画で追跡します。
+配布版Windowsコントロールに豊富な架空データを設定して描画しています。実際のOSウィンドウと出典は別途記録しています。 [画像の出典](media/release-1.45.5/README.md).
 
-## 実際のアプリ画面
+| 使用履歴 | フォルダー設定 |
+| --- | --- |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="media/release-1.45.5/history-en-dark.png" /><img src="media/release-1.45.5/history-en-light.png" width="420" alt="使用履歴" /></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="media/release-1.45.5/folders-en-dark.png" /><img src="media/release-1.45.5/folders-en-light.png" width="420" alt="フォルダー設定" /></picture> |
 
-[Windows/Linux最新画像と検証範囲](media/release-1.42.2/README.md)。実際のタイトルバーを残して単色背景に配置し、架空のUI入力と実アカウント検証を明記します。
+| macOS · Apple Silicon | Linux · x64 preview |
+| --- | --- |
+| <picture><source media="(prefers-color-scheme: dark)" srcset="media/release-1.45.5/native-macos-dark.png" /><img src="media/release-1.45.5/native-macos-light.png" width="420" alt="Native macOS app, fictional accounts" /></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="media/release-1.45.5/native-linux-dark.png" /><img src="media/release-1.45.5/native-linux-light.png" width="420" alt="Native Linux app, fictional accounts" /></picture> |
 
-![Windows実行画面](media/release-1.42.2/windows.png)
+</details>
 
-**Windows x64:** 実際のWPFアプリの架空アカウント、番号付きProプラン、明確な自動切替表示です。デモのみOnを選択し、既定はOffです。個人アカウントやデスクトップは使用していません。
-![実際のXfce OSタイトルバーと4つのデモアカウントを同時に撮影したLinuxアプリ](media/release-1.42.2/linux-x64-dark.png)
+## 貢献
 
-**Linux x64 · X11/Xfwm4:** 実際のOSタイトルバーと架空のデモアカウント4つを同じウィンドウで撮影しました。タイトルバーの合成や個人のログイン情報はありません。[ライトテーマ・出典・ハッシュ・検証範囲](media/release-1.42.2/README.md)。
+バグ報告、改善提案、UI翻訳、コードの貢献を歓迎します。 [貢献ガイド](../CONTRIBUTING.md) · [脆弱性の非公開報告](https://github.com/Gaebabi/codex-switch/security/advisories/new).
 
-**MacBook実機のスクリーンショットは後日追加予定です。**
-<!-- MacBook screenshot slot: media/release-1.42.2/macbook.png; privacy/provenance review required. -->
-
-[貢献](../CONTRIBUTING.md) / [セキュリティ](../SECURITY.md) / [検証資料](evidence/README.md) / [消費予測](FORECAST.md)
-
-OpenAIの公式製品ではない独立したオープンソースです。認証情報はローカルで暗号化して保存します。[MIT](../LICENSE)
+OpenAI公式製品ではない独立プロジェクトです。認証情報はローカルに暗号化して保存します。 [MIT](../LICENSE) · [Asset notices](../licenses/Burn0Assets.LICENSE.txt) · [プラットフォームの対応範囲](PLATFORM_SUPPORT_PLAN.md).
