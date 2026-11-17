@@ -13,13 +13,13 @@
 
 [Native desktop model integration](docs/DESKTOP_MODEL_BACKEND.md) places registered custom models in the same Codex model picker while OpenAI connects directly. One initial backend installation restart is required; normal model edits and selection need no restart. The former combined HTTP profile remains retired.
 
-Windows · macOS15+ · Linux preview · MIT open source · **1.45.4**
+Windows · macOS15+ · Linux preview · MIT open source · **1.45.5**
 
 Windows model settings include **Context and auto compaction**: edit native OpenAI defaults or individual external models, save, and use the new values on the next request without restarting Codex. Empty fields restore defaults; actual model limits and native safety margins remain in effect.
 
 [English](README.md) / [한국어](docs/README.ko.md) / [日本語](docs/README.ja.md) / [简体中文](docs/README.zh-CN.md)
 
-[Download](#download) · [Get started](#get-started) · [Features](#features) · [Screenshots](#actual-app-screenshots) · [Contribute](#contribute) · [Release notes](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.4)
+[Download](#download) · [Get started](#get-started) · [Features](#features) · [Screenshots](#actual-app-screenshots) · [Contribute](#contribute) · [Release notes](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.5)
 
 <p align="center"><img src="docs/evidence/home-simplification/native-after-windows.png" width="500" height="350" alt="Codex Switch1.44.0 with quota tanks and one Settings gear" /></p>
 
@@ -27,9 +27,7 @@ Actual Windows app with fictional account inputs. [Native screenshots and source
 
 **Find it useful?** Star this repository or share it with another Codex user.
 
-Release1.45.4 reduces Windows folder-monitor disk reads. Hidden/minimized windows pause folder allocation traversal; visible windows reuse unchanged roots and directory snapshots and refresh affected directories from filesystem notifications. Lightweight drive counters remain active. [Changes and verification](docs/development/RELEASE_1_45_4.md).
-
-The local Windows source follow-up adds current desktop-status compatibility, a shared folder-query budget and more structured settings panels. These changes are separate from the published1.45.4 downloads until a new release is verified.
+Release1.45.5 restores Windows desktop status for current Codex, bounds folder metadata reads and organizes provider, drive and history panels. Models moves to the titlebar, Add/Refresh share the toolbar, Date chats is in Settings, and an active-drive spinner reports folder work. [Changes and verification](docs/development/RELEASE_1_45_5.md).
 
 <details>
 <summary>Earlier release highlights</summary>
@@ -62,19 +60,19 @@ Complete packages include the .NET runtime; no source build or .NET installation
 
 | Platform | Download |
 | --- | --- |
-| Windows x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.4/CodexSwitch-v1.45.4-win-x64.zip) |
-| macOS15+ Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.4/CodexSwitch-v1.45.4-osx-arm64.zip) |
-| macOS15+ Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.4/CodexSwitch-v1.45.4-osx-x64.zip) |
-| Linux x64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.4/CodexSwitch-v1.45.4-preview-linux-x64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.4/CodexSwitch-v1.45.4-preview-linux-x64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.4/CodexSwitch-v1.45.4-preview-linux-x64.tar.gz) |
-| Linux ARM64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.4/CodexSwitch-v1.45.4-preview-linux-arm64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.4/CodexSwitch-v1.45.4-preview-linux-arm64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.4/CodexSwitch-v1.45.4-preview-linux-arm64.tar.gz) |
+| Windows x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-win-x64.zip) |
+| macOS15+ Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-osx-arm64.zip) |
+| macOS15+ Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-osx-x64.zip) |
+| Linux x64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-x64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-x64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-x64.tar.gz) |
+| Linux ARM64 **preview** | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-arm64.deb) / [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-arm64.rpm) / [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-arm64.tar.gz) |
 
-[Release notes and SHA256 checksums](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.4). Windows/Linux packages are unsigned. Mac bundles are ad-hoc signed and **not Apple-notarized**; follow [Mac setup](docs/MACOS.md).
+[Release notes and SHA256 checksums](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.5). Windows/Linux packages are unsigned. Mac bundles are ad-hoc signed and **not Apple-notarized**; follow [Mac setup](docs/MACOS.md).
 
 Linux is an integration preview. Native storage, installed UI and package tests are distinct from supported account handoff and full desktop acceptance. Desktop integration requires approved OpenAI Linux client26.1007.71326, an existing file credential policy and X11/XWayland; newer clients require review. CLI-only mode needs an explicit executable checksum and does not resume desktop chats. [Requirements and limits](docs/development/LINUX.md) / [Linux installation](docs/development/LINUX_PACKAGES.md)
 
 Warning icons retain full hover details; activate one to sign in again for the selected account. [Actual application evidence](docs/evidence/account-automation/README.md).
 
-**Linux1.45.4 downloads include terminal account switching and saved CLI-session resumption, introduced in source1.41.0.** `CodexSwitch cli` manages the existing encrypted accounts without DISPLAY; `cli switch <account> --resume <CLI-session-UUID>` combines manual switching and official CLI resumption. `--continue` explicitly submits a follow-up; `--exec --continue` selects noninteractive continuation. A verified native CLI and an unlocked supported Secret Service are required. Real two-account contextual CLI resumption is verified on Linux x64; native ARM64/offline tests and full desktop acceptance have separate scopes. [Commands, actual screenshots and exact verification limits](docs/development/LINUX_TERMINAL.md).
+**Linux1.45.5 downloads include terminal account switching and saved CLI-session resumption, introduced in source1.41.0.** `CodexSwitch cli` manages the existing encrypted accounts without DISPLAY; `cli switch <account> --resume <CLI-session-UUID>` combines manual switching and official CLI resumption. `--continue` explicitly submits a follow-up; `--exec --continue` selects noninteractive continuation. A verified native CLI and an unlocked supported Secret Service are required. Real two-account contextual CLI resumption is verified on Linux x64; native ARM64/offline tests and full desktop acceptance have separate scopes. [Commands, actual screenshots and exact verification limits](docs/development/LINUX_TERMINAL.md).
 
 ## Get started
 
@@ -111,9 +109,9 @@ Warning icons retain full hover details; activate one to sign in again for the s
 
 ## Actual app screenshots
 
-### Windows source preview
+### Windows interface
 
-Provider, drive and history panels now share sections, typography and gauge rules. These previews are rendered from production WPF controls with fictional data; they are separate from the current release downloads and native account acceptance. [Source and verification scope](docs/evidence/desktop-polish/README.md).
+Provider, drive and history panels now share sections, typography and gauge rules. These panel views are rendered from production WPF controls with fictional data. They illustrate the Windows interface and do not establish native account acceptance. [Source and verification scope](docs/evidence/desktop-polish/README.md).
 
 | Providers | Drives | History |
 | --- | --- | --- |
