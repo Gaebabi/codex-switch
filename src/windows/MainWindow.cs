@@ -26,7 +26,7 @@ internal sealed class MainWindow : Window
     private readonly DesktopStreamRecoveryMonitor _streamRecovery;
     private readonly HardwareResourceMonitor _hardware = new();
     private readonly HardwareUsagePanel _hardwarePanel = new();
-    private readonly DriveMonitor _drives = new(WindowsDiskTemperature.Read);
+    private readonly DriveMonitor _drives;
     private readonly DriveUsagePanel _drivePanel;
     private readonly Program.Options _options;
     private Burn0Theme _theme;
@@ -73,7 +73,10 @@ internal sealed class MainWindow : Window
     public MainWindow(AccountService service, Program.Options options)
     {
         _service = service; _options = options;
+        _drives = new(WindowsDiskTemperature.Read, Path.Combine(options.DataDirectory, "folder-index"));
         _drivePanel = new(OpenDriveSettings);
+        _drivePanel.IndexPermissionRequested += async root => await EnableFolderIndexAsync(root);
+        _drivePanel.IndexRebuildRequested += root => _drives.RefreshFolderIndex(root, true);
         _sessions = new DesktopSessionMonitor(options.CodexHome);
         _streamRecovery = new DesktopStreamRecoveryMonitor(service, _sessions, () => _ready && !_closing && !_switching && !_loggingIn && !_providerEditing &&
             !_service.IsBusy && _service.Vault.Data.ActivePendingSwitch == null);
@@ -134,6 +137,23 @@ internal sealed class MainWindow : Window
         catch (Win32Exception error) { Confirm(Loc.F("thermal.cpu_setup_failed", error.NativeErrorCode), "Codex Switch", "확인", false); }
         catch (Exception error) when (error is IOException or InvalidDataException or System.Net.Http.HttpRequestException) { ShowError(error); }
         finally { _cpuTemperatureChanging = false; _hardwarePanel.SetCpuTemperatureBusy(false); }
+    }
+    private readonly HashSet<string> _folderIndexEnabling = new(DriveMonitor.RootComparer);
+    private async Task EnableFolderIndexAsync(string root)
+    {
+        if (_options.UiEvidenceDirectory != null || _closing || !_folderIndexEnabling.Add(root)) return;
+        try
+        {
+            _drivePanel.SetIndexPermissionBusy(root, true);
+            SetStatus("folders.permission_working", false);
+            await FolderIndexSetup.EnableAsync(root, _lifetime.Token);
+            _drives.RefreshFolderIndex(root);
+            SetStatus("folders.permission_ready", false);
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested) { }
+        catch (Win32Exception error) when (error.NativeErrorCode == 1223) { SetStatus("folders.permission_cancelled", false); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or Win32Exception) { ShowError(error); }
+        finally { _folderIndexEnabling.Remove(root); _drivePanel.SetIndexPermissionBusy(root, false); }
     }
     private void ApplyTheme()
     {

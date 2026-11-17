@@ -189,6 +189,26 @@ internal static class NativeUiEvidence
                     Capture(folderPopup.Handle, Path.Combine(directory, name + "-folders-hover.png")); folderTip.IsOpen = false;
                     cases.Add(new { name = name + "-folder-confirmation", passed = true, scope = "Fictional allocated folders in the actual native window and popup; no personal paths or Explorer launch" });
                     cases.Add(new { name = name + "-disk-confirmation", passed = true, scope = "Fictional disk throughput/profile/latency in real native app; not manufacturer rating or physical benchmark" });
+                    var indexed = new[]
+                    {
+                        new DriveReading(@"C:\", "System", 156 * gib, 512 * gib, Index: new(FolderIndexAccess.Ready, 4200, 165000)),
+                        new DriveReading(@"D:\", "Projects", 318 * gib, 1024 * gib, Index: new(FolderIndexAccess.JournalMissing, 1200, 42000))
+                    };
+                    diskPanel.Refresh(indexed, new Burn0Theme(dark)); window.UpdateLayout(); await Task.Delay(100);
+                    var permission = Descendants<Button>(diskPanel).Single(button => button.Name == "FolderIndexPermissionButton" && button.IsVisible);
+                    Assert(permission.IsEnabled && System.Windows.Automation.AutomationProperties.GetName(permission) == Loc.T("folders.enable_index") && diskPanel.Fits,
+                        "The native index permission action is clipped or unavailable");
+                    Capture(window, Path.Combine(directory, name + "-folder-index-lock.png"));
+                    diskPanel.SetIndexPermissionBusy(@"D:\", true); Assert(!permission.IsEnabled, "Duplicate index permission request remains enabled");
+                    diskPanel.SetIndexPermissionBusy(@"D:\", false);
+                    indexed[1] = indexed[1] with { Index = new(FolderIndexAccess.Ready, 1250, 44000), MeasuringFolders = true };
+                    diskPanel.Refresh(indexed, new Burn0Theme(dark)); window.UpdateLayout(); await Task.Delay(100);
+                    Assert(!permission.IsVisible && Descendants<System.Windows.Shapes.Ellipse>(diskPanel).Count(e => e.Name == "FolderScanSpinner" && e.IsVisible) == 1,
+                        "Granted access did not expose only the active drive's index work");
+                    Capture(window, Path.Combine(directory, name + "-folder-index-working.png"));
+                    indexed[1] = indexed[1] with { MeasuringFolders = false }; diskPanel.Refresh(indexed, new Burn0Theme(dark)); window.UpdateLayout();
+                    Assert(!Descendants<System.Windows.Shapes.Ellipse>(diskPanel).Any(e => e.Name == "FolderScanSpinner" && e.IsVisible), "Idle index activity did not clear");
+                    cases.Add(new { name = name + "-index-confirmation", passed = true, scope = "Fictional index/permission states in the real native window; no elevation, journal creation or personal folders" });
                 }
                 await AccountWarningEvidence.CaptureAsync(window, service, directory);
                 await AccountAutomationEvidence.CaptureAsync(window, service, directory);

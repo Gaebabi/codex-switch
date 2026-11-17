@@ -43,15 +43,15 @@ Responses 호환 제공자를 등록하면 Windows의 **기존 Codex 모델 선�
 
 | 플랫폼 | 아키텍처 | 패키지 |
 | --- | --- | --- |
-| Windows | x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-win-x64.zip) |
-| macOS 15+ | Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-osx-arm64.zip) |
-| macOS 15+ | Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-osx-x64.zip) |
-| Linux 미리보기 | x64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-x64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-x64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-x64.tar.gz) |
-| Linux 미리보기 | arm64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-arm64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-arm64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.5/CodexSwitch-v1.45.5-preview-linux-arm64.tar.gz) |
+| Windows | x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-win-x64.zip) |
+| macOS 15+ | Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-osx-arm64.zip) |
+| macOS 15+ | Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-osx-x64.zip) |
+| Linux 미리보기 | x64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-preview-linux-x64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-preview-linux-x64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-preview-linux-x64.tar.gz) |
+| Linux 미리보기 | arm64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-preview-linux-arm64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-preview-linux-arm64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.6/CodexSwitch-v1.45.6-preview-linux-arm64.tar.gz) |
 
 .NET 런타임이 포함되어 별도 설치가 필요 없습니다. 압축을 푼 폴더·앱 번들 전체를 유지하세요.
 
-[업데이트 내용·SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.5) · [Mac 최초 실행](MACOS.md) · [Linux 요구사항과 터미널 사용법](development/LINUX_PACKAGES.md). Windows·Linux는 미서명이며, Mac은 임시 서명으로 Apple 공증은 없습니다.
+[업데이트 내용·SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.6) · [Mac 최초 실행](MACOS.md) · [Linux 요구사항과 터미널 사용법](development/LINUX_PACKAGES.md). Windows·Linux는 미서명이며, Mac은 임시 서명으로 Apple 공증은 없습니다.
 
 ## 시작하기
 

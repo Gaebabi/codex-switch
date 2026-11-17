@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CodexAccountDesk;
 
-internal sealed record DriveReading(string Root, string Label, long? Free, long? Total, TemperatureReading? Temperature = null, DiskIoReading? Io = null, FolderReading[]? Folders = null, bool MeasuringFolders = false)
+internal sealed record DriveReading(string Root, string Label, long? Free, long? Total, TemperatureReading? Temperature = null, DiskIoReading? Io = null, FolderReading[]? Folders = null, bool MeasuringFolders = false, FolderIndexStatus? Index = null)
 {
     public double? FreePercent => Free.HasValue && Total > 0 ? 100.0 * Free.Value / Total.Value : null;
 }
@@ -15,9 +15,10 @@ internal sealed class DriveMonitor : IAsyncDisposable
 {
     internal static StringComparer RootComparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
     private readonly Func<string, TemperatureReading> _temperature;
-    private readonly FolderMonitor _folders = new();
-    public DriveMonitor(Func<string, TemperatureReading>? temperature = null)
+    private readonly FolderMonitor _folders;
+    public DriveMonitor(Func<string, TemperatureReading>? temperature = null, string? indexDirectory = null)
     {
+        _folders = new(indexDirectory);
         _temperature = temperature ?? (_ => TemperatureReading.Missing(TemperatureState.PlatformUnsupported));
         _folders.Changed += () => Changed?.Invoke();
     }
@@ -27,7 +28,7 @@ internal sealed class DriveMonitor : IAsyncDisposable
     private readonly SemaphoreSlim _changed = new(0, 1);
     private Task? _run;
     public event Action? Changed;
-    public DriveReading[] Current => Volatile.Read(ref _current).Select(r => r with { Folders = _folders.Read(r.Root), MeasuringFolders = _folders.IsMeasuringRoot(r.Root) }).ToArray();
+    public DriveReading[] Current => Volatile.Read(ref _current).Select(r => r with { Folders = _folders.Read(r.Root), MeasuringFolders = _folders.IsMeasuringRoot(r.Root), Index = _folders.IndexStatus(r.Root) }).ToArray();
     public void Configure(DrivePreference[] preferences)
     {
         var comparison = RootComparer;
@@ -40,6 +41,11 @@ internal sealed class DriveMonitor : IAsyncDisposable
     }
     public void Start() { _folders.Start(); _run ??= Task.Run(RunAsync); }
     public void SetFolderMeasurementActive(bool active) => _folders.SetActive(active);
+    internal void RefreshFolderIndex(string root, bool rebuild = false)
+    {
+        if (!_configuration.Any(p => RootComparer.Equals(p.Root, root))) throw new ArgumentException("Unknown folder-index drive.");
+        _folders.RefreshIndex(root, rebuild);
+    }
     private async Task RunAsync()
     {
         using var io = OperatingSystem.IsWindows() ? new WindowsDiskIoSampler() : null;

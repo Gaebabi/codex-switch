@@ -91,6 +91,7 @@ internal static class Program
         Loc.SetLanguage("en");
         try
         {
+            if (arguments.Length == 2 && arguments[0] == "--enable-folder-index") return WindowsFolderJournal.Enable(arguments[1]);
             var options = Options.Parse(arguments);
             if (options.UiEvidenceDirectory != null) return NativeUiEvidence.Run(options.UiEvidenceDirectory);
             if (options.CpuSensorReportPath != null) return CpuTemperatureDiagnostics.VerifyAsync(options.CpuSensorReportPath).GetAwaiter().GetResult();

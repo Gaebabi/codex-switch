@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "sourceFingerprint": "e9b78fefe43dd67e0268c9f3af9a784a999f9c0fbcad7138cdf005bd00d101e6",
+  "scope": "Production Windows footer controls rendered offscreen with fictional drive/index states. Not native OS-window, elevation or owner-folder acceptance.",
+  "pixelChanges": false,
+  "metadataRemoved": true,
+  "personalDataUsed": false,
+  "hardwareIndexChecks": 72,
+  "uiChecks": 179,
+  "images": [
+    {
+      "file": "permission-ko-dark.png",
+      "sha256": "d2555cf2f39235e11920956d613bf98d422534c8ab96c4dcba701ff7c58e7c83"
+    },
+    {
+      "file": "permission-en-light.png",
+      "sha256": "fe443f5a7c80b3b4b8ac3323decb3863de5b0643a7c886665c00a16229c78a50"
+    }
+  ]
+}
