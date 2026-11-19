@@ -28,7 +28,7 @@ Issue [66](https://github.com/Gaebabi/codex-switch/issues/66) / [PR67](https://g
 
 ## Use a complete candidate
 
-Keep the entire extracted tar folder. It contains its .NET10.0.13 runtime, application assemblies/native libraries, canonical1024px icon, licenses, LGPL libsecret source/patch/relink recipe and a package file inventory. No .NET, Python or source build is needed to run it. System C/C++/ICU/OpenSSL/Kerberos/zlib/GLib/libgcrypt/SQLite and X11/XCB/ICE/SM/fontconfig dependencies remain distribution-provided. Current framework/client use X11/XWayland; pure Wayland is a separate gate.
+Keep the entire extracted tar folder. It contains its .NET10.0.15 runtime, application assemblies/native libraries, canonical1024px icon, licenses, LGPL libsecret source/patch/relink recipe and a package file inventory. No .NET, Python or source build is needed to run it. System C/C++/ICU/OpenSSL/Kerberos/zlib/GLib/libgcrypt/SQLite and X11/XCB/ICE/SM/fontconfig dependencies remain distribution-provided. Current framework/client use X11/XWayland; pure Wayland is a separate gate.
 
 ```text
 ./CodexSwitch
