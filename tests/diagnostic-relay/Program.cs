@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Channels;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 
@@ -99,6 +100,7 @@ try
     builder.WebHost.ConfigureKestrel(k => k.Listen(IPAddress.Loopback, 0));
     await using var upstream = builder.Build(); upstream.UseWebSockets();
     var requests = 0; byte[]? actualBody = null; string? actualAuth = null;
+    var closes = Channel.CreateUnbounded<(WebSocketCloseStatus? Status, string? Reason)>();
     var expectedError = "{\"error\":{\"code\":\"rate_limit_exceeded\",\"type\":\"rate_limit_error\",\"message\":\"secret error text\"}}";
     upstream.Run(async c =>
     {
@@ -112,7 +114,9 @@ try
             var response = Encoding.UTF8.GetBytes("{\"type\":\"response.output_text.delta\",\"delta\":\"secret output 한글\"}");
             await socket.SendAsync(response.AsMemory(0, 17), WebSocketMessageType.Text, false, c.RequestAborted);
             await socket.SendAsync(response.AsMemory(17), WebSocketMessageType.Text, true, c.RequestAborted);
-            await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "done", c.RequestAborted); return;
+            await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", c.RequestAborted);
+            closes.Writer.TryWrite((socket.CloseStatus, socket.CloseStatusDescription));
+            return;
         }
         using var input = new MemoryStream(); await c.Request.Body.CopyToAsync(input); actualBody = input.ToArray();
         if (c.Request.Path == "/responses/limited" || c.Request.Path == "/responses/ws-limited")
@@ -163,13 +167,26 @@ try
         using var output = new MemoryStream(); var wsbuffer = new byte[16384]; ValueWebSocketReceiveResult reply;
         do { reply = await ws.ReceiveAsync(wsbuffer.AsMemory(), CancellationToken.None); output.Write(wsbuffer, 0, reply.Count); } while (!reply.EndOfMessage);
         Check("WebSocket fragmented input bytes and text output survive", actualBody!.SequenceEqual(payload) && Encoding.UTF8.GetString(output.ToArray()).Contains("secret output 한글"));
+        async Task CompleteClose(ClientWebSocket socket)
+        {
+            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var close = await socket.ReceiveAsync(wsbuffer.AsMemory(), deadline.Token);
+            Check("The downstream receives the upstream close status and reason",
+                close.MessageType == WebSocketMessageType.Close && socket.CloseStatus == WebSocketCloseStatus.NormalClosure && socket.CloseStatusDescription == "done");
+            await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, "acknowledged", deadline.Token);
+            var ack = await closes.Reader.ReadAsync(deadline.Token);
+            Check("The upstream receives the downstream close acknowledgment before relay teardown",
+                ack.Status == WebSocketCloseStatus.NormalClosure && ack.Reason == "acknowledged");
+        }
+        await CompleteClose(ws);
         // A large message must be forwarded even when metadata sampling is bounded.
         using var largeWs = new ClientWebSocket(); largeWs.Options.SetRequestHeader("Authorization", "Bearer secret-auth-token");
         await largeWs.ConnectAsync(new Uri(relay.BaseUrl.Replace("http:", "ws:") + "/responses"), CancellationToken.None);
         var large = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new { input = new string('x', 100000) }));
         await largeWs.SendAsync(large.AsMemory(), WebSocketMessageType.Text, true, CancellationToken.None);
-        await largeWs.ReceiveAsync(wsbuffer.AsMemory(), CancellationToken.None);
+        do { reply = await largeWs.ReceiveAsync(wsbuffer.AsMemory(), CancellationToken.None); } while (!reply.EndOfMessage);
         Check("Large WebSocket payload is not truncated by diagnostics", actualBody!.SequenceEqual(large));
+        await CompleteClose(largeWs);
     }
     var log = await File.ReadAllTextAsync(events);
     Check("Diagnostics exclude auth, prompts, output and raw error messages", !new[] { "secret-auth-token", "secret prompt", "secret output", "secret error text" }.Any(log.Contains));

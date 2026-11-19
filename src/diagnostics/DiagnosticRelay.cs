@@ -158,9 +158,10 @@ internal sealed class DiagnosticRelay : IAsyncDisposable
                 using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
                 var send = Pump(client, upstream, id, "request_metadata", watch, stop.Token);
                 var receive = Pump(upstream, client, id, "response_metadata", watch, stop.Token);
-                await Task.WhenAny(send, receive); stop.Cancel();
-                try { await Task.WhenAll(send, receive); }
-                catch (OperationCanceledException) when (stop.IsCancellationRequested) { }
+                var first = await Task.WhenAny(send, receive);
+                if (first.IsCompletedSuccessfully) stop.CancelAfter(TimeSpan.FromSeconds(5));
+                else stop.Cancel();
+                await Task.WhenAll(send, receive);
             }
             else
             {
