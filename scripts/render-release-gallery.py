@@ -19,7 +19,7 @@ if not output.is_relative_to(root/'docs/media'):
 output.mkdir(parents=True,exist_ok=True)
 windows=json.loads((a.windows/'evidence.json').read_text(encoding='utf-8'))
 linux=json.loads((a.linux/'session.json').read_text(encoding='utf-8'))
-if windows['os']!='Windows' or windows['architecture']!='X64' or windows['appVersion']!=version or windows['runtime']!='.NET 10.0.13':
+if windows['os']!='Windows' or windows['architecture']!='X64' or windows['appVersion']!=version or windows['runtime']!='.NET 10.0.15':
     raise SystemExit('Expected current native Windows evidence')
 if linux['failed']!=0 or not linux['ordinaryUi'] or linux['accountsUsed'] or linux['expected']['candidateVersion']!=version:
     raise SystemExit('Expected passing ordinary installed Linux desktop evidence')
@@ -53,7 +53,7 @@ if 'direct-parent native WM frame' not in entry['capture']:
     raise SystemExit('Linux gallery requires the actual verified window-manager frame')
 lin=compose(a.linux,linux['images'],'ordinary-native-frame.png','linux.png')
 win.update(os='Windows',architecture='X64',runtime=windows['runtime'],revision=windows['revision'],scope='Actual native WPF window with fictional dashboard accounts and unavailable resources; no account or personal-screen capture.')
-lin.update(os='Debian13/Xfce Docker userspace',architecture='X64',runtime='.NET 10.0.13',revision=linux['expected']['candidateRevision'],testRevision=linux['expected']['testRevision'],scope='Actual ordinary installed empty-account application with its native xfwm4 titlebar; not a booted VM, GNOME/KDE/Wayland or authenticated handoff claim.')
+lin.update(os='Debian13/Xfce Docker userspace',architecture='X64',runtime='.NET 10.0.15',revision=linux['expected']['candidateRevision'],testRevision=linux['expected']['testRevision'],scope='Actual ordinary installed empty-account application with its native xfwm4 titlebar; not a booted VM, GNOME/KDE/Wayland or authenticated handoff claim.')
 receipt={'schema':1,'applicationVersion':version,'canvas':{'width':1000,'height':800,'background':'#18202b','scaling':'none'},'metadataRemoved':True,
          'images':[win,lin],'macbook':{'pending':True,'slot':'macbook.png','requirement':'Maintainer real-device capture with original titlebar and privacy/provenance review; no substitute image.'}}
 (output/'gallery.json').write_text(json.dumps(receipt,indent=2)+'\n',encoding='utf-8')

@@ -33,7 +33,7 @@ check('No global .NET host/SDK/runtime is installed',shutil.which('dotnet') is N
 for file,value in markers.items():check('System package installation preserves pre-existing private marker bytes/modes',file.read_bytes()==value and file.stat().st_mode&0o777==0o600)
 app=Path('/opt/codex-switch/CodexSwitch')
 value=json.loads(subprocess.run([str(app),'--package-info'],capture_output=True,text=True,check=True,timeout=20).stdout)
-check('The installed complete native application runs without .NET installation',value['runtime']=='.NET 10.0.13')
+check('The installed complete native application runs without .NET installation',value['runtime']=='.NET 10.0.15')
 subprocess.run(['desktop-file-validate','/usr/share/applications/codex-switch.desktop'],check=True,timeout=10)
 check('Menu and canonical icon are installed through the package manager',Path('/usr/share/icons/hicolor/1024x1024/apps/codex-switch.png').is_file() and Path('/usr/bin/codex-switch').is_file())
 subprocess.run([sys.executable,'/input/capture-linux-app.py','--app',str(app),'--output',str(a.raw_ui.resolve())],check=True,timeout=120)

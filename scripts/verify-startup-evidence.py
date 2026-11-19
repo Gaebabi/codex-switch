@@ -14,7 +14,7 @@ a = p.parse_args()
 if re.fullmatch(r'[0-9a-f]{40}', a.revision) is None:
     raise SystemExit('Exact committed source required')
 receipt = json.loads((a.source/'receipt.json').read_text(encoding='utf-8'))
-if receipt['failed'] != 0 or receipt['passed'] != 12 or receipt['os'] != 'Windows' or receipt['architecture'] != 'X64' or receipt['runtime'] != '.NET 10.0.13':
+if receipt['failed'] != 0 or receipt['passed'] != 12 or receipt['os'] != 'Windows' or receipt['architecture'] != 'X64' or receipt['runtime'] != '.NET 10.0.15':
     observed = {key: receipt[key] for key in ('os', 'architecture', 'runtime', 'passed', 'failed')}
     raise SystemExit('Complete native Windows manual/timer recovery checks must pass: ' + json.dumps(observed))
 a.output.mkdir(parents=True, exist_ok=False)

@@ -154,6 +154,14 @@ internal static class MacDiagnostics
                 await Task.Delay(120); await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Render);
                 try
                 {
+                    var version = window.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Name == "RunningVersionLabel");
+                    var versionPoint = version.TranslatePoint(new Point(), window);
+                    var addAccount = window.GetVisualDescendants().OfType<Button>().Single(button => button.Name == "AddAccountButton");
+                    var addPoint = addAccount.TranslatePoint(new Point(), window);
+                    Assert(version.IsVisible && version.Text == "v" + typeof(Program).Assembly.GetName().Version!.ToString(3)
+                        && version.Bounds.Width > 0 && versionPoint.HasValue && addPoint.HasValue
+                        && versionPoint.Value.X + version.Bounds.Width <= addPoint.Value.X + 1,
+                        "The dashboard version is missing, differs from the running app, or overlaps the title actions.");
                     Assert(window.Cards.Count == 4 && window.Cards.All(c => c.Bounds.Height >= 118), "Cards are too short.");
                     foreach (var card in window.Cards)
                     foreach (var text in card.GetVisualDescendants().OfType<TextBlock>())

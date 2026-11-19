@@ -40,6 +40,8 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
     private readonly string _prefix = "switch:" + Guid.NewGuid().ToString("N") + ":";
     private int _sequence;
     private ModelGateway? _gateway;
+    private readonly string? _diagnosticUrl;
+    private readonly byte[]? _diagnosticKey;
     private readonly object _gatewayGate = new();
 
     internal static async Task<int> RunAsync(string[] arguments)
@@ -66,6 +68,16 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
     private DesktopBackendHost(Configuration config, string[] arguments)
     {
         _config = config;
+        _diagnosticUrl = Environment.GetEnvironmentVariable(DiagnosticGatewayEndpoint.RelayUrlVariable);
+        var diagnosticKey = Environment.GetEnvironmentVariable(DiagnosticGatewayEndpoint.KeyVariable);
+        if (_diagnosticUrl != null || diagnosticKey != null)
+        {
+            if (!Uri.TryCreate(_diagnosticUrl, UriKind.Absolute, out var relay) ||
+                relay.Scheme != Uri.UriSchemeHttp || relay.Host != "127.0.0.1" ||
+                diagnosticKey is not { Length: 64 })
+                throw new InvalidDataException("Invalid diagnostic relay binding.");
+            _diagnosticKey = Convert.FromHexString(diagnosticKey);
+        }
         var start = new ProcessStartInfo(config.NativeExecutable)
         {
             UseShellExecute = false, CreateNoWindow = true,
@@ -74,6 +86,8 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
         };
         start.Environment["CODEX_HOME"] = config.Home;
         start.Environment.Remove("CODEX_CLI_PATH");
+        start.Environment.Remove(DiagnosticGatewayEndpoint.RelayUrlVariable);
+        start.Environment.Remove(DiagnosticGatewayEndpoint.KeyVariable);
         if (arguments.Contains("app-server", StringComparer.Ordinal))
         { start.ArgumentList.Add("-c"); start.ArgumentList.Add("thread_unload_delay_secs=0"); }
         foreach (var argument in arguments) start.ArgumentList.Add(argument);
@@ -312,7 +326,8 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
             throw new InvalidOperationException("The selected custom model was removed. Select a registered model; the conversation was preserved.");
         EnsureGateway();
         var config = parameters["config"] as JsonObject ?? new();
-        config["openai_base_url"] = _gateway!.BaseUrl;
+        config["openai_base_url"] = _diagnosticKey == null ? _gateway!.BaseUrl
+            : DiagnosticGatewayEndpoint.ForPort(_diagnosticUrl!, _diagnosticKey, _gateway!.Port);
         config["model_catalog_json"] = catalog["catalogPath"]!.DeepClone();
         config["features.enable_request_compression"] = false;
         config["features.responses_websockets_v2"] = false;

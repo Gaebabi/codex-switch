@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="CodexSwitch.ModelProviders.Tests" />
+    <InternalsVisibleTo Include="CodexSwitch.DiagnosticRelay.UiTests" />
     <InternalsVisibleTo Include="CodexSwitch.AccountAutomation.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.LinuxTerminal.Tests" />
     <ProjectReference Include="../../core/CodexSwitch.Core.csproj" />

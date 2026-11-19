@@ -31,7 +31,7 @@ epoch=int(subprocess.run(['git','-C',str(repository),'show','-s','--format=%ct',
 os.environ['SOURCE_DATE_EPOCH']=str(epoch)
 info=json.loads(subprocess.run([str(app/'CodexSwitch'),'--package-info'],capture_output=True,text=True,check=True,timeout=15).stdout)
 version=info['version'];expected='Arm64' if a.rid=='linux-arm64' else 'X64'
-if not re.fullmatch(r'\d+\.\d+\.\d+',version) or info['architecture']!=expected or info['runtime']!='.NET 10.0.13':raise SystemExit('Actual application version/architecture/runtime mismatch')
+if not re.fullmatch(r'\d+\.\d+\.\d+',version) or info['architecture']!=expected or info['runtime']!='.NET 10.0.15':raise SystemExit('Actual application version/architecture/runtime mismatch')
 output.mkdir(parents=True);payload=output/'payload';payload.mkdir()
 subprocess.run(['python3',str(repository/'scripts/verify-runtime-package.py'),str(app),'--rid',a.rid,'--output',str(output/'RUNTIME.json')],check=True,timeout=30)
 for file in sorted(app.rglob('*')):

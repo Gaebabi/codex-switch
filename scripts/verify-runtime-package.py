@@ -6,7 +6,7 @@ from pathlib import Path
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('directory',type=Path)
 parser.add_argument('--rid',choices=['win-x64','osx-arm64','osx-x64','linux-x64','linux-arm64'],required=True)
-parser.add_argument('--runtime',default='10.0.13')
+parser.add_argument('--runtime',default='10.0.15')
 parser.add_argument('--output',type=Path,required=True)
 args=parser.parse_args();root=args.directory
 data=json.loads((root/'CodexSwitch.runtimeconfig.json').read_text(encoding='utf-8'))['runtimeOptions']
@@ -31,6 +31,21 @@ if args.rid.startswith('win'):
     backend_assets={asset for key,item in backend_deps['libraries'].items() if item['type']=='project' for asset in backend_target[key].get('runtime',{})}
     if not {'CodexSwitch.Backend.dll','CodexSwitch.Application.dll','CodexSwitch.Core.dll','CodexSwitch.Protocol.dll'}.issubset(backend_assets) or any(not (backend/asset).is_file() for asset in backend_assets):
         raise SystemExit('Desktop backend project dependencies are incomplete')
+    relay = root / 'diagnostics'
+    relay_names = ['CodexSwitch.Diagnostics.exe', 'CodexSwitch.Diagnostics.dll', 'CodexSwitch.Diagnostics.deps.json',
+                   'CodexSwitch.Diagnostics.runtimeconfig.json', 'System.Private.CoreLib.dll', 'coreclr.dll', 'hostfxr.dll', 'hostpolicy.dll']
+    if any(not (relay / name).is_file() for name in relay_names):
+        raise SystemExit('The optional Windows Diagnostic Relay package is incomplete')
+    if any(path.is_file() and (path.name.lower() in ('codexswitch.diagnostics.json', 'installation.json')
+                              or path.name.lower().startswith('events-')) for path in relay.rglob('*')):
+        raise SystemExit('Private Diagnostic Relay state or captures must never be packaged')
+    relay_runtime = json.loads((relay / 'CodexSwitch.Diagnostics.runtimeconfig.json').read_text(encoding='utf-8'))['runtimeOptions']
+    relay_frameworks = {item['name']: item['version'] for item in relay_runtime.get('includedFrameworks', [])}
+    if relay_runtime['tfm'] != 'net10.0' or relay_frameworks != {'Microsoft.NETCore.App': args.runtime, 'Microsoft.AspNetCore.App': args.runtime}:
+        raise SystemExit('Diagnostic Relay does not contain the reviewed self-contained runtime')
+    relay_deps = json.loads((relay / 'CodexSwitch.Diagnostics.deps.json').read_text(encoding='utf-8'))
+    if not relay_deps['runtimeTarget']['name'].endswith('/win-x64'):
+        raise SystemExit('Diagnostic Relay runtime identifier differs')
     for name in ['CodexSwitch.Sensors.exe','PawnIO-Modules.LGPL-2.1.txt','SOURCE.md','module-source/AMDFamily17.p','module-source/IntelMSR.p','module-source/pawnio.inc']:
         if not (root/'sensors'/name).is_file():raise SystemExit('Native CPU sensor worker or corresponding source/license missing')
     worker=(root/'sensors/CodexSwitch.Sensors.exe').read_bytes()

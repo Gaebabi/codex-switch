@@ -294,7 +294,8 @@ internal sealed partial class ModelGateway : IAsyncDisposable
                 if (route.Provider == null) CopyOpenAiHeaders(request, upstream, identity);
                 else upstream.Headers.Authorization = new AuthenticationHeaderValue("Bearer", route.Provider.ApiKey);
                 upstream.Content = rewrite || removeReasoning || history.Changed || providerReasoning?.Count > 0 || providerItemIds?.Count > 0 ?
-                    new GatewayRoutedContent(bytesIn, body ?? new JsonObject(), rewrite, route.Model?.GenericMetadata == true, removeReasoning, history.Replacements, configurationUpdates, providerReasoning, providerItemIds) :
+                    new GatewayRoutedContent(bytesIn, body ?? new JsonObject(), rewrite, route.Model?.GenericMetadata == true, removeReasoning, history.Replacements, configurationUpdates, providerReasoning, providerItemIds,
+                        normalizeAgentObservations: route.Provider != null) :
                     new ReadOnlyMemoryContent(bytesIn);
                 upstream.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
                 return upstream;

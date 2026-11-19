@@ -71,7 +71,7 @@ try:
  run(binary,'--install-package',env)
  check('Normal per-user installer activates a complete native payload',installed.is_file() and (prefix/'current').is_symlink())
  info=json.loads(run(installed,'--package-info',env).stdout)
- check('Installed self-contained app starts with global .NET unavailable',info['version']==manifest['Version'] and info['runtime']=='.NET 10.0.13')
+ check('Installed self-contained app starts with global .NET unavailable',info['version']==manifest['Version'] and info['runtime']=='.NET 10.0.15')
  desktop=data/'applications/codex-switch.desktop';icon=data/'icons/hicolor/1024x1024/apps/codex-switch.png'
  check('Menu and canonical high-resolution icon integrate per user',desktop.is_file() and icon.read_bytes()==(payload/'icons/codex-switch.png').read_bytes())
  subprocess.run(['desktop-file-validate',str(desktop)],check=True,capture_output=True,text=True,timeout=10)
@@ -90,7 +90,7 @@ try:
   try:value=json.loads(line)
   except json.JSONDecodeError:continue
   if isinstance(value,dict):responses.append(value)
- check('Native desktop launch executes the actual installed app through special-character paths',any(value.get('version')==manifest['Version'] and value.get('runtime')=='.NET 10.0.13' for value in responses))
+ check('Native desktop launch executes the actual installed app through special-character paths',any(value.get('version')==manifest['Version'] and value.get('runtime')=='.NET 10.0.15' for value in responses))
  if a.previous_archive:check('Update retains the previous complete version',old.is_dir())
  run(binary,'--install-package',env);check('Repeated installation verifies and preserves the same package',json.loads(run(installed,'--package-info',env).stdout)['version']==manifest['Version'])
  with (prefix/'.installation.lock').open('r+b') as lock:
