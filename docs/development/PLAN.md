@@ -1,5 +1,7 @@
 # Current plan
 
+2026-11-17 owner request implemented: error-triggered automatic Continue submission, both desktop-host lifecycle hooks, polling/receipt code and the unused failed-rollout reader are removed. Account/provider/composition regressions pass313/352/6 checks, with100package self-tests. Explicit account-switch/restart and terminal continuations remain; existing recovery files are preserved. This is a local follow-up to1.45.6; public publication is a separate scope.
+
 2026-11-17 owner-approved1.45.6 delivery: [issue181](https://github.com/Gaebabi/codex-switch/issues/181) tracks the accepted persistent-index/spinner/permission changes on the explicitly approved release/1.45.6 branch. Require protected final-head CI, reviewed-tree equality and verified native publication; install the released Windows package on host/VM, restart Codex normally with the same account/chats, then remove obsolete installations after their consumers exit. Preserve data/settings/bootstrap/index stores and previous public releases. [Release scope](RELEASE_1_45_6.md).
 
 2026-11-17 persistent folder-index request: retain directory/allocation work across app restarts, replay offline changes instead of traversing unchanged trees, and fix activity that appears to spin indefinitely. The owner also requires visible lock/permission-request controls for drives needing journal setup. Preserve the global query budget, hidden-window pause, allocated-byte semantics and owner data/processes. [Design and acceptance](FOLDER_INDEX.md). Implementation/verification is authorized; a new branch, public release and publication are separate scopes.
@@ -380,3 +382,11 @@ Tracking [#1](https://github.com/Gaebabi/codex-switch/issues/1); foundation [#2]
 Follow-ups: separate core/platform projects, supported .NET LTS, Linux security/client adapters, native switching/continuation and verified packages/environment coverage. [Roadmap](../PLATFORM_SUPPORT_PLAN.md)
 
 This foundation does not implement Linux or publish a new binary version. Completed release/media history remains in Git.
+# Diagnostic Relay — owner-requested implementation
+
+- [x] Implement a separate opt-in native HTTP/WebSocket relay and Windows ON/OFF/live-event controls. OFF removes the owned launch override for bundled native discovery, preserves the existing home/config/auth/history, refuses foreign override changes and avoids stopping active work.
+- [x] Verify payload/error/header preservation, absent relay retries, privacy, tool/turn/RPC timing, network phases, separately scoped disk/process counters and actual-native per-run configuration using disposable fixtures.
+- [ ] Owner installation, adopted ON/OFF state and real Pro-account upstream acceptance; no owner activation/restart was performed for verification.
+- [x] Replace the raw-event-first inspector with chat/turn striped time shares, stable live selection, collapsed raw/setup controls, and partial/stale capture handling.
+- [x] Add upstream-before-forward timing, visible TTFT, explicitly approximate stream TPS, E2E TPS and max/P95 arrival gaps, with unavailable states for batched/ambiguous/legacy data.
+- Keep component/contracts, complete package build, installed GUI/native adoption, real account acceptance, publication and satisfaction-gated backup commits as separate states. See [Diagnostic Relay](../DIAGNOSTIC_RELAY.md).

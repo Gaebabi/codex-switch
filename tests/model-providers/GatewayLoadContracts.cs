@@ -51,6 +51,26 @@ internal static class GatewayLoadContracts
         var tool = new JsonObject { ["type"] = "namespace", ["name"] = "fixture", ["tools"] = new JsonArray(new JsonObject { ["type"] = "function", ["name"] = "lookup", ["parameters"] = new JsonObject { ["type"] = "object" } }) };
         var message = new JsonObject { ["type"] = "message", ["role"] = "user", ["content"] = "Keep the original conversation" };
         var toolCall = new JsonObject { ["type"] = "function_call", ["name"] = "lookup", ["call_id"] = "fixture-call", ["arguments"] = "{}" };
+        var observation = new JsonObject { ["type"] = "function_call_output", ["namespace"] = "agent",
+            ["name"] = "codex_apps_open_page", ["id"] = "fco_fixture", ["output"] = "{\"page_id\":null}" };
+        var appObservation = new JsonObject { ["type"] = "function_call_output", ["namespace"] = "codex_app",
+            ["name"] = "send_message_to_thread", ["id"] = "fco_app_fixture", ["output"] = "{\"status\":\"queued\"}" };
+        var paired = new JsonObject { ["type"] = "function_call_output", ["namespace"] = "agent",
+            ["name"] = "lookup", ["call_id"] = "fixture-call", ["output"] = "paired output" };
+        var sideEvents = JsonSerializer.SerializeToUtf8Bytes(new JsonObject { ["model"] = "alias",
+            ["input"] = new JsonArray(observation.DeepClone(), toolCall.DeepClone(), paired.DeepClone(), message.DeepClone(), appObservation.DeepClone()) });
+        using (var routed = new GatewayRoutedContent(sideEvents, new JsonObject { ["model"] = "load-model" }, true, false, false, normalizeAgentObservations: true))
+        {
+            var result = JsonNode.Parse(await routed.ReadAsStringAsync())!["input"]!.AsArray();
+            check("Custom Responses preserve unpaired client observations as context while leaving actual tool pairs untouched",
+                result[0]?["type"]?.GetValue<string>() == "message" && result[0]?["role"]?.GetValue<string>() == "assistant" &&
+                result[0]?["content"]?[1]?["text"]?.GetValue<string>() == observation["output"]!.GetValue<string>() &&
+                JsonNode.DeepEquals(result[1], toolCall) && JsonNode.DeepEquals(result[2], paired) && JsonNode.DeepEquals(result[3], message) &&
+                result[4]?["type"]?.GetValue<string>() == "message" &&
+                result[4]?["content"]?[1]?["text"]?.GetValue<string>() == appObservation["output"]!.GetValue<string>());
+        }
+        using (var untouched = new GatewayRoutedContent(sideEvents, new JsonObject(), false, false, false))
+            check("Native requests keep the original Codex observation envelope", JsonNode.DeepEquals(JsonNode.Parse(await untouched.ReadAsStringAsync()), JsonNode.Parse(sideEvents)));
         var declaration = new JsonObject { ["type"] = "additional_tools", ["role"] = "developer", ["tools"] = new JsonArray(tool.DeepClone()) };
         var input = new JsonObject { ["model"] = "alias", ["tools"] = new JsonArray(tool.DeepClone()),
             ["input"] = new JsonArray(message.DeepClone(), declaration, toolCall.DeepClone(), declaration.DeepClone()) };

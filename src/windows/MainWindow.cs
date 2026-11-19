@@ -23,13 +23,13 @@ internal sealed class MainWindow : Window
 {
     private readonly AccountService _service;
     private readonly DesktopSessionMonitor _sessions;
-    private readonly DesktopStreamRecoveryMonitor _streamRecovery;
     private readonly HardwareResourceMonitor _hardware = new();
     private readonly HardwareUsagePanel _hardwarePanel = new();
     private readonly DriveMonitor _drives;
     private readonly DriveUsagePanel _drivePanel;
     private readonly Program.Options _options;
     private Burn0Theme _theme;
+    private DiagnosticRelayWindow? _diagnosticInspector;
     private readonly System.Windows.Controls.Primitives.UniformGrid _rows = new();
     private readonly ScrollViewer _scroll = new() { VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
     private readonly TextBlock _status = new(), _loginText = new();
@@ -78,8 +78,6 @@ internal sealed class MainWindow : Window
         _drivePanel.IndexPermissionRequested += async root => await EnableFolderIndexAsync(root);
         _drivePanel.IndexRebuildRequested += root => _drives.RefreshFolderIndex(root, true);
         _sessions = new DesktopSessionMonitor(options.CodexHome);
-        _streamRecovery = new DesktopStreamRecoveryMonitor(service, _sessions, () => _ready && !_closing && !_switching && !_loggingIn && !_providerEditing &&
-            !_service.IsBusy && _service.Vault.Data.ActivePendingSwitch == null);
         _theme = new Burn0Theme(service.Vault.Data.Theme != "light");
         Title = "Codex Switch"; Icon = AppIdentity.WindowIcon; Width = 600; Height = 400; MinWidth = 500; MinHeight = 360;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
@@ -253,6 +251,33 @@ internal sealed class MainWindow : Window
             if (ItemsControl.ItemsControlFromItemContainer(item) is ItemsControl previous) previous.Items.Remove(item);
         var menu = DropdownTheme.Create(_homeActions, _theme);
         menu.Items.Add(_providers);
+        var diagnosticRelay = new MenuItem { Header = Loc.T("diagnostics.title"), Name = "DiagnosticRelayMenuItem" };
+        diagnosticRelay.Click += (_, _) =>
+        {
+            if (_diagnosticInspector != null)
+            {
+                if (!_diagnosticInspector.IsVisible) _diagnosticInspector.OpenModeless();
+                if (_diagnosticInspector.WindowState == WindowState.Minimized) _diagnosticInspector.WindowState = WindowState.Normal;
+                _diagnosticInspector.Activate(); return;
+            }
+            var badges = _service.ModelProviders.Settings.Providers.SelectMany(provider => provider.Models.Select(model =>
+                new KeyValuePair<string, DiagnosticModelBadge>(model.Alias(provider.Id),
+                    new(model.UpstreamId, DiagnosticModelBadge.IsHuggingFace(provider.BaseUrl)))))
+                .ToDictionary(pair => pair.Key, pair => pair.Value);
+            _diagnosticInspector = new DiagnosticRelayWindow(this, _service.Installation.CliPath, home: _service.CodexHome, theme: _theme,
+                titleLookup: ids => NativeHistoryThreads.Titles(_service.CodexHome, ids), stateDirectory: System.IO.Path.Combine(_service.Vault.DirectoryPath, "diagnostic-relay"),
+                openChat: id => RuntimeLocator.OpenDesktopThread(_service.Installation.DesktopPath, id),
+                sidebarLookup: ids => NativeHistoryThreads.Sidebar(_service.CodexHome, ids), modelBadges: badges);
+            _diagnosticInspector.Closed += (_, _) => _diagnosticInspector = null;
+            _diagnosticInspector.Closing += (window, args) =>
+            {
+                if (_closing) return;
+                args.Cancel = true;
+                ((DiagnosticRelayWindow)window!).Hide();
+            };
+            _diagnosticInspector.OpenModeless();
+        };
+        menu.Items.Add(diagnosticRelay);
         _automaticSwitch.Items.Clear();
         var automatic = BuildAutomaticSwitchMenu();
         while (automatic.Items.Count > 0) { var item = automatic.Items[0]; automatic.Items.RemoveAt(0); _automaticSwitch.Items.Add(item); }
@@ -376,17 +401,8 @@ internal sealed class MainWindow : Window
     internal void ReportBackgroundError(Exception error) => SetStatus(UserErrors.Describe(error), true);
     private void SetResources()
     {
-        var style = new Style(typeof(Button));
-        style.Setters.Add(new Setter(Control.ForegroundProperty, Color("text"))); style.Setters.Add(new Setter(Control.BackgroundProperty, Color("surface")));
-        style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0))); style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12, 6, 12, 6)));
-        style.Setters.Add(new Setter(Control.FontSizeProperty, _theme.Number("ui-size"))); style.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.Medium));
-        style.Setters.Add(new Setter(FrameworkElement.MinHeightProperty, _theme.Number("control-height"))); style.Setters.Add(new Setter(Control.CursorProperty, System.Windows.Input.Cursors.Hand));
-        style.Setters.Add(new Setter(Control.TemplateProperty, ButtonTemplate(_theme.Number("radius"))));
-        var hover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true }; hover.Setters.Add(new Setter(Control.BackgroundProperty, Color("hover"))); style.Triggers.Add(hover);
-        var disabled = new Trigger { Property = UIElement.IsEnabledProperty, Value = false }; disabled.Setters.Add(new Setter(UIElement.OpacityProperty, 0.45)); style.Triggers.Add(disabled);
-        var primary = new Style(typeof(Button), style); primary.Setters.Add(new Setter(Control.BackgroundProperty, Color("action"))); primary.Setters.Add(new Setter(Control.ForegroundProperty, Color("on-action")));
-        var primaryHover = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true }; primaryHover.Setters.Add(new Setter(Control.BackgroundProperty, Color("action"))); primaryHover.Setters.Add(new Setter(UIElement.OpacityProperty, 0.88)); primary.Triggers.Add(primaryHover);
-        var caption = new Style(typeof(Button), style); caption.Setters.Add(new Setter(Control.TemplateProperty, ButtonTemplate(0)));
+        var (style, primary) = _theme.ButtonStyles();
+        var caption = new Style(typeof(Button), style); caption.Setters.Add(new Setter(Control.TemplateProperty, Burn0Theme.ButtonTemplate(0)));
         var titleAction = new Style(typeof(Button), style);
         titleAction.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
         titleAction.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(0)));
@@ -409,13 +425,6 @@ internal sealed class MainWindow : Window
         Resources["TitleActionButton"] = titleAction;
         Resources[typeof(CheckBox)] = switchStyle;
     }
-    private static ControlTemplate ButtonTemplate(double radius)
-    {
-        var template = new ControlTemplate(typeof(Button)); var border = new FrameworkElementFactory(typeof(Border)); border.SetValue(Border.CornerRadiusProperty, new CornerRadius(radius));
-        border.SetBinding(Border.BackgroundProperty, new System.Windows.Data.Binding("Background") { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
-        var presenter = new FrameworkElementFactory(typeof(ContentPresenter)); presenter.SetBinding(FrameworkElement.MarginProperty, new System.Windows.Data.Binding("Padding") { RelativeSource = System.Windows.Data.RelativeSource.TemplatedParent });
-        presenter.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center); presenter.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center); border.AppendChild(presenter); template.VisualTree = border; return template;
-    }
     private async Task EnsureInitializedAsync(CancellationToken cancellation)
     {
         if (_ready) return;
@@ -430,7 +439,6 @@ internal sealed class MainWindow : Window
         _started = true;
         if (_options.UiEvidenceDirectory != null) return;
         _sessions.Start();
-        if (_options.ReportPath == null) _streamRecovery.Start();
         _hardware.Start();
         _drives.Configure(_service.Vault.Data.Drives.ToArray()); _drives.Start();
         if (_options.ReportPath == null) { CreateTray(); _refreshTimer.Start(); _clockTimer.Start(); }
@@ -1120,7 +1128,6 @@ internal sealed class MainWindow : Window
         await Task.WhenAll(_operations.ToArray());
         WriteRunningState("stopping-drives"); await _drives.DisposeAsync();
         WriteRunningState("stopping-hardware"); await _hardware.DisposeAsync();
-        WriteRunningState("stopping-stream-recovery"); await _streamRecovery.DisposeAsync();
         WriteRunningState("stopping-sessions"); await _sessions.DisposeAsync();
         WriteRunningState("stopping-service"); await _service.StopAsync();
         _exit = true; _tray?.Dispose(); WriteRunningState("stopped"); Application.Current.Shutdown();

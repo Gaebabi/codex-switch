@@ -33,7 +33,6 @@ internal sealed class DeskWindow : Window
     private readonly Dictionary<string, ResourcePressure> _volumeTemperaturePressure = new();
     private readonly List<Task> _operations = new();
     private AccountService? _service;
-    private DesktopStreamRecoveryMonitor? _streamRecovery;
     private DeskTheme _theme;
     private Grid _accounts = new(), _hardware = new();
     private ScrollViewer _accountScroll = new();
@@ -115,9 +114,6 @@ internal sealed class DeskWindow : Window
             await _service.InitializeAsync(token); _ready = true;
             if (OperatingSystem.IsLinux()) _statusMessage = Loc.T(_service.HasLinuxDesktop ? "msg.linux_desktop_ready" : "msg.linux_cli_only");
             _sessions.Start(); _resources.Start(); _drives.Configure(_service.Vault.Data.Drives.ToArray()); _drives.Start();
-            _streamRecovery ??= new DesktopStreamRecoveryMonitor(_service, _sessions, () => _ready && !Exiting && _login == null && _switch == null &&
-                !_providerEditing && !_service.IsBusy && _service.Vault.Data.ActivePendingSwitch == null);
-            _streamRecovery.Start();
             UpdateTray(); RenderAccounts();
             await _service.RefreshAllAsync(null, token);
             await RecoverAutomaticSwitchAsync();
@@ -142,6 +138,11 @@ internal sealed class DeskWindow : Window
         var mark = new BrandMark { Width = 18, Height = 18, Ink = _theme.Brush("text") };
         var captionContent = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
         captionContent.Children.Add(mark); captionContent.Children.Add(caption);
+        var version = _theme.Text("v" + typeof(DeskWindow).Assembly.GetName().Version!.ToString(3), 10, "muted");
+        version.Name = "RunningVersionLabel";
+        version.VerticalAlignment = VerticalAlignment.Center;
+        version.FlowDirection = FlowDirection.LeftToRight;
+        captionContent.Children.Add(version);
         var dragRegion = new Border { Background = Brushes.Transparent, Margin = new Thickness(_host.Appearance.TitleInset, 0, 0, 0), Child = captionContent };
         dragRegion.PointerPressed += (_, args) =>
         {
@@ -656,7 +657,6 @@ internal sealed class DeskWindow : Window
     {
         if (Exiting) return; Exiting = true; _clock.Stop(); _stop.Cancel(); _login?.Cancel(); _switch?.Cancel();
         await Task.WhenAll(_operations.ToArray());
-        if (_streamRecovery != null) await _streamRecovery.DisposeAsync();
         if (_service != null) await _service.StopAsync();
         await _sessions.DisposeAsync(); await _resources.DisposeAsync(); await _drives.DisposeAsync(); _tray?.Dispose();
         _service?.ReleaseDesktop();

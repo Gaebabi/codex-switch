@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0-windows</TargetFramework><UseWPF>true</UseWPF><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/core/CodexSwitch.Core.csproj" />
+    <ProjectReference Include="../../src/platforms/protocol/CodexSwitch.Protocol.csproj" />
+    <Compile Include="../../src/windows/DiagnosticRelayWindow.cs" Link="DiagnosticRelayWindow.cs" />
+    <Compile Include="../../src/windows/DiagnosticStatisticsView.cs" Link="DiagnosticStatisticsView.cs" />
+    <Compile Include="../../src/windows/DiagnosticEventFeed.cs" Link="DiagnosticEventFeed.cs" />
+    <Compile Include="../../src/windows/Burn0Theme.cs" Link="Burn0Theme.cs" />
+    <Compile Include="../../src/windows/DropdownTheme.cs" Link="DropdownTheme.cs" />
+    <Compile Include="../../src/windows/PanelLayout.cs" Link="PanelLayout.cs" />
+    <Compile Include="../../src/windows/ScrollTheme.cs" Link="ScrollTheme.cs" />
+    <Compile Include="../../src/windows/ToolTipTheme.cs" Link="ToolTipTheme.cs" />
+    <Compile Include="../../src/diagnostics/RelayInstallation.cs" Link="RelayInstallation.cs" />
+    <EmbeddedResource Include="../../resources/Burn0Tokens.css" LogicalName="CodexAccountDesk.Burn0Tokens.css" />
+    <EmbeddedResource Include="../../resources/Burn0Icons.json" LogicalName="CodexAccountDesk.Burn0Icons.json" />
+  </ItemGroup>
+  <Target Name="RunUiContracts" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true'"><Exec Command="dotnet &quot;$(TargetPath)&quot;" /></Target>
+</Project>

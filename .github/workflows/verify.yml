@@ -135,6 +135,12 @@ jobs:
       - name: Verify the packaged live desktop backend with the actual native CLI
         shell: pwsh
         run: dotnet run --project tests/model-providers/CodexSwitch.ModelProviders.Tests.csproj -c Release --no-build --no-launch-profile -- --backend-only --codex "$env:CODEX_ACCOUNT_DESK_CLI" --backend "${{ github.workspace }}/artifacts/win-x64/backend/CodexSwitch.Backend.exe"
+      - name: Verify Diagnostic Relay preservation, timing and native OFF contracts
+        shell: pwsh
+        run: dotnet build tests/diagnostic-relay/CodexSwitch.DiagnosticRelay.Tests.csproj -c Release -p:UseSharedCompilation=false
+      - name: Verify Diagnostic Relay production controls with fictional state
+        shell: pwsh
+        run: dotnet build tests/diagnostic-relay-ui/CodexSwitch.DiagnosticRelay.UiTests.csproj -c Release -p:UseSharedCompilation=false
       - name: Verify bounded concurrent gateway load with generated near-limit inputs
         shell: pwsh
         run: dotnet run --project tests/model-providers/CodexSwitch.ModelProviders.Tests.csproj -c Release --no-build --no-launch-profile -- --stress

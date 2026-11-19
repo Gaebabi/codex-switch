@@ -187,7 +187,7 @@ try:
     os.environ['CODEX_HOME'] = str(ordinary_home)
     app = '/opt/codex-switch/CodexSwitch'
     info = json.loads(run([app, '--package-info'], capture_output=True).stdout)
-    check('Installed candidate version/architecture/runtime match', info['version'] == expected['candidateVersion'] and info['architecture'] == 'X64' and info['runtime'] == '.NET 10.0.13')
+    check('Installed candidate version/architecture/runtime match', info['version'] == expected['candidateVersion'] and info['architecture'] == 'X64' and info['runtime'] == '.NET 10.0.15')
     run([app, '--install-package'], stdout=private_log, stderr=private_log)
     entry = root / 'share/applications/codex-switch.desktop'
     run(['desktop-file-validate', str(entry)])

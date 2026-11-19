@@ -65,10 +65,7 @@ internal sealed class DriveUsagePanel : Grid
         private readonly Action<string> _rebuildIndex;
         private bool _indexSetupBusy;
         private string? _indexMenuTheme, _indexMenuLanguage;
-        private readonly Ellipse _spinner = new() { Name = "FolderScanSpinner", Width = 10, Height = 10, StrokeThickness = 1.8,
-            StrokeDashArray = new DoubleCollection { 11, 5 }, StrokeDashCap = PenLineCap.Round,
-            Margin = new Thickness(4, 0, 0, 0), RenderTransformOrigin = new Point(.5, .5),
-            RenderTransform = new RotateTransform(), Visibility = Visibility.Collapsed };
+        private readonly Ellipse _spinner = Burn0Theme.LoadingSpinner();
         private readonly TextBlock _temperature = new() { FontSize = 10, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 5, 0) };
         private ResourcePressure _temperaturePressure;
         private readonly Border[] _ioTracks = new Border[2], _ioFills = new Border[2];
@@ -79,13 +76,8 @@ internal sealed class DriveUsagePanel : Grid
             Root = root; _openDirectory = openDirectory; _rebuildIndex = rebuildIndex; Margin = new Thickness(0, 2, 4, 2);
             _text.Inlines.Add(_capacity);
             _indexPermission.Click += (_, _) => enableIndex(Root);
-            _spinner.IsVisibleChanged += (_, _) =>
-            {
-                var rotation = (RotateTransform)_spinner.RenderTransform;
-                rotation.BeginAnimation(RotateTransform.AngleProperty, _spinner.IsVisible
-                    ? new DoubleAnimation(0, 360, TimeSpan.FromSeconds(1)) { RepeatBehavior = RepeatBehavior.Forever }
-                    : null);
-            };
+            _spinner.Name = "FolderScanSpinner";
+            _spinner.Margin = new Thickness(4, 0, 0, 0);
             UseLayoutRounding = true;
             RowDefinitions.Add(new() { Height = new GridLength(16) });
             RowDefinitions.Add(new() { Height = new GridLength(2) });

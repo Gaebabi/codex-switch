@@ -20,11 +20,15 @@ $taskSensorHash = (Get-FileHash -LiteralPath (Join-Path $taskOutput 'sensors/Cod
 if ($LASTEXITCODE -ne 0) { throw 'Windows publish failed' }
 & dotnet publish (Join-Path $taskRoot 'src/backend/CodexSwitch.Backend.csproj') -c Release -r win-x64 --self-contained true --nologo -p:UseSharedCompilation=false @storageArguments -o (Join-Path $taskOutput 'backend')
 if ($LASTEXITCODE -ne 0) { throw 'Desktop backend publish failed' }
+& dotnet publish (Join-Path $taskRoot 'src/diagnostics/CodexSwitch.Diagnostics.csproj') -c Release -r win-x64 --self-contained true --nologo -p:UseSharedCompilation=false @storageArguments -o (Join-Path $taskOutput 'diagnostics')
+if ($LASTEXITCODE -ne 0) { throw 'Diagnostic Relay publish failed' }
 Copy-Item -LiteralPath (Join-Path $taskRoot 'licenses/PawnIO-Modules.LGPL-2.1.txt') -Destination (Join-Path $taskOutput 'sensors/PawnIO-Modules.LGPL-2.1.txt')
 Copy-Item -LiteralPath (Join-Path $taskRoot 'src/sensors/modules/SOURCE.md') -Destination (Join-Path $taskOutput 'sensors/SOURCE.md')
 Copy-Item -LiteralPath (Join-Path $taskRoot 'src/sensors/modules/source') -Destination (Join-Path $taskOutput 'sensors/module-source') -Recurse -Force
 if ($Verify) {
-    $taskReport = if ($taskRun) { Join-Path $taskRun 'self-tests.json' } else { Join-Path $taskRoot 'artifacts\self-tests.json' }
+    # Self-tests create private fixture directories; SMB build storage does not provide the required local ACL contract.
+    $taskReport = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) ('Temp/CSVerify-'+[guid]::NewGuid().ToString('N').Substring(0,8)+'/self-tests.json')
+    [IO.Directory]::CreateDirectory((Split-Path -Parent $taskReport)) | Out-Null
     $taskProcess = Start-Process -FilePath (Join-Path $taskOutput 'CodexSwitch.exe') -ArgumentList @('--self-test','--verify-readonly',('"'+$taskReport+'"')) -WindowStyle Hidden -PassThru
     if (!$taskProcess.WaitForExit(60000)) { throw 'Internal verification did not finish' }
     $taskResult = Get-Content -LiteralPath $taskReport -Raw | ConvertFrom-Json

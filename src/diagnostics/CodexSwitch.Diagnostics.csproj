@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>CodexSwitch.Diagnostics</AssemblyName><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../platforms/client/OwnedProcessJob.cs" Link="OwnedProcessJob.cs" />
+    <Compile Include="../application/DiagnosticGatewayEndpoint.cs" Link="DiagnosticGatewayEndpoint.cs" />
+  </ItemGroup>
+</Project>

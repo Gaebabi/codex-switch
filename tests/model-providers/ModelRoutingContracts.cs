@@ -122,9 +122,6 @@ internal static class ModelRoutingContracts
         manager.SelectRoute(aliasB); await manager.RemoveAsync(b.Id, CancellationToken.None); start = upstream.Requests.Count;
         using (var removed = await Send("removed-selection"))
             check("Deleting the selected provider refuses explicitly without a fallback", removed.StatusCode == HttpStatusCode.BadRequest && manager.Settings.SelectedRoute == aliasB && upstream.Requests.Skip(start).All(request => request.Method != "POST"));
-        check("Automatic continuation refuses a removed virtual selection", !StreamRecoveryPolicy.RegisteredModel(ModelRouting.Model, manager.Settings));
-        manager.SelectRoute(aliasA);
-        check("Automatic continuation recognizes a registered virtual selection", StreamRecoveryPolicy.RegisteredModel(ModelRouting.Model, manager.Settings));
     }
 
     private sealed class GatedUpload : HttpContent
