@@ -58,8 +58,8 @@ internal static class DesktopShutdown
             {
                 try
                 {
-                    if (!string.Equals(process.MainModule?.FileName, executable, StringComparison.OrdinalIgnoreCase)) continue;
-                    var started = process.StartTime.ToUniversalTime().ToFileTimeUtc();
+                    if (WindowsProcessImage.Read(process.Id) is not { } image || !image.MatchesPath(executable)) continue;
+                    var started = image.CreationTime;
                     processes.Add(new() { Id = (uint)process.Id, Started = new() { dwLowDateTime = (int)started, dwHighDateTime = (int)(started >> 32) } });
                 }
                 catch (InvalidOperationException) { }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -26,7 +27,48 @@ if (OperatingSystem.IsWindows() || OperatingSystem.IsMacOS())
         Rejected<FileNotFoundException>(() => RuntimeLocator.LaunchDesktop(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing-client"))));
     Check("Absent app thread-open is refused", () =>
         Rejected<FileNotFoundException>(() => RuntimeLocator.OpenDesktopThread(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing-client"), Guid.NewGuid().ToString())));
-    if (OperatingSystem.IsWindows()) Check("Empty Windows executable cannot report a running client", () => Assert(!RuntimeLocator.IsDesktopRunning("")));
+    if (OperatingSystem.IsWindows())
+    {
+        Check("Empty Windows executable cannot report a running client", () => Assert(!RuntimeLocator.IsDesktopRunning("")));
+        Check("Windows process image lookup keeps the live executable identity and excludes an exited process", () =>
+        {
+            var image = WindowsProcessImage.Read(Environment.ProcessId);
+            Assert(image.HasValue && image.Value.CreationTime > 0 && image.Value.MatchesPath(Environment.ProcessPath!));
+            var command = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe");
+            var start = new ProcessStartInfo(command) { UseShellExecute = false, CreateNoWindow = true };
+            foreach (var argument in new[] { "/d", "/q", "/c", "exit", "0" }) start.ArgumentList.Add(argument);
+            using var process = Process.Start(start) ?? throw new InvalidOperationException("The disposable process did not start.");
+            Assert(process.WaitForExit(5000) && WindowsProcessImage.Read(process.Id) == null);
+        });
+        Check("Windows discovery distinguishes the desktop from a CLI running inside its installation", () =>
+        {
+            const string package = @"C:\Program Files\WindowsApps\OpenAI.Codex_26.1117.3838.0_x64__2p2nqsd0c76g0\app";
+            const string unpackaged = @"C:\Users\fixture\AppData\Local\OpenAI\Codex";
+            Assert(RuntimeLocator.IsWindowsDesktopExecutable(Path.Combine(package, "ChatGPT.exe")));
+            Assert(RuntimeLocator.IsWindowsDesktopExecutable(Path.Combine(package, "Codex.exe")));
+            Assert(!RuntimeLocator.IsWindowsDesktopExecutable(Path.Combine(package, "resources", "codex.exe")));
+            Assert(RuntimeLocator.IsWindowsDesktopExecutable(Path.Combine(unpackaged, "ChatGPT.exe")));
+            Assert(!RuntimeLocator.IsWindowsDesktopExecutable(Path.Combine(unpackaged, "bin", "version", "codex.exe")));
+        });
+        Check("Cancelled Windows discovery refuses even valid explicit paths", () =>
+        {
+            const string cli = "CODEX_ACCOUNT_DESK_CLI";
+            const string desktop = "CODEX_ACCOUNT_DESK_DESKTOP";
+            var previousCli = Environment.GetEnvironmentVariable(cli);
+            var previousDesktop = Environment.GetEnvironmentVariable(desktop);
+            try
+            {
+                Environment.SetEnvironmentVariable(cli, Environment.ProcessPath!);
+                Environment.SetEnvironmentVariable(desktop, Environment.ProcessPath!);
+                Rejected<OperationCanceledException>(() => RuntimeLocator.FindAsync(new CancellationToken(true)).GetAwaiter().GetResult());
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(cli, previousCli);
+                Environment.SetEnvironmentVariable(desktop, previousDesktop);
+            }
+        });
+    }
 }
 else
 {

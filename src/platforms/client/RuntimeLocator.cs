@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,7 +21,9 @@ internal static class RuntimeLocator
             return new(installation.Cli.Path, installation.Desktop!.Path);
         }
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Codex discovery requires a supported platform provider.");
+        cancellation.ThrowIfCancellationRequested();
         var desktop = await FindDesktopAsync(cancellation);
+        cancellation.ThrowIfCancellationRequested();
         var candidates = new List<string>();
         var overrideCli = Environment.GetEnvironmentVariable("CODEX_ACCOUNT_DESK_CLI");
         if (!string.IsNullOrWhiteSpace(overrideCli)) candidates.Add(overrideCli);
@@ -47,11 +48,10 @@ internal static class RuntimeLocator
             using (process)
             {
                 string? path;
-                try { path = process.MainModule?.FileName; }
+                try { path = WindowsProcessImage.Read(process.Id)?.Path; }
                 catch (System.ComponentModel.Win32Exception) { continue; }
                 catch (InvalidOperationException) { continue; }
-                if (path != null && (path.Contains("WindowsApps\\OpenAI.Codex_", StringComparison.OrdinalIgnoreCase) ||
-                    path.Contains("OpenAI\\Codex", StringComparison.OrdinalIgnoreCase) && !path.Contains("\\bin\\", StringComparison.OrdinalIgnoreCase))) return path;
+                if (path != null && IsWindowsDesktopExecutable(path)) return path;
             }
         }
         var powershell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "WindowsPowerShell", "v1.0", "powershell.exe");
@@ -71,6 +71,22 @@ internal static class RuntimeLocator
         }
         return "";
     }
+    internal static bool IsWindowsDesktopExecutable(string path)
+    {
+        const StringComparison comparison = StringComparison.OrdinalIgnoreCase;
+        var name = Path.GetFileName(path);
+        if (!string.Equals(name, "ChatGPT.exe", comparison) && !string.Equals(name, "Codex.exe", comparison)) return false;
+
+        var directory = Path.GetDirectoryName(path);
+        var inAppDirectory = string.Equals(Path.GetFileName(directory), "app", comparison);
+        var root = inAppDirectory ? Path.GetDirectoryName(directory) : directory;
+        if (string.IsNullOrEmpty(root)) return false;
+
+        var rootName = Path.GetFileName(root);
+        var parentName = Path.GetFileName(Path.GetDirectoryName(root));
+        return inAppDirectory && string.Equals(parentName, "WindowsApps", comparison) && rootName.StartsWith("OpenAI.Codex_", comparison) ||
+            string.Equals(parentName, "OpenAI", comparison) && string.Equals(rootName, "Codex", comparison);
+    }
     public static bool IsDesktopRunning(string executable)
     {
         if (OperatingSystem.IsLinux()) return executable.Length != 0 && LinuxDesktopRuntime.Running().Length != 0;
@@ -81,9 +97,9 @@ internal static class RuntimeLocator
         {
             using (process)
             {
-                try { if (string.Equals(process.MainModule?.FileName, executable, StringComparison.OrdinalIgnoreCase)) return true; }
+                try { if (WindowsProcessImage.Read(process.Id) is { } image && image.MatchesPath(executable)) return true; }
                 catch (InvalidOperationException) { }
-                catch (System.ComponentModel.Win32Exception) { throw new IOException("Codex의 실행 상태를 확인할 수 없어 계정 전환을 중단했습니다."); }
+                catch (System.ComponentModel.Win32Exception error) { throw new IOException("Codex의 실행 상태를 확인할 수 없어 계정 전환을 중단했습니다.", error); }
             }
         }
         return false;
