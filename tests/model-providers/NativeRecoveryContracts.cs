@@ -228,6 +228,28 @@ internal static class NativeRecoveryContracts
         File.WriteAllText(child, Meta(new { thread_id = parent, end_byte_offset = Encoding.UTF8.GetByteCount(prefix) }));
         var found = NativeHistoryRecovery.ReadLatest(home, child, session, CancellationToken.None);
         check("Recovery follows the exact segmented history and excludes records after its boundary", found.Tokens.SequenceEqual(new[] { token }));
+        var large = Path.Combine(sessions, "rollout-large-" + session + ".jsonl");
+        var padding = Encoding.UTF8.GetBytes("{\"type\":\"event_msg\",\"payload\":{\"text\":\"한글" + new string('x', 256 * 1024) + "\"}}\n");
+        long largeBound;
+        using (var stream = File.Create(large))
+        {
+            stream.Write(Encoding.UTF8.GetBytes(Meta()));
+            while (stream.Position <= 512L * 1024 * 1024) stream.Write(padding);
+            stream.Write(Encoding.UTF8.GetBytes(Compact(token)));
+            largeBound = stream.Position;
+        }
+        check("A long native segment still exposes its latest checkpoint", NativeHistoryRecovery.ReadLatest(home, large, session, CancellationToken.None).Tokens.SequenceEqual(new[] { token }));
+        File.AppendAllText(large, Compact("outside-large-parent-bound"));
+        var largeChild = Path.Combine(sessions, "rollout-large-child-" + session + "_" + Guid.NewGuid() + ".jsonl");
+        File.WriteAllText(largeChild, Meta(new { thread_id = session, end_byte_offset = largeBound }));
+        check("A large parent uses its exact byte boundary instead of its later tail", NativeHistoryRecovery.ReadLatest(home, largeChild, session, CancellationToken.None).Tokens.SequenceEqual(new[] { token }));
+        File.WriteAllText(largeChild, Meta(new { thread_id = session, end_byte_offset = new FileInfo(large).Length + 1 }));
+        var invalidLargeBound = false;
+        try { NativeHistoryRecovery.ReadLatest(home, largeChild, session, CancellationToken.None); }
+        catch (InvalidDataException) { invalidLargeBound = true; }
+        check("A parent boundary past end of file still fails closed", invalidLargeBound);
+        File.Delete(largeChild);
+        File.Delete(large);
         File.AppendAllText(child, Compact("real-native-compaction"));
         check("A newer native checkpoint makes recovery idempotent without editing old history", NativeHistoryRecovery.ReadLatest(home, child, session, CancellationToken.None).Tokens.Length == 0);
         var foreignRecord = JsonSerializer.Serialize(new { type = "response_item", payload = foreign.RootElement }) + "\n";

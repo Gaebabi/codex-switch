@@ -18,6 +18,26 @@ Check("RPC/desktop state/queue algorithms share one UI-independent protocol asse
         typeof(SessionActivity).Assembly == assembly && typeof(DesktopQueueState).Assembly == assembly && typeof(ServerQueueStore).Assembly == assembly);
     Assert(!assembly.GetReferencedAssemblies().Any(a => a.Name is "CodexSwitch" or "PresentationFramework" or "Avalonia" or "Avalonia.Controls"));
 });
+Check("Isolated account RPC strips workload identity inputs without changing the parent environment", () =>
+{
+    const string rule = "OPENAI_FEDERATION_RULE_ID";
+    const string tokenFile = "OPENAI_IDENTITY_TOKEN_FILE";
+    var previousRule = Environment.GetEnvironmentVariable(rule);
+    var previousTokenFile = Environment.GetEnvironmentVariable(tokenFile);
+    try
+    {
+        Environment.SetEnvironmentVariable(rule, "synthetic-rule");
+        Environment.SetEnvironmentVariable(tokenFile, "synthetic-token-file");
+        var start = CodexRpc.CreateStart("fixture-codex", Path.GetTempPath(), preserveProvider: false, isolatedFileCredentials: true);
+        Assert(!start.Environment.ContainsKey(rule) && !start.Environment.ContainsKey(tokenFile));
+        Assert(Environment.GetEnvironmentVariable(rule) == "synthetic-rule" && Environment.GetEnvironmentVariable(tokenFile) == "synthetic-token-file");
+    }
+    finally
+    {
+        Environment.SetEnvironmentVariable(rule, previousRule);
+        Environment.SetEnvironmentVariable(tokenFile, previousTokenFile);
+    }
+});
 Check("Native SQLite is isolated from UI/domain/protocol projects", () =>
 {
     var assembly = typeof(ReadOnlySqlite).Assembly;

@@ -43,15 +43,15 @@ Responses互換のプロバイダーを登録すると、Windowsの**標準Codex
 
 | プラットフォーム | アーキテクチャ | パッケージ |
 | --- | --- | --- |
-| Windows | x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.7/CodexSwitch-v1.45.7-win-x64.zip) |
-| macOS 15+ | Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.7/CodexSwitch-v1.45.7-osx-arm64.zip) |
-| macOS 15+ | Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.7/CodexSwitch-v1.45.7-osx-x64.zip) |
-| Linux プレビュー | x64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.7/CodexSwitch-v1.45.7-preview-linux-x64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.7/CodexSwitch-v1.45.7-preview-linux-x64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.7/CodexSwitch-v1.45.7-preview-linux-x64.tar.gz) |
-| Linux プレビュー | arm64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.7/CodexSwitch-v1.45.7-preview-linux-arm64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.7/CodexSwitch-v1.45.7-preview-linux-arm64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.7/CodexSwitch-v1.45.7-preview-linux-arm64.tar.gz) |
+| Windows | x64 | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.8/CodexSwitch-v1.45.8-win-x64.zip) |
+| macOS 15+ | Apple Silicon | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.8/CodexSwitch-v1.45.8-osx-arm64.zip) |
+| macOS 15+ | Intel | [ZIP](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.8/CodexSwitch-v1.45.8-osx-x64.zip) |
+| Linux プレビュー | x64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.8/CodexSwitch-v1.45.8-preview-linux-x64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.8/CodexSwitch-v1.45.8-preview-linux-x64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.8/CodexSwitch-v1.45.8-preview-linux-x64.tar.gz) |
+| Linux プレビュー | arm64 | [DEB](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.8/CodexSwitch-v1.45.8-preview-linux-arm64.deb) · [RPM](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.8/CodexSwitch-v1.45.8-preview-linux-arm64.rpm) · [tar.gz](https://github.com/Gaebabi/codex-switch/releases/download/v1.45.8/CodexSwitch-v1.45.8-preview-linux-arm64.tar.gz) |
 
 .NETランタイムを同梱しています。展開したフォルダー／アプリバンドル全体を保持してください。
 
-[リリースノート・SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.7) · [Macの初回起動](MACOS.md) · [Linuxの要件とターミナル操作](development/LINUX_PACKAGES.md). Windows/Linuxは未署名、Macはアドホック署名でAppleの公証はありません。
+[リリースノート・SHA256](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.8) · [Macの初回起動](MACOS.md) · [Linuxの要件とターミナル操作](development/LINUX_PACKAGES.md). Windows/Linuxは未署名、Macはアドホック署名でAppleの公証はありません。
 
 ## 使い始める
 

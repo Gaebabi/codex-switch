@@ -1,5 +1,7 @@
 # Current plan
 
+2026-11-22 owner requested 1.45.8 publication and installation on CodexWork. The release covers Windows discovery, shutdown observation and isolation of account RPC authentication. First-launch responsiveness and exactly-once continuation are separate acceptance checks. [Release verification](RELEASE_1_45_8.md).
+
 2026-11-17 owner request implemented: error-triggered automatic Continue submission, both desktop-host lifecycle hooks, polling/receipt code and the unused failed-rollout reader are removed. Account/provider/composition regressions pass313/352/6 checks, with100package self-tests. Explicit account-switch/restart and terminal continuations remain; existing recovery files are preserved. This is a local follow-up to1.45.6; public publication is a separate scope.
 
 2026-11-17 owner-approved1.45.6 delivery: [issue181](https://github.com/Gaebabi/codex-switch/issues/181) tracks the accepted persistent-index/spinner/permission changes on the explicitly approved release/1.45.6 branch. Require protected final-head CI, reviewed-tree equality and verified native publication; install the released Windows package on host/VM, restart Codex normally with the same account/chats, then remove obsolete installations after their consumers exit. Preserve data/settings/bootstrap/index stores and previous public releases. [Release scope](RELEASE_1_45_6.md).

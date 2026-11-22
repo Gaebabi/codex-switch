@@ -33,7 +33,7 @@ internal sealed class CodexRpc : IAsyncDisposable
         foreach (var name in new[] { "LD_PRELOAD", "LD_LIBRARY_PATH", "LD_AUDIT", "LD_DEBUG", "GLIBC_TUNABLES", "GCONV_PATH" }) start.Environment.Remove(name);
         return new CodexRpc(start);
     }
-    private static ProcessStartInfo CreateStart(string executable, string home, bool preserveProvider, bool isolatedFileCredentials, IReadOnlyDictionary<string, string>? configOverrides = null)
+    internal static ProcessStartInfo CreateStart(string executable, string home, bool preserveProvider, bool isolatedFileCredentials, IReadOnlyDictionary<string, string>? configOverrides = null)
     {
         var start = new ProcessStartInfo(executable) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardInput = true,
             RedirectStandardOutput = true, RedirectStandardError = true, StandardInputEncoding = new UTF8Encoding(false),
@@ -49,6 +49,7 @@ internal sealed class CodexRpc : IAsyncDisposable
         start.Environment.Remove("CODEX_ACCESS_TOKEN");
         start.Environment.Remove("OPENAI_API_KEY");
         start.Environment.Remove("CODEX_API_KEY");
+        start.Environment.Remove("OPENAI_FEDERATION_RULE_ID");
         start.Environment.Remove("OPENAI_IDENTITY_TOKEN_FILE");
         start.Environment.Remove("OPENAI_IDENTITY_TOKEN_AUDIENCE");
         return start;
