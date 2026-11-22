@@ -12,6 +12,9 @@ namespace CodexAccountDesk;
 
 internal static class NativeHistoryRecovery
 {
+    private const int MaximumRecordBytes = 512 * 1024 * 1024;
+    private static readonly UTF8Encoding StrictUtf8 = new(false, true);
+
     internal sealed record Candidate(string ThreadId, string Model, string RolloutPath, string[] Checkpoints, string[]? ForeignReasoning = null, string[]? ForeignItemIds = null);
 
     internal static GatewayIdentity ReadIdentity(string home)
@@ -87,6 +90,41 @@ internal static class NativeHistoryRecovery
         return false;
     }
 
+    private static IEnumerable<ReadOnlyMemory<byte>> ReadSegmentRecords(FileStream file, long remaining, CancellationToken cancellation)
+    {
+        if (remaining == 0) throw new InvalidDataException("The native history segment is incomplete.");
+        var buffer = new byte[64 * 1024];
+        using var record = new MemoryStream();
+        while (remaining > 0)
+        {
+            cancellation.ThrowIfCancellationRequested();
+            var count = (int)Math.Min(buffer.Length, remaining);
+            file.ReadExactly(buffer, 0, count);
+            remaining -= count;
+            var start = 0;
+            while (start < count)
+            {
+                cancellation.ThrowIfCancellationRequested();
+                var newline = Array.IndexOf(buffer, (byte)'\n', start, count - start);
+                var size = (newline < 0 ? count : newline) - start;
+                if (newline >= 0 && record.Length == 0) yield return buffer.AsMemory(start, size);
+                else
+                {
+                    if (record.Length + size > MaximumRecordBytes)
+                        throw new InvalidDataException("A native history record exceeds the verification limit.");
+                    record.Write(buffer, start, size);
+                    if (newline >= 0)
+                    {
+                        yield return record.GetBuffer().AsMemory(0, checked((int)record.Length));
+                        record.SetLength(0);
+                    }
+                }
+                start = newline < 0 ? count : newline + 1;
+            }
+        }
+        if (record.Length != 0) throw new InvalidDataException("The native history segment is incomplete.");
+    }
+
     internal static (string? Account, string[] Tokens, string[] ForeignReasoning, string[] ForeignItemIds) ReadLatest(string home, string path, string thread, CancellationToken cancellation)
     {
         var visited = new HashSet<string>(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
@@ -115,18 +153,15 @@ internal static class NativeHistoryRecovery
                     throw new InvalidDataException("A native history segment crosses an unconfigured linked directory.");
             using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
             var length = bound ?? file.Length;
-            if (length < 0 || length > file.Length || length > 512 * 1024 * 1024)
+            if (length < 0 || length > file.Length)
                 throw new InvalidDataException("The native history segment boundary is invalid.");
-            var bytes = new byte[checked((int)length)]; file.ReadExactly(bytes);
-            if (bytes.Length == 0 || bytes[^1] != '\n') throw new InvalidDataException("The native history segment is incomplete.");
             string? account = null, parent = null, model = null; long? parentBound = null; string[]? tokens = null;
             var segmentReasoning = new HashSet<string>(StringComparer.Ordinal);
             var segmentItemIds = new HashSet<string>(StringComparer.Ordinal);
-            using var reader = new StringReader(new UTF8Encoding(false, true).GetString(bytes));
             var first = true;
-            while (reader.ReadLine() is string line)
+            foreach (var line in ReadSegmentRecords(file, length, cancellation))
             {
-                cancellation.ThrowIfCancellationRequested();
+                StrictUtf8.GetCharCount(line.Span);
                 using var document = JsonDocument.Parse(line); var record = document.RootElement;
                 var payload = record.GetProperty("payload"); var type = JsonValue.String(record, "type");
                 if (first)

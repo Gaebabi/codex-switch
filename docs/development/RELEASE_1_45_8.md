@@ -4,6 +4,8 @@ Windows discovery distinguishes the registered Codex desktop from its bundled CL
 
 Windows process observation reads the executable and start time from one process handle. Exited processes leave the running set, and a mapped drive can match the exact UNC path returned by Windows. Isolated account RPCs remove inherited workload identity parameters together so that a shell's federation settings cannot interrupt an account query.
 
+Native history preflight streams verified UTF-8 records through the captured byte boundary. Returning a long conversation to a native model supports rollout segments larger than 512 MiB. Byte boundaries still have to fit the original files and end on complete records.
+
 ## Acceptance
 
 - Verify the reported startup failure before and after the change using the same signed Windows desktop package and an isolated home. Cover the installed desktop, bundled and standalone CLI, explicit paths, installation gaps, cancellation, concurrent discovery, shutdown and the next launch.
