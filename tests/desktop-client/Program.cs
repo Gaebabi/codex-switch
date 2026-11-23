@@ -29,6 +29,19 @@ if (OperatingSystem.IsWindows() || OperatingSystem.IsMacOS())
         Rejected<FileNotFoundException>(() => RuntimeLocator.OpenDesktopThread(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing-client"), Guid.NewGuid().ToString())));
     if (OperatingSystem.IsWindows())
     {
+        Check("Normal Windows launch uses the official Store activation and keeps standalone launch intact", () =>
+        {
+            var root = Path.Combine(Path.GetTempPath(), "Program Files");
+            var registered = Path.Combine(root, "WindowsApps", "OpenAI.Codex_26.1119.907.0_x64__2p2nqsd0c76g0", "app", "ChatGPT.exe");
+            var store = RuntimeLocator.WindowsDesktopLaunch(registered);
+            Assert(store.UseShellExecute && store.FileName == @"shell:AppsFolder\OpenAI.Codex_2p2nqsd0c76g0!App");
+            var otherPublisher = registered.Replace("2p2nqsd0c76g0", "wrongpublisher", StringComparison.Ordinal);
+            var alternate = RuntimeLocator.WindowsDesktopLaunch(otherPublisher);
+            Assert(!alternate.UseShellExecute && alternate.FileName == otherPublisher);
+            var standalone = Path.Combine(root, "OpenAI", "Codex", "ChatGPT.exe");
+            var executable = RuntimeLocator.WindowsDesktopLaunch(standalone);
+            Assert(!executable.UseShellExecute && executable.FileName == standalone && executable.WorkingDirectory == Path.GetDirectoryName(standalone));
+        });
         Check("Empty Windows executable cannot report a running client", () => Assert(!RuntimeLocator.IsDesktopRunning("")));
         Check("Windows process image lookup keeps the live executable identity and excludes an exited process", () =>
         {

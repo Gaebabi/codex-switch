@@ -1,5 +1,7 @@
 # Current plan
 
+2026-11-23 release 1.45.9 covers Windows taskbar grouping, native chat continuation ownership, early Windows startup readiness and prompt usage display. Check the changelog and image links, then verify the protected PR head, native packages and anonymous release downloads. [Release notes](RELEASE_1_45_9.md).
+
 2026-11-22 owner requested 1.45.8 publication and installation on CodexWork. The release covers Windows discovery, shutdown observation and isolation of account RPC authentication. First-launch responsiveness and exactly-once continuation are separate acceptance checks. [Release verification](RELEASE_1_45_8.md).
 
 2026-11-17 owner request implemented: error-triggered automatic Continue submission, both desktop-host lifecycle hooks, polling/receipt code and the unused failed-rollout reader are removed. Account/provider/composition regressions pass313/352/6 checks, with100package self-tests. Explicit account-switch/restart and terminal continuations remain; existing recovery files are preserved. This is a local follow-up to1.45.6; public publication is a separate scope.

@@ -31,6 +31,8 @@ Responses 호환 제공자를 등록하면 Windows의 **기존 Codex 모델 선�
 
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="media/release-1.45.5/models-ko-dark.png" /><img src="media/release-1.45.5/models-ko-light.png" width="520" alt="커스텀 모델" /></picture></p>
 
+[커스텀 모델 설정 화면 원본 보기](media/custom-models/README.md).
+
 ## 그 밖의 핵심 기능
 
 | 할 일 | 제공 기능 |

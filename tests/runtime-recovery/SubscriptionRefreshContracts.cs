@@ -7,12 +7,14 @@ using System.Text.Json;
 
 internal static class SubscriptionRefreshContracts
 {
-    private sealed class Handler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
+    private sealed class Handler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellation)
-        { cancellation.ThrowIfCancellationRequested(); return Task.FromResult(respond(request)); }
+        { cancellation.ThrowIfCancellationRequested(); return respond(request, cancellation); }
     }
-    public static HttpClient InstallClient(object service, Func<HttpRequestMessage, HttpResponseMessage> respond)
+    public static HttpClient InstallClient(object service, Func<HttpRequestMessage, HttpResponseMessage> respond) =>
+        InstallClient(service, (request, _) => Task.FromResult(respond(request)));
+    private static HttpClient InstallClient(object service, Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond)
     {
         var client = new HttpClient(new Handler(respond));
         var property = service.GetType().GetProperty("SubscriptionClient", BindingFlags.Instance | BindingFlags.NonPublic)!;
@@ -43,10 +45,17 @@ internal static class SubscriptionRefreshContracts
         var vault = Activator.CreateInstance(vaultType, vaultPath)!;
         var service = Activator.CreateInstance(serviceType, new object?[] { vault, home, null, null, null })!;
         var mode = "success"; var requestValid = false;
-        using var http = InstallClient(service, request =>
+        var billingEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var allowBilling = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var http = InstallClient(service, async (request, cancellation) =>
         {
             requestValid = request.Method == HttpMethod.Get && request.RequestUri!.AbsoluteUri == "https://chatgpt.com/backend-api/accounts/check/v4-2023-04-27" &&
                 request.Headers.Authorization?.Parameter == "fictional-valid-access" && request.Headers.GetValues("ChatGPT-Account-ID").Single() == "subscription-fixture-workspace" && request.Headers.UserAgent.ToString().StartsWith("CodexSwitch/");
+            if (mode == "failure")
+            {
+                billingEntered.TrySetResult();
+                await allowBilling.Task.WaitAsync(cancellation);
+            }
             return mode switch {
                 "failure" => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable),
                 "mismatch" => Response("different-account", newEnd),
@@ -71,8 +80,16 @@ internal static class SubscriptionRefreshContracts
             await Call("RefreshAllAsync", null, CancellationToken.None);
             check(Equals(Value("SubscriptionActiveUntil"), newEnd), "Canonical credential synchronization cannot restore the old token date");
             var usage = Value("Usage"); var checkedAt = Value("SubscriptionLastChecked"); mode = "failure";
-            await Call("RefreshAllAsync", null, CancellationToken.None);
-            check(Value("Error") == null && Value("SubscriptionError") != null && !ReferenceEquals(usage, Value("Usage")) && Equals(Value("SubscriptionLastChecked"), checkedAt) && Equals(Value("SubscriptionActiveUntil"), newEnd), "Billing failure is explicit, preserves its last successful timestamp, and does not block quota refresh");
+            var pending = Call("RefreshAllAsync", null, CancellationToken.None);
+            bool quotaVisible;
+            try
+            {
+                await billingEntered.Task.WaitAsync(TimeSpan.FromSeconds(15));
+                quotaVisible = !pending.IsCompleted && Value("Error") == null && !ReferenceEquals(usage, Value("Usage")) && Equals(Value("SubscriptionLastChecked"), checkedAt);
+            }
+            finally { allowBilling.TrySetResult(); }
+            await pending;
+            check(quotaVisible && Value("Error") == null && Value("SubscriptionError") != null && Equals(Value("SubscriptionLastChecked"), checkedAt) && Equals(Value("SubscriptionActiveUntil"), newEnd), "Fresh quota is visible while billing is pending, and a billing failure preserves the last successful date");
             mode = "mismatch";
             await Call("RefreshAllAsync", null, CancellationToken.None);
             check(Value("SubscriptionError") != null && Equals(Value("SubscriptionActiveUntil"), newEnd), "Foreign billing never replaces the selected subscription");

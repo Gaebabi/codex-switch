@@ -38,6 +38,72 @@ internal static class Program
             BindingFlags.Static | BindingFlags.NonPublic, null, new[] {typeof(Window), typeof(string)}, null)!;
         capture.Invoke(null, new object[] {window, path});
     }
+    private static async Task VerifyReadyWhileRefreshing(string root, string output)
+    {
+        var directory = Path.Combine(root, "ready-while-refreshing");
+        var home = Path.Combine(directory, "home"); Directory.CreateDirectory(home);
+        var data = Path.Combine(directory, "data");
+        var executable = Path.Combine(directory, "disposable-codex.exe"); File.WriteAllBytes(executable, Array.Empty<byte>());
+        const string cliOverride = "CODEX_ACCOUNT_DESK_CLI";
+        const string desktopOverride = "CODEX_ACCOUNT_DESK_DESKTOP";
+        var priorCli = Environment.GetEnvironmentVariable(cliOverride);
+        var priorDesktop = Environment.GetEnvironmentVariable(desktopOverride);
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var refreshes = 0;
+        Func<string, CancellationToken, Task> refresh = async (_, token) =>
+        {
+            Interlocked.Increment(ref refreshes);
+            entered.TrySetResult();
+            await release.Task.WaitAsync(token);
+        };
+        Window? window = null;
+        Task? startup = null;
+        try
+        {
+            Environment.SetEnvironmentVariable(cliOverride, executable);
+            Environment.SetEnvironmentVariable(desktopOverride, executable);
+            var fakeAuth = Product.GetType("CodexAccountDesk.Diagnostics", true)!.GetMethod("FakeAuth", BindingFlags.Static | BindingFlags.NonPublic)!;
+            var auth = (string)fakeAuth.Invoke(null, new object?[] { "startup-fixture", "startup@example.test", "startup-account", null, null })!;
+            File.WriteAllText(Path.Combine(home, "auth.json"), auth);
+            var integration = Assembly.Load("CodexSwitch.Application");
+            var vault = Activator.CreateInstance(integration.GetType("CodexAccountDesk.AccountVault", true)!, data)!;
+            var service = Activator.CreateInstance(integration.GetType("CodexAccountDesk.AccountService", true)!, new object?[] {vault, home, refresh, null, null})!;
+            var options = Activator.CreateInstance(Product.GetType("CodexAccountDesk.Program+Options", true)!)!;
+            options.GetType().GetProperty("DataDirectory")!.SetValue(options, data);
+            options.GetType().GetProperty("CodexHome")!.SetValue(options, home);
+            options.GetType().GetProperty("StartHidden")!.SetValue(options, true);
+            window = (Window)Activator.CreateInstance(WindowType, service, options)!;
+            window.ShowInTaskbar = false;
+            window.ShowActivated = false;
+            window.WindowStartupLocation = WindowStartupLocation.Manual;
+            window.Left = -12000;
+            window.Top = 20;
+            startup = Call(window, "StartAsync");
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            await Call(window, "StartAsync");
+            var rendered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            window.ContentRendered += (_, _) => rendered.TrySetResult();
+            window.Show();
+            await rendered.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            WindowType.GetMethod("CapturePreview", PrivateInstance)!.Invoke(window, new object[] {Path.Combine(output, "refresh-pending.png"), 1.0});
+            var receipt = Path.Combine(data, "running-instance.json");
+            using var status = File.Exists(receipt) ? JsonDocument.Parse(File.ReadAllText(receipt)) : null;
+            Check("Tray startup exposes ready controls while its single initial refresh is pending", !startup.IsCompleted && refreshes == 1 &&
+                ((Button)Field(window, "_add")).IsEnabled && status?.RootElement.GetProperty("ready").GetBoolean() == true);
+        }
+        finally
+        {
+            release.TrySetResult();
+            try { if (startup != null) await startup; }
+            finally
+            {
+                if (window != null) await Call(window, "ExitAsync");
+                Environment.SetEnvironmentVariable(cliOverride, priorCli);
+                Environment.SetEnvironmentVariable(desktopOverride, priorDesktop);
+            }
+        }
+    }
     [STAThread]
     public static int Main(string[] args)
     {
@@ -45,7 +111,8 @@ internal static class Program
         var output = Path.GetFullPath(args[0]);
         if (Directory.Exists(output)) throw new IOException("Use a fresh verification output");
         Directory.CreateDirectory(output);
-        var root = Path.Combine(Path.GetTempPath(), "codex-startup-test-" + Guid.NewGuid().ToString("N"));
+        var privateTemp = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Temp");
+        var root = Path.Combine(privateTemp, "codex-startup-test-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
         var previous = Environment.GetEnvironmentVariable("CODEX_ACCOUNT_DESK_DESKTOP");
         AppContext.SetSwitch("Switch.System.Windows.Media.ShouldRenderEvenWhenNoDisplayDevicesAreAvailable", true);
@@ -71,7 +138,7 @@ internal static class Program
                     options.GetType().GetProperty("CodexHome")!.SetValue(options, home);
                     options.GetType().GetProperty("UiEvidenceDirectory")!.SetValue(options, output);
                     var window = (Window)Activator.CreateInstance(WindowType, service, options)!;
-                    window.ShowInTaskbar = false; window.Left = 20; window.Top = 20; window.WindowStartupLocation = WindowStartupLocation.Manual;
+                    window.ShowInTaskbar = false; window.ShowActivated = false; window.Left = -12000; window.Top = 20; window.WindowStartupLocation = WindowStartupLocation.Manual;
                     var timer = (DispatcherTimer)Field(window, "_refreshTimer");
                     try
                     {
@@ -99,12 +166,13 @@ internal static class Program
                     }
                     finally { timer.Stop(); window.Close(); }
                 }
+                await VerifyReadyWhileRefreshing(root, output);
             }
-            catch (Exception error) { exit=1; Console.Error.WriteLine(error.GetType().Name + ": " + error.Message); }
+            catch (Exception error) { exit=1; Console.Error.WriteLine(error.GetBaseException()); }
             finally
             {
                 File.WriteAllText(Path.Combine(output,"receipt.json"),JsonSerializer.Serialize(new {schema=1,os="Windows",architecture=RuntimeInformation.ProcessArchitecture.ToString(),runtime=RuntimeInformation.FrameworkDescription,version=Product.GetName().Version!.ToString(3),passed=Checks.Count,failed=exit,checks=Checks,
-                    scope="Actual WPF window and production initializer/manual button/DispatcherTimer recovery; owned absent-then-placeholder path and empty encrypted storage only. Placeholder never executed; no network, real accounts, personal Codex or desktop capture."}));
+                    scope="Actual WPF windows, production startup and manual/timer recovery, and a gated fixture refresh. Placeholders are never executed. No network, real accounts, personal Codex or desktop capture."}));
                 application.Shutdown();
             }
         };
@@ -112,7 +180,7 @@ internal static class Program
         finally
         {
             Environment.SetEnvironmentVariable("CODEX_ACCOUNT_DESK_DESKTOP",previous);
-            if (Path.GetDirectoryName(root)!=Path.GetTempPath().TrimEnd(Path.DirectorySeparatorChar) || !Path.GetFileName(root).StartsWith("codex-startup-test-",StringComparison.Ordinal)) throw new IOException("Unexpected cleanup target");
+            if (Path.GetDirectoryName(root)!=privateTemp || !Path.GetFileName(root).StartsWith("codex-startup-test-",StringComparison.Ordinal)) throw new IOException("Unexpected cleanup target");
             Directory.Delete(root,true);
         }
         return exit;

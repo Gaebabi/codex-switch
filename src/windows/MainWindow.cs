@@ -445,13 +445,19 @@ internal sealed class MainWindow : Window
         await RunAsync("Codex 계정 확인 중…", async token =>
         {
             await EnsureInitializedAsync(token);
+            token.ThrowIfCancellationRequested();
+            SetStatus("사용량 갱신 중… 다른 기능을 계속 사용할 수 있습니다.");
+            WriteRunningState("running");
+            await Dispatcher.Yield(DispatcherPriority.Background);
+            token.ThrowIfCancellationRequested();
             var refresh = _service.RefreshAllAsync(null, token);
             if (_options.ReportPath != null) _duringRefreshInteraction = CaptureControls();
             await refresh; SetRefreshStatus();
         });
+        if (_closing) return;
         if (_options.ReportPath == null && _options.UiEvidenceDirectory == null) await RecoverAutomaticSwitchAsync();
         if (_options.SwitchAccount != null && _options.ReportPath == null) await SwitchToAccountAsync(_options.SwitchAccount);
-        WriteRunningState("running");
+        if (!_closing) WriteRunningState("running");
         if (_options.ReportPath != null)
         {
             for (var attempt = 0; attempt < 60 && !_sessions.Current.Available; attempt++) await Task.Delay(250);
@@ -930,7 +936,7 @@ internal sealed class MainWindow : Window
             await RunAsync("채팅 이름 백업 중…", async _ =>
             {
                 var cancellation = _switchCancellation.Token;
-                await using var backend = new DesktopSwitchBackend(_service, _sessions, profile.Key, includeUnfinished: restart);
+                await using var backend = new DesktopSwitchBackend(_service, _sessions, profile.Key, restartOnly: restart);
                 var coordinator = new AccountSwitchCoordinator(backend, SaveSwitch, SwitchChanged, UserErrors.Describe, _service.ApplyModelProfileAsync, _service.ValidateModelProfileAsync);
                 var plan = pending != null ? JsonSerializer.Deserialize<AccountSwitchPlan>(JsonSerializer.Serialize(pending))! :
                     restart ? await coordinator.PrepareRestartAsync(profile.Key, DateTimeOffset.UtcNow, cancellation, modelProfile) :

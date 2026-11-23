@@ -14,9 +14,9 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
     private CodexRpc? _metadata;
     private LinuxClientSession? _linuxMetadata;
     private readonly string? _targetAccountKey;
-    private readonly bool _includeUnfinished;
-    public DesktopSwitchBackend(AccountService service, DesktopSessionMonitor sessions, string? targetAccountKey = null, bool includeUnfinished = false)
-    { _service = service; _sessions = sessions; _targetAccountKey = targetAccountKey; _includeUnfinished = includeUnfinished; }
+    private readonly bool _restartOnly;
+    public DesktopSwitchBackend(AccountService service, DesktopSessionMonitor sessions, string? targetAccountKey = null, bool restartOnly = false)
+    { _service = service; _sessions = sessions; _targetAccountKey = targetAccountKey; _restartOnly = restartOnly; }
     public Task<string?> CurrentAccountAsync(CancellationToken cancellation) => OperatingSystem.IsLinux() ? _service.CurrentAccountKeyAsync(cancellation) : Task.Run(() =>
         File.Exists(_service.AuthPath) ? AuthDocument.Parse(File.ReadAllText(_service.AuthPath)).Key : null, cancellation);
     public async Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation)
@@ -36,7 +36,7 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
             if (!RuntimeLocator.IsDesktopRunning(_service.Installation.DesktopPath)) return Array.Empty<SwitchChat>();
         }
         await _sessions.WaitForDiscoveryAsync(cancellation);
-        var chats = _sessions.Threads.Where(thread => thread.Status == "active" || _includeUnfinished && thread.Status == "idle" && thread.Goal == "active").Select(thread => new SwitchChat {
+        var chats = _sessions.Threads.Where(thread => thread.Status == "active" || _restartOnly && thread.Status == "idle" && thread.Goal == "active").Select(thread => new SwitchChat {
             Id = thread.Id, OriginalTitle = thread.Title ?? "", OriginalTurnId = thread.LastTurnId, OriginalGoal = thread.Goal }).ToArray();
         foreach (var chat in chats.Where(chat => OperatingSystem.IsLinux() || string.IsNullOrWhiteSpace(chat.OriginalTitle)))
         {
@@ -135,17 +135,7 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
         }
         else RuntimeLocator.OpenDesktopThread(_service.Installation.DesktopPath, chat.Id);
         var thread = await _sessions.WaitForThreadAsync(chat.Id, cancellation);
-        if (SwitchContinuation.Decide(chat, thread) is ChatResumeState decided) return decided;
-        if (thread.Goal == "active")
-        {
-            var deadline = DateTimeOffset.UtcNow.AddSeconds(3);
-            while (DateTimeOffset.UtcNow < deadline)
-            {
-                await Task.Delay(150, cancellation);
-                thread = _sessions.Threads.FirstOrDefault(item => item.Id == chat.Id) ?? await _sessions.WaitForThreadAsync(chat.Id, cancellation);
-                if (thread.Status == "active") return ChatResumeState.AlreadyRunning;
-            }
-        }
+        if (SwitchContinuation.Decide(chat, thread, _restartOnly) is ChatResumeState decided) return decided;
         thread = await _sessions.WaitForThreadAsync(chat.Id, cancellation);
         if (SwitchContinuation.Decide(chat, thread) is ChatResumeState settled) return settled;
         if (OperatingSystem.IsLinux())
@@ -176,7 +166,7 @@ internal static class SwitchContinuation
     public static object StartParameters(SwitchChat chat) => new { conversationId = chat.Id,
         turnStart = new { request = new { threadId = chat.Id, input = new[] { new { type = "text", text = "Continue", text_elements = Array.Empty<object>() } },
             clientUserMessageId = chat.ContinueMessageId }, context = new { inheritThreadSettings = true } } };
-    public static ChatResumeState? Decide(SwitchChat chat, DesktopThreadState thread)
+    public static ChatResumeState? Decide(SwitchChat chat, DesktopThreadState thread, bool restartOnly = false)
     {
         if (thread.Status == "active") return ChatResumeState.AlreadyRunning;
         if (thread.Status != "idle") return ChatResumeState.Unconfirmed;
@@ -185,6 +175,7 @@ internal static class SwitchContinuation
                 ChatResumeState.Completed : ChatResumeState.Unconfirmed;
         if (thread.LastTurnId != null && chat.OriginalTurnId != null && thread.LastTurnId != chat.OriginalTurnId) return ChatResumeState.Completed;
         if (thread.LastTurnId == chat.OriginalTurnId && thread.LastTurnId != null && thread.LastTurnStatus == "completed" && thread.Goal != "active") return ChatResumeState.Completed;
+        if (restartOnly || chat.OriginalGoal == "active" || thread.Goal == "active") return ChatResumeState.Resumed;
         return null;
     }
 }
