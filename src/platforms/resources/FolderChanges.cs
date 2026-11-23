@@ -5,17 +5,21 @@ using System.Threading;
 
 namespace CodexAccountDesk;
 
+internal enum FolderChange { Entries, ItemChanged, RootMetadata, Reset }
+
 internal sealed class FolderChanges : IDisposable
 {
-    private readonly Action<string, bool> _changed;
+    private readonly Action<string, FolderChange> _changed;
     private readonly Func<string, bool> _ignore;
     private readonly List<FileSystemWatcher> _watchers = new();
     private volatile bool _retry = true;
+    private volatile bool _watchingFolder;
     private int _identityChanged;
     internal bool TakeIdentityChange() => Interlocked.Exchange(ref _identityChanged, 0) != 0;
     internal string Path { get; }
     internal bool Available => !_retry;
-    internal FolderChanges(string path, Action<string, bool> changed, Func<string, bool>? ignore = null) { Path = path; _changed = changed; _ignore = ignore ?? (_ => false); }
+    internal FolderChanges(string path, Action<string, FolderChange> changed, Func<string, bool> ignore)
+    { Path = path; _changed = changed; _ignore = ignore; }
     internal bool Connect()
     {
         if (!_retry || !OperatingSystem.IsWindows()) return false;
@@ -28,46 +32,55 @@ internal sealed class FolderChanges : IDisposable
                 if (!ancestor.Exists || (ancestor.Attributes & FileAttributes.ReparsePoint) != 0) candidate = ancestor.Parent;
             if (candidate == null) { _retry = true; return false; }
             var recursive = DriveMonitor.RootComparer.Equals(candidate.FullName, Path);
-            Add(candidate.FullName, recursive);
-            if (recursive && candidate.Parent != null) Add(candidate.Parent.FullName, false);
+            _watchingFolder = recursive;
+            const NotifyFilters rootChanges = NotifyFilters.DirectoryName | NotifyFilters.Attributes | NotifyFilters.Security;
+            if (recursive)
+            {
+                Add(candidate.FullName, true, NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size | NotifyFilters.LastWrite);
+                Add(candidate.FullName, true, NotifyFilters.Attributes | NotifyFilters.Security, attributesOnly: true);
+                if (candidate.Parent != null) Add(candidate.Parent.FullName, false, rootChanges);
+            }
+            else Add(candidate.FullName, false, rootChanges);
             return true;
         }
         catch (IOException) { _retry = true; Dispose(); return false; }
         catch (UnauthorizedAccessException) { _retry = true; Dispose(); return false; }
         catch (ArgumentException) { _retry = true; Dispose(); return false; }
     }
-    private void Add(string scope, bool recursive)
+    private void Add(string scope, bool recursive, NotifyFilters filters, bool attributesOnly = false)
     {
         var watcher = new FileSystemWatcher(scope)
         {
             IncludeSubdirectories = recursive,
-            NotifyFilter = recursive
-                ? NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size | NotifyFilters.LastWrite | NotifyFilters.Attributes | NotifyFilters.Security
-                : NotifyFilters.DirectoryName | NotifyFilters.Attributes | NotifyFilters.Security,
+            NotifyFilter = filters,
             InternalBufferSize = 65536,
         };
-        watcher.Changed += (_, e) => Notify(e.FullPath, recursive);
+        watcher.Changed += (_, e) => Notify(e.FullPath, recursive, changed: true, attributesOnly: attributesOnly);
         watcher.Created += (_, e) => Notify(e.FullPath, recursive);
         watcher.Deleted += (_, e) => Notify(e.FullPath, recursive);
         watcher.Renamed += (_, e) => { Notify(e.OldFullPath, recursive); Notify(e.FullPath, recursive); };
-        watcher.Error += (_, _) => { _retry = true; _changed(Path, true); };
+        watcher.Error += (_, _) => { _retry = true; _changed(Path, FolderChange.Reset); };
         _watchers.Add(watcher); watcher.EnableRaisingEvents = true;
     }
-    private void Notify(string path, bool recursive)
+    private void Notify(string path, bool recursive, bool changed = false, bool attributesOnly = false)
     {
         if (_ignore(path)) return;
         if (!recursive)
         {
             var prefix = System.IO.Path.TrimEndingDirectorySeparator(path) + System.IO.Path.DirectorySeparatorChar;
             if (DriveMonitor.RootComparer.Equals(path, Path) || Path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            { _retry = true; Interlocked.Exchange(ref _identityChanged, 1); _changed(Path, true); }
+            {
+                if (changed && _watchingFolder) _changed(Path, FolderChange.RootMetadata);
+                else { _retry = true; Interlocked.Exchange(ref _identityChanged, 1); _changed(Path, FolderChange.Reset); }
+            }
             return;
         }
-        var directory = System.IO.Path.GetDirectoryName(path);
-        _changed(directory ?? Path, false);
+        if (changed && !attributesOnly) _changed(path, FolderChange.ItemChanged);
+        else _changed(System.IO.Path.GetDirectoryName(path) ?? Path, FolderChange.Entries);
     }
     public void Dispose()
     {
+        _watchingFolder = false;
         foreach (var watcher in _watchers) watcher.Dispose();
         _watchers.Clear();
     }

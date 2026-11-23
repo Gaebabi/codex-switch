@@ -114,9 +114,36 @@ internal static class PersistentFolderContracts
             {
                 monitor.Configure(new[] { new DrivePreference { Root = root, Folders = new[] { new FolderPreference { Path = owned } } } }); monitor.Start();
                 await Wait(() => monitor.Read(root).Single().State == FolderState.Available && !monitor.IsMeasuring);
-                var queries = monitor.QueryCounts; await Task.Delay(3500);
+                var queries = monitor.QueryCounts; var probes = monitor.JournalProbes;
+                await Task.Delay(TimeSpan.FromSeconds(65));
                 check("Index-owned writes inside a tracked tree reach idle and retain their physical allocation", () =>
-                    Assert(!monitor.IsMeasuringRoot(root) && monitor.QueryCounts == queries && monitor.Read(root).Single().Bytes >= 8192));
+                    Assert(!monitor.IsMeasuringRoot(root) && monitor.QueryCounts == queries && monitor.JournalProbes == probes && monitor.Read(root).Single().Bytes >= 8192));
+            }
+            var unsupported = Path.Combine(temporary, "unsupported");
+            var nested = unsupported;
+            for (var level = 0; level < 12; level++) nested = Path.Combine(nested, "level");
+            Directory.CreateDirectory(nested);
+            var deepestFile = Path.Combine(nested, "last.bin");
+            File.WriteAllBytes(deepestFile, new byte[65536]);
+            var allocation = FolderUsage.Allocation(deepestFile).Bytes;
+            await using (var monitor = new FolderMonitor(Path.Combine(temporary, "unsupported-index"), _ => new(FolderIndexAccess.Unsupported)))
+            {
+                monitor.Configure(new[] { new DrivePreference { Root = root, Folders = new[] { new FolderPreference { Path = unsupported } } } });
+                monitor.Start();
+                await Wait(() => monitor.Read(root).Single().Bytes == allocation && monitor.Read(root).Single().State == FolderState.Cached && !monitor.IsMeasuring);
+                check("A drive without a journal finishes the entire bounded first scan without reprobing between slices", () =>
+                {
+                    if (monitor.QueryCounts != (1, 13) || monitor.JournalProbes != 1)
+                        throw new InvalidOperationException($"Unexpected initial measurement work: {monitor.QueryCounts}; journal probes: {monitor.JournalProbes}.");
+                });
+                File.WriteAllBytes(deepestFile, new byte[131072]);
+                var updated = FolderUsage.Allocation(deepestFile).Bytes;
+                await Wait(() => monitor.Read(root).Single().Bytes == updated && monitor.Read(root).Single().State == FolderState.Cached && !monitor.IsMeasuring);
+                check("A later watcher change on a drive without a journal rereads only the changed directory", () =>
+                {
+                    if (monitor.QueryCounts.Directories != 14 || monitor.JournalProbes != 1)
+                        throw new InvalidOperationException($"Unexpected watcher measurement work: {monitor.QueryCounts}; journal probes: {monitor.JournalProbes}.");
+                });
             }
             var foreign = Path.Combine(temporary, "foreign"); Directory.CreateDirectory(foreign);
             var foreignFile = Path.Combine(foreign, "allocation.sqlite3"); var original = Encoding.UTF8.GetBytes("not-an-owned-index"); File.WriteAllBytes(foreignFile, original);

@@ -69,6 +69,21 @@ internal static class FolderUiContracts
                 after.Refresh(new[] { tracked with { Free = 299 * gib } }, theme);
                 if (!segments.SequenceEqual(Find<Button>(after).Where(b => b.Tag is string)) || !ReferenceEquals(folderTip, segments[0].ToolTip)) throw new Exception("Periodic updates replaced the hovered segment or tooltip.");
                 checks.Add($"{language}/{dark}: compact hover, exact folder/root click targets and stable controls survive periodic refresh.");
+                var narrow = new DriveUsagePanel(() => { }, opened.Add);
+                var smallFolders = tracked.Folders!.Select(row => row with { Bytes = 1048576 }).ToArray();
+                narrow.Refresh(new[] { tracked with { Folders = smallFolders } }, theme);
+                var bitmap = Capture(narrow, Path.Combine(output, $"folders-small-segments-{language}-{dark}.png"), theme, 500, 34, nativeDpi: true);
+                var smallButtons = Find<Button>(narrow).Where(b => b.Tag is string).Take(2).ToArray();
+                if (smallButtons.Length != 2 || smallButtons.Any(button => button.ActualWidth * VisualTreeHelper.GetDpi(button).DpiScaleX < 0.99 ||
+                    !Find<Border>(button).Any(border => border.Background is SolidColorBrush brush &&
+                        smallFolders.Any(row => DriveSettingsWindow.FolderBrush(row.Color).Color == brush.Color) && border.BorderThickness.Right == 0)))
+                    throw new Exception("Small positive folder allocations must retain visible color after layout and separator rendering. Widths: " +
+                        string.Join(", ", smallButtons.Select(button => button.ActualWidth.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture))));
+                var blue = ReadPixel(smallButtons[0], narrow, bitmap);
+                var orange = ReadPixel(smallButtons[1], narrow, bitmap);
+                if (blue.B <= blue.R + 20 || orange.R <= orange.B + 20)
+                    throw new Exception($"The rendered small folder colors are missing: {blue}, {orange} at {bitmap.DpiX} DPI.");
+                checks.Add($"{language}/{dark}: subpixel folder allocations keep a colored, actionable pixel.");
                 var busy = new DriveUsagePanel(() => { }, _ => { });
                 busy.Refresh(new[] { tracked with { MeasuringFolders = true } }, theme);
                 Capture(busy, Path.Combine(output, $"folders-scanning-{language}-{dark}.png"), theme, 500, 34);
@@ -106,7 +121,14 @@ internal static class FolderUiContracts
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
             foreach (var child in Find<T>(VisualTreeHelper.GetChild(root, i))) yield return child;
     }
-    private static void Capture(FrameworkElement content, string path, Burn0Theme theme, int width, int height, Window? window = null)
+    private static Color ReadPixel(Button button, FrameworkElement target, BitmapSource image)
+    {
+        var center = button.TranslatePoint(new Point(button.ActualWidth / 2, button.ActualHeight / 2), target);
+        var pixel = new byte[4];
+        image.CopyPixels(new Int32Rect((int)(center.X * image.DpiX / 96), (int)(center.Y * image.DpiY / 96), 1, 1), pixel, 4, 0);
+        return Color.FromRgb(pixel[2], pixel[1], pixel[0]);
+    }
+    private static BitmapSource Capture(FrameworkElement content, string path, Burn0Theme theme, int width, int height, Window? window = null, bool nativeDpi = false)
     {
         var canvas = new Grid { Background = theme.Color("canvas"), Width = width, Height = height };
         if (window != null)
@@ -122,7 +144,11 @@ internal static class FolderUiContracts
         canvas.Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, new Action(() => frame.Continue = false));
         System.Windows.Threading.Dispatcher.PushFrame(frame);
         canvas.UpdateLayout();
-        var bitmap = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); bitmap.Render(canvas);
+        var dpi = nativeDpi ? VisualTreeHelper.GetDpi(content) : new DpiScale(1, 1);
+        var bitmap = new RenderTargetBitmap((int)Math.Ceiling(width * dpi.DpiScaleX), (int)Math.Ceiling(height * dpi.DpiScaleY),
+            dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        bitmap.Render(canvas);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap)); using var file = File.Create(path); encoder.Save(file);
+        return bitmap;
     }
 }

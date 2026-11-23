@@ -80,7 +80,7 @@ internal static partial class FolderUsage
         if (!OperatingSystem.IsWindows()) return new(folder.Path, folder.Color, null, FolderState.Unsupported);
         cancellation.ThrowIfCancellationRequested();
         var work = cache.Pending(folder.Path);
-        if (work == null)
+        if (work == null || cache.NeedsRootCheck(folder.Path))
         {
             cache.Begin(folder.Path);
             uint volume;
@@ -92,10 +92,9 @@ internal static partial class FolderUsage
                     if ((cache.Query(() => File.GetAttributes(path), cancellation) & FileAttributes.ReparsePoint) != 0)
                         return Failed(FolderState.Unavailable);
                 }
-                if ((cache.Query(() => File.GetAttributes(folder.Path), cancellation) & FileAttributes.Directory) == 0) return Failed(FolderState.Unavailable);
                 var info = cache.Query(() =>
                 {
-                    using var handle = CreateFileW(NativePath(folder.Path), 0x80, 7, IntPtr.Zero, 3, 0x02200000, IntPtr.Zero);
+                    using var handle = CreateFileW(NativePath(folder.Path), 0x81, 7, IntPtr.Zero, 3, 0x02200000, IntPtr.Zero);
                     if (handle.IsInvalid || !GetFileInformationByHandle(handle, out var value))
                         throw new IOException("Folder volume cannot be read.", new Win32Exception(Marshal.GetLastWin32Error()));
                     return value;
@@ -111,7 +110,7 @@ internal static partial class FolderUsage
             catch (UnauthorizedAccessException) { return Failed(FolderState.Unavailable); }
             cache.Trust(folder.Path);
             if (cache.TryReuse(folder.Path, out var saved)) return saved with { Color = folder.Color };
-            work = cache.Start(folder.Path, volume);
+            work = cache.Pending(folder.Path) ?? cache.Start(folder.Path, volume);
         }
         var processed = 0;
         var slice = Stopwatch.StartNew();
