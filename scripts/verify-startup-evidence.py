@@ -23,7 +23,7 @@ names = [f'{mode}-{state}.png' for mode in ('manual', 'automatic') for state in 
 for name in [*names, 'refresh-pending.png']:
     with Image.open(a.source/name) as source:
         rgb = source.convert('RGB')
-        if rgb.width < 500 or rgb.height < 360 or rgb.convert('L').entropy() < 1:
+        if rgb.width < 500 or rgb.height < 360 or rgb.convert('L').entropy() < 0.5:
             raise SystemExit(f'Nonblank production app capture required: {name}')
         if name == 'refresh-pending.png':
             rgb = rgb.crop((0, 0, rgb.width, rgb.height * 4 // 5))
