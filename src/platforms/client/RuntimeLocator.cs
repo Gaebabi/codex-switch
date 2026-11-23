@@ -109,8 +109,20 @@ internal static class RuntimeLocator
         RequirePlatform();
         if (OperatingSystem.IsMacOS()) { MacDesktop.Launch(executable); return; }
         if (executable.Length == 0 || !File.Exists(executable)) throw new FileNotFoundException("Codex 데스크톱 앱을 찾을 수 없습니다. 계정은 적용됐으므로 Codex를 직접 실행해 주세요.");
-        var start = new ProcessStartInfo(executable) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(executable)! };
-        Process.Start(start)?.Dispose();
+        Process.Start(WindowsDesktopLaunch(executable))?.Dispose();
+    }
+    internal static ProcessStartInfo WindowsDesktopLaunch(string executable)
+    {
+        const string publisherId = "2p2nqsd0c76g0";
+        var appDirectory = Path.GetDirectoryName(executable);
+        var package = Path.GetDirectoryName(appDirectory);
+        if (IsWindowsDesktopExecutable(executable) &&
+            string.Equals(Path.GetFileName(appDirectory), "app", StringComparison.OrdinalIgnoreCase) &&
+            package != null && Path.GetFileName(package).EndsWith("_" + publisherId, StringComparison.OrdinalIgnoreCase))
+        {
+            return new ProcessStartInfo(@"shell:AppsFolder\OpenAI.Codex_" + publisherId + "!App") { UseShellExecute = true };
+        }
+        return new ProcessStartInfo(executable) { UseShellExecute = false, WorkingDirectory = appDirectory! };
     }
     public static void OpenDesktopThread(string executable, string id)
     {

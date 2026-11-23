@@ -31,6 +31,8 @@ The first backend setup needs one normal Codex restart. Compatibility depends on
 
 <p align="center"><picture><source media="(prefers-color-scheme: dark)" srcset="docs/media/release-1.45.5/models-en-dark.png" /><img src="docs/media/release-1.45.5/models-en-light.png" width="520" alt="Custom models" /></picture></p>
 
+[View the full-size model settings screenshots](docs/media/custom-models/README.md).
+
 ## More at a glance
 
 | Task | What you get |

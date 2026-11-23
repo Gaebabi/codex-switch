@@ -308,6 +308,18 @@ foreach (var failure in new[] { "name", "close", "apply", "apply-after-write" })
     Check("Retrying chat-open never repeats the account switch or an already completed chat", backend.Applies == 1 && backend.Resumes == 1 && backend.ResumeCalls == 3 && done.ResumeState == ChatResumeState.Completed);
 }
 {
+    var chat = new SwitchChat { Id = "chat", OriginalTurnId = "previous" };
+    var waiting = new DesktopThreadState(chat.Id, "owner", "idle", false, null, null, "resumed", "previous", "interrupted", null);
+    Check("Same-account restart opens the chat and leaves continuation to Codex", SwitchContinuation.Decide(chat, waiting, restartOnly: true) == ChatResumeState.Resumed);
+    Check("An active native goal never receives a synthetic Continue while waiting", SwitchContinuation.Decide(chat, waiting with { Goal = "active" }) == ChatResumeState.Resumed);
+    chat.OriginalGoal = "active";
+    Check("A captured native goal retains continuation ownership before live goal status arrives", SwitchContinuation.Decide(chat, waiting) == ChatResumeState.Resumed);
+    chat.OriginalGoal = null;
+    Check("An interrupted ordinary chat is still eligible during an explicit account handoff", SwitchContinuation.Decide(chat, waiting) == null);
+    chat.ResumeState = ChatResumeState.Unconfirmed;
+    Check("Restart observes any previously ambiguous delivery without confirming or resending it", SwitchContinuation.Decide(chat, waiting, restartOnly: true) == ChatResumeState.Unconfirmed);
+}
+{
     var backend = new FakeBackend { AmbiguousContinue = true };
     var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, e => e.Message);
     var plan = await coordinator.PrepareAsync("target", now, CancellationToken.None);

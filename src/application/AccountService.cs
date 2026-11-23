@@ -204,8 +204,13 @@ internal sealed class AccountService
             lock (Vault.SyncRoot)
             {
                 if (!IsCurrentRevision(profile, revision)) return;
+                profile.Usage = usage; profile.Error = null;
+                if (usage != null) UsageHistory.Record(profile, usage);
+                if (!string.IsNullOrEmpty(email)) profile.Email = email;
+                if (plan != null) profile.Plan = plan;
                 subscriptionAuth = profile.AuthJson;
             }
+            Changed?.Invoke();
             SubscriptionSnapshot? subscription = null;
             string? subscriptionError = null;
             try { subscription = await SubscriptionClient.ReadAsync(subscriptionAuth, cancellation).ConfigureAwait(false); }
@@ -214,12 +219,8 @@ internal sealed class AccountService
             lock (Vault.SyncRoot)
             {
                 if (!IsCurrentRevision(profile, revision)) return;
-                profile.Usage = usage; profile.Error = null;
                 profile.SubscriptionError = subscriptionError;
                 if (subscription != null) profile.SetSubscription(subscription);
-                if (usage != null) UsageHistory.Record(profile, usage);
-                if (!string.IsNullOrEmpty(email)) profile.Email = email;
-                if (plan != null) profile.Plan = plan;
                 Vault.Save();
             }
         }
