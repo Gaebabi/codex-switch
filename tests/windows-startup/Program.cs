@@ -138,7 +138,7 @@ internal static class Program
                     options.GetType().GetProperty("CodexHome")!.SetValue(options, home);
                     options.GetType().GetProperty("UiEvidenceDirectory")!.SetValue(options, output);
                     var window = (Window)Activator.CreateInstance(WindowType, service, options)!;
-                    window.ShowInTaskbar = false; window.ShowActivated = false; window.Left = -12000; window.Top = 20; window.WindowStartupLocation = WindowStartupLocation.Manual;
+                    window.ShowInTaskbar = false; window.Left = 20; window.Top = 20; window.WindowStartupLocation = WindowStartupLocation.Manual;
                     var timer = (DispatcherTimer)Field(window, "_refreshTimer");
                     try
                     {
