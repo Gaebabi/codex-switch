@@ -9,7 +9,7 @@ parser.add_argument('--revision',required=True)
 args=parser.parse_args()
 if not re.fullmatch('[a-f0-9]{40}',args.revision):raise SystemExit('Exact disk evidence revision required')
 data=json.loads(Path('artifacts/disk-io-native.json').read_text(encoding='utf-8'))
-if data['failed'] or data['passed']!=72 or len(data['checks'])!=72:raise SystemExit('Hardware/disk/folder contracts did not pass')
+if data['failed'] or data['passed']!=74 or len(data['checks'])!=74:raise SystemExit('Hardware/disk/folder contracts did not pass')
 native=data['nativeDiskIo']
 if native['state']!='Available' or not native['readAvailable'] or not native['writeAvailable']:raise SystemExit('Native disk counters were not actually available')
 if native['profile'] not in {'Unknown','SeekPenalty','NoSeekPenalty','Mixed'}:raise SystemExit('Invalid disk capability profile')

@@ -41,9 +41,10 @@ internal sealed class DesktopSessionMonitor : IAsyncDisposable
         _ledger.Reset(); Publish(_ledger.Read());
         lock (_connectionSync) _connection?.Cancel();
     }
-    public async Task WaitForDiscoveryAsync(CancellationToken cancellation)
+    public async Task WaitForDiscoveryAsync(CancellationToken cancellation, TimeSpan? discoveryLimit = null)
     {
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation); timeout.CancelAfter(TimeSpan.FromSeconds(25));
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
+        if (discoveryLimit is { } limit) timeout.CancelAfter(limit);
         try { while (!Current.Available) await Task.Delay(150, timeout.Token); }
         catch (OperationCanceledException) when (!cancellation.IsCancellationRequested) { throw new TimeoutException("진행 중인 채팅 상태를 확인하지 못했습니다."); }
     }

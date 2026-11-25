@@ -31,6 +31,93 @@ internal static class ProviderUiEvidence
         image.Render(canvas); image.Render(root); var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
         using var file = File.Create(path); encoder.Save(file);
     }
+
+    private static void VerifySwitchStatus(AccountService service, string output, List<string> checks)
+    {
+        var current = service.CurrentKey!;
+        var claims = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("{\"sub\":\"switch-target-fixture\",\"email\":\"target@example.invalid\"}"))
+            .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        var target = service.Vault.Upsert(JsonSerializer.Serialize(new { auth_mode = "chatgpt", tokens = new
+        {
+            account_id = "switch-target-fixture", id_token = "e30." + claims + ".fictional",
+            access_token = "fictional-switch-access", refresh_token = "fictional-switch-refresh"
+        } }));
+        target.Alias = "Target account";
+        var pending = new AccountSwitchPlan { RestartOnly = true, SourceAccountKey = current, TargetAccountKey = current, Phase = SwitchPhase.Closing };
+        service.Vault.Data.PendingSwitch = pending;
+        try
+        {
+            foreach (var language in new[] { "en", "ko" })
+            {
+                service.Vault.Data.PendingSwitch = pending;
+                var main = new MainWindow(service, new Program.Options
+                {
+                    DataDirectory = service.Vault.DirectoryPath, CodexHome = service.CodexHome, UiEvidenceDirectory = output
+                });
+                const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                void Set(string name, object? value) => typeof(MainWindow).GetField(name, flags)!.SetValue(main, value);
+                void Invoke(string name, params object[] args) => typeof(MainWindow).GetMethod(name, flags)!.Invoke(main, args);
+                IEnumerable<Button> Buttons(DependencyObject root)
+                {
+                    if (root is Button button && Equals(button.Tag, "account-switch-action")) yield return button;
+                    for (var child = 0; child < VisualTreeHelper.GetChildrenCount(root); child++)
+                        foreach (var nested in Buttons(VisualTreeHelper.GetChild(root, child))) yield return nested;
+                }
+                Button Action(FrameworkElement panel, string label) => Buttons(panel).Single(button =>
+                    button.Content is StackPanel content && content.Children.OfType<TextBlock>().Any(text => text.Text == Loc.T(label)));
+                Set("_ready", true);
+                Set("_accountWindows", new Dictionary<string, int> { [""] = 101 });
+                main.PrepareUiEvidence(language, dark: false);
+                var root = Surface(main);
+                Layout(root, 500, 320);
+                var status = Field<TextBlock>(main, "_switchText");
+                var cancel = Field<Button>(main, "_cancelSwitch");
+                if (!Action(root, "switch.open_window").IsEnabled || !Action(root, "switch.show_window").IsEnabled)
+                    throw new Exception("An empty stale restart must allow the target's explicit Switch action.");
+                pending.Chats.Add(new SwitchChat());
+                try
+                {
+                    Invoke("RenderAccounts"); Invoke("UpdateControls"); Layout(root, 500, 320);
+                    if (Action(root, "switch.open_window").IsEnabled || !Action(root, "switch.recover").IsEnabled ||
+                        status.Text != Loc.T("switch.recover_pending"))
+                        throw new Exception("A real recovery must disable unrelated targets and explain the Recover action.");
+                    Capture(root, Path.Combine(output, "switch-recover-" + language + ".png"), main.Background, 500, 320);
+                }
+                finally { pending.Chats.Clear(); }
+
+                using var cancellation = new CancellationTokenSource();
+                Set("_switchCancellation", cancellation); Set("_switching", true); Set("_queuedKey", target.Key);
+                Set("_switchPhase", SwitchPhase.Resuming);
+                service.Vault.Data.PendingSwitch = new AccountSwitchPlan
+                {
+                    SourceAccountKey = current, TargetAccountKey = target.Key, AccountApplied = true, Phase = SwitchPhase.Resuming,
+                    Chats = [new SwitchChat()]
+                };
+                Invoke("SwitchProgressChanged", new SwitchProgress(SwitchStage.Connecting, TimeSpan.FromSeconds(30)));
+                Invoke("RenderAccounts"); Layout(root, 500, 320);
+                var initial = status.Text;
+                Thread.Sleep(1050);
+                Invoke("UpdateCountdowns"); Invoke("SetRefreshStatus");
+                if (!status.Text.Contains(Loc.T("switch.connecting")) || status.Text == initial ||
+                    cancel.Visibility != Visibility.Visible || cancel.TranslatePoint(new Point(), root).X + cancel.ActualWidth > 500 ||
+                    Buttons(root).Any(b => b.IsEnabled))
+                    throw new Exception("Switch progress must stay visible through quota refresh, tick down and leave only cancellation available.");
+                Capture(root, Path.Combine(output, "switch-connection-" + language + ".png"), main.Background, 500, 320);
+                cancel.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (!cancellation.IsCancellationRequested || status.Text != Loc.T("switch.cancelling") || cancel.Visibility != Visibility.Collapsed)
+                    throw new Exception("Cancelling a safe stage must expose its pending cancellation immediately.");
+                service.Vault.Data.PendingSwitch = null;
+                Invoke("SetSwitchResult", "switch.opened", false);
+                if (status.Text != Loc.T("switch.opened") || cancel.Visibility != Visibility.Collapsed)
+                    throw new Exception("The terminal result must replace progress even while the backend is disposing.");
+                Set("_switchCancellation", null); Set("_switching", false);
+                main.Close();
+                checks.Add(language + ": compact account switch displays live countdown, cancellation and actionable recovery independently of refresh.");
+            }
+        }
+        finally { service.Vault.Data.PendingSwitch = null; service.Vault.Data.Accounts.Remove(target); }
+    }
+
     [STAThread]
     private static int Main(string[] args)
     {
@@ -294,6 +381,7 @@ internal static class ProviderUiEvidence
             }
             menuManager.DisposeAsync().AsTask().GetAwaiter().GetResult();
             checks.Add("Mixed model visibility and long labels render in both themes through the production popup.");
+            VerifySwitchStatus(service, args[0], checks);
             FolderUiContracts.Verify(service, args[0], checks);
             SettingsUiContracts.Verify(service, args[0], checks);
             FolderIndexUiContracts.Verify(args[0], checks);

@@ -1,5 +1,13 @@
 # Binary releases
 
+## 1.45.10
+
+Windows account cards can open a dedicated Codex window for each additional account and focus it again while other accounts keep running. Each window has its own login, native home and chat history. Switch verifies its live user and workspace before bringing it forward. The dashboard receives active chat counts and discards an observation when the login changes or the connection closes. Separate account windows are available in manual mode with credit use allowed.
+
+Account recovery now shows the current stage, time remaining, retries and cancellation in a dedicated status area. IPC reconnection and chat resume retries reuse a confirmed desktop launch. Empty restarts refresh the chat snapshot before replacement. Ambiguous Continue delivery retains its original message identity. The Windows Store execution alias preserves the registered taskbar identity for account windows.
+
+Drive usage bars retain small tracked-folder segments. Folder monitoring reuses unchanged readings to reduce repeated traversal. The Windows 11 test suite exercised two fictional accounts, focus after rediscovery and reopening one closed window while the other stayed alive. The screenshots show production WPF controls rendered with fictional accounts and a pending recovery. [Earlier account actions](media/release-1.45.10/previous-actions-ko.png) · [Open and Focus](media/release-1.45.10/account-windows-ko.png)
+
 [Release1.45.0](https://github.com/Gaebabi/codex-switch/releases/tag/v1.45.0) adds live Windows native/custom model selection, native encrypted-history recovery and deferred custom tool discovery. It retains native OpenAI operation with the Switch editor closed after explicit initial backend setup. macOS/Linux retain their existing support scope. [Changes, setup and publication gates](development/RELEASE_1_45_0.md). The release verification manifest records package provenance and publication checks.
 
 [Release1.44.0](https://github.com/Gaebabi/codex-switch/releases/tag/v1.44.0) simplifies Home around the existing quota tanks: Add/Refresh remain visible while one Settings gear groups global actions. It includes the corrected built-in image endpoints and bounded concurrent handling for image-heavy chats. Windows x64, macOS15+ Apple Silicon/Intel and Linux x64/ARM64 integration preview packages are published; all twelve public assets match their sizes/SHA256, and the Windows ZIP passes99self-tests. [Verification and installation gates](development/RELEASE_1_44_0.md).

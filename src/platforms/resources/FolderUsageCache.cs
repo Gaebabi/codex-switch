@@ -48,7 +48,6 @@ internal static partial class FolderUsage
         private readonly Dictionary<string, FolderReading> _readings = new(DriveMonitor.RootComparer);
         internal readonly Dictionary<string, FolderJournalCursor> Cursors = new(DriveMonitor.RootComparer);
         private readonly Dictionary<string, FolderJournalCursor> _persistedCursors = new(DriveMonitor.RootComparer);
-        internal Action? Checkpoint;
         internal int DirectoriesPerSlice { get; set; } = int.MaxValue;
         internal long DirectoryReads { get; private set; }
         internal long RootReads { get; private set; }
@@ -125,7 +124,7 @@ internal static partial class FolderUsage
         internal bool TryReuse(string folder, out FolderReading reading)
         {
             return _readings.TryGetValue(folder, out reading!) && reading.State != FolderState.Scanning && !_work.ContainsKey(folder) &&
-                (_store == null || _trusted.Contains(folder)) && !_dirty.Concat(_reset).Any(path => DriveMonitor.RootComparer.Equals(path, folder) || Inside(folder, path) || Inside(path, folder));
+                _trusted.Contains(folder) && !_dirty.Concat(_reset).Any(path => DriveMonitor.RootComparer.Equals(path, folder) || Inside(folder, path) || Inside(path, folder));
         }
         internal void Begin(string folder) { RootReads++; }
         internal Work? Pending(string folder) => _work.GetValueOrDefault(folder);
@@ -133,6 +132,8 @@ internal static partial class FolderUsage
         internal Work Start(string folder, uint volume) { var value = new Work(folder, volume); _work[folder] = value; return value; }
         internal long Bytes(string folder) => _bytes.GetValueOrDefault(folder);
         internal void Trust(string folder) => _trusted.Add(folder);
+    internal bool NeedsRootCheck(string folder) => !_trusted.Contains(folder);
+    internal void CheckRootOnRead(string folder) => _trusted.Remove(folder);
         internal string[] UntrustedRoots => _roots.Keys.Where(p => !_trusted.Contains(p)).ToArray();
         internal void Finish(string folder)
         {
@@ -254,8 +255,10 @@ internal static partial class FolderUsage
             directory = canonical;
             if (_directories.TryGetValue(directory, out var old)) RemoveReferences(directory, old);
             _directories[directory] = entries; _byFolder[folder].Add(directory);
+            var failed = false;
             foreach (var entry in entries)
             {
+                failed |= entry.Failed;
                 if ((entry.Attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) == FileAttributes.Directory && entry.Id != 0)
                 { _directoryIds[new(Path.GetPathRoot(directory)!.ToUpperInvariant(), entry.Volume, entry.Id)] = entry.Path; _knownDirectories.Add(entry.Path); }
                 if (!entry.Resolved || entry.Failed) continue;
@@ -266,7 +269,7 @@ internal static partial class FolderUsage
                 else if (!DriveMonitor.RootComparer.Equals(file.FirstDirectory, directory)) (file.OtherDirectories ??= new(DriveMonitor.RootComparer)).Add(directory);
             }
             if (_dirty.Remove(directory)) Delete(FolderIndexStore.DirtyKind, directory);
-            _failed.Remove(directory);
+            if (failed) _failed.Add(directory); else _failed.Remove(directory);
             if (!Owns(directory)) Put(FolderIndexStore.DirectoryKind, directory, entries);
             if (old != null) Prune(old, directory);
         }
@@ -306,14 +309,13 @@ internal static partial class FolderUsage
                     if (!children.TryGetValue(child.Path, out var id) || id == 0 || id != child.Id) Reset(child.Path, false);
             }
             SetDirectory(path, fresh);
-            if (++_writes % 64 == 0) { Checkpoint?.Invoke(); Flush(); }
+            if (++_writes % 64 == 0) Flush();
             return fresh;
         }
         internal void FailDirectory(string path) { foreach (var child in _directories.Keys.Where(p => DriveMonitor.RootComparer.Equals(path, p) || Inside(path, p)).ToArray()) RemoveDirectory(child); _dirty.Remove(path); _failed.Add(path); }
         internal void RetryPartial()
         {
             foreach (var directory in _failed.ToArray()) Invalidate(directory);
-            foreach (var pair in _directories) if (pair.Value.Any(e => e.Failed)) Invalidate(pair.Key);
             foreach (var row in _readings.Values.Where(r => r.State == FolderState.Partial))
                 foreach (var path in _directoryIds.Values.Where(p => (DriveMonitor.RootComparer.Equals(p, row.Path) || Inside(row.Path, p)) && !_directories.ContainsKey(p)).ToArray()) Invalidate(path);
         }

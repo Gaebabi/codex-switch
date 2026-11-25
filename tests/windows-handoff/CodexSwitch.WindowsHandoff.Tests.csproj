@@ -2,6 +2,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
@@ -12,5 +13,6 @@
     <ProjectReference Include="../../src/platforms/protocol/CodexSwitch.Protocol.csproj" />
     <ProjectReference Include="../../src/application/CodexSwitch.Application.csproj" />
     <Compile Include="Program.cs" />
+    <Compile Include="AccountWindowContracts.cs" />
   </ItemGroup>
 </Project>

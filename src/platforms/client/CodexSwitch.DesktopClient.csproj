@@ -4,6 +4,7 @@
     <RootNamespace>CodexAccountDesk</RootNamespace><Nullable>enable</Nullable><ImplicitUsings>disable</ImplicitUsings><DebugType>none</DebugType>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="System.Management" Version="10.0.14" />
     <InternalsVisibleTo Include="CodexSwitch.LinuxTerminal.Tests" />
     <InternalsVisibleTo Include="CodexSwitch.AccountAutomation.Tests" />
     <EmbeddedResource Include="LinuxClients.json" LogicalName="CodexAccountDesk.LinuxClients.json" />

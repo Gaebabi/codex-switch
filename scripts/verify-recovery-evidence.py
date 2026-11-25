@@ -7,7 +7,7 @@ from PIL import Image
 
 source, destination = map(Path, sys.argv[1:3])
 result = json.loads((source / 'recovery-receipt.json').read_text(encoding='utf-8'))
-if result.get('passed') is not True or result.get('pendingLabel') != 'Recover' or result.get('completedLabel') != 'Switch':
+if result.get('passed') is not True or result.get('pendingActions') != ['Open', 'Recover'] or result.get('completedActions') != ['Open']:
     raise SystemExit('Recovery UI assertions failed')
 destination.mkdir(parents=True, exist_ok=True)
 images = []

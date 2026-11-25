@@ -16,14 +16,14 @@ namespace CodexAccountDesk;
 
 internal sealed class DesktopBackendHost : IAsyncDisposable
 {
-    internal sealed record Configuration(string NativeExecutable, string Home, string Directory);
+    internal sealed record Configuration(string NativeExecutable, string Home, string Directory, string? AccountWindowBackend = null);
     private sealed class Session
     {
         internal string? Model, Revision;
         internal bool Custom, Ephemeral;
         internal JsonObject Settings = new();
     }
-    private sealed class RpcFailure(JsonObject error) : Exception(error["message"]?.GetValue<string>())
+    private sealed class RpcFailure(JsonObject error) : InvalidOperationException(error["message"]?.GetValue<string>())
     { internal JsonObject Error { get; } = error; }
     private readonly Configuration _config;
     private readonly Process _native;
@@ -39,6 +39,9 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
     private readonly CancellationTokenSource _stop = new();
     private readonly string _prefix = "switch:" + Guid.NewGuid().ToString("N") + ":";
     private int _sequence;
+    private Task? _windowIdentity;
+    private readonly AccountWindowActivity _windowActivity = new();
+    private Task<JsonNode?>? _windowSessionRead;
     private ModelGateway? _gateway;
     private readonly string? _diagnosticUrl;
     private readonly byte[]? _diagnosticKey;
@@ -60,6 +63,10 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
                 return 0;
             }
             var configuration = JsonSerializer.Deserialize<Configuration>(SecureFiles.ReadPrivateBytes(path)) ?? throw new InvalidDataException("The desktop backend configuration is empty.");
+            if (Environment.GetEnvironmentVariable("CODEX_SWITCH_WINDOW_HOME") is string windowHome &&
+                (configuration.AccountWindowBackend == null ||
+                 !string.Equals(Path.GetFullPath(windowHome), Path.GetFullPath(configuration.Home), StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidOperationException("The account window and native home do not match.");
             await using var host = new DesktopBackendHost(configuration, arguments);
             return await host.RunAsync(arguments.Contains("app-server", StringComparer.Ordinal)).ConfigureAwait(false);
         }
@@ -86,9 +93,11 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
         };
         start.Environment["CODEX_HOME"] = config.Home;
         start.Environment.Remove("CODEX_CLI_PATH");
+        start.Environment.Remove("CODEX_SWITCH_WINDOW_HOME");
+        start.Environment.Remove("CODEX_SWITCH_BACKEND_CONFIG");
         start.Environment.Remove(DiagnosticGatewayEndpoint.RelayUrlVariable);
         start.Environment.Remove(DiagnosticGatewayEndpoint.KeyVariable);
-        if (arguments.Contains("app-server", StringComparer.Ordinal))
+        if (config.AccountWindowBackend == null && arguments.Contains("app-server", StringComparer.Ordinal))
         { start.ArgumentList.Add("-c"); start.ArgumentList.Add("thread_unload_delay_secs=0"); }
         foreach (var argument in arguments) start.ArgumentList.Add(argument);
         _native = Process.Start(start) ?? throw new IOException("The native Codex backend did not start.");
@@ -126,6 +135,7 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
             _stop.Cancel();
             foreach (var waiter in _pending.Values) waiter.TrySetCanceled();
             await worker.ConfigureAwait(false);
+            if (_windowIdentity != null) await _windowIdentity.ConfigureAwait(false);
             _native.StandardInput.Close();
         }
         await outputPump.ConfigureAwait(false);
@@ -157,7 +167,8 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
             try
             {
                 JsonNode? result;
-                if (method == "model/list") (result, catalogReceipt) = await ModelsAsync(parameters).ConfigureAwait(false);
+                if (_config.AccountWindowBackend != null) result = await RequestAsync(method, parameters).ConfigureAwait(false);
+                else if (method == "model/list") (result, catalogReceipt) = await ModelsAsync(parameters).ConfigureAwait(false);
                 else result = await HandleAsync(method, parameters).ConfigureAwait(false);
                 reply = new() { ["id"] = message["id"]!.DeepClone(), ["result"] = result };
             }
@@ -165,11 +176,23 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
             catch (Exception error)
             { reply = new() { ["id"] = message["id"]!.DeepClone(), ["error"] = new JsonObject { ["code"] = -32000, ["message"] = error.Message } }; }
             await WriteClientAsync(reply).ConfigureAwait(false);
+            if (_config.AccountWindowBackend != null && method == "initialize" && reply["error"] == null)
+                _windowIdentity ??= AccountWindowIdentity.ServeAsync(_config.Home, ReadWindowSessionsAsync, _windowActivity, _stop.Token);
             if (catalogReceipt != null)
                 SecureFiles.AtomicWrite(Path.Combine(_config.Directory, DesktopBackendCatalog.ObservedFileName), JsonSerializer.SerializeToUtf8Bytes(new { revision = catalogReceipt, backendPid = Environment.ProcessId, nativePid = _native.Id, contextSettingsVersion = 1 }));
         }
         finally { gate.Release(); }
     }
+    private Task<JsonNode?> ReadWindowSessionsAsync(string method, JsonObject parameters)
+    {
+        lock (_windowActivity)
+        {
+            if (_windowSessionRead == null || _windowSessionRead.IsCompleted)
+                _windowSessionRead = RequestAsync(method, parameters);
+            return _windowSessionRead;
+        }
+    }
+
     private async Task ReadNativeAsync()
     {
         try
@@ -180,11 +203,14 @@ internal sealed class DesktopBackendHost : IAsyncDisposable
                 var id = message["id"]?.ToJsonString();
                 if (id != null && _pending.TryRemove(id, out var waiter)) { waiter.TrySetResult(message); continue; }
                 var method = message["method"]?.GetValue<string>();
+                if (_config.AccountWindowBackend != null && method == "account/updated") _windowActivity.Update(_active.Count, true);
                 var thread = message["params"]?["threadId"]?.GetValue<string>();
                 if (thread != null)
                 {
                     if (method == "turn/started") _active[thread] = 0;
                     if (method is "turn/completed" or "thread/closed") _active.TryRemove(thread, out _);
+                    if (_config.AccountWindowBackend != null && method is "turn/started" or "turn/completed" or "thread/closed")
+                        _windowActivity.Update(_active.Count);
                     if (method == "thread/closed" && _handoffs.ContainsKey(thread)) continue;
                 }
                 await WriteClientAsync(message).ConfigureAwait(false);

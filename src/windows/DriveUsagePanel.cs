@@ -56,7 +56,7 @@ internal sealed class DriveUsagePanel : Grid
         public string Root { get; }
         public bool Fits => _text.ActualWidth >= 20 && _temperature.ActualWidth + 22 < ActualWidth && _ioFills.All(fill => fill.Height is >= 0 and <= 16);
         private readonly Border _track = new() { CornerRadius = new CornerRadius(4) };
-        private readonly Grid _segments = new() { ClipToBounds = true, FlowDirection = FlowDirection.LeftToRight };
+        private readonly Canvas _segments = new() { ClipToBounds = true, FlowDirection = FlowDirection.LeftToRight };
         private readonly TextBlock _text = new() { FontSize = 11, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(5, 0, 4, 0) };
         private readonly Run _capacity = new();
@@ -71,6 +71,7 @@ internal sealed class DriveUsagePanel : Grid
         private readonly Border[] _ioTracks = new Border[2], _ioFills = new Border[2];
         private readonly Action<string> _openDirectory;
         private readonly List<SegmentButton> _buttons = new();
+        private DriveSegment[] _allocation = Array.Empty<DriveSegment>();
         public DriveCell(string root, Action<string> openDirectory, Action<string> enableIndex, Action<string> rebuildIndex)
         {
             Root = root; _openDirectory = openDirectory; _rebuildIndex = rebuildIndex; Margin = new Thickness(0, 2, 4, 2);
@@ -100,7 +101,41 @@ internal sealed class DriveUsagePanel : Grid
                 track.Children.Add(_ioTracks[index]); track.Children.Add(_ioFills[index]); throughput.Children.Add(track);
             }
             Grid.SetColumn(throughput, 3); content.Children.Add(throughput);
-            _segments.SizeChanged += (_, _) => _segments.Clip = new RectangleGeometry(new Rect(_segments.RenderSize), 4, 4);
+            _segments.SizeChanged += (_, _) =>
+            {
+                _segments.Clip = new RectangleGeometry(new Rect(_segments.RenderSize), 4, 4);
+                SetSegmentWidths();
+            };
+        }
+        private void SetSegmentWidths()
+        {
+            var scale = VisualTreeHelper.GetDpi(_segments).DpiScaleX;
+            var pixels = Math.Round(_segments.ActualWidth * scale);
+            var total = _allocation.Sum(segment => (double)segment.Bytes);
+            if (pixels <= 0 || total <= 0) return;
+            bool NeedsPixel(DriveSegment segment) => segment.Color.HasValue && pixels * segment.Bytes / total < 1;
+            var remaining = pixels;
+            var remainingBytes = total;
+            foreach (var segment in _allocation.Where(NeedsPixel))
+            {
+                remaining--;
+                remainingBytes -= segment.Bytes;
+            }
+            remaining = Math.Max(0, remaining);
+            var edge = 0.0;
+            for (var index = 0; index < _allocation.Length; index++)
+            {
+                var segment = _allocation[index];
+                var start = Math.Min(pixels, Math.Round(edge));
+                if (NeedsPixel(segment)) edge += 1;
+                else if (remainingBytes > 0) edge += remaining * segment.Bytes / remainingBytes;
+                var button = _buttons[index];
+                var left = start / scale;
+                var width = (Math.Min(pixels, Math.Round(edge)) - start) / scale;
+                if (Canvas.GetLeft(button) != left) Canvas.SetLeft(button, left);
+                if (button.Width != width) button.Width = width;
+                if (button.Height != _segments.ActualHeight) button.Height = _segments.ActualHeight;
+            }
         }
         public void Refresh(DriveReading reading, Burn0Theme theme)
         {
@@ -111,16 +146,17 @@ internal sealed class DriveUsagePanel : Grid
             if (segments.Length == 0) segments = new[] { new DriveSegment(reading.Root, 1, null) };
             if (!_buttons.Select(b => b.Label).SequenceEqual(segments.Select(s => s.Label)))
             {
-                _segments.Children.Clear(); _segments.ColumnDefinitions.Clear(); _buttons.Clear();
+                _segments.Children.Clear(); _buttons.Clear();
                 foreach (var segment in segments)
                 {
                     var button = new SegmentButton(segment.Label, segment.Color.HasValue ? segment.Label : Root, _openDirectory);
-                    _segments.ColumnDefinitions.Add(new()); Grid.SetColumn(button, _buttons.Count); _buttons.Add(button); _segments.Children.Add(button);
+                    _buttons.Add(button); _segments.Children.Add(button);
                 }
             }
+            _allocation = segments;
+            SetSegmentWidths();
             for (var i = 0; i < segments.Length; i++)
             {
-                _segments.ColumnDefinitions[i].Width = new GridLength(segments[i].Bytes, GridUnitType.Star);
                 _buttons[i].Refresh(segments[i], reading, theme);
             }
             var label = string.IsNullOrWhiteSpace(reading.Label) ? reading.Root[..2] : reading.Label;
@@ -198,14 +234,14 @@ internal sealed class DriveUsagePanel : Grid
             HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
         public SegmentButton(string label, string path, Action<string> openDirectory)
         {
-            Label = label; Tag = path; Padding = new Thickness(0); BorderThickness = new Thickness(0); MinHeight = 0;
+            Label = label; Tag = path; Padding = new Thickness(0); BorderThickness = new Thickness(0); MinHeight = 0; Width = 0; Height = 0;
             Background = Brushes.Transparent; Cursor = System.Windows.Input.Cursors.Hand;
             HorizontalContentAlignment = HorizontalAlignment.Stretch; VerticalContentAlignment = VerticalAlignment.Stretch;
             var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
             presenter.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ContentProperty));
             Template = new ControlTemplate(typeof(Button)) { VisualTree = presenter };
             var surface = new Grid { Background = Brushes.Transparent }; surface.Children.Add(_fill); surface.Children.Add(_pattern); surface.Children.Add(_share); Content = surface;
-            SizeChanged += (_, _) => _share.Visibility = ActualWidth >= 40 && _share.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+            SizeChanged += (_, _) => UpdateExtent();
             Click += (_, _) => openDirectory(path);
         }
         public void Refresh(DriveSegment segment, DriveReading reading, Burn0Theme theme)
@@ -214,9 +250,7 @@ internal sealed class DriveUsagePanel : Grid
             var brush = segment.Color is int color ? DriveSettingsWindow.FolderBrush(color) : theme.Color(segment.Label == "folders.free" ? "success" : "muted");
             _fill.Background = plain || segment.Label == "folders.free" ? Brushes.Transparent
                 : new SolidColorBrush(brush.Color) { Opacity = segment.Color.HasValue ? 1 : theme.Dark ? 0.55 : 0.48 };
-            var separator = segment.Label == "folders.free" ? 0 : 1;
-            _fill.BorderBrush = theme.Color("canvas"); _fill.BorderThickness = new Thickness(0, 0, separator, 0);
-            _pattern.Margin = new Thickness(0, 0, separator, 0);
+            _fill.BorderBrush = theme.Color("canvas");
             if (segment.Color.HasValue)
             {
                 var drawing = new GeometryDrawing(null, new Pen(new SolidColorBrush(Colors.White) { Opacity = 0.24 }, 2),
@@ -227,7 +261,7 @@ internal sealed class DriveUsagePanel : Grid
             }
             else _pattern.Background = Brushes.Transparent;
             _share.Text = segment.Color.HasValue && reading.Total > 0 ? (100.0 * segment.Bytes / reading.Total.Value).ToString("0.#", Loc.Culture) + "%" : "";
-            _share.Visibility = ActualWidth >= 40 && _share.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+            UpdateExtent();
             var folder = reading.Folders?.FirstOrDefault(f => f.Path == segment.Label);
             var bytes = plain ? reading.Free : folder?.Bytes ?? segment.Bytes;
             var value = bytes.HasValue ? (bytes.Value / 1073741824.0).ToString("0.###", Loc.Culture) + " GiB" : "—";
@@ -235,10 +269,17 @@ internal sealed class DriveUsagePanel : Grid
             var details = (string)Tag;
             if (bytes.HasValue && reading.Total > 0) details += "\n" + (100.0 * bytes.Value / reading.Total.Value).ToString("0.0", Loc.Culture) + "%";
             if (plain) details += " · " + Loc.T("folders.free");
-            if (folder?.State == FolderState.Partial) details += " · " + Loc.T("folders.partial");
+            if (folder?.State is FolderState.Partial or FolderState.Cached or FolderState.Scanning)
+                details += " · " + Loc.T(folder.State switch { FolderState.Partial => "folders.partial", FolderState.Cached => "folders.cached", _ => "folders.scanning" });
             details += "\n" + Loc.T("folders.open");
             ToolTipTheme.Resource(this, title, value, details, theme, "text");
             AutomationProperties.SetName(this, title + " " + value + "\n" + details);
+        }
+        private void UpdateExtent()
+        {
+            var separator = Label != "folders.free" && ActualWidth >= 4 ? 1 : 0;
+            _fill.BorderThickness = _pattern.Margin = new Thickness(0, 0, separator, 0);
+            _share.Visibility = ActualWidth >= 40 && _share.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 }
