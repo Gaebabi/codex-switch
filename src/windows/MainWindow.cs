@@ -33,6 +33,8 @@ internal sealed class MainWindow : Window
     private readonly System.Windows.Controls.Primitives.UniformGrid _rows = new();
     private readonly ScrollViewer _scroll = new() { VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
     private readonly TextBlock _status = new(), _loginText = new();
+    private readonly Border _switchPanel = new() { Name = "AccountSwitchStatus" };
+    private readonly TextBlock _switchText = new() { TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
     private readonly SessionUsagePanel _sessionCount = new();
     private readonly Button _refresh = new(), _add = new(), _cancelLogin = new(), _cancelSwitch = new();
     private readonly MenuItem _automaticSwitch = new();
@@ -61,7 +63,15 @@ internal sealed class MainWindow : Window
     private bool CanRefresh => !_closing && (_ready || _initialization?.IsCompleted != false);
     private string? _queuedKey;
     private SwitchPhase _switchPhase;
+    private SwitchProgress? _switchProgress;
+    private Dictionary<string, int>? _accountWindows;
+    private bool _readingAccountWindows, _accountWindowsDirty;
+    private CancellationTokenSource? _windowWatch;
+    private readonly Dictionary<string, int> _windowActivity = new();
+    private string? _switchResult;
+    private bool _switchWarning;
     private CancellationTokenSource? _switchCancellation;
+    private bool CanCancelSwitch => _switching && _switchCancellation is { IsCancellationRequested: false } && _switchProgress?.CanCancel == true;
     private Button? _maximizeButton;
     private object? _duringRefreshInteraction;
     private string _statusSource = "Codex 계정 확인 중…";
@@ -100,14 +110,19 @@ internal sealed class MainWindow : Window
         _drives.Changed += DrivesChanged;
         void UpdateFolderMeasurement() => _drives.SetFolderMeasurementActive(IsVisible && WindowState != WindowState.Minimized);
         UpdateFolderMeasurement();
-        IsVisibleChanged += (_, _) => UpdateFolderMeasurement();
+        IsVisibleChanged += (_, _) =>
+        {
+            UpdateFolderMeasurement();
+            if (IsVisible) _ = RefreshAccountWindowsAsync(); else _windowWatch?.Cancel();
+        };
         StateChanged += (_, _) => UpdateFolderMeasurement();
         StateChanged += (_, _) => { if (_maximizeButton != null) _maximizeButton.Content = Burn0Theme.Icon(WindowState == WindowState.Maximized ? "window-restore" : "window-maximize", Color("muted"), 12, true); };
         _refreshTimer.Tick += async (_, _) => { if (CanRefresh) await RefreshAsync(); };
         _clockTimer.Tick += (_, _) => UpdateCountdowns();
+        Activated += (_, _) => _ = RefreshAccountWindowsAsync();
         Loaded += async (_, _) => await StartAsync();
         Closing += OnClosing;
-        Closed += (_, _) => { _service.Changed -= ServiceChanged; _sessions.Changed -= SessionChanged; _hardware.Changed -= HardwareChanged; _drives.Changed -= DrivesChanged; _lifetime.Cancel(); _tray?.Dispose(); };
+        Closed += (_, _) => { _service.Changed -= ServiceChanged; _sessions.Changed -= SessionChanged; _hardware.Changed -= HardwareChanged; _drives.Changed -= DrivesChanged; _lifetime.Cancel(); _windowWatch?.Dispose(); _tray?.Dispose(); };
         PreviewKeyDown += async (_, arguments) =>
         {
             if (arguments.Key == System.Windows.Input.Key.F5) { arguments.Handled = true; await RefreshAsync(); }
@@ -155,7 +170,7 @@ internal sealed class MainWindow : Window
     }
     private void ApplyTheme()
     {
-        foreach (var element in new FrameworkElement[] { _homeActions, _automaticState, _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _loginPanel, _scroll })
+        foreach (var element in new FrameworkElement[] { _homeActions, _automaticState, _sessionCount, _hardwarePanel, _drivePanel, _status, _loginText, _add, _refresh, _cancelLogin, _cancelSwitch, _switchPanel, _switchText, _loginPanel, _scroll })
         {
             if (element.Parent is Panel panel) panel.Children.Remove(element);
             else if (element.Parent is ContentControl control && ReferenceEquals(control.Content, element)) control.Content = null;
@@ -176,7 +191,7 @@ internal sealed class MainWindow : Window
         _importCurrent.Click += async (_, _) => await ImportCurrentAsync();
         refreshMenu.Items.Add(_importCurrent); _refresh.ContextMenu = refreshMenu;
         ConfigureButton(_cancelLogin, "로그인 취소", "close"); ConfigureButton(_cancelSwitch, "전환 취소", "close");
-        foreach (var text in new[] { _status, _loginText }) { text.Foreground = Color("muted"); text.FontSize = _theme.Number("caption-size"); }
+        foreach (var text in new[] { _status, _loginText, _switchText }) { text.Foreground = Color("muted"); text.FontSize = _theme.Number("caption-size"); }
         RenderSessions();
         _hardwarePanel.FlowDirection = FlowDirection.LeftToRight; _drivePanel.FlowDirection = FlowDirection.LeftToRight;
         _hardwarePanel.Refresh(_hardware.Current, _theme);
@@ -238,11 +253,18 @@ internal sealed class MainWindow : Window
         Grid.SetColumn(_automaticState, 2); toolbarRow.Children.Add(_automaticState);
         var login = new DockPanel(); DockPanel.SetDock(_cancelLogin, Dock.Right); login.Children.Add(_cancelLogin); _loginText.TextWrapping = TextWrapping.Wrap; _loginText.VerticalAlignment = VerticalAlignment.Center; _loginText.Margin = new Thickness(0, 0, 12, 0); login.Children.Add(_loginText);
         _loginPanel.Child = login; _loginPanel.Margin = new Thickness(0, 0, 0, 16); Grid.SetRow(_loginPanel, 1); body.Children.Add(_loginPanel);
+        var switchContent = new DockPanel();
+        _cancelSwitch.VerticalAlignment = VerticalAlignment.Center; _cancelSwitch.Margin = new Thickness(8, 0, 0, 0);
+        DockPanel.SetDock(_cancelSwitch, Dock.Right);
+        switchContent.Children.Add(_cancelSwitch); switchContent.Children.Add(_switchText);
+        _switchPanel.Child = switchContent;
+        _switchPanel.Background = Color("surface"); _switchPanel.CornerRadius = new CornerRadius(_theme.Number("radius"));
+        _switchPanel.Padding = new Thickness(10, 6, 10, 6); _switchPanel.Margin = new Thickness(0, 0, 0, 6);
+        modelHeader.Children.Add(_switchPanel);
         _scroll.Content = _rows; Grid.SetRow(_scroll, 2); body.Children.Add(_scroll);
         var footer = new StackPanel { Margin = new Thickness(0, 4, 0, 0) };
         _hardwarePanel.Margin = new Thickness(0, 0, 0, 4); footer.Children.Add(_hardwarePanel);
         footer.Children.Add(_drivePanel); footer.Children.Add(_status);
-        _cancelSwitch.HorizontalAlignment = HorizontalAlignment.Left; _cancelSwitch.Margin = new Thickness(0, 10, 0, 0); footer.Children.Add(_cancelSwitch);
         Grid.SetRow(footer, 3); body.Children.Add(footer); Grid.SetRow(body, 1); root.Children.Add(body); return root;
     }
     internal ContextMenu HomeActionsMenu()
@@ -431,6 +453,7 @@ internal sealed class MainWindow : Window
         if (_initialization == null || _initialization.IsFaulted || _initialization.IsCanceled) _initialization = _service.InitializeAsync(cancellation);
         UpdateControls(); UpdateTray();
         await _initialization; _ready = true; UpdateControls(); RenderAccounts();
+        _ = RefreshAccountWindowsAsync();
     }
     internal Task StartInTrayAsync() => StartAsync();
     private async Task StartAsync()
@@ -568,15 +591,15 @@ internal sealed class MainWindow : Window
             foreach (var descendant in Descendants(child)) yield return descendant;
         }
     }
-    private async Task RunAsync(string status, Func<CancellationToken, Task> action)
+    private async Task RunAsync(string status, Func<CancellationToken, Task> action, Action<Exception>? onFailure = null)
     {
         if (_closing) return;
         var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously); _operations.Add(completion.Task);
         SetStatus(status);
         try { await action(_lifetime.Token); }
         catch (OperationCanceledException) when (_lifetime.IsCancellationRequested) { }
-        catch (OperationCanceledException) { SetStatus("작업을 취소했습니다."); }
-        catch (Exception error) { SetStatus(UserErrors.Describe(error), true); }
+        catch (OperationCanceledException error) { if (onFailure != null) onFailure(error); else SetStatus("작업을 취소했습니다."); }
+        catch (Exception error) { if (onFailure != null) onFailure(error); else SetStatus(UserErrors.Describe(error), true); }
         finally { _operations.Remove(completion.Task); completion.TrySetResult(true); UpdateControls(); RenderAccounts(); UpdateTray(); }
     }
     private async Task RefreshAsync()
@@ -609,7 +632,7 @@ internal sealed class MainWindow : Window
     }
     private Task ImportCurrentAsync() => RunAsync("현재 로그인 가져오는 중…", async token =>
     {
-        if (_stampingTitles) return;
+        if (_stampingTitles || _switching) return;
         await EnsureInitializedAsync(token);
         var profile = await Task.Run(() => { var p = _service.SynchronizeCurrent(); _service.Vault.Save(); return p; }, token);
         if (profile == null) throw new InvalidOperationException("Codex에서 먼저 로그인하거나 계정 추가를 선택해 주세요.");
@@ -680,30 +703,123 @@ internal sealed class MainWindow : Window
             (activity.Queued.HasValue ? Loc.F("큐는 예약 메시지 수\n보류된 큐 {0}", activity.PausedQueued) : Loc.T(activity.QueueProblem ?? "큐 상태 확인 중…")) + "\n" +
             (activity.Goals.HasValue ? Loc.F("목표는 진행 중인 Goal 수\n멈춘 목표 {0}", activity.PausedGoals) : Loc.T("목표 상태 확인 중…")) + "\n" + Loc.T("sessions.errors_help") : Loc.T(activity.Problem ?? "채팅 상태 확인 중…");
     }
+    private async Task RefreshAccountWindowsAsync()
+    {
+        if (!_ready || _closing || !IsVisible || _options.ReportPath != null || _options.UiEvidenceDirectory != null) return;
+        if (_readingAccountWindows) { _accountWindowsDirty = true; return; }
+        _readingAccountWindows = true;
+        try
+        {
+            do
+            {
+                _accountWindowsDirty = false;
+                _windowWatch?.Cancel(); _windowWatch?.Dispose();
+                _windowWatch = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+                var token = _windowWatch.Token;
+                _accountWindows = await Task.Run(() => WindowsAccountWindows.Inventory(_service.Installation.DesktopPath), token);
+                if (_closing || token.IsCancellationRequested) return;
+                _windowActivity.Clear();
+                RenderAccounts();
+                foreach (var pid in _accountWindows.Values.Where(id => id > 0)) _ = ObserveWindowExitAsync(pid, token);
+                foreach (var account in _service.Accounts.Where(account => account.HasAccountWindow))
+                {
+                    var profile = new AccountWindowProfile(_service.Vault.DirectoryPath, account.Key);
+                    if (_accountWindows.TryGetValue(profile.Desktop, out var pid) && pid > 0)
+                        _ = ObserveAccountActivityAsync(account.Key, profile.Home, pid, token);
+                }
+            } while (_accountWindowsDirty && !_closing);
+        }
+        catch (OperationCanceledException) when (_windowWatch?.IsCancellationRequested == true || _lifetime.IsCancellationRequested) { }
+        catch (Exception error) { _accountWindows = null; if (!_closing) { RenderAccounts(); ReportBackgroundError(error); } }
+        finally
+        {
+            _readingAccountWindows = false;
+            if (_accountWindowsDirty && IsVisible && !_closing) _ = RefreshAccountWindowsAsync();
+        }
+    }
+    private async Task ObserveAccountActivityAsync(string key, string home, int pid, CancellationToken token)
+    {
+        var delay = 1;
+        while (!token.IsCancellationRequested)
+        {
+            try
+            {
+                await AccountWindowIdentity.VerifyAsync(home, key, pid, token, count =>
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        if (token.IsCancellationRequested) return;
+                        delay = 1;
+                        _windowActivity[key] = count; RenderAccounts();
+                    })));
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { return; }
+            catch (Exception error) when (error is IOException or InvalidOperationException or TimeoutException or
+                System.Management.ManagementException or UnauthorizedAccessException or Win32Exception)
+            {
+                if (token.IsCancellationRequested) return;
+                if (_windowActivity.Remove(key)) RenderAccounts();
+                if (error is InvalidOperationException or UnauthorizedAccessException) return;
+                try { await Task.Delay(TimeSpan.FromSeconds(delay), token); } catch (OperationCanceledException) { return; }
+                delay = Math.Min(30, delay * 2);
+            }
+        }
+    }
+    private async Task ObserveWindowExitAsync(int pid, CancellationToken token)
+    {
+        try
+        {
+            using var process = Process.GetProcessById(pid);
+            await process.WaitForExitAsync(token);
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { return; }
+        catch (ArgumentException) { }
+        catch (Win32Exception) { return; }
+        if (!token.IsCancellationRequested) await RefreshAccountWindowsAsync();
+    }
+    private string AccountWindowAction(AccountProfile profile)
+    {
+        if (_accountWindows == null) return "switch.find_action";
+        var dir = profile.IsCurrent && !profile.HasAccountWindow ? "" : new AccountWindowProfile(_service.Vault.DirectoryPath, profile.Key).Desktop;
+        if (!_accountWindows.TryGetValue(dir, out var pid)) return "switch.open_window";
+        return pid > 0 ? "switch.show_window" : "switch.find_action";
+    }
     private void RenderAccounts()
     {
         var offset = _scroll.VerticalOffset; _rows.Children.Clear(); _tankCards.Clear();
         var accounts = _service.Accounts;
+        var pending = PendingSwitch();
         RenderSessions();
         if (accounts.Length == 0)
         { var message = Label(Loc.T("현재 계정을 가져오거나 다른 계정으로 로그인하세요."), 14, "muted"); message.Margin = new Thickness(0, 18, 0, 0); _rows.Children.Add(message); return; }
         foreach (var profile in accounts.OrderByDescending(a => a.IsCurrent).ThenBy(a => a.DisplayName, StringComparer.CurrentCultureIgnoreCase))
         {
             var actions = new StackPanel { Orientation = Orientation.Horizontal };
-            var pendingResume = PendingSwitch() is { } pending && pending.TargetAccountKey == profile.Key;
-            var label = profile.Key == _queuedKey && _switching ? _switchPhase == SwitchPhase.BackingUp ? "백업 중" : _switchPhase == SwitchPhase.Resuming ? "재개 중" : "전환 중" :
-                pendingResume ? "switch.recover" : profile.RequiresApply ? "로그인 적용" : profile.IsCurrent ? "사용 중" : "전환";
-            var switchButton = NewButton(label, null, !profile.IsCurrent || profile.RequiresApply || pendingResume);
+            var pendingResume = pending?.TargetAccountKey == profile.Key;
+            var windowAction = AccountWindowAction(profile);
+            var allowed = windowAction == "switch.show_window" || SwitchRecovery.AllowsAccount(pending, profile.Key, _service.CurrentKey, manualSwitch: true);
+            var label = profile.Key == _queuedKey && _switching && _switchProgress?.Stage != SwitchStage.AccountWindow ?
+                _switchPhase == SwitchPhase.BackingUp ? "백업 중" : _switchPhase == SwitchPhase.Resuming ? "재개 중" : "전환 중" : windowAction;
+            var switchButton = NewButton(label, null, !profile.IsCurrent);
             switchButton.Tag = "account-switch-action";
-            if (pendingResume) switchButton.ToolTip = PendingSwitch()?.Error;
+            switchButton.ToolTip = !allowed ? Loc.Error(pending?.Error ?? "switch.recover_pending") : Loc.T("switch.window_help");
+            ToolTipService.SetShowOnDisabled(switchButton, !allowed);
             switchButton.Margin = new Thickness(0); switchButton.FontSize = 12; switchButton.Padding = new Thickness(8, 5, 8, 5);
-            switchButton.IsEnabled = _ready && !_switching && !_stampingTitles && !_loggingIn && !_closing && (!profile.IsCurrent || profile.RequiresApply || pendingResume);
-            switchButton.Click += async (_, _) => await QueueSwitchAsync(profile); actions.Children.Add(switchButton);
+            switchButton.IsEnabled = _ready && !_switching && !_stampingTitles && !_loggingIn && !_closing && allowed;
+            switchButton.Click += async (_, _) => await ShowAccountWindowAsync(profile); actions.Children.Add(switchButton);
+            if (!_switching && (pendingResume || profile.RequiresApply))
+            {
+                var recovery = NewButton(pendingResume ? "switch.recover" : "로그인 적용");
+                recovery.Tag = "account-switch-action"; recovery.Margin = new Thickness(3, 0, 0, 0);
+                recovery.IsEnabled = _ready && !_stampingTitles && !_loggingIn && !_closing;
+                recovery.Click += async (_, _) => await QueueSwitchAsync(profile); actions.Children.Add(recovery);
+            }
             var more = NewButton("", "more"); more.Padding = new Thickness(6); more.Margin = new Thickness(4, 0, 0, 0); more.ToolTip = Loc.T("계정 메뉴"); more.Click += (_, _) => OpenAccountMenu(more, profile); actions.Children.Add(more);
             var details = profile.RequiresApply ? Loc.T("새 로그인 적용 대기") : "";
+            var active = _windowActivity.TryGetValue(profile.Key, out var running) && running > 0;
+            if (active) details = Loc.F("switch.active_chats", running);
             var warning = profile.Error == null ? null : profile.Usage == null ? Loc.Error(profile.Error) : Loc.F("갱신 실패 · 이전 조회값\n{0}", Loc.Error(profile.Error));
             var titleRow = new AccountCardHeader(profile.DisplayName, details, _theme, actions, profile.IsCurrent, warning,
-                () => _ = ReauthenticateAsync(profile.Key));
+                () => _ = ReauthenticateAsync(profile.Key), active);
             _selectedQuotas.TryGetValue(profile.Key, out var selected);
             var card = new AccountTankCard(profile, AccountTankCard.SelectQuota(profile, selected), _theme, titleRow, more,
                 selection => { _selectedQuotas[profile.Key] = selection; RenderAccounts(); });
@@ -748,7 +864,12 @@ internal sealed class MainWindow : Window
         { var profile = accounts.FirstOrDefault(a => a.Key == pair.Key); if (profile == null) pair.Value.Close(); else pair.Value.Refresh(profile, _theme, Resources, _service.Vault.Data.TrendHours); }
     }
     private void UpdateCountdowns()
-    { var now = DateTimeOffset.UtcNow; foreach (var card in _tankCards) card.Update(now); foreach (var window in _details.Values) window.Update(now); }
+    {
+        var now = DateTimeOffset.UtcNow;
+        foreach (var card in _tankCards) card.Update(now);
+        foreach (var window in _details.Values) window.Update(now);
+        if (_switching) RenderSwitchStatus();
+    }
     private object ProbeTankLayout()
     {
         UpdateLayout();
@@ -816,13 +937,18 @@ internal sealed class MainWindow : Window
             priority.Items.Add(item);
         }
         menu.Items.Add(priority);
-        if (_switching && profile.Key == _queuedKey && _switchPhase is SwitchPhase.BackingUp or SwitchPhase.Resuming)
+        if (CanCancelSwitch && profile.Key == _queuedKey)
         {
             var cancel = new MenuItem { Header = Loc.T("전환 작업 취소") }; cancel.Click += (_, _) => CancelSwitch(); menu.Items.Add(cancel);
         }
         var rename = new MenuItem { Header = Loc.T("표시 이름 변경") }; rename.Click += (_, _) => { var alias = PromptForAlias(profile); if (alias != null) _service.Rename(profile.Key, alias); };
-        var remove = new MenuItem { Header = Loc.T("등록 제거"), IsEnabled = !profile.IsCurrent && profile.Key != _queuedKey };
-        remove.Click += async (_, _) => { if (!_stampingTitles && Confirm(Loc.F("{0}의 등록 정보를 제거할까요?", profile.DisplayName), Loc.T("계정 등록 제거"), "등록 제거")) await RunAsync("등록 제거 중…", async _ => { await _service.RemoveAsync(profile.Key); SetStatus("등록 정보를 제거했습니다."); }); };
+        var remove = new MenuItem { Header = Loc.T("등록 제거"), IsEnabled = CanRemoveAccount(profile) };
+        remove.Click += async (_, _) =>
+        {
+            if (CanRemoveAccount(profile) && Confirm(Loc.F("{0}의 등록 정보를 제거할까요?", profile.DisplayName), Loc.T("계정 등록 제거"), "등록 제거") &&
+                CanRemoveAccount(profile))
+                await RunAsync("등록 제거 중…", async _ => { await _service.RemoveAsync(profile.Key); SetStatus("등록 정보를 제거했습니다."); });
+        };
         menu.Items.Add(rename); menu.Items.Add(remove); owner.ContextMenu = menu; menu.IsOpen = true;
     }
     private string? PromptForAlias(AccountProfile profile)
@@ -839,6 +965,8 @@ internal sealed class MainWindow : Window
     }
     private AccountSwitchPlan? PendingSwitch()
     { lock (_service.Vault.SyncRoot) return _service.Vault.Data.ActivePendingSwitch; }
+    private bool CanRemoveAccount(AccountProfile profile) => !_switching && !_stampingTitles && !profile.IsCurrent &&
+        (PendingSwitch() is not { } pending || pending.SourceAccountKey != profile.Key && pending.TargetAccountKey != profile.Key);
     private object ProbeSwitchStages()
     {
         var width = Width; var height = Height; var language = Loc.Language; var switching = _switching; var queued = _queuedKey; var phase = _switchPhase;
@@ -880,19 +1008,66 @@ internal sealed class MainWindow : Window
     }
     private void SwitchChanged(AccountSwitchPlan plan)
     {
+        void ApplyPhase()
+        {
+            if (_closing) return;
+            if (plan.Phase == SwitchPhase.Finished && SwitchRecovery.Active(plan) == null)
+                SetSwitchResult(plan.RestartOnly
+                    ? plan.Chats.Count == 0 ? "restart.opened" : "restart.done"
+                    : plan.Chats.Count == 0 ? "switch.opened" : "계정을 전환하고 채팅을 재개했습니다.");
+            if (_switchPhase == plan.Phase) return;
+            _switchPhase = plan.Phase;
+            UpdateControls(); RenderAccounts(); UpdateTray();
+        }
+        if (Dispatcher.CheckAccess()) ApplyPhase(); else Dispatcher.Invoke(ApplyPhase);
+    }
+    private void SwitchProgressChanged(SwitchProgress progress)
+    {
         void ApplyProgress()
         {
             if (_closing) return;
-            _switchPhase = plan.Phase;
-            if (plan.Error != null) SetStatus(plan.Error, true);
-            else if (plan.Phase == SwitchPhase.BackingUp) SetStatus("채팅 이름 백업 {0}/{1}", false, plan.Chats.Count(chat => chat.NameSaved), plan.Chats.Count);
-            else if (plan.Phase == SwitchPhase.Resuming) SetStatus("채팅 재개 {0}/{1}", false,
-                plan.Chats.Count(chat => chat.ResumeState is ChatResumeState.Resumed or ChatResumeState.AlreadyRunning or ChatResumeState.Completed), plan.Chats.Count);
-            else SetStatus(plan.Phase switch { SwitchPhase.Closing => "Codex 정상 종료 중…", SwitchPhase.Applying => "계정 적용 중…",
-                SwitchPhase.Launching => "Codex 여는 중…", SwitchPhase.CreditPaused => "credits.paused", _ => plan.RestartOnly ? "restart.done" : "계정을 전환하고 채팅을 재개했습니다." });
-            UpdateControls(); RenderAccounts(); UpdateTray();
+            var couldCancel = CanCancelSwitch;
+            _switchProgress = progress; RenderSwitchStatus();
+            if (couldCancel != CanCancelSwitch) UpdateTray();
         }
         if (Dispatcher.CheckAccess()) ApplyProgress(); else Dispatcher.Invoke(ApplyProgress);
+    }
+    private void SetSwitchResult(string source, bool warning = false)
+    {
+        _switchProgress = null;
+        _switchResult = source; _switchWarning = warning; RenderSwitchStatus();
+    }
+    private void RenderSwitchStatus()
+    {
+        var warning = false;
+        string text;
+        if (_switching && _switchProgress is { } progress)
+        {
+            text = _switchCancellation?.IsCancellationRequested == true && progress.Stage != SwitchStage.Reopening
+                ? Loc.T("switch.cancelling")
+                : progress.SecondsLeft == 0 ? Loc.F("switch.settling", progress.Label)
+                : Loc.F("switch.countdown", progress.Label, progress.SecondsLeft);
+        }
+        else
+        {
+            var pending = PendingSwitch();
+            warning = _switchWarning || pending != null;
+            var detail = _switchResult ?? pending?.Error ?? pending?.Chats?.FirstOrDefault(chat => chat?.Error != null)?.Error;
+            text = detail == null ? "" : Loc.Error(detail);
+            if (pending is { CreditProtectionPause: true, Phase: SwitchPhase.CreditPaused })
+            {
+                if (text.Length == 0) text = Loc.T("credits.paused");
+            }
+            else if (pending != null)
+            {
+                var recovery = Loc.T("switch.recover_pending");
+                text = text.Length == 0 || text == recovery ? recovery : text + "\n" + recovery;
+            }
+        }
+        if (_switchText.Text != text) _switchText.Text = text;
+        _switchText.Foreground = Color(warning ? "warning" : "text");
+        _switchPanel.Visibility = text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
+        _cancelSwitch.Visibility = CanCancelSwitch ? Visibility.Visible : Visibility.Collapsed;
     }
     private async void RestartCodexClicked(object? sender, RoutedEventArgs args)
     {
@@ -918,29 +1093,38 @@ internal sealed class MainWindow : Window
     }
     private async Task QueueSwitchAsync(AccountProfile profile, bool automatic = false, bool creditPause = false, bool restart = false, CodexModelProfile? modelProfile = null)
     {
+        if (_closing || _switching || _stampingTitles || _loggingIn || _providerEditing) return;
         var pending = PendingSwitch();
-        if (modelProfile != null && pending != null) { SetStatus("남은 채팅 재개 작업을 먼저 처리해 주세요.", true); return; }
-        restart |= pending?.RestartOnly == true;
-        if (_closing || _switching || _stampingTitles || _loggingIn || !restart && !creditPause && profile.IsCurrent && !profile.RequiresApply && pending?.TargetAccountKey != profile.Key) return;
-        if (restart && pending != null && !pending.RestartOnly) { SetStatus("남은 채팅 재개 작업을 먼저 처리해 주세요.", true); return; }
-        if (pending != null && !pending.CreditProtectionPause && pending.TargetAccountKey != profile.Key) { SetStatus("남은 채팅 재개 작업을 먼저 처리해 주세요.", true); return; }
+        var manual = !automatic && !creditPause && !restart && modelProfile == null;
+        if (!SwitchRecovery.AllowsAccount(pending, profile.Key, _service.CurrentKey, manual) ||
+            pending != null && (modelProfile != null || restart && !pending.RestartOnly))
+        { SetSwitchResult(pending?.Error ?? "switch.recover_pending", true); return; }
+        var replacedSource = !automatic && !creditPause && SwitchRecovery.CanReplaceEmptyRestart(pending, _service.CurrentKey)
+            ? pending!.SourceAccountKey : null;
+        restart |= pending is { RestartOnly: true } && pending.TargetAccountKey == profile.Key;
+        if (replacedSource != null) pending = null;
+        if (!restart && !creditPause && profile.IsCurrent && !profile.RequiresApply && pending?.TargetAccountKey != profile.Key) return;
         creditPause |= pending is { CreditProtectionPause: true, Phase: not SwitchPhase.CreditPaused } && pending.TargetAccountKey == profile.Key && !AccountAutomation.CanUse(_service, profile, DateTimeOffset.UtcNow);
-        if (!creditPause && !AccountAutomation.CanUse(_service, profile, DateTimeOffset.UtcNow)) { SetStatus("credits.resume_blocked", true); return; }
+        if (!creditPause && !AccountAutomation.CanUse(_service, profile, DateTimeOffset.UtcNow)) { SetSwitchResult("credits.resume_blocked", true); return; }
         try { _service.CheckCredentialBackend(profile); }
-        catch (Exception error) { SetStatus(UserErrors.Describe(error), true); return; }
+        catch (Exception error) { SetSwitchResult(UserErrors.Describe(error), true); return; }
+        _switchResult = null; _switchWarning = false;
         _queuedKey = profile.Key; _switching = true; _switchPhase = SwitchPhase.BackingUp;
         _switchCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         UpdateControls(); RenderAccounts(); UpdateTray();
+        AccountSwitchPlan? attemptPlan = null;
         try
         {
-            await RunAsync("채팅 이름 백업 중…", async _ =>
+            await RunAsync("", async _ =>
             {
                 var cancellation = _switchCancellation.Token;
                 await using var backend = new DesktopSwitchBackend(_service, _sessions, profile.Key, restartOnly: restart);
-                var coordinator = new AccountSwitchCoordinator(backend, SaveSwitch, SwitchChanged, UserErrors.Describe, _service.ApplyModelProfileAsync, _service.ValidateModelProfileAsync);
+                var coordinator = new AccountSwitchCoordinator(backend, SaveSwitch, SwitchChanged, UserErrors.Describe,
+                    _service.ApplyModelProfileAsync, _service.ValidateModelProfileAsync, SwitchProgressChanged);
                 var plan = pending != null ? JsonSerializer.Deserialize<AccountSwitchPlan>(JsonSerializer.Serialize(pending))! :
                     restart ? await coordinator.PrepareRestartAsync(profile.Key, DateTimeOffset.UtcNow, cancellation, modelProfile) :
-                    await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, cancellation, creditPause);
+                    await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, cancellation, creditPause, replacedSource);
+                attemptPlan = plan;
                 if (plan.CreditProtectionPause)
                 {
                     if (!creditPause) await coordinator.RetargetCreditPauseAsync(plan, profile.Key, cancellation);
@@ -951,30 +1135,74 @@ internal sealed class MainWindow : Window
                     !_service.Accounts.Any(p => p.IsCurrent && p.Key == plan.SourceAccountKey && AutomaticSwitchPolicy.OrdinaryAvailable(p, DateTimeOffset.UtcNow));
                 if (!automatic) plan.AutomaticRecoveryAttempts = 0;
                 SaveSwitch(plan);
-                if (await coordinator.RunAsync(plan, cancellation)) SetStatus(plan.RestartOnly ? "restart.done" : "계정을 전환하고 채팅을 재개했습니다.");
-                else if (plan.CreditProtectionPause && plan.Phase == SwitchPhase.CreditPaused) SetStatus("credits.paused", true);
-                else SetStatus("계정 전환 완료. 재개 확인이 필요한 채팅 {0}개", true,
-                    plan.Chats.Count(chat => chat.ResumeState is ChatResumeState.Unconfirmed or ChatResumeState.Failed or ChatResumeState.Pending or ChatResumeState.Sending));
-            });
+                if (await coordinator.RunAsync(plan, cancellation)) return;
+                if (plan.CreditProtectionPause && plan.Phase == SwitchPhase.CreditPaused) SetSwitchResult("credits.paused", true);
+                else SetSwitchResult(plan.Chats.FirstOrDefault(chat => chat.Error != null)?.Error ??
+                    Loc.F("계정 전환 완료. 재개 확인이 필요한 채팅 {0}개",
+                        plan.Chats.Count(chat => chat.ResumeState is ChatResumeState.Unconfirmed or ChatResumeState.Failed or ChatResumeState.Pending or ChatResumeState.Sending)), true);
+            }, error => SetSwitchResult(attemptPlan?.Error ?? (error is OperationCanceledException ? "전환 작업을 취소했습니다." :
+                UserErrors.Describe(error)), true));
         }
         finally
         {
             if (automatic && PendingSwitch() != null) AccountAutomation.Pause(_service);
             _switchCancellation.Dispose(); _switchCancellation = null; _switching = false; _queuedKey = null;
+            _switchProgress = null;
             UpdateControls(); RenderAccounts(); UpdateTray();
         }
     }
+    private async Task ShowAccountWindowAsync(AccountProfile profile)
+    {
+        if (!_ready || _closing || _switching || _stampingTitles || _loggingIn || _providerEditing) return;
+        _switching = true; _queuedKey = profile.Key; _switchPhase = SwitchPhase.Launching;
+        _switchResult = null; _switchWarning = false;
+        _switchCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        _switchProgress = new(SwitchStage.AccountWindow, TimeSpan.FromSeconds(40));
+        UpdateControls(); RenderAccounts(); UpdateTray();
+        try
+        {
+            await RunAsync("", async _ =>
+            {
+                using var deadline = CancellationTokenSource.CreateLinkedTokenSource(_switchCancellation.Token);
+                deadline.CancelAfter(TimeSpan.FromSeconds(40));
+                try { await _service.OpenAccountWindowAsync(profile.Key, deadline.Token); }
+                catch (OperationCanceledException) when (deadline.IsCancellationRequested && !_switchCancellation.IsCancellationRequested)
+                { throw new TimeoutException(Loc.T("switch.window_wait")); }
+                SetSwitchResult(profile.IsCurrent && !profile.HasAccountWindow ? "switch.primary_ready" : Loc.F("switch.window_ready", profile.DisplayName));
+            }, error => SetSwitchResult(error is OperationCanceledException ? "전환 작업을 취소했습니다." : UserErrors.Describe(error), true));
+        }
+        finally
+        {
+            _switchCancellation.Dispose(); _switchCancellation = null; _switching = false; _queuedKey = null; _switchProgress = null;
+            UpdateControls(); RenderAccounts(); UpdateTray();
+            await RefreshAccountWindowsAsync();
+        }
+    }
+
     public async Task SwitchToAccountAsync(string identifier)
     {
         await EnsureInitializedAsync(_lifetime.Token);
         var matches = _service.Accounts.Where(profile => string.Equals(profile.Email, identifier, StringComparison.OrdinalIgnoreCase) || profile.Key == identifier).ToArray();
         if (matches.Length != 1) { SetStatus("전환할 계정을 하나로 확인하지 못했습니다.", true); return; }
-        BringToFront(); await QueueSwitchAsync(matches[0]);
+        BringToFront(); await ShowAccountWindowAsync(matches[0]);
     }
     private void CancelSwitch()
     {
-        _switchCancellation?.Cancel();
+        if (!CanCancelSwitch) return;
+        _switchCancellation!.Cancel(); RenderSwitchStatus(); UpdateTray();
     }
+    private bool CanChangeWindowPolicy()
+    {
+        try
+        {
+            if (!_switching && (!_service.Accounts.Any(account => account.HasAccountWindow) ||
+                !WindowsAccountWindows.HasManagedWindow(_service.Installation.DesktopPath))) return true;
+            SetSwitchResult("switch.window_policy_change", true);
+        }
+        catch (Exception error) { SetSwitchResult(UserErrors.Describe(error), true); }
+        return false;
+    }
+
     internal ContextMenu BuildAutomaticSwitchMenu()
     {
         var menu = DropdownTheme.Create(_homeActions, _theme);
@@ -983,13 +1211,19 @@ internal sealed class MainWindow : Window
         var next = new MenuItem { Name = "NextAutomaticAccount", Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow), IsEnabled = false, Opacity = 1, Foreground = _theme.Color("muted") };
         enabled.Click += (_, _) =>
         {
+            if (enabled.IsChecked && !CanChangeWindowPolicy()) { enabled.IsChecked = false; return; }
             lock (_service.Vault.SyncRoot) { _service.Vault.Data.AutomaticSwitchEnabled = enabled.IsChecked; _service.Vault.Save(); }
             UpdateControls();
         };
         menu.Items.Add(enabled); menu.Items.Add(next);
         var credits = DropdownTheme.Switch(Loc.T("credits.allow"), _service.Vault.Data.AllowCreditUse, _theme);
         credits.Name = "AllowCreditUse"; credits.ToolTip = new TextBlock { Text = Loc.T("credits.allow_help"), MaxWidth = 340, TextWrapping = TextWrapping.Wrap };
-        credits.Click += (_, _) => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.AllowCreditUse = credits.IsChecked; _service.Vault.Save(); } UpdateControls(); };
+        credits.Click += (_, _) =>
+        {
+            if (!credits.IsChecked && !CanChangeWindowPolicy()) { credits.IsChecked = true; return; }
+            lock (_service.Vault.SyncRoot) { _service.Vault.Data.AllowCreditUse = credits.IsChecked; _service.Vault.Save(); }
+            UpdateControls();
+        };
         menu.Items.Add(credits); menu.Items.Add(new Separator());
         foreach (var custom in new[] { false, true })
         {
@@ -1084,10 +1318,10 @@ internal sealed class MainWindow : Window
         if (_homeActions.ContextMenu is { IsOpen: true })
             foreach (var next in _automaticSwitch.Items.OfType<MenuItem>().Where(item => item.Name == "NextAutomaticAccount"))
                 next.Header = AccountAutomation.NextLabel(_service, DateTimeOffset.UtcNow);
-        _refresh.IsEnabled = CanRefresh; _add.IsEnabled = _ready && !_loggingIn && !_closing && !_stampingTitles;
-        if (_importCurrent != null) _importCurrent.IsEnabled = !_closing && !_stampingTitles;
+        _refresh.IsEnabled = CanRefresh; _add.IsEnabled = _ready && !_loggingIn && !_closing && !_stampingTitles && !_switching;
+        if (_importCurrent != null) _importCurrent.IsEnabled = !_closing && !_stampingTitles && !_switching;
         _loginPanel.Visibility = _loggingIn ? Visibility.Visible : Visibility.Collapsed;
-        _cancelSwitch.Visibility = Visibility.Collapsed;
+        RenderSwitchStatus();
     }
     internal object ProbeInteractionState()
     {
@@ -1110,16 +1344,18 @@ internal sealed class MainWindow : Window
         if (_tray == null) return; var menu = new Forms.ContextMenuStrip();
         menu.Items.Add(Loc.T("계정 관리 열기"), null, (_, _) => BringToFront()); var refresh = menu.Items.Add(Loc.T("사용량 새로 고침"), null, async (_, _) => await RefreshAsync()); refresh.Enabled = CanRefresh;
         menu.Items.Add(new Forms.ToolStripSeparator());
+        var pending = PendingSwitch();
         foreach (var profile in _service.Accounts)
         {
             var text = profile.DisplayName + "   " + (profile.IsRefreshing ? Loc.T("갱신 중") : profile.Usage?.LeastRemaining is double remaining ? Loc.F("잔여 {0:0.#}%", remaining) : Loc.T("조회 정보 없음"));
-            var item = new Forms.ToolStripMenuItem(text) { Checked = profile.IsCurrent, Enabled = _ready && !_closing && !_switching };
-            item.Click += async (_, _) => { BringToFront(); await QueueSwitchAsync(profile); }; menu.Items.Add(item);
+            var item = new Forms.ToolStripMenuItem(text) { Checked = profile.IsCurrent, Enabled = _ready && !_closing && !_switching &&
+                SwitchRecovery.AllowsAccount(pending, profile.Key, _service.CurrentKey, manualSwitch: true) };
+            item.Click += async (_, _) => { BringToFront(); await ShowAccountWindowAsync(profile); }; menu.Items.Add(item);
         }
         var languages = new Forms.ToolStripMenuItem(Loc.T("언어"));
         foreach (var option in Loc.Languages) { var item = new Forms.ToolStripMenuItem(option.NativeName) { Checked = option.Code == Loc.Language }; item.Click += (_, _) => ChangeLanguage(option.Code); languages.DropDownItems.Add(item); }
         menu.Items.Add(languages);
-        if (_switching && _switchPhase is SwitchPhase.BackingUp or SwitchPhase.Resuming) menu.Items.Add(Loc.T("전환 작업 취소"), null, (_, _) => CancelSwitch());
+        if (CanCancelSwitch) menu.Items.Add(Loc.T("전환 작업 취소"), null, (_, _) => CancelSwitch());
         menu.Items.Add(new Forms.ToolStripSeparator()); menu.Items.Add(Loc.T("프로그램 종료"), null, async (_, _) => await ExitAsync());
         var previous = _tray.ContextMenuStrip; _tray.ContextMenuStrip = menu; previous?.Dispose();
         var current = _service.Accounts.FirstOrDefault(a => a.IsCurrent); var tooltip = "Codex · " + (current?.Usage?.LeastRemaining is double value ? Loc.F("잔여 {0:0.#}%", value) + " · " : "") + (current?.DisplayName ?? Loc.T("로그인 정보 없음")); _tray.Text = tooltip[..Math.Min(tooltip.Length, 63)];

@@ -22,6 +22,8 @@ internal sealed class AccountProfile
     [JsonIgnore] public DateTimeOffset? SubscriptionLastChecked { get; set; }
     [JsonIgnore] public string? SubscriptionError { get; set; }
     public bool RequiresApply { get; set; }
+    public bool HasAccountWindow { get; set; }
+    public bool WindowLoginPending { get; set; }
     public UsageSnapshot? Usage { get; set; }
     public List<UsageTrack> History { get; set; } = new();
     public List<CreditTrack> CreditHistory { get; set; } = new();
@@ -151,7 +153,7 @@ internal static class AuthDocument
         var key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(accountId + "\n" + subject))).ToLowerInvariant();
         return new AccountProfile { Key = key, Email = email, AccountId = accountId, Plan = plan, AuthJson = json };
     }
-    private static JsonDocument DecodeClaims(string jwt)
+    internal static JsonDocument DecodeClaims(string jwt)
     {
         var parts = jwt.Split('.');
         if (parts.Length != 3) throw new InvalidOperationException("로그인 토큰의 형식이 올바르지 않습니다.");

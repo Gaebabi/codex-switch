@@ -35,7 +35,7 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
             if (!File.Exists(_service.Installation.DesktopPath)) throw new FileNotFoundException("Codex 데스크톱 앱을 찾을 수 없습니다.");
             if (!RuntimeLocator.IsDesktopRunning(_service.Installation.DesktopPath)) return Array.Empty<SwitchChat>();
         }
-        await _sessions.WaitForDiscoveryAsync(cancellation);
+        await _sessions.WaitForDiscoveryAsync(cancellation, TimeSpan.FromSeconds(25));
         var chats = _sessions.Threads.Where(thread => thread.Status == "active" || _restartOnly && thread.Status == "idle" && thread.Goal == "active").Select(thread => new SwitchChat {
             Id = thread.Id, OriginalTitle = thread.Title ?? "", OriginalTurnId = thread.LastTurnId, OriginalGoal = thread.Goal }).ToArray();
         foreach (var chat in chats.Where(chat => OperatingSystem.IsLinux() || string.IsNullOrWhiteSpace(chat.OriginalTitle)))
@@ -53,8 +53,10 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
             throw new PlatformNotSupportedException("Desktop metadata actions require a verified desktop lifecycle and peer provider.");
         if (_metadata == null)
         {
-            _metadata = new CodexRpc(_service.Installation.CliPath, _service.CodexHome, true);
-            await _metadata.InitializeAsync(cancellation);
+            var candidate = new CodexRpc(_service.Installation.CliPath, _service.CodexHome, true);
+            try { await candidate.InitializeAsync(cancellation); }
+            catch { await candidate.DisposeAsync(); throw; }
+            _metadata = candidate;
         }
         return _metadata;
     }
@@ -118,15 +120,35 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
     {
         if (OperatingSystem.IsLinux())
         {
-            if (_service.LinuxDesktop == null) return;
-            await _service.LinuxDesktop.StartAsync(cancellation);
+            if (_service.LinuxDesktop == null) throw new LinuxDesktopOwnershipException();
+            try { await _service.LinuxDesktop.StartAsync(cancellation); }
+            catch (TimeoutException error) { throw new InvalidOperationException(error.Message, error); }
+            return;
         }
-        else if (!RuntimeLocator.IsDesktopRunning(_service.Installation.DesktopPath)) RuntimeLocator.LaunchDesktop(_service.Installation.DesktopPath);
-        await _sessions.WaitForDiscoveryAsync(cancellation);
+        await Task.Run(async () =>
+        {
+            var executable = _service.Installation.DesktopPath;
+            if (RuntimeLocator.IsDesktopRunning(executable)) return;
+            cancellation.ThrowIfCancellationRequested();
+            RuntimeLocator.LaunchDesktop(executable);
+            try
+            {
+                while (!RuntimeLocator.IsDesktopRunning(executable))
+                    await Task.Delay(200, cancellation);
+            }
+            catch (IOException error) { throw new InvalidOperationException(error.Message, error); }
+        }, cancellation);
     }
+    public Task WaitForDesktopConnectionAsync(CancellationToken cancellation) => _sessions.WaitForDiscoveryAsync(cancellation);
     public async Task<ChatResumeState> ResumeAsync(SwitchChat chat, Action sending, CancellationToken cancellation)
     {
         var expectedAccount = _targetAccountKey ?? _service.CurrentKey;
+        cancellation.ThrowIfCancellationRequested();
+        if (_sessions.Current.Available && chat.ResumeState is ChatResumeState.Sending or ChatResumeState.Unconfirmed &&
+            _sessions.Threads.FirstOrDefault(candidate => candidate.Id == chat.Id && candidate.ResumeState == "resumed" &&
+                candidate.Status is "idle" or "active") is { } opened &&
+            SwitchContinuation.Decide(chat, opened, _restartOnly) is { } observed)
+            return observed;
         if (OperatingSystem.IsLinux())
         {
             var metadata = await RequestMetadataAsync("thread/read", new { threadId = chat.Id, includeTurns = false }, cancellation);

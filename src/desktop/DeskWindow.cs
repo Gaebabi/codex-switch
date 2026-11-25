@@ -278,12 +278,13 @@ internal sealed class DeskWindow : Window
         {
             var profile = profiles[i]; var pending = _service?.Vault.Data.ActivePendingSwitch;
             var resume = pending?.TargetAccountKey == profile.Key;
+            var allowed = SwitchRecovery.AllowsAccount(pending, profile.Key, _service?.CurrentKey, manualSwitch: true);
             var activeSwitch = _switchTarget == profile.Key && _switch != null;
             var text = activeSwitch ? _phase == SwitchPhase.BackingUp ? "백업 중" : _phase == SwitchPhase.Resuming ? "재개 중" : "전환 중" :
                 resume ? "switch.recover" : profile.RequiresApply ? "로그인 적용" : profile.IsCurrent ? "사용 중" : "전환";
             var button = _theme.Button(Loc.T(text), () => _ = SwitchAsync(profile));
-            if (resume) ToolTip.SetTip(button, pending?.Error);
-            button.IsEnabled = _ready && _switch == null && _login == null && !_stampingTitles && (!profile.IsCurrent || profile.RequiresApply || resume);
+            if (resume || !allowed) ToolTip.SetTip(button, Loc.Error(pending?.Error ?? "switch.recover_pending"));
+            button.IsEnabled = _ready && _switch == null && _login == null && !_stampingTitles && allowed && (!profile.IsCurrent || profile.RequiresApply || resume);
             button.FontSize = 10; button.Padding = new Thickness(5, 2);
             var more = _theme.IconButton(DeskButtonIconKind.More, Loc.T("계정 메뉴"), () => { }); more.Width = 25; more.Padding = new Thickness(3, 2);
             more.Click += (_, _) => AccountMenu(more, profile);
@@ -333,11 +334,16 @@ internal sealed class DeskWindow : Window
     private async Task SwitchAsync(AccountProfile profile, bool automatic = false, bool creditPause = false, bool restart = false, CodexModelProfile? modelProfile = null)
     {
         if (!_ready || _switch != null || _login != null || _stampingTitles) return;
-        var creditPending = _service!.Vault.Data.ActivePendingSwitch;
-        if (modelProfile != null && creditPending != null) { _statusMessage = Loc.T("남은 채팅 재개 작업을 먼저 처리해 주세요."); _status.Text = _statusMessage; return; }
-        restart |= creditPending?.RestartOnly == true;
-        if (restart && creditPending != null && !creditPending.RestartOnly) { _statusMessage = Loc.T("남은 채팅 재개 작업을 먼저 처리해 주세요."); _status.Text = _statusMessage; return; }
-        creditPause |= creditPending is { CreditProtectionPause: true, Phase: not SwitchPhase.CreditPaused } && creditPending.TargetAccountKey == profile.Key && !AccountAutomation.CanUse(_service, profile, DateTimeOffset.UtcNow);
+        var pending = _service!.Vault.Data.ActivePendingSwitch;
+        var manual = !automatic && !creditPause && !restart && modelProfile == null;
+        if (!SwitchRecovery.AllowsAccount(pending, profile.Key, _service.CurrentKey, manual) ||
+            pending != null && (modelProfile != null || restart && !pending.RestartOnly))
+        { _statusMessage = Loc.T("switch.recover_pending"); _status.Text = _statusMessage; return; }
+        var replacedSource = !automatic && !creditPause && SwitchRecovery.CanReplaceEmptyRestart(pending, _service.CurrentKey)
+            ? pending!.SourceAccountKey : null;
+        restart |= pending is { RestartOnly: true } && pending.TargetAccountKey == profile.Key;
+        if (replacedSource != null) pending = null;
+        creditPause |= pending is { CreditProtectionPause: true, Phase: not SwitchPhase.CreditPaused } && pending.TargetAccountKey == profile.Key && !AccountAutomation.CanUse(_service, profile, DateTimeOffset.UtcNow);
         if (!creditPause && !AccountAutomation.CanUse(_service, profile, DateTimeOffset.UtcNow)) { _statusMessage = Loc.T("credits.resume_blocked"); _status.Text = _statusMessage; return; }
         _switch = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token); _switchTarget = profile.Key; _phase = SwitchPhase.BackingUp; RenderAccounts();
         try
@@ -348,11 +354,10 @@ internal sealed class DeskWindow : Window
                 await using var backend = new DesktopSwitchBackend(_service, _sessions, profile.Key, restartOnly: restart);
                 var coordinator = new AccountSwitchCoordinator(backend,
                     plan => { lock (_service.Vault.SyncRoot) { _service.Vault.Data.PendingSwitch = plan; _service.Vault.Save(); } },
-                    plan => OnUi(() => { _phase = plan.Phase; RenderAccounts(); }), UserErrors.Describe, _service.ApplyModelProfileAsync, _service.ValidateModelProfileAsync);
-                var pending = _service.Vault.Data.ActivePendingSwitch;
-                if (pending != null && !pending.CreditProtectionPause && pending.TargetAccountKey != profile.Key) throw new InvalidOperationException(Loc.T("남은 채팅 재개 작업을 먼저 처리해 주세요."));
+                    plan => OnUi(() => { _phase = plan.Phase; RenderAccounts(); }), UserErrors.Describe, _service.ApplyModelProfileAsync, _service.ValidateModelProfileAsync,
+                    progress => OnUi(() => { _status.Text = progress.Label; ToolTip.SetTip(_status, progress.Label); }));
                 var plan = pending ?? (restart ? await coordinator.PrepareRestartAsync(profile.Key, DateTimeOffset.UtcNow, _switch.Token, modelProfile) :
-                    await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, _switch.Token, creditPause));
+                    await coordinator.PrepareAsync(profile.Key, DateTimeOffset.UtcNow, _switch.Token, creditPause, replacedSource));
                 if (plan.CreditProtectionPause)
                 {
                     if (!creditPause) await coordinator.RetargetCreditPauseAsync(plan, profile.Key, _switch.Token);
@@ -364,7 +369,9 @@ internal sealed class DeskWindow : Window
                 if (!automatic) plan.AutomaticRecoveryAttempts = 0;
                 lock (_service.Vault.SyncRoot) { _service.Vault.Data.PendingSwitch = plan; _service.Vault.Save(); }
                 if (await coordinator.RunAsync(plan, _switch.Token))
-                { if (plan.RestartOnly) _statusMessage = Loc.T("restart.done"); }
+                    _statusMessage = Loc.T(plan.RestartOnly
+                        ? plan.Chats.Count == 0 ? "restart.opened" : "restart.done"
+                        : plan.Chats.Count == 0 ? "switch.opened" : "계정을 전환하고 채팅을 재개했습니다.");
                 else
                     _statusMessage = plan.CreditProtectionPause && plan.Phase == SwitchPhase.CreditPaused ? Loc.T("credits.paused") : automatic ? Loc.T("auto.paused") : Loc.F("계정 전환 완료. 재개 확인이 필요한 채팅 {0}개",
                         plan.Chats.Count(chat => chat.ResumeState is ChatResumeState.Unconfirmed or ChatResumeState.Failed or ChatResumeState.Pending or ChatResumeState.Sending));

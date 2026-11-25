@@ -8,10 +8,12 @@ internal sealed class AccountCardHeader : Grid
 {
     public StackPanel Actions { get; }
     private readonly TextBlock _name, _metadata;
+    private readonly bool _showCompactStatus;
     private readonly Dictionary<Button, (Thickness Padding, double Height, double Font)> _sizes = new();
-    public AccountCardHeader(string name, string metadata, Burn0Theme theme, StackPanel actions, bool current = false, string? warning = null, System.Action? relogin = null)
+    public AccountCardHeader(string name, string metadata, Burn0Theme theme, StackPanel actions, bool current = false, string? warning = null, System.Action? relogin = null, bool showCompactStatus = false)
     {
         Actions = actions;
+        _showCompactStatus = showCompactStatus;
         ColumnDefinitions.Add(new()); ColumnDefinitions.Add(new() { Width = GridLength.Auto });
         var labels = new StackPanel { Margin = new Thickness(0, 0, 6, 0) };
         _name = new TextBlock { Text = name, FontSize = 14, FontWeight = FontWeights.SemiBold, Foreground = theme.Color("text"), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = name + "\n" + metadata, FlowDirection = FlowDirection.LeftToRight };
@@ -30,7 +32,7 @@ internal sealed class AccountCardHeader : Grid
             if (Actions.Parent is Panel previous) previous.Children.Remove(Actions);
             Children.Add(Actions);
         }
-        _name.FontSize = compact ? 12 : 14; _metadata.Visibility = compact || string.IsNullOrEmpty(_metadata.Text) ? Visibility.Collapsed : Visibility.Visible;
+        _name.FontSize = compact ? 12 : 14; _metadata.Visibility = compact && !_showCompactStatus || string.IsNullOrEmpty(_metadata.Text) ? Visibility.Collapsed : Visibility.Visible;
         foreach (var entry in _sizes)
         {
             entry.Key.MinHeight = compact ? 24 : entry.Value.Height;

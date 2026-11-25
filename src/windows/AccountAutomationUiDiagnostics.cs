@@ -118,21 +118,26 @@ internal static class AccountAutomationUiDiagnostics
             vault.Data.Drives.Clear();
             var service = new AccountService(vault, System.IO.Path.Combine(directory, "absent-restart-completion-home"));
             var window = new MainWindow(service, new Program.Options { UiEvidenceDirectory = directory, CodexHome = service.CodexHome, DataDirectory = vault.DirectoryPath });
-            var plan = new AccountSwitchPlan { Phase = SwitchPhase.Finished, AccountApplied = true, RestartOnly = true,
-                Chats = new() { new() { ResumeState = ChatResumeState.AlreadyRunning } } };
             var flags = BindingFlags.Instance | BindingFlags.NonPublic;
             var originalLanguage = Loc.Language;
             try
             {
-                foreach (var language in Loc.Languages)
+                foreach (var hasChat in new[] { true, false })
                 {
-                    window.ChangeLanguage(language.Code, false);
+                    var plan = new AccountSwitchPlan { Phase = SwitchPhase.Finished, AccountApplied = true, RestartOnly = true };
+                    if (hasChat) plan.Chats.Add(new() { ResumeState = ChatResumeState.AlreadyRunning });
+                    vault.Data.PendingSwitch = plan;
                     typeof(MainWindow).GetMethod("SwitchChanged", flags)!.Invoke(window, new object[] { plan });
-                    var status = (TextBlock)typeof(MainWindow).GetField("_status", flags)!.GetValue(window)!;
-                    assert(status.Text == Loc.T("restart.done") && status.Visibility == Visibility.Visible,
-                        "Completed restart lost its translated status: " + language.Code);
-                    assert(plan.Error == null && SwitchRecovery.Active(plan) == null,
-                        "Rendering completion created a recovery failure: " + language.Code);
+                    foreach (var language in Loc.Languages)
+                    {
+                        window.ChangeLanguage(language.Code, false);
+                        var status = (TextBlock)typeof(MainWindow).GetField("_switchText", flags)!.GetValue(window)!;
+                        var panel = (Border)typeof(MainWindow).GetField("_switchPanel", flags)!.GetValue(window)!;
+                        assert(status.Text == Loc.T(hasChat ? "restart.done" : "restart.opened") && panel.Visibility == Visibility.Visible,
+                            "Completed restart lost its translated status: " + language.Code);
+                        assert(plan.Error == null && vault.Data.ActivePendingSwitch == null,
+                            "Rendering completion created a recovery failure: " + language.Code);
+                    }
                 }
             }
             finally { window.Close(); Loc.SetLanguage(originalLanguage); }

@@ -73,7 +73,8 @@ internal sealed class AccountService
                 Key = p.Key, Alias = p.Alias, Email = p.Email, AccountId = p.AccountId, Plan = p.Plan,
                 SubscriptionActiveUntil = p.SubscriptionActiveUntil, SubscriptionLastChecked = p.SubscriptionLastChecked,
                 Subscription = p.Subscription, SubscriptionError = p.SubscriptionError,
-                IsCurrent = p.Key == CurrentKey, RequiresApply = p.RequiresApply, Usage = p.Usage, Error = p.Error,
+                IsCurrent = p.Key == CurrentKey, RequiresApply = p.RequiresApply, HasAccountWindow = p.HasAccountWindow,
+                WindowLoginPending = p.WindowLoginPending, Usage = p.Usage, Error = p.Error,
                 IsRefreshing = _queries.IsRunning(p.Key), History = p.History.Select(t => t.Copy()).ToList(),
                 CreditHistory = p.CreditHistory.Select(t => t.Copy()).ToList(),
                 RecoveredCreditHistory = p.RecoveredCreditHistory.ToList()
@@ -156,20 +157,26 @@ internal sealed class AccountService
             if (profile == null) return;
             await using var client = await OpenLinuxAsync(cancellation, workspace).ConfigureAwait(false);
             string authJson;
+            AccountWindowProfile? windowHome;
             lock (Vault.SyncRoot)
             {
                 profile = Vault.Data.Accounts.Find(a => a.Key == key);
                 if (profile == null) return;
+                revision = profile.CredentialRevision;
+                windowHome = OperatingSystem.IsWindows() && profile.HasAccountWindow && !profile.WindowLoginPending && key != CurrentKey
+                    ? new(Vault.DirectoryPath, key) : null;
                 var canonical = CanonicalAuthExists() ? ReadCanonicalAuth() : null;
                 if (canonical != null && !profile.RequiresApply && AuthDocument.Parse(canonical).Key == key) Vault.Upsert(canonical);
+                if (windowHome != null) Vault.Upsert(windowHome.ReadLogin());
                 authJson = profile.AuthJson; revision = profile.CredentialRevision;
             }
-            await using var home = new RuntimeHome(Vault.DirectoryPath, authJson);
+            await using var home = windowHome == null ? new RuntimeHome(Vault.DirectoryPath, authJson) : null;
+            var queryHome = windowHome?.Home ?? home!.Path;
             UsageSnapshot? usage = null;
             string? email = null, plan = null;
             try
             {
-                await using var rpc = await OpenAccountRpcAsync(home.Path, client, workspace, cancellation).ConfigureAwait(false);
+                await using var rpc = await OpenAccountRpcAsync(queryHome, client, workspace, cancellation).ConfigureAwait(false);
                 var accountResult = await rpc.RequestAsync("account/read", new { refreshToken = false }, cancellation).ConfigureAwait(false);
                 if (!accountResult.TryGetProperty("account", out var info) || info.ValueKind != JsonValueKind.Object || JsonValue.String(info, "type") != "chatgpt")
                     throw new InvalidOperationException("로그인이 만료됐습니다. 계정 추가로 다시 로그인해 주세요.");
@@ -179,16 +186,16 @@ internal sealed class AccountService
             }
             finally
             {
-                if (File.Exists(Path.Combine(home.Path, "auth.json")))
+                if (File.Exists(Path.Combine(queryHome, "auth.json")))
                 {
-                    var refreshed = home.ReadAuth();
+                    var refreshed = windowHome?.ReadLogin() ?? home!.ReadAuth();
                     if (AuthDocument.Parse(refreshed).Key != key) throw new InvalidOperationException("조회 중 로그인 계정이 변경됐습니다.");
                     if (client != null) await client.RequireFileAsync(cancellation, workspace).ConfigureAwait(false);
                     lock (Vault.SyncRoot)
                     {
                         if (IsCurrentRevision(profile, revision))
                         {
-                            if (refreshed != authJson)
+                            if (windowHome == null && refreshed != authJson)
                             {
                                 var canonical = CanonicalAuthExists() ? ReadCanonicalAuth() : null;
                                 if (!profile.RequiresApply && canonical == authJson) SecureFiles.AtomicWriteText(AuthPath, refreshed);
@@ -305,6 +312,7 @@ internal sealed class AccountService
                 !Vault.Data.Accounts.Any(p => p.Key == expectedAccountKey)))
                 throw new InvalidOperationException(Loc.T("account.relogin_mismatch"));
             var profile = Vault.Upsert(authJson);
+            if (OperatingSystem.IsWindows() && profile.HasAccountWindow) profile.WindowLoginPending = true;
             var active = CanonicalAuthExists() ? ReadCanonicalAuth() : null;
             profile.RequiresApply = active != null && AuthDocument.Parse(active).Key == profile.Key && active != profile.AuthJson;
             profile.Error = null; key = profile.Key; Vault.Save();
@@ -313,6 +321,76 @@ internal sealed class AccountService
         var refresh = RefreshAccountAsync(key, CancellationToken.None, true);
         return new AccountRegistration(Accounts.Single(a => a.Key == key), refresh);
     }
+    internal async Task OpenAccountWindowAsync(string key, CancellationToken cancellation)
+    {
+        if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException();
+        await _switchGate.WaitAsync(cancellation).ConfigureAwait(false);
+        TaskCompletionSource<bool>? finished = null;
+        try
+        {
+            AccountWindowProfile? window;
+            string? expectedPrimary;
+            lock (Vault.SyncRoot)
+            {
+                expectedPrimary = CurrentKey;
+                var saved = Vault.Data.Accounts.Find(a => a.Key == key);
+                window = key == expectedPrimary && saved?.HasAccountWindow != true ? null : new(Vault.DirectoryPath, key);
+                _switchTargets = new HashSet<string> { key };
+                finished = _switchFinished = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            }
+            await _queries.CancelAndDrainAsync(_switchTargets, cancellation).ConfigureAwait(false);
+            var installation = await RuntimeLocator.FindAsync(cancellation).ConfigureAwait(false);
+            if (string.IsNullOrEmpty(installation.DesktopPath)) throw new FileNotFoundException("Codex 데스크톱 앱을 찾을 수 없습니다.");
+            var backend = Path.Combine(AppContext.BaseDirectory, "backend", "CodexSwitch.Backend.exe");
+            AccountProfile Selected()
+            {
+                var account = Vault.Data.Accounts.Find(a => a.Key == key) ?? throw new InvalidOperationException("선택한 계정이 삭제됐습니다.");
+                CheckCredentialBackend(account);
+                var primary = CanonicalAuthExists() ? AuthDocument.Parse(ReadCanonicalAuth()).Key : null;
+                if (primary != expectedPrimary) throw new InvalidOperationException("switch.window_identity");
+                return account;
+            }
+            void Prepare()
+            {
+                lock (Vault.SyncRoot)
+                {
+                    var account = Selected();
+                    if (!SwitchRecovery.AllowsAccount(Vault.Data.ActivePendingSwitch, key, CurrentKey, true))
+                        throw new InvalidOperationException("switch.recover_pending");
+                    if (!AccountAutomation.CanUse(this, account, DateTimeOffset.UtcNow))
+                        throw new InvalidOperationException("credits.resume_blocked");
+                    if (window != null && (!Vault.Data.AllowCreditUse || Vault.Data.AutomaticSwitchEnabled))
+                        throw new InvalidOperationException("switch.window_policy");
+                    if (window == null) return;
+                    var native = Path.Combine(Path.GetDirectoryName(installation.DesktopPath)!, "resources", "codex.exe");
+                    if (!File.Exists(native) || !File.Exists(backend)) throw new FileNotFoundException("Codex account-window runtime is missing.");
+                    window.Prepare(account);
+                    var binding = new DesktopBackendHost.Configuration(native, window.Home, window.Home, backend);
+                    SecureFiles.AtomicWrite(Path.Combine(window.Home, "window-backend.json"), JsonSerializer.SerializeToUtf8Bytes(binding));
+                    Vault.Save();
+                }
+            }
+            Task Verify(int pid, CancellationToken token)
+            {
+                lock (Vault.SyncRoot)
+                {
+                    var account = Selected();
+                    if (window == null) return Task.CompletedTask;
+                    if (account.WindowLoginPending) throw new InvalidOperationException("switch.window_busy");
+                    _ = window.ReadLogin();
+                }
+                return AccountWindowIdentity.VerifyAsync(window.Home, key, pid, token);
+            }
+            await WindowsAccountWindows.OpenAsync(installation.DesktopPath, window?.Desktop, window?.Home ?? CodexHome, backend,
+                Prepare, Verify, cancellation).ConfigureAwait(false);
+        }
+        finally
+        {
+            lock (Vault.SyncRoot) { _switchTargets.Clear(); _switchFinished = null; }
+            finished?.TrySetResult(true); _switchGate.Release(); Changed?.Invoke();
+        }
+    }
+
     public async Task ApplySwitchAsync(string key, Func<bool>? desktopRunning, bool launch, CancellationToken cancellation,
         string? expectedSource = null, bool verifySource = false, bool requireCliQuiescence = false)
     {
@@ -333,7 +411,7 @@ internal sealed class AccountService
                 _switchTargets = new HashSet<string>(new[] { key, CurrentKey ?? "" });
                 finished = _switchFinished = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             }
-            await _queries.CancelAndDrainAsync(_switchTargets).ConfigureAwait(false);
+            await _queries.CancelAndDrainAsync(_switchTargets, cancellation).ConfigureAwait(false);
             var policy = client == null ? null : await client.RequireFileAsync(cancellation, workspace).ConfigureAwait(false);
             lock (Vault.SyncRoot)
             {
@@ -380,6 +458,12 @@ internal sealed class AccountService
             if (key == CurrentKey) throw new InvalidOperationException("현재 로그인 계정은 제거할 수 없습니다.");
             if (Vault.Data.ActivePendingSwitch?.TargetAccountKey == key || Vault.Data.ActivePendingSwitch?.SourceAccountKey == key)
                 throw new InvalidOperationException("남은 채팅 재개 작업을 먼저 처리해 주세요.");
+            if (OperatingSystem.IsWindows() && Vault.Data.Accounts.Find(a => a.Key == key) is { HasAccountWindow: true })
+            {
+                var profile = new AccountWindowProfile(Vault.DirectoryPath, key);
+                if (WindowsAccountWindows.UsesProfile(Installation.DesktopPath, profile.Desktop)) throw new InvalidOperationException("switch.window_busy");
+                profile.RemoveLogin();
+            }
             Vault.Data.Accounts.RemoveAll(a => a.Key == key); Vault.Data.AutomaticSwitchPriority.RemoveAll(k => k == key); Vault.Save();
         }
         Changed?.Invoke();

@@ -48,6 +48,7 @@ internal static class DesktopShutdown
         if (OperatingSystem.IsWindows()) return CloseWindowsAsync(executable, cancellation);
         throw new PlatformNotSupportedException("Codex normal shutdown requires a supported platform provider.");
     }
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static Task CloseWindowsAsync(string executable, CancellationToken cancellation) => Task.Run(async () =>
     {
         cancellation.ThrowIfCancellationRequested();
@@ -66,6 +67,8 @@ internal static class DesktopShutdown
             }
         }
         if (processes.Count == 0) return;
+        if (RuntimeLocator.IsWindowsDesktopExecutable(executable) && WindowsAccountWindows.HasManagedWindow(executable))
+            throw new InvalidOperationException("switch.window_shutdown");
         var parents = ReadParents(); var ids = new HashSet<uint>(processes.ConvertAll(process => process.Id));
         processes.RemoveAll(process => parents.TryGetValue(process.Id, out var parent) && ids.Contains(parent));
         if (processes.Count == 0) throw new IOException("Codex의 기본 프로세스를 확인하지 못했습니다.");
@@ -83,13 +86,22 @@ internal static class DesktopShutdown
                 Started = new() { dwLowDateTime = (int)selfStart, dwHighDateTime = (int)(selfStart >> 32) } };
             Check(RmAddFilter(session, null, ref selfIdentity, null, 2)); // RmNoShutdown
             using var cancel = cancellation.Register(() => RmCancelCurrentTask(session));
-            var result = RmShutdown(session, 0, IntPtr.Zero);
             cancellation.ThrowIfCancellationRequested();
-            if (result != 0) throw new IOException("Codex를 정상 종료하지 못했습니다. Codex 메뉴에서 종료한 뒤 다시 전환해 주세요.", new Win32Exception((int)result));
+            var result = RmShutdown(session, 0, IntPtr.Zero);
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation); timeout.CancelAfter(TimeSpan.FromSeconds(30));
-            try { while (RuntimeLocator.IsDesktopRunning(executable)) await Task.Delay(100, timeout.Token); }
+            try
+            {
+                while (RuntimeLocator.IsDesktopRunning(executable))
+                {
+                    timeout.Token.ThrowIfCancellationRequested();
+                    if (result != 0)
+                        throw new InvalidOperationException("Codex를 정상 종료하지 못했습니다. Codex 메뉴에서 종료한 뒤 다시 전환해 주세요.", new Win32Exception((int)result));
+                    await Task.Delay(100, timeout.Token);
+                }
+            }
             catch (OperationCanceledException) when (!cancellation.IsCancellationRequested)
-            { throw new IOException("Codex가 아직 실행 중입니다. Codex 메뉴에서 완전히 종료해 주세요."); }
+            { throw new InvalidOperationException("Codex가 아직 실행 중입니다. Codex 메뉴에서 완전히 종료해 주세요."); }
+            catch (IOException error) { throw new InvalidOperationException(error.Message, error); }
         }
         finally { RmEndSession(session); }
     }, cancellation);

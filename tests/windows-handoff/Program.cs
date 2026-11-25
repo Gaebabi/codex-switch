@@ -14,6 +14,8 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Native Windows handoff checks require Windows");
+        if (args.Length == 2 && args[0] == "--account-windows")
+            return await AccountWindowContracts.RunAsync(args[1]);
         var executable = Path.GetFullPath(args.Single());
         if (Path.GetFileName(executable) != "HandoffFixture.exe" || !File.Exists(executable) || RuntimeLocator.IsDesktopRunning(executable))
             throw new InvalidOperationException("A fresh disposable fixture executable is required");
@@ -65,16 +67,17 @@ internal static class Program
                 var backend = new Backend(executable, fixture); var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, UserErrors.Describe);
                 var plan = await coordinator.PrepareAsync("target", DateTimeOffset.UtcNow, CancellationToken.None);
                 watch.Restart(); var timedOut = false;
-                try { await coordinator.RunAsync(plan, CancellationToken.None); } catch (IOException) { timedOut = true; }
+                try { await coordinator.RunAsync(plan, CancellationToken.None); } catch (InvalidOperationException) { timedOut = true; }
                 Assert(timedOut && watch.Elapsed >= TimeSpan.FromSeconds(29) && watch.Elapsed < TimeSpan.FromSeconds(40) &&
-                    !fixture.Child.HasExited && !plan.AccountApplied && !backend.Calls.Contains("launch"), "Deadline, no-force shutdown or apply/launch boundary failed");
+                    !fixture.Child.HasExited && !plan.AccountApplied && !backend.Calls.Contains("launch") &&
+                    backend.Calls.Count(call => call == "close") == 1, "Deadline, no-force shutdown or apply/launch boundary failed");
                 passed.Add("30-second deadline stops handoff without force-killing a slow child or applying credentials");
             }
             using (var fixture = await StartAsync(executable, directory, 0, true))
             {
                 var denied = false;
                 try { await DesktopShutdown.CloseAsync(executable, CancellationToken.None); }
-                catch (IOException error) when (error.InnerException is System.ComponentModel.Win32Exception native && native.NativeErrorCode == 351) { denied = true; }
+                catch (InvalidOperationException error) when (error.InnerException is System.ComponentModel.Win32Exception native && native.NativeErrorCode == 351) { denied = true; }
                 Assert(denied && !fixture.Parent.HasExited, "Unsupported native shutdown was hidden or force-killed");
                 passed.Add("Restart Manager unsupported headless shutdown is preserved and does not force-close the process");
             }

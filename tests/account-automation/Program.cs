@@ -12,6 +12,8 @@ CreditOverlayContracts.Run(Check);
 await RuntimeCleanupContracts.Run(Check);
 await CreditProtectionContracts.Run(Check);
 await RestartContracts.Run(Check);
+await SwitchLifecycleContracts.Run(Check);
+await AccountWindowIdentityContracts.RunAsync(Check);
 {
     var completed = new AccountSwitchPlan { Phase = SwitchPhase.Finished, AccountApplied = true,
         Chats = new() { new() { ResumeState = ChatResumeState.Resumed }, new() { ResumeState = ChatResumeState.AlreadyRunning } } };
@@ -262,10 +264,10 @@ foreach (var failure in new[] { "name", "close", "apply", "apply-after-write" })
     Check("A later recovery completes its retry without applying credentials again", await coordinator.RunAsync(plan, CancellationToken.None) && backend.Launches == 2 && backend.Applies == 0 && saved == null);
 }
 {
-    var backend = new FakeBackend { LaunchFailures = 1, LaunchError = new TimeoutException("Synthetic discovery timeout") };
+    var backend = new FakeBackend { ConnectionFailures = 1 };
     var coordinator = new AccountSwitchCoordinator(backend, _ => { }, _ => { }, e => e.Message);
     var plan = await coordinator.PrepareAsync("target", now, CancellationToken.None);
-    Check("Desktop discovery timeouts are retried in the same switch", await coordinator.RunAsync(plan, CancellationToken.None) && backend.Launches == 2);
+    Check("Desktop discovery timeout retries only the connection", await coordinator.RunAsync(plan, CancellationToken.None) && backend.Launches == 1 && backend.Connections == 2);
 }
 {
     var backend = new FakeBackend { LaunchFailures = 3, LaunchError = new InvalidDataException("Synthetic trust refusal") };
@@ -287,8 +289,8 @@ foreach (var failure in new[] { "name", "close", "apply", "apply-after-write" })
     var coordinator = new AccountSwitchCoordinator(backend, _ => { }, p => { if (p.AutomaticRecoveryAttempts == 1) cancellation.Cancel(); }, e => e.Message);
     var plan = await coordinator.PrepareAsync("target", now, cancellation.Token); plan.Automatic = true;
     try { await coordinator.RunAsync(plan, cancellation.Token); } catch (OperationCanceledException) { }
-    Check("Cancellation during the retry wait prevents another switch attempt and disables restart recovery",
-        backend.Launches == 2 && plan.AutomaticRecoveryAttempts == 2 && backend.Resumes == 0);
+    Check("Cancellation during the retry wait neither repeats the launch nor enables automatic recovery",
+        backend.Launches == 1 && plan.AutomaticRecoveryAttempts == 2 && backend.Resumes == 0);
 }
 {
     var backend = new FakeBackend { Current = "target", Failure = "launch-always" };
@@ -305,7 +307,8 @@ foreach (var failure in new[] { "name", "close", "apply", "apply-after-write" })
     var done = new SwitchChat { Id = "completed", ResumeState = ChatResumeState.Completed };
     plan.Chats.Add(done);
     Check("A transient chat-open failure also completes without exposing Recover", await coordinator.RunAsync(plan, CancellationToken.None) && saved == null);
-    Check("Retrying chat-open never repeats the account switch or an already completed chat", backend.Applies == 1 && backend.Resumes == 1 && backend.ResumeCalls == 3 && done.ResumeState == ChatResumeState.Completed);
+    Check("Retrying chat-open never repeats launch, account application or an already completed chat",
+        backend.Launches == 1 && backend.Applies == 1 && backend.Resumes == 1 && backend.ResumeCalls == 3 && done.ResumeState == ChatResumeState.Completed);
 }
 {
     var chat = new SwitchChat { Id = "chat", OriginalTurnId = "previous" };
@@ -380,26 +383,36 @@ sealed class FakeBackend : IAccountSwitchBackend
     public int Launches, Applies, Resumes, Closes, Names, LaunchFailures, ResumeFailures, ResumeCalls, CloseFailures, NameFailures, ApplyFailures, ApplyCalls;
     public Exception? LaunchError;
     public SwitchChat[]? CapturedChats;
+    public Func<CancellationToken, Task<SwitchChat[]>>? CaptureOverride;
+    public Func<CancellationToken, Task>? CloseOverride, LaunchOverride, AfterSending;
+    public int Connections, ConnectionFailures;
     public int FailNameAt;
     public bool AmbiguousContinue;
     public string? LastMarker;
     public Task<string?> CurrentAccountAsync(CancellationToken cancellation) => Task.FromResult<string?>(Current);
-    public Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation) => Task.FromResult(CapturedChats ?? new[] { new SwitchChat { Id = "chat", OriginalTitle = "Fictional work" } });
+    public Task<SwitchChat[]> CaptureAsync(CancellationToken cancellation) =>
+        CaptureOverride?.Invoke(cancellation) ?? Task.FromResult(CapturedChats ?? new[] { new SwitchChat { Id = "chat", OriginalTitle = "Fictional work" } });
     public int TargetValidations;
     public Task ValidateChatsForTargetAsync(SwitchChat[] chats, string target, CancellationToken cancellation) { TargetValidations++; if (Failure == "target-refused") throw new InvalidDataException("Synthetic workspace refusal"); return Task.CompletedTask; }
     public Task BackupNameAsync(SwitchChat chat, DateTimeOffset at, CancellationToken cancellation) { Names++; if (Names <= NameFailures || Names == FailNameAt) throw new IOException("Synthetic name failure"); return Task.CompletedTask; }
-    public Task CloseDesktopAsync(CancellationToken cancellation) { Closes++; if (Failure == "close" || Closes <= CloseFailures) throw new IOException("Synthetic shutdown remains incomplete"); if (Failure == "cancel-after-close") Cancel!.Cancel(); return Task.CompletedTask; }
+    public Task CloseDesktopAsync(CancellationToken cancellation) { Closes++; if (Failure == "close" || Closes <= CloseFailures) throw new IOException("Synthetic shutdown remains incomplete"); if (Failure == "cancel-after-close") Cancel!.Cancel(); return CloseOverride?.Invoke(cancellation) ?? Task.CompletedTask; }
     public Task ApplyAccountAsync(string key, string? source, CancellationToken cancellation) { ApplyCalls++; if (Failure == "apply" || ApplyCalls <= ApplyFailures) throw new IOException("Synthetic apply failure"); Current = key; Applies++; if (Failure == "apply-after-write" && ApplyCalls == 1) throw new IOException("Synthetic failure after writing credentials"); return Task.CompletedTask; }
-    public Task LaunchDesktopAsync(CancellationToken cancellation) { Launches++; if (Failure == "launch-always" || Launches <= LaunchFailures) throw LaunchError ?? new IOException("Synthetic launch failure"); return Task.CompletedTask; }
-    public Task<ChatResumeState> ResumeAsync(SwitchChat chat, Action sending, CancellationToken cancellation)
+    public Task LaunchDesktopAsync(CancellationToken cancellation) { Launches++; if (Failure == "launch-always" || Launches <= LaunchFailures) throw LaunchError ?? new IOException("Synthetic launch failure"); return LaunchOverride?.Invoke(cancellation) ?? Task.CompletedTask; }
+    public Task WaitForDesktopConnectionAsync(CancellationToken cancellation)
+    {
+        if (++Connections <= ConnectionFailures) throw new TimeoutException("Synthetic IPC discovery timeout");
+        return Task.CompletedTask;
+    }
+    public async Task<ChatResumeState> ResumeAsync(SwitchChat chat, Action sending, CancellationToken cancellation)
     {
         ResumeCalls++;
         if (ResumeCalls <= ResumeFailures) throw new IOException("Synthetic chat-open failure");
         // Match the production backend's observation-only policy after ambiguous delivery.
-        if (SwitchContinuation.Decide(chat, new(chat.Id, "owner", "idle", false, null, null, "resumed", null, null, null)) is ChatResumeState decided) return Task.FromResult(decided);
+        if (SwitchContinuation.Decide(chat, new(chat.Id, "owner", "idle", false, null, null, "resumed", null, null, null)) is ChatResumeState decided) return decided;
         sending(); Resumes++; LastMarker = chat.ContinueMessageId;
+        if (AfterSending != null) await AfterSending(cancellation);
         if (AmbiguousContinue) throw new IOException("Synthetic lost Continue response");
-        return Task.FromResult(ChatResumeState.Resumed);
+        return ChatResumeState.Resumed;
     }
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

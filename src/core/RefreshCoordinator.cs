@@ -65,15 +65,15 @@ internal sealed class RefreshCoordinator
         else if (failure != null) entry.Completion.TrySetException(failure);
         else entry.Completion.TrySetResult(true);
     }
-    public async Task CancelAndDrainAsync(IEnumerable<string>? keys = null)
+    public async Task CancelAndDrainAsync(IEnumerable<string>? keys = null, CancellationToken cancellation = default)
     {
         Entry[] entries;
         lock (_state) entries = _running.Values.Where(e => keys == null || keys.Contains(e.Key)).ToArray();
         foreach (var entry in entries) entry.Cancel();
         foreach (var entry in entries)
         {
-            try { await entry.Completion.Task.ConfigureAwait(false); }
-            catch (OperationCanceledException) { }
+            try { await entry.Completion.Task.WaitAsync(cancellation).ConfigureAwait(false); }
+            catch (OperationCanceledException) when (!cancellation.IsCancellationRequested) { }
         }
     }
 }
