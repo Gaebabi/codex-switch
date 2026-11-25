@@ -3,21 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Win32.SafeHandles;
 
 namespace CodexAccountDesk;
 
 internal static class AccountWindowIdentity
 {
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern bool GetNamedPipeServerProcessId(SafePipeHandle pipe, out uint processId);
-
     internal static string Pipe(string home) => "CodexSwitch.Window." + SecureFiles.Hash(Path.GetFullPath(home).ToUpperInvariant());
 
     internal static async Task ServeAsync(string home, Func<string, JsonObject, Task<JsonNode?>> rpc, AccountWindowActivity activity, CancellationToken stop)
@@ -103,9 +98,7 @@ internal static class AccountWindowIdentity
         if (config?.AccountWindowBackend == null) throw new InvalidOperationException("switch.window_identity");
         using var pipe = new NamedPipeClientStream(".", Pipe(home), PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
         await pipe.ConnectAsync(750, cancellation).ConfigureAwait(false);
-        if (!GetNamedPipeServerProcessId(pipe.SafePipeHandle, out var peer) || WindowsProcessImage.Read((int)peer) is not { } image ||
-            !image.MatchesPath(Path.GetFullPath(config.AccountWindowBackend))) throw new InvalidOperationException("switch.window_peer");
-        if (!WindowsAccountWindows.DescendsFrom((int)peer, rootPid)) throw new InvalidOperationException("switch.window_parent");
+        WindowsAccountWindows.VerifyBackend(pipe.SafePipeHandle, config.AccountWindowBackend, rootPid);
         await pipe.WriteAsync(new byte[] { activity == null ? (byte)1 : (byte)2 }, cancellation).ConfigureAwait(false);
         var expected = Encoding.ASCII.GetBytes(key + "\n");
         var actual = new byte[expected.Length];

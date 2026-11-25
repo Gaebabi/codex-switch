@@ -115,7 +115,17 @@ internal static class WindowsAccountWindows
     internal static bool UsesProfile(string executable, string profile) => Roots(executable, true).Any(root =>
         string.Equals(root.Directory, profile, StringComparison.OrdinalIgnoreCase));
 
-    internal static bool DescendsFrom(int child, int parent)
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool GetNamedPipeServerProcessId(Microsoft.Win32.SafeHandles.SafePipeHandle pipe, out uint processId);
+
+    internal static void VerifyBackend(Microsoft.Win32.SafeHandles.SafePipeHandle pipe, string executable, int rootPid)
+    {
+        if (!GetNamedPipeServerProcessId(pipe, out var peer) || WindowsProcessImage.Read((int)peer) is not { } image ||
+            !image.MatchesPath(Path.GetFullPath(executable))) throw new InvalidOperationException("switch.window_peer");
+        if (!DescendsFrom((int)peer, rootPid)) throw new InvalidOperationException("switch.window_parent");
+    }
+
+    private static bool DescendsFrom(int child, int parent)
     {
         var seen = new HashSet<int>();
         for (var pid = child; pid > 0 && seen.Count < 24 && seen.Add(pid);)
