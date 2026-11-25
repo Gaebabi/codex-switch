@@ -112,7 +112,10 @@ await Check("Production Linux metadata names and verifies a real locally persist
 await Check("Production backend normally closes its original desktop before returning and relaunches in the same home", async () =>
 {
     await desktopBackend.CloseDesktopAsync(token); Assert(LinuxDesktopRuntime.Running(token).Length == 0);
-    await desktopBackend.LaunchDesktopAsync(token); Assert(desktopService.LinuxDesktop!.RequireOwnedOrStopped(token) && sessions.Current.Available);
+    await desktopBackend.LaunchDesktopAsync(token);
+    Assert(desktopService.LinuxDesktop!.RequireOwnedOrStopped(token));
+    await desktopBackend.WaitForDesktopConnectionAsync(token);
+    Assert(sessions.Current.Available);
     await desktopBackend.CloseDesktopAsync(token); Assert(LinuxDesktopRuntime.Running(token).Length == 0 && !File.Exists(Path.Combine(desktopHome, "auth.json")));
 });
 await desktopService.StopAsync(); desktopService.ReleaseDesktop();

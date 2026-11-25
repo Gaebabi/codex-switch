@@ -144,7 +144,7 @@ internal static class Program
                     {
                         window.Show(); await window.Dispatcher.InvokeAsync(() => {}, DispatcherPriority.Loaded);
                         Func<CancellationToken, Task> initialize = token => Call(window, "EnsureInitializedAsync", token);
-                        await Call(window, "RunAsync", "Codex 계정 확인 중…", initialize);
+                        await Call(window, "RunAsync", "Codex 계정 확인 중…", initialize, Type.Missing);
                         Check(label + ": real initialization failed while the configured client path is absent", !(bool)Field(window,"_ready") && ((Task)Field(window,"_initialization")).IsFaulted);
                         Check(label + ": account addition stays disabled before successful initialization", !((Button)Field(window,"_add")).IsEnabled);
                         await Task.Delay(200); Capture(window, Path.Combine(output, label + "-unavailable.png"));
