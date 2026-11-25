@@ -120,7 +120,11 @@ internal sealed class DesktopSwitchBackend : IAccountSwitchBackend
     {
         if (OperatingSystem.IsLinux())
         {
-            if (_service.LinuxDesktop == null) throw new LinuxDesktopOwnershipException();
+            if (_service.LinuxDesktop == null)
+            {
+                if (LinuxDesktopRuntime.Running(cancellation).Length != 0) throw new LinuxDesktopOwnershipException();
+                return;
+            }
             try { await _service.LinuxDesktop.StartAsync(cancellation); }
             catch (TimeoutException error) { throw new InvalidOperationException(error.Message, error); }
             return;
