@@ -828,14 +828,14 @@ internal sealed class MainWindow : Window
         LayoutCards(); RefreshDetails(accounts);
         _scroll.ScrollToVerticalOffset(offset);
     }
-    internal string EvidenceSwitchLabel(string key)
+    internal string[] EvidenceAccountActions(string key)
     {
         if (_options.UiEvidenceDirectory == null) throw new InvalidOperationException("Evidence mode is required.");
         var profiles = _service.Accounts.OrderByDescending(a => a.IsCurrent).ThenBy(a => a.DisplayName, StringComparer.CurrentCultureIgnoreCase).ToArray();
         var index = Array.FindIndex(profiles, profile => profile.Key == key);
         if (index < 0) throw new InvalidOperationException("Evidence account missing.");
-        return Descendants(_rows.Children[index]).OfType<Button>().Where(button => Equals(button.Tag, "account-switch-action"))
-            .SelectMany(Descendants).OfType<TextBlock>().Single().Text;
+        return Descendants(_rows.Children[index]).OfType<Button>().Where(button => Equals(button.Tag, "account-switch-action") && button.IsEnabled)
+            .Select(button => Descendants(button).OfType<TextBlock>().Single().Text).ToArray();
     }
     private void LayoutCards()
     {
