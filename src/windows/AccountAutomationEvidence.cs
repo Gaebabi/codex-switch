@@ -95,7 +95,7 @@ internal static class AccountAutomationEvidence
                 var card = Descendants<AccountTankCard>(window).Single(c => ((TextBlock)typeof(AccountTankCard).GetField("_plan", fields)!.GetValue(c)!).Text == "Free");
                 card.MenuButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 var accountMenu = card.MenuButton.ContextMenu!;
-                var priority = accountMenu.Items.OfType<MenuItem>().Single(i => i.Items.Count == 4);
+                var priority = accountMenu.Items.OfType<MenuItem>().Single(i => i.Name == "AutomaticSwitchPriorityMenuItem");
                 priority.IsSubmenuOpen = true; await Task.Delay(120);
                 _ = NativeHandle((MenuItem)priority.Items[0], "Account priority submenu");
                 ((MenuItem)priority.Items[0]).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent)); accountMenu.IsOpen = false;

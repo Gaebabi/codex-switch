@@ -1020,7 +1020,7 @@ internal sealed class MainWindow : Window
         var history = new MenuItem { Header = Loc.T("추이 보기") }; history.Click += (_, _) => OpenDetails(profile.Key);
         menu.Items.Add(history); menu.Items.Add(new Separator());
         var order = AccountAutomation.OrderedAccounts(_service);
-        var priority = new MenuItem { Header = Loc.F("auto.priority", Array.FindIndex(order, p => p.Key == profile.Key) + 1) };
+        var priority = new MenuItem { Name = "AutomaticSwitchPriorityMenuItem", Header = Loc.F("auto.priority", Array.FindIndex(order, p => p.Key == profile.Key) + 1) };
         for (var index = 1; index <= order.Length; index++)
         {
             var position = index;
