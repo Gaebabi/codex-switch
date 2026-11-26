@@ -101,7 +101,7 @@ internal sealed class CodexRpc : IAsyncDisposable
                 var root = document.RootElement;
                 if (root.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.Number && _pending.TryGetValue(id.GetInt32(), out var completion))
                 {
-                    if (root.TryGetProperty("error", out var error)) completion.TrySetException(new CodexRequestException(JsonValue.String(error, "message") ?? "Codex 조회에 실패했습니다.", _methods.TryGetValue(id.GetInt32(), out var operation) ? operation : null));
+                    if (root.TryGetProperty("error", out var error)) completion.TrySetException(new CodexRequestException(JsonValue.String(error, "message") ?? "Codex 조회에 실패했습니다.", _methods.TryGetValue(id.GetInt32(), out var operation) ? operation : null, JsonValue.Int(error, "code")));
                     else if (root.TryGetProperty("result", out var result)) completion.TrySetResult(result.Clone());
                     else completion.TrySetException(new InvalidDataException("Codex 응답에 결과가 없습니다."));
                 }
@@ -139,5 +139,7 @@ internal sealed class CodexRpc : IAsyncDisposable
 internal sealed class CodexRequestException : Exception
 {
     public string? Operation { get; }
-    public CodexRequestException(string message, string? operation = null) : base(message) { Operation = operation; }
+    public int? Code { get; }
+    public CodexRequestException(string message, string? operation = null, int? code = null) : base(message)
+    { Operation = operation; Code = code; }
 }

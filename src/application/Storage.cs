@@ -38,7 +38,11 @@ internal sealed class AccountVault
         var parsed = AuthDocument.Parse(authJson);
         var existing = Data.Accounts.Find(a => a.Key == parsed.Key);
         if (existing == null) { Data.Accounts.Add(parsed); return parsed; }
-        if (existing.AuthJson != authJson) { existing.AuthJson = authJson; existing.CredentialRevision++; }
+        if (existing.AuthJson != authJson)
+        {
+            existing.AuthJson = authJson; existing.CredentialRevision++;
+            if (existing.RequiresLogin) { existing.RequiresLogin = false; existing.Usage = null; }
+        }
         if (parsed.Email.Length > 0) existing.Email = parsed.Email;
         if (parsed.Plan != "unknown") existing.Plan = parsed.Plan;
         return existing;
@@ -49,7 +53,7 @@ internal sealed class AccountVault
         lock (SyncRoot)
         {
         var bytes = JsonSerializer.SerializeToUtf8Bytes(Data);
-        try { SecureFiles.AtomicWrite(FilePath, VaultProtection.Protect(bytes, DirectoryPath)); }
+        try { SecureFiles.AtomicWriteOwned(FilePath, VaultProtection.Protect(bytes, DirectoryPath)); }
         finally { CryptographicOperations.ZeroMemory(bytes); }
         }
     }

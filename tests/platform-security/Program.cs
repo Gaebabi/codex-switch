@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -41,6 +42,28 @@ try
         SecureFiles.AtomicWriteText(textPath, "replacement");
         Assert(File.ReadAllText(textPath) == "replacement" && Directory.GetFiles(privateDirectory).Length == 1);
     });
+    if (OperatingSystem.IsWindows())
+    {
+        Check("Owned Windows replacement preserves the destination ACL and cleans failed staging writes", () =>
+        {
+            var file = new FileInfo(textPath);
+            var acl = file.GetAccessControl(AccessControlSections.Access);
+            acl.SetAccessRuleProtection(true, preserveInheritance: true);
+            file.SetAccessControl(acl);
+            var expectedAcl = file.GetAccessControl(AccessControlSections.Access).GetSecurityDescriptorSddlForm(AccessControlSections.Access);
+            using (File.Open(textPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                var refused = false;
+                try { SecureFiles.AtomicWriteOwned(textPath, "blocked"u8.ToArray()); }
+                catch (IOException) { refused = true; }
+                catch (UnauthorizedAccessException) { refused = true; }
+                Assert(refused && File.ReadAllText(textPath) == "replacement" && Directory.GetFiles(privateDirectory).Length == 1);
+            }
+            SecureFiles.AtomicWriteOwned(textPath, "renamed"u8.ToArray());
+            Assert(File.ReadAllText(textPath) == "renamed" && Directory.GetFiles(privateDirectory).Length == 1);
+            Assert(file.GetAccessControl(AccessControlSections.Access).GetSecurityDescriptorSddlForm(AccessControlSections.Access) == expectedAcl);
+        });
+    }
     if (!OperatingSystem.IsWindows())
     {
         Check("POSIX directory/file modes remain0700/0600", () =>

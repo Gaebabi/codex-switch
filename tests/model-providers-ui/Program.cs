@@ -74,6 +74,63 @@ internal static class ProviderUiEvidence
                 var cancel = Field<Button>(main, "_cancelSwitch");
                 if (!Action(root, "switch.open_window").IsEnabled || !Action(root, "switch.show_window").IsEnabled)
                     throw new Exception("An empty stale restart must allow the target's explicit Switch action.");
+                var layoutBefore = service.Vault.Data.DashboardAccountOrder;
+                var secondaryDesktop = new AccountWindowProfile(service.Vault.DirectoryPath, target.Key).Desktop;
+                Set("_accountWindows", new Dictionary<string, int> { [""] = 101, [secondaryDesktop] = 102 });
+                Invoke("RenderAccounts"); Layout(root, 500, 320);
+                var focusActions = Buttons(root).Where(button => button.Content is StackPanel content &&
+                    content.Children.OfType<TextBlock>().Any(text => text.Text == Loc.T("switch.show_window"))).ToArray();
+                if (focusActions.Length != 2 || focusActions.Any(button => !ReferenceEquals(button.Style, main.Resources["PrimaryButton"])))
+                    throw new Exception("Both account Focus buttons must use the primary style.");
+                Capture(root, Path.Combine(output, "dashboard-focus-" + language + ".png"), main.Background, 500, 320);
+                var tank = Field<List<AccountTankCard>>(main, "_tankCards").Single(card => card.AccountKey == target.Key);
+                tank.MenuButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                var menu = tank.MenuButton.ContextMenu ?? throw new Exception("The tank menu did not open.");
+                var move = menu.Items.OfType<MenuItem>().Single(item => item.Name == "MoveAccountMenuItem");
+                var firstPosition = move.Items.OfType<MenuItem>().First();
+                menu.IsOpen = false;
+                firstPosition.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                Layout(root, 500, 320);
+                if (Field<List<AccountTankCard>>(main, "_tankCards")[0].AccountKey != target.Key ||
+                    new AccountVault(service.Vault.DirectoryPath).Data.DashboardAccountOrder.FirstOrDefault() != target.Key)
+                    throw new Exception("The menu must move the tank and persist the displayed order.");
+                Capture(root, Path.Combine(output, "dashboard-reordered-" + language + ".png"), main.Background, 500, 320);
+                var destination = Field<List<AccountTankCard>>(main, "_tankCards").Single(card => card.AccountKey == current);
+                Set("_draggingAccount", target.Key);
+                try
+                {
+                    var constructor = typeof(DragEventArgs).GetConstructor(flags, null,
+                        [typeof(IDataObject), typeof(DragDropKeyStates), typeof(DragDropEffects), typeof(DependencyObject), typeof(Point)], null)!;
+                    var payload = new DataObject("CodexSwitch.DashboardAccount", target.Key);
+                    var drop = (DragEventArgs)constructor.Invoke([payload, DragDropKeyStates.None, DragDropEffects.Move, destination, new Point(10, 10)]);
+                    drop.RoutedEvent = DragDrop.DropEvent;
+                    destination.RaiseEvent(drop);
+                    if (drop.Effects != DragDropEffects.Move ||
+                        !new AccountVault(service.Vault.DirectoryPath).Data.DashboardAccountOrder.SequenceEqual(new[] { current, target.Key }))
+                        throw new Exception("Dropping a tank onto another position must save the new order.");
+                }
+                finally { Set("_draggingAccount", null); }
+                service.Vault.Data.DashboardAccountOrder = layoutBefore;
+                service.Vault.Save();
+                Set("_accountWindows", new Dictionary<string, int> { [""] = 101 });
+                Invoke("RenderAccounts"); Layout(root, 500, 320);
+                checks.Add(language + ": matching Focus styles and persistent tank reorder.");
+                target.Usage = new() { Buckets = [new() { Id = "codex", Primary = new() { UsedPercent = 13, Minutes = 10080 } }] };
+                target.RequiresLogin = true;
+                Invoke("RenderAccounts"); Layout(root, 500, 320);
+                var signIn = Action(root, "account.sign_in");
+                var expiredCard = Field<List<AccountTankCard>>(main, "_tankCards").Single(card =>
+                    Field<AccountProfile>(card, "_profile").Key == target.Key);
+                if (!signIn.IsEnabled || Buttons(root).Any(button => button.Content is StackPanel content &&
+                    content.Children.OfType<TextBlock>().Any(text => text.Text == Loc.T("switch.open_window"))) ||
+                    Field<TextBlock>(expiredCard, "_number").Text != "—" || ((TankGaugeSurface)expiredCard.Children[0]).Remaining != null)
+                    throw new Exception("An expired saved session must show sign-in and an empty quota gauge.");
+                signIn.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (main.EvidenceReloginAccount != target.Key) throw new Exception("Sign-in must target the selected account.");
+                Capture(root, Path.Combine(output, "account-sign-in-" + language + ".png"), main.Background, 500, 320);
+                target.RequiresLogin = false; target.Usage = null;
+                Invoke("RenderAccounts"); Layout(root, 500, 320);
+                checks.Add(language + ": expired account shows sign-in and hides cached usage.");
                 pending.Chats.Add(new SwitchChat());
                 try
                 {
@@ -110,6 +167,32 @@ internal static class ProviderUiEvidence
                 Invoke("SetSwitchResult", "switch.opened", false);
                 if (status.Text != Loc.T("switch.opened") || cancel.Visibility != Visibility.Collapsed)
                     throw new Exception("The terminal result must replace progress even while the backend is disposing.");
+                var notification = Field<NotificationContent>(main, "_switchNotification");
+                var closeSwitch = Field<Button>(notification, "_dismiss");
+                var gauge = Field<ScaleTransform>(notification, "_remaining");
+                Invoke("UpdateNotifications", System.Diagnostics.Stopwatch.GetTimestamp() + 4 * System.Diagnostics.Stopwatch.Frequency);
+                if (closeSwitch.Visibility != Visibility.Visible || gauge.ScaleX is < 0.4 or > 0.6)
+                    throw new Exception("The remaining-time gauge must shrink while a notice is displayed.");
+                Capture(root, Path.Combine(output, "notification-countdown-" + language + ".png"), main.Background, 500, 320);
+                Invoke("UpdateNotifications", System.Diagnostics.Stopwatch.GetTimestamp() + 20 * System.Diagnostics.Stopwatch.Frequency);
+                if (Field<Border>(main, "_switchPanel").Visibility != Visibility.Collapsed)
+                    throw new Exception("Expired switch notifications must disappear.");
+
+                pending.Id = Guid.NewGuid().ToString();
+                service.Vault.Data.PendingSwitch = pending;
+                Invoke("RenderSwitchStatus");
+                closeSwitch.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Invoke("RenderSwitchStatus");
+                if (Field<Border>(main, "_switchPanel").Visibility != Visibility.Collapsed ||
+                    !ReferenceEquals(service.Vault.Data.PendingSwitch, pending))
+                    throw new Exception("Dismissal must hide the recovery notice without discarding the plan.");
+                service.Vault.Data.PendingSwitch = null;
+
+                Invoke("SetStatus", "account.login_required", true, Array.Empty<object>());
+                var footer = Field<NotificationContent>(main, "_footerNotification");
+                Field<Button>(footer, "_dismiss").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (footer.Visibility != Visibility.Collapsed) throw new Exception("The footer notice close action must dismiss it immediately.");
+                checks.Add(language + ": notification countdown, expiration and manual dismissal preserve recovery.");
                 Set("_switchCancellation", null); Set("_switching", false);
                 main.Close();
                 checks.Add(language + ": compact account switch displays live countdown, cancellation and actionable recovery independently of refresh.");

@@ -20,6 +20,7 @@ internal sealed class VaultData
     public int AutomaticSwitchThreshold { get; set; } = 10;
     public bool AutomaticSwitchUsePriority { get; set; }
     public List<string> AutomaticSwitchPriority { get; set; } = new();
+    public List<string> DashboardAccountOrder { get; set; } = new();
     public DateTimeOffset? LastAutomaticSwitchAttempt { get; set; }
     private static List<DrivePreference> DefaultDrives()
     {

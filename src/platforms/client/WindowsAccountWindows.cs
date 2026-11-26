@@ -101,16 +101,20 @@ internal static class WindowsAccountWindows
     }
 
     internal static bool HasManagedWindow(string executable) => Roots(executable, true).Any(root => root.Managed);
-    internal static Dictionary<string, int> Inventory(string executable)
+    internal static (Dictionary<string, int> Windows, DateTimeOffset? PrimaryStartedAt) Inventory(string executable)
     {
         var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        DateTimeOffset? primaryStartedAt = null;
         foreach (var root in Roots(executable))
         {
             if (!root.Managed && root.Directory != null) continue;
             var directory = root.Directory ?? "";
             if (!result.TryAdd(directory, root.Pid)) result[directory] = 0;
+            if (!root.Managed && directory.Length == 0 && result[directory] > 0 &&
+                Window(root) != IntPtr.Zero)
+                primaryStartedAt = new DateTimeOffset(DateTime.FromFileTimeUtc(root.Created));
         }
-        return result;
+        return (result, result.TryGetValue("", out var primary) && primary > 0 ? primaryStartedAt : null);
     }
     internal static bool UsesProfile(string executable, string profile) => Roots(executable, true).Any(root =>
         string.Equals(root.Directory, profile, StringComparison.OrdinalIgnoreCase));

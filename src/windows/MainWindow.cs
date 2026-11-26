@@ -35,6 +35,10 @@ internal sealed class MainWindow : Window
     private readonly TextBlock _status = new(), _loginText = new();
     private readonly Border _switchPanel = new() { Name = "AccountSwitchStatus" };
     private readonly TextBlock _switchText = new() { TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
+    private NotificationContent _switchNotification = null!, _footerNotification = null!;
+    private NotificationDeadline? _switchNotice, _footerNotice;
+    private string? _noticedRecoveryId;
+    private readonly DispatcherTimer _notificationTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
     private readonly SessionUsagePanel _sessionCount = new();
     private readonly Button _refresh = new(), _add = new(), _cancelLogin = new(), _cancelSwitch = new();
     private readonly MenuItem _automaticSwitch = new();
@@ -48,6 +52,9 @@ internal sealed class MainWindow : Window
     private MenuItem? _importCurrent;
     private readonly Border _loginPanel = new();
     private readonly List<AccountTankCard> _tankCards = new();
+    private const string DashboardDragFormat = "CodexSwitch.DashboardAccount";
+    private string? _draggingAccount;
+    private long _lastDragScroll;
     private readonly Dictionary<string, string> _selectedQuotas = new();
     private readonly Dictionary<string, AccountDetailWindow> _details = new();
     private readonly HashSet<Task> _operations = new();
@@ -80,6 +87,12 @@ internal sealed class MainWindow : Window
     internal string? EvidenceReloginAccount { get; private set; }
     private object? _languageInteraction;
     private object? _alternateWindowFrame;
+    private readonly record struct NotificationDeadline(long StartedAt, double Seconds)
+    {
+        internal static NotificationDeadline Start(bool warning) => new(Stopwatch.GetTimestamp(), warning ? 15 : 8);
+        internal double Remaining(long now) => Math.Clamp(1 - Stopwatch.GetElapsedTime(StartedAt, now).TotalSeconds / Seconds, 0, 1);
+    }
+
     public MainWindow(AccountService service, Program.Options options)
     {
         _service = service; _options = options;
@@ -98,6 +111,7 @@ internal sealed class MainWindow : Window
         ApplyTheme();
         _scroll.SizeChanged += (_, _) => LayoutCards();
         _scroll.ScrollChanged += (_, args) => { if (args.ViewportWidthChange != 0) LayoutCards(); };
+        _scroll.PreviewDragOver += ScrollAccountDrag;
         _refresh.Click += async (_, _) => await RefreshAsync();
         _add.Click += async (_, _) => await AddAsync();
         _cancelLogin.Click += (_, _) => _loginCancellation?.Cancel();
@@ -114,11 +128,13 @@ internal sealed class MainWindow : Window
         {
             UpdateFolderMeasurement();
             if (IsVisible) _ = RefreshAccountWindowsAsync(); else _windowWatch?.Cancel();
+            UpdateNotifications(Stopwatch.GetTimestamp());
         };
         StateChanged += (_, _) => UpdateFolderMeasurement();
         StateChanged += (_, _) => { if (_maximizeButton != null) _maximizeButton.Content = Burn0Theme.Icon(WindowState == WindowState.Maximized ? "window-restore" : "window-maximize", Color("muted"), 12, true); };
         _refreshTimer.Tick += async (_, _) => { if (CanRefresh) await RefreshAsync(); };
         _clockTimer.Tick += (_, _) => UpdateCountdowns();
+        _notificationTimer.Tick += (_, _) => UpdateNotifications(Stopwatch.GetTimestamp());
         Activated += (_, _) => _ = RefreshAccountWindowsAsync();
         Loaded += async (_, _) => await StartAsync();
         Closing += OnClosing;
@@ -197,6 +213,7 @@ internal sealed class MainWindow : Window
         _hardwarePanel.Refresh(_hardware.Current, _theme);
         _drivePanel.Refresh(_drives.Current, _theme);
         _status.TextWrapping = TextWrapping.NoWrap; _status.TextTrimming = TextTrimming.CharacterEllipsis;
+        _status.VerticalAlignment = VerticalAlignment.Center;
         _loginText.Text = Loc.T("브라우저에서 추가할 계정으로 로그인해 주세요.");
         _loginPanel.Background = Color("surface"); _loginPanel.CornerRadius = new CornerRadius(_theme.Number("radius")); _loginPanel.Padding = new Thickness(12);
         Content = BuildRoot(); RenderAccounts(); UpdateControls(); RenderStatus();
@@ -253,19 +270,32 @@ internal sealed class MainWindow : Window
         Grid.SetColumn(_automaticState, 2); toolbarRow.Children.Add(_automaticState);
         var login = new DockPanel(); DockPanel.SetDock(_cancelLogin, Dock.Right); login.Children.Add(_cancelLogin); _loginText.TextWrapping = TextWrapping.Wrap; _loginText.VerticalAlignment = VerticalAlignment.Center; _loginText.Margin = new Thickness(0, 0, 12, 0); login.Children.Add(_loginText);
         _loginPanel.Child = login; _loginPanel.Margin = new Thickness(0, 0, 0, 16); Grid.SetRow(_loginPanel, 1); body.Children.Add(_loginPanel);
-        var switchContent = new DockPanel();
         _cancelSwitch.VerticalAlignment = VerticalAlignment.Center; _cancelSwitch.Margin = new Thickness(8, 0, 0, 0);
-        DockPanel.SetDock(_cancelSwitch, Dock.Right);
-        switchContent.Children.Add(_cancelSwitch); switchContent.Children.Add(_switchText);
-        _switchPanel.Child = switchContent;
+        _switchNotification = new NotificationContent(_switchText, NotificationClose("DismissSwitchNotification", DismissSwitchNotice), _theme, _cancelSwitch);
+        _switchPanel.Child = _switchNotification;
         _switchPanel.Background = Color("surface"); _switchPanel.CornerRadius = new CornerRadius(_theme.Number("radius"));
         _switchPanel.Padding = new Thickness(10, 6, 10, 6); _switchPanel.Margin = new Thickness(0, 0, 0, 6);
         modelHeader.Children.Add(_switchPanel);
         _scroll.Content = _rows; Grid.SetRow(_scroll, 2); body.Children.Add(_scroll);
         var footer = new StackPanel { Margin = new Thickness(0, 4, 0, 0) };
         _hardwarePanel.Margin = new Thickness(0, 0, 0, 4); footer.Children.Add(_hardwarePanel);
-        footer.Children.Add(_drivePanel); footer.Children.Add(_status);
+        _footerNotification = new NotificationContent(_status, NotificationClose("DismissFooterNotification", DismissFooterNotice), _theme);
+        footer.Children.Add(_drivePanel); footer.Children.Add(_footerNotification);
         Grid.SetRow(footer, 3); body.Children.Add(footer); Grid.SetRow(body, 1); root.Children.Add(body); return root;
+    }
+    private Button NotificationClose(string name, Action dismiss)
+    {
+        var button = NewButton("", "close");
+        button.Name = name;
+        button.ToolTip = Loc.T("닫기");
+        System.Windows.Automation.AutomationProperties.SetName(button, Loc.T("닫기"));
+        button.Width = button.Height = 23;
+        button.MinHeight = 0;
+        button.Padding = new Thickness(0);
+        button.Margin = new Thickness(8, 0, 0, 0);
+        button.VerticalAlignment = VerticalAlignment.Center;
+        button.Click += (_, _) => dismiss();
+        return button;
     }
     internal ContextMenu HomeActionsMenu()
     {
@@ -716,8 +746,16 @@ internal sealed class MainWindow : Window
                 _windowWatch?.Cancel(); _windowWatch?.Dispose();
                 _windowWatch = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
                 var token = _windowWatch.Token;
-                _accountWindows = await Task.Run(() => WindowsAccountWindows.Inventory(_service.Installation.DesktopPath), token);
+                var (windows, primaryStartedAt) = await Task.Run(() => WindowsAccountWindows.Inventory(_service.Installation.DesktopPath), token);
                 if (_closing || token.IsCancellationRequested) return;
+                _accountWindows = windows;
+                if (!_switching && primaryStartedAt is { } started && _service.RetireEmptyWindowsRestart(started))
+                {
+                    ClearSwitchNotice();
+                    _switchWarning = false;
+                    UpdateControls();
+                    UpdateTray();
+                }
                 _windowActivity.Clear();
                 RenderAccounts();
                 foreach (var pid in _accountWindows.Values.Where(id => id > 0)) _ = ObserveWindowExitAsync(pid, token);
@@ -785,28 +823,31 @@ internal sealed class MainWindow : Window
     }
     private void RenderAccounts()
     {
+        if (_draggingAccount != null) return;
         var offset = _scroll.VerticalOffset; _rows.Children.Clear(); _tankCards.Clear();
-        var accounts = _service.Accounts;
+        var accounts = _service.DashboardAccounts();
         var pending = PendingSwitch();
         RenderSessions();
         if (accounts.Length == 0)
         { var message = Label(Loc.T("현재 계정을 가져오거나 다른 계정으로 로그인하세요."), 14, "muted"); message.Margin = new Thickness(0, 18, 0, 0); _rows.Children.Add(message); return; }
-        foreach (var profile in accounts.OrderByDescending(a => a.IsCurrent).ThenBy(a => a.DisplayName, StringComparer.CurrentCultureIgnoreCase))
+        foreach (var profile in accounts)
         {
             var actions = new StackPanel { Orientation = Orientation.Horizontal };
             var pendingResume = pending?.TargetAccountKey == profile.Key;
-            var windowAction = AccountWindowAction(profile);
-            var allowed = windowAction == "switch.show_window" || SwitchRecovery.AllowsAccount(pending, profile.Key, _service.CurrentKey, manualSwitch: true);
+            var windowAction = profile.RequiresLogin ? "account.sign_in" : AccountWindowAction(profile);
+            var allowed = profile.RequiresLogin || windowAction == "switch.show_window" ||
+                SwitchRecovery.AllowsAccount(pending, profile.Key, _service.CurrentKey, manualSwitch: true);
             var label = profile.Key == _queuedKey && _switching && _switchProgress?.Stage != SwitchStage.AccountWindow ?
                 _switchPhase == SwitchPhase.BackingUp ? "백업 중" : _switchPhase == SwitchPhase.Resuming ? "재개 중" : "전환 중" : windowAction;
-            var switchButton = NewButton(label, null, !profile.IsCurrent);
+            var switchButton = NewButton(label, null, true);
             switchButton.Tag = "account-switch-action";
-            switchButton.ToolTip = !allowed ? Loc.Error(pending?.Error ?? "switch.recover_pending") : Loc.T("switch.window_help");
+            switchButton.ToolTip = !allowed ? Loc.Error(pending?.Error ?? "switch.recover_pending") :
+                Loc.T(profile.RequiresLogin ? "account.relogin" : "switch.window_help");
             ToolTipService.SetShowOnDisabled(switchButton, !allowed);
             switchButton.Margin = new Thickness(0); switchButton.FontSize = 12; switchButton.Padding = new Thickness(8, 5, 8, 5);
             switchButton.IsEnabled = _ready && !_switching && !_stampingTitles && !_loggingIn && !_closing && allowed;
-            switchButton.Click += async (_, _) => await ShowAccountWindowAsync(profile); actions.Children.Add(switchButton);
-            if (!_switching && (pendingResume || profile.RequiresApply))
+            switchButton.Click += async (_, _) => await ActivateAccountAsync(profile); actions.Children.Add(switchButton);
+            if (!_switching && !profile.RequiresLogin && (pendingResume || profile.RequiresApply))
             {
                 var recovery = NewButton(pendingResume ? "switch.recover" : "로그인 적용");
                 recovery.Tag = "account-switch-action"; recovery.Margin = new Thickness(3, 0, 0, 0);
@@ -823,6 +864,11 @@ internal sealed class MainWindow : Window
             _selectedQuotas.TryGetValue(profile.Key, out var selected);
             var card = new AccountTankCard(profile, AccountTankCard.SelectQuota(profile, selected), _theme, titleRow, more,
                 selection => { _selectedQuotas[profile.Key] = selection; RenderAccounts(); });
+            if (_ready && accounts.Length > 1)
+            {
+                titleRow.EnableReordering(_theme, grip => DragAccount(grip, profile.Key));
+                SetAccountDropTarget(card);
+            }
             _tankCards.Add(card); _rows.Children.Add(card);
         }
         LayoutCards(); RefreshDetails(accounts);
@@ -831,11 +877,57 @@ internal sealed class MainWindow : Window
     internal string[] EvidenceAccountActions(string key)
     {
         if (_options.UiEvidenceDirectory == null) throw new InvalidOperationException("Evidence mode is required.");
-        var profiles = _service.Accounts.OrderByDescending(a => a.IsCurrent).ThenBy(a => a.DisplayName, StringComparer.CurrentCultureIgnoreCase).ToArray();
-        var index = Array.FindIndex(profiles, profile => profile.Key == key);
-        if (index < 0) throw new InvalidOperationException("Evidence account missing.");
-        return Descendants(_rows.Children[index]).OfType<Button>().Where(button => Equals(button.Tag, "account-switch-action") && button.IsEnabled)
+        var card = _tankCards.Single(card => card.AccountKey == key);
+        return Descendants(card).OfType<Button>().Where(button => Equals(button.Tag, "account-switch-action") && button.IsEnabled)
             .Select(button => Descendants(button).OfType<TextBlock>().Single().Text).ToArray();
+    }
+    private void DragAccount(UIElement grip, string key)
+    {
+        if (!_ready || _closing || _draggingAccount != null) return;
+        _draggingAccount = key;
+        try { DragDrop.DoDragDrop(grip, new DataObject(DashboardDragFormat, key), DragDropEffects.Move); }
+        finally { _draggingAccount = null; RenderAccounts(); }
+    }
+
+    private void SetAccountDropTarget(AccountTankCard card)
+    {
+        card.Background = Brushes.Transparent;
+        card.AllowDrop = true;
+        bool CanDrop(DragEventArgs args) => !_closing && _draggingAccount is { } key && key != card.AccountKey &&
+            args.Data.GetDataPresent(DashboardDragFormat, autoConvert: false) &&
+            Equals(args.Data.GetData(DashboardDragFormat, autoConvert: false), key);
+        card.DragOver += (_, args) =>
+        {
+            var allowed = CanDrop(args);
+            card.ShowDropTarget(allowed);
+            args.Effects = allowed ? DragDropEffects.Move : DragDropEffects.None;
+            args.Handled = true;
+        };
+        card.DragLeave += (_, _) => card.ShowDropTarget(false);
+        card.Drop += (_, args) =>
+        {
+            card.ShowDropTarget(false);
+            if (!CanDrop(args)) { args.Effects = DragDropEffects.None; args.Handled = true; return; }
+            args.Effects = DragDropEffects.Move; args.Handled = true;
+            MoveAccount(_draggingAccount!, card.AccountKey);
+        };
+    }
+
+    private void ScrollAccountDrag(object sender, DragEventArgs args)
+    {
+        if (_draggingAccount == null || _scroll.ScrollableHeight == 0 ||
+            Stopwatch.GetElapsedTime(_lastDragScroll) < TimeSpan.FromMilliseconds(70)) return;
+        var y = args.GetPosition(_scroll).Y;
+        var direction = y < 24 ? -1 : y > _scroll.ViewportHeight - 24 ? 1 : 0;
+        if (direction == 0) return;
+        _lastDragScroll = Stopwatch.GetTimestamp();
+        _scroll.ScrollToVerticalOffset(_scroll.VerticalOffset + 24 * direction);
+    }
+
+    private void MoveAccount(string key, string destination)
+    {
+        try { _service.MoveDashboardAccount(key, destination); RenderAccounts(); }
+        catch (Exception error) { ReportBackgroundError(error); }
     }
     private void LayoutCards()
     {
@@ -928,7 +1020,7 @@ internal sealed class MainWindow : Window
         var history = new MenuItem { Header = Loc.T("추이 보기") }; history.Click += (_, _) => OpenDetails(profile.Key);
         menu.Items.Add(history); menu.Items.Add(new Separator());
         var order = AccountAutomation.OrderedAccounts(_service);
-        var priority = new MenuItem { Header = Loc.F("auto.priority", Array.FindIndex(order, p => p.Key == profile.Key) + 1) };
+        var priority = new MenuItem { Name = "AutomaticSwitchPriorityMenuItem", Header = Loc.F("auto.priority", Array.FindIndex(order, p => p.Key == profile.Key) + 1) };
         for (var index = 1; index <= order.Length; index++)
         {
             var position = index;
@@ -937,6 +1029,21 @@ internal sealed class MainWindow : Window
             priority.Items.Add(item);
         }
         menu.Items.Add(priority);
+        var tanks = _service.DashboardAccounts();
+        if (tanks.Length > 1 && _ready)
+        {
+            var move = new MenuItem { Header = Loc.T("dashboard.move_account"), Name = "MoveAccountMenuItem" };
+            for (var index = 0; index < tanks.Length; index++)
+            {
+                var destination = tanks[index];
+                var current = destination.Key == profile.Key;
+                var item = new MenuItem { Header = Loc.F("dashboard.position", index + 1, destination.DisplayName),
+                    IsCheckable = true, IsChecked = current, IsEnabled = !current };
+                item.Click += (_, _) => MoveAccount(profile.Key, destination.Key);
+                move.Items.Add(item);
+            }
+            menu.Items.Add(move);
+        }
         if (CanCancelSwitch && profile.Key == _queuedKey)
         {
             var cancel = new MenuItem { Header = Loc.T("전환 작업 취소") }; cancel.Click += (_, _) => CancelSwitch(); menu.Items.Add(cancel);
@@ -1035,11 +1142,51 @@ internal sealed class MainWindow : Window
     private void SetSwitchResult(string source, bool warning = false)
     {
         _switchProgress = null;
-        _switchResult = source; _switchWarning = warning; RenderSwitchStatus();
+        _switchResult = source; _switchWarning = warning;
+        _switchNotice = NotificationDeadline.Start(warning);
+        RenderSwitchStatus();
+    }
+    private void ClearSwitchNotice()
+    {
+        _switchResult = null; _switchWarning = false; _switchNotice = null;
+    }
+    private void DismissSwitchNotice()
+    {
+        ClearSwitchNotice();
+        RenderSwitchStatus();
+    }
+    private void DismissFooterNotice()
+    {
+        _footerNotice = null; _statusSource = ""; _statusArguments = Array.Empty<object?>(); _statusWarning = false;
+        RenderStatus();
+    }
+    private void UpdateNotifications(long now)
+    {
+        if (_switchNotice is { } switchNotice)
+        {
+            var remaining = switchNotice.Remaining(now);
+            if (remaining == 0) DismissSwitchNotice();
+            else _switchNotification.UpdateGauge(remaining);
+        }
+        if (_footerNotice is { } footerNotice)
+        {
+            var remaining = footerNotice.Remaining(now);
+            if (remaining == 0) DismissFooterNotice();
+            else _footerNotification.UpdateGauge(remaining);
+        }
+        UpdateNotificationTimer();
+    }
+    private void UpdateNotificationTimer()
+    {
+        var active = IsVisible && !_closing &&
+            (_switchNotice != null && _switchPanel.Visibility == Visibility.Visible ||
+             _footerNotice != null && _footerNotification.Visibility == Visibility.Visible);
+        if (active) _notificationTimer.Start(); else _notificationTimer.Stop();
     }
     private void RenderSwitchStatus()
     {
         var warning = false;
+        double? remaining = null;
         string text;
         if (_switching && _switchProgress is { } progress)
         {
@@ -1051,23 +1198,35 @@ internal sealed class MainWindow : Window
         else
         {
             var pending = PendingSwitch();
-            warning = _switchWarning || pending != null;
-            var detail = _switchResult ?? pending?.Error ?? pending?.Chats?.FirstOrDefault(chat => chat?.Error != null)?.Error;
-            text = detail == null ? "" : Loc.Error(detail);
-            if (pending is { CreditProtectionPause: true, Phase: SwitchPhase.CreditPaused })
+            if (pending != null && pending.Id != _noticedRecoveryId)
             {
-                if (text.Length == 0) text = Loc.T("credits.paused");
+                _noticedRecoveryId = pending.Id;
+                _switchNotice ??= NotificationDeadline.Start(warning: true);
             }
-            else if (pending != null)
+            text = "";
+            if (_switchNotice is { } notice)
             {
-                var recovery = Loc.T("switch.recover_pending");
-                text = text.Length == 0 || text == recovery ? recovery : text + "\n" + recovery;
+                remaining = notice.Remaining(Stopwatch.GetTimestamp());
+                warning = _switchWarning || pending != null;
+                var detail = _switchResult ?? pending?.Error ?? pending?.Chats?.FirstOrDefault(chat => chat?.Error != null)?.Error;
+                text = detail == null ? "" : Loc.Error(detail);
+                if (pending is { CreditProtectionPause: true, Phase: SwitchPhase.CreditPaused })
+                {
+                    if (text.Length == 0) text = Loc.T("credits.paused");
+                }
+                else if (pending != null)
+                {
+                    var recovery = Loc.T("switch.recover_pending");
+                    text = text.Length == 0 || text == recovery ? recovery : text + "\n" + recovery;
+                }
             }
         }
         if (_switchText.Text != text) _switchText.Text = text;
         _switchText.Foreground = Color(warning ? "warning" : "text");
         _switchPanel.Visibility = text.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
         _cancelSwitch.Visibility = CanCancelSwitch ? Visibility.Visible : Visibility.Collapsed;
+        _switchNotification.SetRemaining(remaining, warning);
+        UpdateNotificationTimer();
     }
     private async void RestartCodexClicked(object? sender, RoutedEventArgs args)
     {
@@ -1094,6 +1253,7 @@ internal sealed class MainWindow : Window
     private async Task QueueSwitchAsync(AccountProfile profile, bool automatic = false, bool creditPause = false, bool restart = false, CodexModelProfile? modelProfile = null)
     {
         if (_closing || _switching || _stampingTitles || _loggingIn || _providerEditing) return;
+        if (profile.RequiresLogin) { SetSwitchResult("account.login_required", true); return; }
         var pending = PendingSwitch();
         var manual = !automatic && !creditPause && !restart && modelProfile == null;
         if (!SwitchRecovery.AllowsAccount(pending, profile.Key, _service.CurrentKey, manual) ||
@@ -1108,7 +1268,7 @@ internal sealed class MainWindow : Window
         if (!creditPause && !AccountAutomation.CanUse(_service, profile, DateTimeOffset.UtcNow)) { SetSwitchResult("credits.resume_blocked", true); return; }
         try { _service.CheckCredentialBackend(profile); }
         catch (Exception error) { SetSwitchResult(UserErrors.Describe(error), true); return; }
-        _switchResult = null; _switchWarning = false;
+        ClearSwitchNotice();
         _queuedKey = profile.Key; _switching = true; _switchPhase = SwitchPhase.BackingUp;
         _switchCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         UpdateControls(); RenderAccounts(); UpdateTray();
@@ -1155,7 +1315,7 @@ internal sealed class MainWindow : Window
     {
         if (!_ready || _closing || _switching || _stampingTitles || _loggingIn || _providerEditing) return;
         _switching = true; _queuedKey = profile.Key; _switchPhase = SwitchPhase.Launching;
-        _switchResult = null; _switchWarning = false;
+        ClearSwitchNotice();
         _switchCancellation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
         _switchProgress = new(SwitchStage.AccountWindow, TimeSpan.FromSeconds(40));
         UpdateControls(); RenderAccounts(); UpdateTray();
@@ -1179,12 +1339,15 @@ internal sealed class MainWindow : Window
         }
     }
 
+    private Task ActivateAccountAsync(AccountProfile profile) =>
+        profile.RequiresLogin ? ReauthenticateAsync(profile.Key) : ShowAccountWindowAsync(profile);
+
     public async Task SwitchToAccountAsync(string identifier)
     {
         await EnsureInitializedAsync(_lifetime.Token);
         var matches = _service.Accounts.Where(profile => string.Equals(profile.Email, identifier, StringComparison.OrdinalIgnoreCase) || profile.Key == identifier).ToArray();
         if (matches.Length != 1) { SetStatus("전환할 계정을 하나로 확인하지 못했습니다.", true); return; }
-        BringToFront(); await ShowAccountWindowAsync(matches[0]);
+        BringToFront(); await ActivateAccountAsync(matches[0]);
     }
     private void CancelSwitch()
     {
@@ -1286,7 +1449,12 @@ internal sealed class MainWindow : Window
         { SetStatus(credit.Error ?? "credits.paused", true); return; }
         SetStatus(_service.Accounts.Any(a => a.Error != null) ? "" : "사용량을 갱신했습니다.");
     }
-    private void SetStatus(string source, bool warning = false, params object?[] arguments) { _statusSource = source; _statusArguments = arguments; _statusWarning = warning; RenderStatus(); }
+    private void SetStatus(string source, bool warning = false, params object?[] arguments)
+    {
+        _statusSource = source; _statusArguments = arguments; _statusWarning = warning;
+        _footerNotice = source.Length == 0 ? null : NotificationDeadline.Start(warning);
+        RenderStatus();
+    }
     private void RenderStatus()
     {
         var template = _statusSource.Length == 0 ? "" : _statusWarning ? Loc.Error(_statusSource) : Loc.T(_statusSource);
@@ -1295,6 +1463,9 @@ internal sealed class MainWindow : Window
         _status.Foreground = Color(_statusWarning ? "warning" : "muted");
         var empty = _service.Vault.Data.Drives.Count == 0;
         _status.Visibility = _status.Text.Length > 0 && (_statusWarning || empty || _statusSource == "titles.done") ? Visibility.Visible : Visibility.Collapsed;
+        _footerNotification.Visibility = _status.Visibility;
+        _footerNotification.SetRemaining(_footerNotice?.Remaining(Stopwatch.GetTimestamp()), _statusWarning);
+        UpdateNotificationTimer();
         _drivePanel.Visibility = Visibility.Visible;
         _drivePanel.HorizontalAlignment = empty ? HorizontalAlignment.Right : HorizontalAlignment.Stretch;
         _drivePanel.Width = empty ? 22 : double.NaN;
@@ -1347,10 +1518,11 @@ internal sealed class MainWindow : Window
         var pending = PendingSwitch();
         foreach (var profile in _service.Accounts)
         {
-            var text = profile.DisplayName + "   " + (profile.IsRefreshing ? Loc.T("갱신 중") : profile.Usage?.LeastRemaining is double remaining ? Loc.F("잔여 {0:0.#}%", remaining) : Loc.T("조회 정보 없음"));
+            var text = profile.DisplayName + "   " + (profile.RequiresLogin ? Loc.T("account.sign_in") : profile.IsRefreshing ? Loc.T("갱신 중") :
+                profile.Usage?.LeastRemaining is double remaining ? Loc.F("잔여 {0:0.#}%", remaining) : Loc.T("조회 정보 없음"));
             var item = new Forms.ToolStripMenuItem(text) { Checked = profile.IsCurrent, Enabled = _ready && !_closing && !_switching &&
-                SwitchRecovery.AllowsAccount(pending, profile.Key, _service.CurrentKey, manualSwitch: true) };
-            item.Click += async (_, _) => { BringToFront(); await ShowAccountWindowAsync(profile); }; menu.Items.Add(item);
+                (profile.RequiresLogin || SwitchRecovery.AllowsAccount(pending, profile.Key, _service.CurrentKey, manualSwitch: true)) };
+            item.Click += async (_, _) => { BringToFront(); await ActivateAccountAsync(profile); }; menu.Items.Add(item);
         }
         var languages = new Forms.ToolStripMenuItem(Loc.T("언어"));
         foreach (var option in Loc.Languages) { var item = new Forms.ToolStripMenuItem(option.NativeName) { Checked = option.Code == Loc.Language }; item.Click += (_, _) => ChangeLanguage(option.Code); languages.DropDownItems.Add(item); }
@@ -1364,7 +1536,7 @@ internal sealed class MainWindow : Window
     private void OnClosing(object? sender, CancelEventArgs arguments) { if (_exit || _options.ReportPath != null || _options.UiEvidenceDirectory != null) return; arguments.Cancel = true; foreach (var window in _details.Values) window.Hide(); Hide(); }
     internal async Task ExitAsync()
     {
-        if (_closing) return; _closing = true; _refreshTimer.Stop(); _clockTimer.Stop(); _lifetime.Cancel(); _loginCancellation?.Cancel();
+        if (_closing) return; _closing = true; _refreshTimer.Stop(); _clockTimer.Stop(); _notificationTimer.Stop(); _lifetime.Cancel(); _loginCancellation?.Cancel();
         WriteRunningState("stopping-operations");
         // Keep IPC/account services alive until a cancelled handoff has reopened the desktop.
         await Task.WhenAll(_operations.ToArray());

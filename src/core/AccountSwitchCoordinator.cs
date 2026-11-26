@@ -83,6 +83,9 @@ internal static class SwitchRecovery
             Phase: SwitchPhase.BackingUp or SwitchPhase.Closing, Chats.Count: 0 } &&
         plan.SourceAccountKey == current && plan.TargetAccountKey == current;
 
+    public static bool CanRetireEmptyRestart(AccountSwitchPlan? plan, string? current, DateTimeOffset? primaryStartedAt) =>
+        CanReplaceEmptyRestart(plan, current) && plan!.RequestedAt != default && primaryStartedAt > plan.RequestedAt;
+
     public static bool AllowsAccount(AccountSwitchPlan? plan, string target, string? current, bool manualSwitch) =>
         plan == null || plan.CreditProtectionPause || plan.TargetAccountKey == target ||
         manualSwitch && CanReplaceEmptyRestart(plan, current);

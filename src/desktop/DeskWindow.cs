@@ -281,10 +281,12 @@ internal sealed class DeskWindow : Window
             var allowed = SwitchRecovery.AllowsAccount(pending, profile.Key, _service?.CurrentKey, manualSwitch: true);
             var activeSwitch = _switchTarget == profile.Key && _switch != null;
             var text = activeSwitch ? _phase == SwitchPhase.BackingUp ? "백업 중" : _phase == SwitchPhase.Resuming ? "재개 중" : "전환 중" :
-                resume ? "switch.recover" : profile.RequiresApply ? "로그인 적용" : profile.IsCurrent ? "사용 중" : "전환";
-            var button = _theme.Button(Loc.T(text), () => _ = SwitchAsync(profile));
-            if (resume || !allowed) ToolTip.SetTip(button, Loc.Error(pending?.Error ?? "switch.recover_pending"));
-            button.IsEnabled = _ready && _switch == null && _login == null && !_stampingTitles && allowed && (!profile.IsCurrent || profile.RequiresApply || resume);
+                profile.RequiresLogin ? "account.sign_in" : resume ? "switch.recover" : profile.RequiresApply ? "로그인 적용" : profile.IsCurrent ? "사용 중" : "전환";
+            var button = _theme.Button(Loc.T(text), () => _ = profile.RequiresLogin ? AddAccountAsync(profile.Key) : SwitchAsync(profile));
+            if (profile.RequiresLogin) ToolTip.SetTip(button, Loc.T("account.relogin"));
+            else if (resume || !allowed) ToolTip.SetTip(button, Loc.Error(pending?.Error ?? "switch.recover_pending"));
+            button.IsEnabled = _ready && _switch == null && _login == null && !_stampingTitles &&
+                (profile.RequiresLogin || allowed && (!profile.IsCurrent || profile.RequiresApply || resume));
             button.FontSize = 10; button.Padding = new Thickness(5, 2);
             var more = _theme.IconButton(DeskButtonIconKind.More, Loc.T("계정 메뉴"), () => { }); more.Width = 25; more.Padding = new Thickness(3, 2);
             more.Click += (_, _) => AccountMenu(more, profile);
@@ -334,6 +336,7 @@ internal sealed class DeskWindow : Window
     private async Task SwitchAsync(AccountProfile profile, bool automatic = false, bool creditPause = false, bool restart = false, CodexModelProfile? modelProfile = null)
     {
         if (!_ready || _switch != null || _login != null || _stampingTitles) return;
+        if (profile.RequiresLogin) { _statusMessage = Loc.T("account.login_required"); _status.Text = _statusMessage; return; }
         var pending = _service!.Vault.Data.ActivePendingSwitch;
         var manual = !automatic && !creditPause && !restart && modelProfile == null;
         if (!SwitchRecovery.AllowsAccount(pending, profile.Key, _service.CurrentKey, manual) ||

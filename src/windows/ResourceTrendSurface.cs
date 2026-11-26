@@ -8,7 +8,6 @@ namespace CodexAccountDesk;
 internal sealed class ResourceTrendSurface : FrameworkElement
 {
     private Brush _track = Brushes.Transparent, _fill = Brushes.Transparent, _area = Brushes.Transparent;
-    private Pen _tick = new(Brushes.Transparent, 1);
     private readonly bool _historyOnly;
     public ResourceTrendSurface(bool historyOnly = false) => _historyOnly = historyOnly;
     private Pen _line = new(Brushes.Transparent, 1);
@@ -27,7 +26,6 @@ internal sealed class ResourceTrendSurface : FrameworkElement
         var fill = new SolidColorBrush(color) { Opacity = theme.Dark ? 0.26 : 0.19 };
         fill.Freeze(); _area = fill;
         _fill = new SolidColorBrush(color); _fill.Freeze();
-        _tick = new(new SolidColorBrush(theme.Color("muted").Color) { Opacity = 0.25 }, 1); _tick.Freeze();
         InvalidateVisual();
         var stroke = new SolidColorBrush(color) { Opacity = 0.7 }; stroke.Freeze();
         _line = new(stroke, 1) { StartLineCap = PenLineCap.Round, EndLineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round }; _line.Freeze();
@@ -39,8 +37,6 @@ internal sealed class ResourceTrendSurface : FrameworkElement
         context.DrawRectangle(_track, null, bounds);
         if (!_historyOnly)
         {
-            for (var quarter = 1; quarter < 4; quarter++)
-                context.DrawLine(_tick, new Point(bounds.Width * quarter / 4, 0), new Point(bounds.Width * quarter / 4, bounds.Height));
             if (Percent is double percent && double.IsFinite(percent) && percent > 0)
             {
                 var width = bounds.Width * Math.Clamp(percent, 0, 100) / 100;

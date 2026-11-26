@@ -1,6 +1,10 @@
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace CodexAccountDesk;
 
@@ -25,6 +29,34 @@ internal sealed class AccountCardHeader : Grid
         foreach (Button button in actions.Children) _sizes[button] = (button.Padding, button.MinHeight, button.FontSize);
         Grid.SetColumn(actions, 1); Children.Add(actions);
     }
+    internal void EnableReordering(Burn0Theme theme, System.Action<UIElement> start)
+    {
+        foreach (UIElement child in Children) SetColumn(child, GetColumn(child) + 1);
+        ColumnDefinitions.Insert(0, new ColumnDefinition { Width = GridLength.Auto });
+        var dots = new UniformGrid { Rows = 3, Columns = 2, Width = 8, Height = 13, IsHitTestVisible = false };
+        for (var i = 0; i < 6; i++)
+            dots.Children.Add(new Ellipse { Width = 2, Height = 2, Fill = theme.Color("muted") });
+        var grip = new Border { Width = 16, Margin = new Thickness(0, 0, 4, 0), Background = Brushes.Transparent,
+            Cursor = Cursors.SizeAll, ToolTip = Loc.T("dashboard.drag_account"), Child = dots };
+        Children.Add(grip);
+        Point? origin = null;
+        grip.MouseLeftButtonDown += (_, args) =>
+        {
+            if (grip.CaptureMouse()) { origin = args.GetPosition(grip); args.Handled = true; }
+        };
+        grip.LostMouseCapture += (_, _) => origin = null;
+        grip.MouseLeftButtonUp += (_, _) => grip.ReleaseMouseCapture();
+        grip.MouseMove += (_, args) =>
+        {
+            if (origin is not { } from || args.LeftButton != MouseButtonState.Pressed) return;
+            var distance = args.GetPosition(grip) - from;
+            if (System.Math.Abs(distance.X) < SystemParameters.MinimumHorizontalDragDistance &&
+                System.Math.Abs(distance.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+            grip.ReleaseMouseCapture();
+            start(grip);
+        };
+    }
+
     public void SetCompact(bool compact)
     {
         if (!ReferenceEquals(Actions.Parent, this))

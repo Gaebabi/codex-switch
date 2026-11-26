@@ -64,7 +64,7 @@ internal static class AutomaticSwitchPolicy
         return int.MaxValue;
     }
     private static bool Fresh(AccountProfile profile, DateTimeOffset now, bool allowPendingCredentials = false) =>
-        profile.Error == null && !profile.IsRefreshing && (!profile.RequiresApply || allowPendingCredentials) && profile.Usage != null &&
+        profile.Error == null && !profile.RequiresLogin && !profile.IsRefreshing && (!profile.RequiresApply || allowPendingCredentials) && profile.Usage != null &&
         now >= profile.Usage.CheckedAt && now - profile.Usage.CheckedAt <= MaximumAge;
     private static bool Numeric(UsageWindow window) => window.Minutes is > 0 && double.IsFinite(window.UsedPercent) && window.UsedPercent is >= 0 and <= 100;
     private static bool Valid(UsageWindow window, DateTimeOffset now) => Numeric(window) && (window.ResetsAt == null || window.ResetsAt > now.ToUnixTimeSeconds());

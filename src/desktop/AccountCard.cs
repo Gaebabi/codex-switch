@@ -16,7 +16,7 @@ internal sealed class MacAccountCard : Grid
     private readonly QuotaChoice? _quota;
     private readonly UsageTrendModel _trend;
     private readonly TextBlock _depletion, _reset, _subscription;
-    public static QuotaChoice[] Choices(AccountProfile profile) => profile.Usage?.Buckets.SelectMany(bucket => new[] {
+    public static QuotaChoice[] Choices(AccountProfile profile) => profile.RequiresLogin ? Array.Empty<QuotaChoice>() : profile.Usage?.Buckets.SelectMany(bucket => new[] {
         bucket.Primary == null ? null : new QuotaChoice(bucket.Id, "primary", bucket.Primary, bucket.Label),
         bucket.Secondary == null ? null : new QuotaChoice(bucket.Id, "secondary", bucket.Secondary, bucket.Label) }).OfType<QuotaChoice>().ToArray() ?? Array.Empty<QuotaChoice>();
     public static QuotaChoice? Select(AccountProfile profile, string? selection) => Choices(profile).FirstOrDefault(q => q.BucketId + ":" + q.Slot == selection)
@@ -78,7 +78,7 @@ internal sealed class MacAccountCard : Grid
         ToolTip.SetTip(_subscription, SubscriptionPresentation.Details(_profile));
         _subscription.Foreground = _theme.Brush(AccountDateWarnings.Subscription(_profile.SubscriptionActiveUntil, now) ? "warning" : "muted");
         _reset.Foreground = _theme.Brush(AccountDateWarnings.Reset(_quota?.Window.ResetsAt, now) ? "warning" : "text");
-        if (_quota == null) { _depletion.Text = Loc.T(_profile.IsRefreshing ? "측정중" : "정보 없음"); _reset.Text = "—"; return; }
+        if (_quota == null) { _depletion.Text = _profile.RequiresLogin ? "—" : Loc.T(_profile.IsRefreshing ? "측정중" : "정보 없음"); _reset.Text = "—"; return; }
         var forecast = UsagePredictor.Evaluate(_quota.Window, _trend, now);
         _depletion.Text = forecast.State == ForecastState.ResetsFirst ? Loc.T("리셋 먼저") : forecast.ExhaustsAt is DateTimeOffset end ? Compact(end, now) : Loc.T(forecast.State switch {
             ForecastState.Collecting or ForecastState.InsufficientChange => "측정중", ForecastState.NoGrowth => "증가 없음", ForecastState.Stale => "갱신 필요", ForecastState.Exhausted => "한도 도달", _ => "갱신 대기" });

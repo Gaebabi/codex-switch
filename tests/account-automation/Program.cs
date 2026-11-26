@@ -14,6 +14,14 @@ await CreditProtectionContracts.Run(Check);
 await RestartContracts.Run(Check);
 await SwitchLifecycleContracts.Run(Check);
 await AccountWindowIdentityContracts.RunAsync(Check);
+Check("Definitive account authentication failures require sign-in",
+    AccountLoginRequiredException.Matches(new AccountLoginRequiredException()) &&
+    AccountLoginRequiredException.Matches(new CodexRequestException("HTTP 401 Unauthorized", "account/rateLimits/read")) &&
+    AccountLoginRequiredException.Matches(new CodexRequestException("Your refresh token was already used. Please log out and sign in again.", "account/read")));
+Check("Transient or unrelated failures keep the saved session usable",
+    !AccountLoginRequiredException.Matches(new CodexRequestException("Could not refresh usage: HTTP 503", "account/rateLimits/read")) &&
+    !AccountLoginRequiredException.Matches(new CodexRequestException("HTTP 401 Unauthorized", "thread/read")) &&
+    !AccountLoginRequiredException.Matches(new TimeoutException()));
 {
     var completed = new AccountSwitchPlan { Phase = SwitchPhase.Finished, AccountApplied = true,
         Chats = new() { new() { ResumeState = ChatResumeState.Resumed }, new() { ResumeState = ChatResumeState.AlreadyRunning } } };
@@ -348,6 +356,17 @@ try
     var registration = service.CompleteRegistration(Auth("one", "new"), original.Key); await registration.ImmediateRefresh;
     Check("Same identity refresh preserves key alias and count", registration.Profile.Key == original.Key && original.Alias == "Preserved alias" && vault.Data.Accounts.Count == 1);
     Check("Browser login never overwrites desktop credentials", !Directory.Exists(service.CodexHome));
+    original.Usage = Profile("unused", 87).Usage;
+    original.RequiresLogin = true; vault.Save();
+    var expired = service.Accounts.Single();
+    Check("Rejected sign-in persists and hides cached quota while retaining the observed usage",
+        new AccountVault(vault.DirectoryPath).Data.Accounts.Single().RequiresLogin &&
+        expired.RequiresLogin && expired.Usage == null && original.Usage != null &&
+        !AutomaticSwitchPolicy.OrdinaryAvailable(original, now));
+    var renewed = service.CompleteRegistration(Auth("one", "renewed"), original.Key); await renewed.ImmediateRefresh;
+    Check("Verified browser sign-in clears the rejection without displaying previous quota",
+        !new AccountVault(vault.DirectoryPath).Data.Accounts.Single().RequiresLogin &&
+        !service.Accounts.Single().RequiresLogin && service.Accounts.Single().Usage == null);
     var second = vault.Upsert(Auth("two", "test"));
     AccountAutomation.SetPriority(service, second.Key, 1);
     var ranked = new AccountVault(vault.DirectoryPath).Data;
@@ -356,6 +375,20 @@ try
     Check("Moving an account preserves a complete unique order", vault.Data.AutomaticSwitchPriority.SequenceEqual(new[] { original.Key, second.Key }));
     original.Usage = Profile("unused", 5).Usage; second.Usage = Profile("unused", 70).Usage;
     typeof(AccountService).GetProperty(nameof(AccountService.CurrentKey))!.SetValue(service, original.Key);
+    Check("A dashboard without a saved layout starts with the current account", service.DashboardAccounts()[0].Key == original.Key);
+    service.MoveDashboardAccount(second.Key, original.Key);
+    var layout = new AccountVault(vault.DirectoryPath);
+    var dashboardAfterRestart = new AccountService(layout, service.CodexHome, (_, _) => Task.CompletedTask);
+    typeof(AccountService).GetProperty(nameof(AccountService.CurrentKey))!.SetValue(dashboardAfterRestart, original.Key);
+    Check("Moving the primary tank down persists without changing automatic priority",
+        dashboardAfterRestart.DashboardAccounts().Select(account => account.Key).SequenceEqual(new[] { second.Key, original.Key }) &&
+        layout.Data.AutomaticSwitchPriority.SequenceEqual(new[] { original.Key, second.Key }));
+    var newTank = layout.Upsert(Auth("three", "test"));
+    Check("New registrations append after the chosen tank order",
+        dashboardAfterRestart.DashboardAccounts().Select(account => account.Key).SequenceEqual(new[] { second.Key, original.Key, newTank.Key }));
+    service.MoveDashboardAccount(original.Key, second.Key);
+    Check("An account tank can move back into the first position",
+        service.DashboardAccounts().Select(account => account.Key).SequenceEqual(new[] { original.Key, second.Key }));
     Check("Disabled automation never reserves", AccountAutomation.Reserve(service, false, now) == null);
     vault.Data.AutomaticSwitchEnabled = true;
     Check("Busy UI never reserves", AccountAutomation.Reserve(service, true, now) == null);
@@ -372,6 +405,23 @@ try
     AccountAutomation.Pause(service);
     Check("Failure pause persists without losing accounts", !new AccountVault(vault.DirectoryPath).Data.AutomaticSwitchEnabled && vault.Data.Accounts.Count == 2);
     CreditProtectionContracts.Service(Check, service, original, second, now);
+    if (OperatingSystem.IsWindows())
+    {
+        Directory.CreateDirectory(service.CodexHome);
+        File.WriteAllText(service.AuthPath, original.AuthJson);
+        service.SynchronizeCurrent();
+        var emptyRestart = new AccountSwitchPlan { SourceAccountKey = original.Key, TargetAccountKey = original.Key,
+            RestartOnly = true, RequestedAt = now.AddDays(-7), Phase = SwitchPhase.Closing, DesktopRestartRequired = true };
+        vault.Data.PendingSwitch = emptyRestart;
+        vault.Save();
+        File.WriteAllText(service.AuthPath, second.AuthJson);
+        Check("A different on-disk login keeps the saved restart even if the card still shows the source",
+            !service.RetireEmptyWindowsRestart(now) && new AccountVault(vault.DirectoryPath).Data.PendingSwitch?.Id == emptyRestart.Id);
+        File.WriteAllText(service.AuthPath, original.AuthJson);
+        Check("Retiring a superseded empty restart clears only its checkpoint in the durable vault",
+            service.RetireEmptyWindowsRestart(now) && new AccountVault(vault.DirectoryPath).Data.PendingSwitch == null &&
+            File.ReadAllText(service.AuthPath) == original.AuthJson && vault.Data.Accounts.Count == 2);
+    }
 }
 finally { if (Directory.Exists(fixture)) Directory.Delete(fixture, true); }
 Console.WriteLine(JsonSerializer.Serialize(new { passed = checks.Count, failed = 0, checks, scope = "Fictional account files and backend only; no real Codex process, browser, login or chat touched." }, new JsonSerializerOptions { WriteIndented = true }));
