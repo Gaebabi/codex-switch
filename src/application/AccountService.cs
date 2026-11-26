@@ -74,13 +74,44 @@ internal sealed class AccountService
                 SubscriptionActiveUntil = p.SubscriptionActiveUntil, SubscriptionLastChecked = p.SubscriptionLastChecked,
                 Subscription = p.Subscription, SubscriptionError = p.SubscriptionError,
                 IsCurrent = p.Key == CurrentKey, RequiresApply = p.RequiresApply, HasAccountWindow = p.HasAccountWindow,
-                WindowLoginPending = p.WindowLoginPending, Usage = p.Usage, Error = p.Error,
+                RequiresLogin = p.RequiresLogin, WindowLoginPending = p.WindowLoginPending, Usage = p.RequiresLogin ? null : p.Usage,
+                Error = p.RequiresLogin ? "account.login_required" : p.Error,
                 IsRefreshing = _queries.IsRunning(p.Key), History = p.History.Select(t => t.Copy()).ToList(),
                 CreditHistory = p.CreditHistory.Select(t => t.Copy()).ToList(),
                 RecoveredCreditHistory = p.RecoveredCreditHistory.ToList()
             }).ToArray();
         }
     }
+    internal AccountProfile[] DashboardAccounts()
+    {
+        lock (Vault.SyncRoot)
+        {
+            var accounts = Accounts.OrderByDescending(account => account.IsCurrent)
+                .ThenBy(account => account.DisplayName, StringComparer.CurrentCultureIgnoreCase).ToArray();
+            if (Vault.Data.DashboardAccountOrder.Count == 0) return accounts;
+            var byKey = accounts.ToDictionary(account => account.Key, StringComparer.Ordinal);
+            return Vault.Data.DashboardAccountOrder.Where(byKey.ContainsKey).Concat(accounts.Select(account => account.Key))
+                .Distinct(StringComparer.Ordinal).Select(key => byKey[key]).ToArray();
+        }
+    }
+
+    internal void MoveDashboardAccount(string key, string destinationKey)
+    {
+        lock (Vault.SyncRoot)
+        {
+            var order = DashboardAccounts().Select(account => account.Key).ToList();
+            var source = order.IndexOf(key);
+            var destination = order.IndexOf(destinationKey);
+            if (source < 0 || destination < 0 || source == destination) return;
+            order.RemoveAt(source);
+            order.Insert(destination, key);
+            var previous = Vault.Data.DashboardAccountOrder;
+            Vault.Data.DashboardAccountOrder = order;
+            try { Vault.Save(); }
+            catch { Vault.Data.DashboardAccountOrder = previous; throw; }
+        }
+    }
+
     public async Task InitializeAsync(CancellationToken cancellation)
     {
         if (OperatingSystem.IsLinux()) LinuxPrivateFiles.CreateDirectory(CodexHome);
@@ -96,6 +127,22 @@ internal sealed class AccountService
     public AccountProfile? SynchronizeCurrent()
     {
         RequireLegacySync(); return SynchronizeCurrentCore(null);
+    }
+
+    internal bool RetireEmptyWindowsRestart(DateTimeOffset primaryStartedAt)
+    {
+        if (!OperatingSystem.IsWindows()) return false;
+        lock (Vault.SyncRoot)
+        {
+            var plan = Vault.Data.PendingSwitch;
+            if (!SwitchRecovery.CanRetireEmptyRestart(plan, CurrentKey, primaryStartedAt) || !CanonicalAuthExists()) return false;
+            var key = AuthDocument.Parse(ReadCanonicalAuth()).Key;
+            if (key != CurrentKey) return false;
+            Vault.Data.PendingSwitch = null;
+            try { Vault.Save(); }
+            catch { Vault.Data.PendingSwitch = plan; throw; }
+            return true;
+        }
     }
     public async Task<AccountProfile?> SynchronizeCurrentAsync(CancellationToken cancellation)
     {
@@ -179,7 +226,7 @@ internal sealed class AccountService
                 await using var rpc = await OpenAccountRpcAsync(queryHome, client, workspace, cancellation).ConfigureAwait(false);
                 var accountResult = await rpc.RequestAsync("account/read", new { refreshToken = false }, cancellation).ConfigureAwait(false);
                 if (!accountResult.TryGetProperty("account", out var info) || info.ValueKind != JsonValueKind.Object || JsonValue.String(info, "type") != "chatgpt")
-                    throw new InvalidOperationException("로그인이 만료됐습니다. 계정 추가로 다시 로그인해 주세요.");
+                    throw new AccountLoginRequiredException();
                 var response = await rpc.RequestAsync("account/rateLimits/read", null, cancellation).ConfigureAwait(false);
                 usage = UsageSnapshot.Parse(response, profile.AccountId);
                 email = JsonValue.String(info, "email"); plan = JsonValue.String(info, "planType");
@@ -211,11 +258,14 @@ internal sealed class AccountService
             lock (Vault.SyncRoot)
             {
                 if (!IsCurrentRevision(profile, revision)) return;
+                var restoredLogin = profile.RequiresLogin;
+                profile.RequiresLogin = false;
                 profile.Usage = usage; profile.Error = null;
                 if (usage != null) UsageHistory.Record(profile, usage);
                 if (!string.IsNullOrEmpty(email)) profile.Email = email;
                 if (plan != null) profile.Plan = plan;
                 subscriptionAuth = profile.AuthJson;
+                if (restoredLogin) Vault.Save();
             }
             Changed?.Invoke();
             SubscriptionSnapshot? subscription = null;
@@ -234,7 +284,18 @@ internal sealed class AccountService
         catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { throw; }
         catch (Exception error)
         {
-            lock (Vault.SyncRoot) { if (profile != null && IsCurrentRevision(profile, revision)) profile.Error = UserErrors.Describe(error); }
+            lock (Vault.SyncRoot)
+            {
+                if (profile != null && IsCurrentRevision(profile, revision))
+                {
+                    profile.Error = UserErrors.Describe(error);
+                    if (!profile.RequiresLogin && AccountLoginRequiredException.Matches(error))
+                    {
+                        profile.RequiresLogin = true;
+                        Vault.Save();
+                    }
+                }
+            }
         }
         finally { _querySlots.Release(); Changed?.Invoke(); }
     }
@@ -312,6 +373,10 @@ internal sealed class AccountService
                 !Vault.Data.Accounts.Any(p => p.Key == expectedAccountKey)))
                 throw new InvalidOperationException(Loc.T("account.relogin_mismatch"));
             var profile = Vault.Upsert(authJson);
+            if (profile.RequiresLogin)
+            {
+                profile.RequiresLogin = false; profile.Usage = null; profile.CredentialRevision++;
+            }
             if (OperatingSystem.IsWindows() && profile.HasAccountWindow) profile.WindowLoginPending = true;
             var active = CanonicalAuthExists() ? ReadCanonicalAuth() : null;
             profile.RequiresApply = active != null && AuthDocument.Parse(active).Key == profile.Key && active != profile.AuthJson;
@@ -345,6 +410,7 @@ internal sealed class AccountService
             AccountProfile Selected()
             {
                 var account = Vault.Data.Accounts.Find(a => a.Key == key) ?? throw new InvalidOperationException("선택한 계정이 삭제됐습니다.");
+                if (account.RequiresLogin) throw new AccountLoginRequiredException();
                 CheckCredentialBackend(account);
                 var primary = CanonicalAuthExists() ? AuthDocument.Parse(ReadCanonicalAuth()).Key : null;
                 if (primary != expectedPrimary) throw new InvalidOperationException("switch.window_identity");
@@ -364,10 +430,25 @@ internal sealed class AccountService
                     if (window == null) return;
                     var native = Path.Combine(Path.GetDirectoryName(installation.DesktopPath)!, "resources", "codex.exe");
                     if (!File.Exists(native) || !File.Exists(backend)) throw new FileNotFoundException("Codex account-window runtime is missing.");
-                    window.Prepare(account);
                     var binding = new DesktopBackendHost.Configuration(native, window.Home, window.Home, backend);
-                    SecureFiles.AtomicWrite(Path.Combine(window.Home, "window-backend.json"), JsonSerializer.SerializeToUtf8Bytes(binding));
-                    Vault.Save();
+                    var managedBefore = account.HasAccountWindow;
+                    var applyBefore = account.WindowLoginPending;
+                    try
+                    {
+                        window.Prepare(account);
+                        var path = Path.Combine(window.Home, "window-backend.json");
+                        var contents = JsonSerializer.SerializeToUtf8Bytes(binding);
+                        if (!File.Exists(path) || (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0 ||
+                            !File.ReadAllBytes(path).AsSpan().SequenceEqual(contents))
+                            SecureFiles.AtomicWriteOwned(path, contents);
+                        if (managedBefore != account.HasAccountWindow || applyBefore != account.WindowLoginPending) Vault.Save();
+                    }
+                    catch
+                    {
+                        account.HasAccountWindow = managedBefore;
+                        account.WindowLoginPending = applyBefore;
+                        throw;
+                    }
                 }
             }
             Task Verify(int pid, CancellationToken token)
@@ -417,6 +498,7 @@ internal sealed class AccountService
             {
                 Installation = installation;
                 var selected = Vault.Data.Accounts.Find(a => a.Key == key) ?? throw new InvalidOperationException("선택한 계정이 삭제됐습니다.");
+                if (selected.RequiresLogin) throw new AccountLoginRequiredException();
                 if (policy != null) LinuxClientSession.RequireFile(policy, selected.AccountId); else CheckCredentialBackend(selected);
                 if (AuthDocument.Parse(selected.AuthJson).Key != key) throw new InvalidDataException("선택한 로그인 정보와 계정이 일치하지 않습니다.");
                 var selectedAuth = selected.AuthJson;
@@ -464,7 +546,10 @@ internal sealed class AccountService
                 if (WindowsAccountWindows.UsesProfile(Installation.DesktopPath, profile.Desktop)) throw new InvalidOperationException("switch.window_busy");
                 profile.RemoveLogin();
             }
-            Vault.Data.Accounts.RemoveAll(a => a.Key == key); Vault.Data.AutomaticSwitchPriority.RemoveAll(k => k == key); Vault.Save();
+            Vault.Data.Accounts.RemoveAll(a => a.Key == key);
+            Vault.Data.AutomaticSwitchPriority.RemoveAll(k => k == key);
+            Vault.Data.DashboardAccountOrder.RemoveAll(k => k == key);
+            Vault.Save();
         }
         Changed?.Invoke();
     }
@@ -590,6 +675,7 @@ internal static class UserErrors
 {
     public static string Describe(Exception error)
     {
+        if (AccountLoginRequiredException.Matches(error)) return "account.login_required";
         if (error is LinuxDesktopOwnershipException) return Loc.T("msg.linux_desktop_unmanaged");
         if (error is LinuxAccountPolicyException policy) return Loc.T(policy.Failure switch
         {
@@ -605,7 +691,6 @@ internal static class UserErrors
         if (error is CodexRequestException request)
         {
             if (request.Operation?.StartsWith("thread", StringComparison.Ordinal) == true) return request.Message;
-            if (error.Message.Contains("401") || error.Message.Contains("refresh", StringComparison.OrdinalIgnoreCase) || error.Message.Contains("auth", StringComparison.OrdinalIgnoreCase)) return "로그인이 만료되거나 취소됐습니다. 계정 추가로 다시 로그인해 주세요.";
             return "Codex 서버에서 사용량을 가져오지 못했습니다. 연결을 확인하고 새로 고침해 주세요.";
         }
         return error.Message;

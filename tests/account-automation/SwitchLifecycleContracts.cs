@@ -14,7 +14,15 @@ internal static class SwitchLifecycleContracts
             SwitchRecovery.AllowsAccount(abandoned, "target", "source", manualSwitch: true) &&
             !SwitchRecovery.AllowsAccount(abandoned, "target", "source", manualSwitch: false) &&
             !SwitchRecovery.AllowsAccount(abandoned, "target", "different", manualSwitch: true));
+        check("A ready primary window started after an empty same-account restart retires the checkpoint",
+            SwitchRecovery.CanRetireEmptyRestart(abandoned, "source", now));
+        check("Missing window evidence, an unchanged process or another login keeps the restart checkpoint",
+            !SwitchRecovery.CanRetireEmptyRestart(abandoned, "source", null) &&
+            !SwitchRecovery.CanRetireEmptyRestart(abandoned, "source", abandoned.RequestedAt) &&
+            !SwitchRecovery.CanRetireEmptyRestart(abandoned, "different", now));
         abandoned.Chats.Add(new SwitchChat());
+        check("A newer window never discards a saved chat checkpoint",
+            !SwitchRecovery.CanRetireEmptyRestart(abandoned, "source", now));
         check("A restart with a chat checkpoint holds other targets while allowing its own recovery",
             !SwitchRecovery.AllowsAccount(abandoned, "target", "source", true) &&
             SwitchRecovery.AllowsAccount(abandoned, "source", "source", true));

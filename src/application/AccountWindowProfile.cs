@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 
 namespace CodexAccountDesk;
 
@@ -19,8 +20,10 @@ internal sealed class AccountWindowProfile(string directory, string key)
 
     internal string ReadLogin()
     {
-        CheckPath(_root); CheckPath(Folder); CheckPath(Desktop); CheckPath(Home); CheckPath(Auth);
-        var json = File.ReadAllText(Auth);
+        CheckPath(_root); CheckPath(Folder); CheckPath(Desktop); CheckPath(Home);
+        string json;
+        try { CheckPath(Auth); json = File.ReadAllText(Auth); }
+        catch (FileNotFoundException) { throw new AccountLoginRequiredException(); }
         if (AuthDocument.Parse(json).Key != key) throw new InvalidOperationException("switch.window_identity");
         return json;
     }
@@ -33,10 +36,10 @@ internal sealed class AccountWindowProfile(string directory, string key)
         if (!account.HasAccountWindow && !File.Exists(config)) SecureFiles.AtomicWriteText(config, "cli_auth_credentials_store = \"file\"\n");
         var hasLogin = File.Exists(Auth);
         if (hasLogin) _ = ReadLogin();
-        else if (account.HasAccountWindow && !account.WindowLoginPending) throw new InvalidOperationException("switch.window_relogin");
+        else if (account.HasAccountWindow && !account.WindowLoginPending) throw new AccountLoginRequiredException();
         if (!account.HasAccountWindow || account.WindowLoginPending)
         {
-            if (!hasLogin || account.WindowLoginPending) SecureFiles.AtomicWriteText(Auth, account.AuthJson);
+            if (!hasLogin || account.WindowLoginPending) SecureFiles.AtomicWriteOwned(Auth, Encoding.UTF8.GetBytes(account.AuthJson));
             account.HasAccountWindow = true;
             account.WindowLoginPending = false;
         }

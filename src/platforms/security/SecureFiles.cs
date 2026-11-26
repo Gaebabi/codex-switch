@@ -33,7 +33,13 @@ internal static class SecureFiles
             InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit, PropagationFlags.None, AccessControlType.Allow));
         new DirectoryInfo(path).SetAccessControl(acl);
     }
-    public static void AtomicWrite(string target, byte[] bytes)
+    public static void AtomicWrite(string target, byte[] bytes) => AtomicWrite(target, bytes, ownedFile: false);
+
+    // These files contain only application-managed data and live under a private directory.
+    // Publish the staged file by rename without the Windows attribute and stream merge.
+    internal static void AtomicWriteOwned(string target, byte[] bytes) => AtomicWrite(target, bytes, ownedFile: true);
+
+    private static void AtomicWrite(string target, byte[] bytes, bool ownedFile)
     {
         if (OperatingSystem.IsLinux()) { LinuxPrivateFiles.Write(target, bytes); return; }
         var absolute = Path.GetFullPath(target);
@@ -49,7 +55,21 @@ internal static class SecureFiles
             using (var stream = new FileStream(staging, options))
             { stream.Write(bytes); stream.Flush(true); }
             if (!OperatingSystem.IsWindows()) File.Move(staging, absolute, true);
-            else if (File.Exists(absolute)) File.Replace(staging, absolute, null);
+            else if (File.Exists(absolute))
+            {
+                if (ownedFile)
+                {
+                    var destination = new FileInfo(absolute);
+                    var stagedFile = new FileInfo(staging);
+                    var permissions = new FileSecurity();
+                    permissions.SetSecurityDescriptorBinaryForm(destination.GetAccessControl(AccessControlSections.Access).GetSecurityDescriptorBinaryForm(),
+                        AccessControlSections.Access);
+                    stagedFile.SetAccessControl(permissions);
+                    if ((destination.Attributes & FileAttributes.Encrypted) != 0) File.Encrypt(staging);
+                    File.Move(staging, absolute, overwrite: true);
+                }
+                else File.Replace(staging, absolute, null);
+            }
             else File.Move(staging, absolute);
         }
         finally { if (File.Exists(staging)) File.Delete(staging); }

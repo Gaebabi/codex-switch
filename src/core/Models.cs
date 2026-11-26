@@ -22,6 +22,7 @@ internal sealed class AccountProfile
     [JsonIgnore] public DateTimeOffset? SubscriptionLastChecked { get; set; }
     [JsonIgnore] public string? SubscriptionError { get; set; }
     public bool RequiresApply { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] public bool RequiresLogin { get; set; }
     public bool HasAccountWindow { get; set; }
     public bool WindowLoginPending { get; set; }
     public UsageSnapshot? Usage { get; set; }

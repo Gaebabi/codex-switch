@@ -1,5 +1,9 @@
 # Binary releases
 
+## 1.45.11
+
+Account cards show **Sign in** and a dash when an account's login is rejected. Windows preserves file access permissions when saving Switch-owned account data, retires obsolete empty restart records, and remembers the order of account tanks. The dashboard also uses consistent Focus buttons, dismissible notices with countdown bars, and hardware meters without internal tick marks. [Changes and verification](development/RELEASE_1_45_11.md)
+
 ## 1.45.10
 
 Windows account cards can open a dedicated Codex window for each additional account and focus it again while other accounts keep running. Each window has its own login, native home and chat history. Switch verifies its live user and workspace before bringing it forward. The dashboard receives active chat counts and discards an observation when the login changes or the connection closes. Separate account windows are available in manual mode with credit use allowed.

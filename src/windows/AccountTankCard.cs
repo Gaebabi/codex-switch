@@ -12,6 +12,7 @@ internal sealed record QuotaChoice(string BucketId, string Slot, UsageWindow Win
 internal sealed class AccountTankCard : Grid
 {
     internal Button MenuButton { get; }
+    internal string AccountKey => _profile.Key;
     private readonly AccountProfile _profile;
     private readonly QuotaChoice? _choice;
     private readonly Burn0Theme _theme;
@@ -29,7 +30,18 @@ internal sealed class AccountTankCard : Grid
     private readonly DockPanel _last;
     private readonly WrapPanel? _windows;
     private bool? _compact;
-    public static QuotaChoice[] Choices(AccountProfile profile) => profile.Usage?.Buckets.SelectMany(bucket =>
+    private Border? _dropTarget;
+    internal void ShowDropTarget(bool active)
+    {
+        if (_dropTarget == null && active)
+        {
+            _dropTarget = new Border { BorderBrush = _theme.Color("accent"), BorderThickness = new Thickness(2),
+                CornerRadius = new CornerRadius(_theme.Number("radius")), IsHitTestVisible = false };
+            Children.Add(_dropTarget);
+        }
+        if (_dropTarget != null) _dropTarget.Visibility = active ? Visibility.Visible : Visibility.Collapsed;
+    }
+    public static QuotaChoice[] Choices(AccountProfile profile) => profile.RequiresLogin ? Array.Empty<QuotaChoice>() : profile.Usage?.Buckets.SelectMany(bucket =>
         new[] { bucket.Primary == null ? null : new QuotaChoice(bucket.Id, "primary", bucket.Primary, bucket.Label),
             bucket.Secondary == null ? null : new QuotaChoice(bucket.Id, "secondary", bucket.Secondary, bucket.Label) }).OfType<QuotaChoice>().ToArray() ?? Array.Empty<QuotaChoice>();
     public static QuotaChoice? SelectQuota(AccountProfile profile, string? selected = null)
@@ -103,19 +115,20 @@ internal sealed class AccountTankCard : Grid
         _daysLabel = Text(Loc.T("subscription.left"), 11, "muted"); _daysLabel.Margin = new Thickness(8, 0, 0, 0);
         _subscriptionLine.Children.Add(_endsLabel); _subscriptionLine.Children.Add(_subscriptionDate);
         _subscriptionLine.Children.Add(_daysLabel); _subscriptionLine.Children.Add(_subscriptionDays);
-        var resetCredits = profile.Usage?.AvailableResets;
+        var usage = profile.RequiresLogin ? null : profile.Usage;
+        var resetCredits = usage?.AvailableResets;
         _resetCredits = Text(resetCredits is int count ? Loc.F("초기화권 {0}장", count) : Loc.T("초기화권 —"), 11, "muted");
         _resetCredits.ToolTip = resetCredits is int available ? Loc.Count("초기화권 {0}개", available) : Loc.T("초기화권 정보 없음");
-        if (profile.Error != null) _resetCredits.ToolTip += "\n" + Loc.T("갱신 실패 · 이전 값");
+        if (profile.Error != null && usage != null) _resetCredits.ToolTip += "\n" + Loc.T("갱신 실패 · 이전 값");
         _resetCredits.HorizontalAlignment = HorizontalAlignment.Right; _resetCredits.LineHeight = 14; _resetCredits.Margin = new Thickness(8, 0, 0, 0);
         Grid.SetColumn(_resetCredits, 2); Grid.SetRow(_resetCredits, 1); footer.Children.Add(_resetCredits);
         _last = new DockPanel { Margin = new Thickness(0, 6, 0, 0) };
-        var creditBucket = profile.Usage?.Buckets.FirstOrDefault(b => b.Id == choice?.BucketId) ?? profile.Usage?.Buckets.FirstOrDefault(b => b.Id == "codex") ?? profile.Usage?.Buckets.FirstOrDefault();
+        var creditBucket = usage?.Buckets.FirstOrDefault(b => b.Id == choice?.BucketId) ?? usage?.Buckets.FirstOrDefault(b => b.Id == "codex") ?? usage?.Buckets.FirstOrDefault();
         _credits = Text(CreditLabel(creditBucket), 11, "muted", FontWeights.Medium);
         _credits.LineHeight = 14; _credits.VerticalAlignment = VerticalAlignment.Center; _credits.Margin = new Thickness(8, 0, 0, 0);
         _credits.ToolTip = creditBucket?.UnlimitedCredits == true ? Loc.T("크레딧 제한 없음") : creditBucket?.CreditBalance is string balance ? Loc.F("크레딧 {0}", balance) : Loc.T("크레딧 정보 없음");
         DockPanel.SetDock(_credits, Dock.Right); _last.Children.Add(_credits);
-        _state = Text(profile.Error != null ? Loc.T("갱신 실패 · 이전 값") : profile.IsRefreshing ? Loc.T("갱신 중…") : profile.IsCurrent ? Loc.T("현재 로그인") : Loc.T("등록 계정"), 11, profile.Error != null ? "warning" : "muted");
+        _state = Text(profile.RequiresLogin ? Loc.T("account.login_required") : profile.Error != null ? Loc.T("갱신 실패 · 이전 값") : profile.IsRefreshing ? Loc.T("갱신 중…") : profile.IsCurrent ? Loc.T("현재 로그인") : Loc.T("등록 계정"), 11, profile.Error != null ? "warning" : "muted");
         _state.VerticalAlignment = VerticalAlignment.Center; _state.TextTrimming = TextTrimming.CharacterEllipsis; _state.ToolTip = profile.Error == null ? null : Loc.Error(profile.Error);
         _state.Margin = new Thickness(10, 0, 0, 0); _subscriptionLine.Children.Add(_state); _last.Children.Add(_subscriptionLine);
         Grid.SetRow(_last, 2); Grid.SetColumnSpan(_last, 3); footer.Children.Add(_last); Grid.SetRow(footer, 2); _layout.Children.Add(footer);
@@ -196,7 +209,8 @@ internal sealed class AccountTankCard : Grid
         _reset.Foreground = _theme.Color(AccountDateWarnings.Reset(_choice?.Window.ResetsAt, now) ? "warning" : "text");
         if (_choice == null)
         {
-            _depletion.Text = Loc.T(_profile.IsRefreshing ? "측정중" : "정보 없음"); _reset.Text = "—"; return;
+            _depletion.Text = _profile.RequiresLogin ? "—" : Loc.T(_profile.IsRefreshing ? "측정중" : "정보 없음");
+            _reset.Text = "—"; return;
         }
         var window = _choice.Window; var forecast = UsagePredictor.Evaluate(window, _trend, now);
         _depletion.Text = forecast.State == ForecastState.ResetsFirst ? Loc.T("리셋 먼저")
